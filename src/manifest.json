@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "resource grid",
+  "description": "You can grid your browsing resources as you like and make it one-stop searching.",
+  "version": "0.1.0",
+  "permissions": [
+    "bookmarks",
+    "tabs",
+    "history"
+  ],
+  "action": {
+    "default_title": "Resource Grid",
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": "Ctrl+Shift+F",
+      "description": "Toggle Resource Grid"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

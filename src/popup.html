@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <main>
+        <div class="pane-right">
+            <div class="finder">
+                <form class="form-query">
+                    <button type="submit" tabindex="-1"><i class="fa fa-search"></i></button><input type="text"
+                        class="query" value="" placeholder="Search" autofocus="true">
+                    <i class="fa fa-times"></i>
+                    <button class="bookmark-button" title="Add new bookmark in current folder" type="button">
+                        <i class="fa fa-star-o"></i>
+                    </button>
+                    <div class="menu-button">
+                        <button class="main-menu-button" type="button">
+                            <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <div class="main-menu" role="menu">
+                            <div role="menuitem" data-value="add-bookmark"><i class="fa fa-star-o"></i>Add new bookmark
+                                at top</div>
+                            <div role="menuitem" data-value="add-folder"><i class="fa fa-folder-plus"></i>Add new folder
+                                at top</div>
+                            <hr aria-hidden="true">
+                            <div role="menuitem" data-value="options"><i class="fa fa-cog"></i>Settings</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="upper"></div>
+            <div class="lower"></div>
+        </div>
+        <div class="pane-center">
+            <div class="upper"></div>
+            <div class="lower"></div>
+        </div>
+        <div class="pane-left">
+            <div class="upper"></div>
+            <div class="lower"></div>
+        </div>
+    </main>
+    <script src="popup.js"></script>
+</body>
+
+</html>

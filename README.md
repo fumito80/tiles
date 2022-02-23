@@ -1,1 +1,1 @@
-# tiles
+# This is a chrome-extension that arranges resources in tiled format for browsing and cross-searching.
