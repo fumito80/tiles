@@ -1,24 +1,28 @@
 {
-  "manifest_version": 3,
-  "name": "resource grid",
-  "description": "You can grid your browsing resources as you like and make it one-stop searching.",
-  "version": "0.1.0",
+  "manifest_version": 2,
+  "name": "x-resources",
+  "description": "You can your browsing resources as you like and make it one-stop searching.",
+  "version": "1.0.0",
   "permissions": [
+    "storage",
     "bookmarks",
     "tabs",
-    "history"
+    "history",
+    "chrome://favicon/*"
   ],
-  "action": {
-    "default_title": "Resource Grid",
+  "browser_action": {
+    "default_title": "x-resources",
     "default_popup": "popup.html"
   },
   "commands": {
-    "_execute_action": {
-      "suggested_key": "Ctrl+Shift+F",
-      "description": "Toggle Resource Grid"
+    "_execute_browser_action": {
+       "suggested_key": {
+          "mac": "Command+Shift+B",
+          "default": "Alt+B"
+       }
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   }
 }
