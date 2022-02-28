@@ -10,8 +10,8 @@ export function makeLeaf({
 }: chrome.bookmarks.BookmarkTreeNode) {
   const style = makeStyleIcon(url);
   return `
-    <div is="bx-leaf" class="leaf" draggable="true" id="${id}" data-parent-id="${parentId}">
-      <a class="anchor" draggable="true" href="#nul" title="${title}" style="${style}">${title}</a><button class="leaf-menu-button"><i class="fa fa-ellipsis-v"></i></button>
+    <div is="bx-leaf" class="leaf" id="${id}" data-parent-id="${parentId}">
+      <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="fa fa-ellipsis-v"></i></button>
       <div class="drop-top"></div>
     </div>
   `;

@@ -3,8 +3,8 @@ import './popup.scss';
 import {
   startTime,
   // IClientState,
-  // IHtml,
-  // ISettings,
+  IHtml,
+  ISettings,
   IState,
   // CliMessageTypes,
   // OpenBookmarkType,
@@ -70,7 +70,7 @@ function setTabs() {
   });
 }
 
-function setOptions({ settings }: IState) {
+function setOptions(settings: ISettings) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
@@ -100,27 +100,27 @@ function setOptions({ settings }: IState) {
   setEventListners();
 }
 
-function repaleceHtml(html: IState['html']) {
+function repaleceHtml(html: IHtml) {
   $('.leafs')!.innerHTML = html.leafs;
   const $folders = $('.folders')!;
   $folders.innerHTML = html.folders;
   // $folders.append(...$(cssid(1), $folders)!.children);
   // $folders.append(...$$(`.folder:not(${cssid(1)})`, $folders));
   // $(cssid(0), $folders)!.remove();
+  ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
-async function init({ state }: { [key: string]: IState }) {
+async function init({ settings, html }: IState) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
-  repaleceHtml(state.html);
-  setOptions(state);
-  ($('.folders .open') as any).scrollIntoViewIfNeeded();
+  setOptions(settings);
+  repaleceHtml(html);
 }
 
 // const { options, html, clState } = await postMessage({ type: CliMessageTypes.initialize });
 
-chrome.storage.local.get('state', init);
+chrome.storage.local.get(['settings', 'html'], init as any);
 
 // setOptions(options);
 // repaleceHtml(html);

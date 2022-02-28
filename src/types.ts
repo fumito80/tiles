@@ -36,14 +36,14 @@ export const initialSettings = {
   },
 };
 
-type ISettings = typeof initialSettings;
+export type ISettings = typeof initialSettings;
 
-interface IClientState {
+export type IClientState = {
   open?: string;
   paths?: Array<string>;
 }
 
-interface IHtml {
+export type IHtml = {
   leafs: string;
   folders: string;
 }

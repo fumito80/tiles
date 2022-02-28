@@ -388,7 +388,7 @@ export function setEventListners() {
           (clone) => $('.draggable-clone')!.appendChild(clone),
         )($target);
         e.dataTransfer!.setDragImage(draggable, 10, 10);
-        const title = $('.title, a', $target)!.textContent || '';
+        const title = $('.title, .anchor', $target)!.textContent || '';
         e.dataTransfer!.setData('text/plain', title);
         e.dataTransfer!.setData('application/bx-move', id);
         $target.classList.add('drag-source');
@@ -693,7 +693,7 @@ export function setEventListners() {
 
   $('.leafs')!.addEventListener('click', (e) => {
     const target = e.target as HTMLDivElement;
-    if (target.localName === 'a') {
+    if (target.classList.contains('anchor')) {
       openBookmark(e.target!);
     } else if ([...target.classList].find((className) => ['title', 'fa-angle-right'].includes(className))) {
       const folder = target.parentElement?.parentElement!;

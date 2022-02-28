@@ -1,17 +1,17 @@
 import {
   initialSettings,
-  // IClientState,
-  // IHtml,
+  IClientState,
+  IHtml,
   // ISettings,
-  IState,
+  // IState,
   // CliMessageTypes,
   // OpenBookmarkType,
-  // EditBookmarkType,
+  EditBookmarkTypes,
   // dropClasses,
+  CliMessageTypes,
   PayloadAction,
 } from './types';
-import * as xr from './types';
-// import { curry, cbToResolve } from './utils';
+// import { cbToResolve } from './utils';
 import { makeLeaf, makeNode } from './html';
 
 export const mapStateToResponse = {
@@ -20,15 +20,15 @@ export const mapStateToResponse = {
   //   html: state.html,
   //   clState: state.clientState,
   // }),
-  [xr.CliMessageTypes.saveState]: ({ payload }: PayloadAction<IState['clientState']>) => payload,
+  [CliMessageTypes.saveState]: ({ payload }: PayloadAction<IClientState>) => payload,
   // ({ dispatch }: ReduxHandlers, { payload }: PayloadAction<bx.IClientState>) => {
   //   dispatch(clientState.actions.update(payload));
   // },
-  [xr.CliMessageTypes.saveOptions]: () => true,
+  [CliMessageTypes.saveOptions]: () => true,
   // ({ dispatch }: ReduxHandlers, { payload }: PayloadAction<bx.IOptions>) => {
   //   dispatch(sliceOptions.actions.update(payload));
   // },
-  [xr.CliMessageTypes.openBookmark]: () => {},
+  [CliMessageTypes.openBookmark]: () => {},
   //   async ({ state }: ReduxHandlers, { payload }: PayloadAction<bx.OpenBookmarkTypes>) => {
   //     const url = state.bookmarks.entities[payload.id]?.url;
   //     switch (payload.openType) {
@@ -52,7 +52,7 @@ export const mapStateToResponse = {
   //       default:
   //     }
   //   },
-  [xr.CliMessageTypes.addBookmark]: () => {},
+  [CliMessageTypes.addBookmark]: () => {},
   // async ({ subscribe }: ReduxHandlers, { payload }: PayloadAction<string>) => {
   //   const { title, url } = await F.getCurrentTab();
   //   const index = (payload === '1') ? 0 : undefined;
@@ -72,7 +72,7 @@ export const mapStateToResponse = {
   //   });
   //   return { id, html, exists };
   // },
-  [xr.CliMessageTypes.removeBookmark]: () => {},
+  [CliMessageTypes.removeBookmark]: () => {},
   // async ({ subscribe }: ReduxHandlers, { payload }: PayloadAction<string>) => {
   //   F.cbToResolve(F.curry(chrome.bookmarks.remove)(payload));
   //   const succeed = await new Promise<boolean>((resolve) => {
@@ -84,7 +84,7 @@ export const mapStateToResponse = {
   //   ({ state }: ReduxHandlers, { payload }: PayloadAction<string>) => (
   //     state.bookmarks.entities[Number(payload)]?.url
   //   ),
-  [xr.CliMessageTypes.editBookmark]: ({ payload }: PayloadAction<xr.EditBookmarkTypes>) => payload,
+  [CliMessageTypes.editBookmark]: ({ payload }: PayloadAction<EditBookmarkTypes>) => payload,
   // async ({ subscribe }: ReduxHandlers, { payload }: PayloadAction<bx.EditBookmarkTypes>) => {
   //   const changes = { [payload.editType]: payload.value };
   //   const succeed = await new Promise<{ title: string, style: string }>((resolve) => {
@@ -99,7 +99,7 @@ export const mapStateToResponse = {
   //   });
   //   return succeed;
   // },
-  [xr.CliMessageTypes.editFolder]: () => {},
+  [CliMessageTypes.editFolder]: () => {},
   // async (
   //   { subscribe }: ReduxHandlers,
   //   { payload: { id, title } }: PayloadAction<{ id: string, title:string }>,
@@ -110,7 +110,7 @@ export const mapStateToResponse = {
   //   });
   //   return succeed;
   // },
-  [xr.CliMessageTypes.addFolder]: () => {},
+  [CliMessageTypes.addFolder]: () => {},
   // async (
   //   { subscribe }: ReduxHandlers,
   //   { payload: { parentId, title } }: PayloadAction<{ parentId: string, title:string }>,
@@ -130,7 +130,7 @@ export const mapStateToResponse = {
   //   });
   //   return { id, html, exists };
   // },
-  [xr.CliMessageTypes.removeFolder]: () => {},
+  [CliMessageTypes.removeFolder]: () => {},
   // async ({ subscribe }: ReduxHandlers, { payload }: PayloadAction<string>) => {
   //   F.cbToResolve(F.curry(chrome.bookmarks.removeTree)(payload));
   //   const succeed = await new Promise<boolean>((resolve) => {
@@ -138,7 +138,7 @@ export const mapStateToResponse = {
   //   });
   //   return succeed;
   // },
-  [xr.CliMessageTypes.moveItem]: () => {},
+  [CliMessageTypes.moveItem]: () => {},
   // async (
   //   { state, subscribe }: ReduxHandlers,
   //   { payload: { id, targetId, dropClass } }: PayloadAction<bx.PayloadMoveItem>,
@@ -205,23 +205,28 @@ function digBookmarks(isNode = false) {
   };
 }
 
-async function makeHtmlBookmarks(results: chrome.bookmarks.BookmarkTreeNode[]) {
-  const [{ children }] = results;
-  const leafs = children?.map(digBookmarks()).join('') || '';
-  const rootTree = children?.find(({ id }) => id === '1');
-  const rootBookmarks = rootTree?.children?.filter(({ url }) => !!url).map(makeLeaf).join('') || '';
-  const mainFolders = children?.find(({ id }) => id === '1')?.children?.map(digBookmarks(true)).join('') || '';
-  const otherFolders = children?.filter(({ id }) => id !== '1').map(digBookmarks(true)).join('');
-  const folders = `${rootBookmarks}${mainFolders}${otherFolders}`;
-  const state: IState = {
-    html: {
-      leafs,
-      folders,
-    },
-    settings: initialSettings,
-    clientState: {},
-  };
-  chrome.storage.local.set({ state });
+function makeHtmlBookmarks() {
+  chrome.bookmarks.getTree(([{ children }]) => {
+    const leafs = children?.map(digBookmarks()).join('') || '';
+    const rootTree = children?.find(({ id }) => id === '1');
+    const rootBookmarks = rootTree?.children?.filter(({ url }) => !!url).map(makeLeaf).join('') || '';
+    const mainFolders = children?.find(({ id }) => id === '1')?.children?.map(digBookmarks(true)).join('') || '';
+    const otherFolders = children?.filter(({ id }) => id !== '1').map(digBookmarks(true)).join('');
+    const folders = `${rootBookmarks}${mainFolders}${otherFolders}`;
+    const html: IHtml = { leafs, folders };
+    chrome.storage.local.set({ html });
+  });
 }
 
-chrome.bookmarks.getTree(makeHtmlBookmarks);
+chrome.bookmarks.onChanged.addListener(makeHtmlBookmarks);
+chrome.bookmarks.onChildrenReordered.addListener(makeHtmlBookmarks);
+chrome.bookmarks.onCreated.addListener(makeHtmlBookmarks);
+chrome.bookmarks.onImportEnded.addListener(makeHtmlBookmarks);
+chrome.bookmarks.onMoved.addListener(makeHtmlBookmarks);
+chrome.bookmarks.onRemoved.addListener(makeHtmlBookmarks);
+
+const settings = initialSettings;
+const clientState = {};
+chrome.storage.local.set({ settings, clientState });
+
+makeHtmlBookmarks();
