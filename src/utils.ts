@@ -16,6 +16,10 @@ export function $$<T extends HTMLElement>(
   return [...parent.querySelectorAll(selector)] as Array<T>;
 }
 
+export function eq<T>(a: T) {
+  return (b: T) => a === b;
+}
+
 // export type Map<T extends Array<any>, U, V> = U extends T
 //   ? (f: (element: U[number], index: number, self: U) => V) => (array: T) => V[]
 //   : (f: (element: T[number], index: number, self: T) => V) => (array: T) => V[]
@@ -86,7 +90,7 @@ export function tail<T extends Array<any>>([, ...rest]: readonly [any, ...T]) {
 type Last<T extends Array<any>> = T[Exclude<keyof T, keyof Tail<T>>];
 
 export function last<T extends Array<any>>(args: T) {
-  return args[args.length - 1] as Last<T>;
+  return args.at(-1) as Last<T>;
 }
 
 // test
@@ -332,9 +336,9 @@ export function pipeP(...fns: Array<any>) {
   };
 }
 
-export function pick<T, U extends keyof T>(target: T, ...props: Array<U>): Pick<T, U>;
-export function pick(target: any, ...props: Array<any>) {
-  return props.reduce((acc, key) => ({ ...acc, [key]: target[key] }), {});
+export function pick<T, U extends keyof T>(...props: Array<U>): (target: T) => Pick<T, U>;
+export function pick(...a: any) {
+  return (target: any) => a.reduce((acc: any, key: any) => ({ ...acc, [key]: target[key] }), {});
 }
 
 // eslint-disable-next-line no-undef
@@ -406,6 +410,23 @@ export function whichClass<T extends ReadonlyArray<string>>(classNames: T, eleme
 export function addRules(selector: string, ruleProps: [string, string][]) {
   const rules = ruleProps.map(([prop, value]) => `${prop}:${value};`).join('');
   document.styleSheets[0].insertRule(`${selector} {${rules}}`);
+}
+
+export function prop<T, U extends keyof T>(name: U): (target: T) => T[U];
+export function prop(name: any) {
+  return (target: any) => target[name];
+}
+
+export function propEq<T, U extends keyof T, V extends T[U]>(name: U, value: V): (target: T)
+  => boolean;
+export function propEq(name: any, value: any) {
+  return (target: any) => target[name] === value;
+}
+
+export function propNe<T, U extends keyof T, V extends T[U]>(name: U, value: V): (target: T)
+  => boolean;
+export function propNe(name: any, value: any) {
+  return (target: any) => target[name] !== value;
 }
 
 // for V3

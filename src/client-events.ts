@@ -5,7 +5,7 @@ import {
   dropClasses,
   CliMessageTypes,
   OpenBookmarkType,
-  // EditBookmarkType,
+  EditBookmarkType,
 } from './types';
 
 import {
@@ -22,6 +22,7 @@ import {
   cbToResolve,
   getCurrentTab,
   showMenu,
+  propEq,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -62,6 +63,12 @@ function checkDroppable(e: DragEvent) {
 function getBookmark(id: string) {
   return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
     chrome.bookmarks.get(id, ([treeNode]) => resolve(treeNode));
+  });
+}
+
+function getSubTree(id: string) {
+  return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
+    chrome.bookmarks.getSubTree(id, ([treeNode]) => resolve(treeNode));
   });
 }
 
@@ -414,70 +421,36 @@ export function setEventListners() {
       $('.draggable-clone')!.innerHTML = '';
     },
     drop: async (e) => {
-      const $target = e.target as HTMLElement;
+      const $dropTarget = e.target as HTMLElement;
       const id = e.dataTransfer?.getData('application/bx-move')!;
-      const dropClass = whichClass(dropClasses, $target)!;
-      const $tree = $target.parentElement! || $target.parentElement!.parentElement!;
-      // const targetId = $target.parentElement!.id || $target.parentElement!.parentElement!.id;
-      const targetId = $tree.id;
-      const treeNode = await getBookmark(targetId);
-
-      // const tree = state.bookmarks.entities[targetId]!;
-      const [parentNode, parentId, index] = await (async () => {
-        if (dropClass === 'drop-folder') {
-          return [null, targetId, treeNode.children?.length || 0];
+      const dropClass = whichClass(dropClasses, $dropTarget)!;
+      const $target = $dropTarget.parentElement!.id
+        ? $dropTarget.parentElement!
+        : $dropTarget.parentElement!.parentElement!;
+      // let parentNode;
+      let parentId;
+      let index;
+      // let nextFolderId = null;
+      switch (dropClass) {
+        case 'drop-folder': {
+          parentId = $target.id;
+          index = $target.children.length - 1;
+          await cbToResolve(curry3(chrome.bookmarks.move)(id)({ parentId }));
+          break;
         }
-        const parentTreeNode = await getBookmark(treeNode.parentId!);
-        // const { childIds } = state.bookmarks.entities[treeNode.parentId!]!;
-        const findIndex = parentTreeNode?.children?.findIndex((node) => node.id === targetId)!;
-        if (findIndex == null || findIndex === -1) {
-          return [null, '', null] as const;
+        default: {
+          const parentNode = $target.parentElement;
+          parentId = parentNode?.id! || '1';
+          const subTree = await getSubTree(parentId);
+          const findIndex = subTree.children?.findIndex(propEq('id', $target.id));
+          if (findIndex == null) {
+            alert('Operation failed with unknown error.');
+            return;
+          }
+          index = findIndex + (dropClass === 'drop-bottom' ? 1 : 0);
+          await cbToResolve(curry3(chrome.bookmarks.move)(id)({ parentId, index }));
         }
-        return [parentTreeNode, treeNode.parentId, findIndex + (dropClass === 'drop-bottom' ? 1 : 0)];
-      })();
-      if (parentId == null || index == null) {
-        alert('Operation failed with unknown error.');
-        return;
       }
-      //   return {
-      //     parentId: null,
-      //     index: null,
-      //   };
-      // }
-      // const lastState = await new Promise<State>((resolve) => {
-      //   // subscribe((state2: State) => resolve(state2), ['html', 'created'], true);
-      //   chrome.bookmarks.move(id, { parentId, index }, resolve);
-      // });
-      let nextFolderId;
-      const { url } = await cbToResolve(curry3(chrome.bookmarks.move)(id)({ parentId, index }));
-      if (parentId !== '1' && !url) {
-        //   return { parentId, index };
-        // }
-        // if (lastState) {
-        // const { childIds } = lastState.bookmarks.entities[parentId]!;
-        const findIndex = parentNode!.children?.findIndex((node) => node.id === id);
-        const nextChildren = parentNode!.children?.slice(findIndex! + 1);
-        const nextFolder = nextChildren?.find((node) => !node.url);
-        nextFolderId = nextFolder?.id;
-        //   // !lastState.bookmarks.entities[node.id]?.url
-        //   !node.url
-        // ));
-      }
-      // return { parentId, index, nextFolderId };
-      // }
-      // return {
-      //   parentId: null,
-      //   index: null,
-      // };
-
-      // const { parentId, index, nextFolderId } = await postMessage({
-      //   type: CliMessageTypes.moveItem,
-      //   payload: { id, dropClass, targetId },
-      // });
-      // if (parentId == null || index == null) {
-      //   alert('Operation failed with unknown error.');
-      //   return;
-      // }
       const $dragSource = $(cssid(id))!;
       if ($dragSource.classList.contains('leaf')) {
         if (parentId === '1') {
@@ -502,12 +475,13 @@ export function setEventListners() {
         if (parentId === '1') {
           $(`.leafs ${cssid(1)}`)!.insertBefore($dragSource, $(`.leafs ${cssid(1)} > div:nth-child(${index + 2})`));
           $('.folders')!.insertBefore($targetFolder, $(`.folders > div:nth-child(${index + 1})`));
-        } else if (nextFolderId == null) {
+        } else if (dropClass === 'drop-folder') {
           $(`.leafs ${cssid(parentId)}`)!.append($targetLeaf);
           $(`.folders ${cssid(parentId)}`)!.append($targetFolder);
         } else {
-          $(`.leafs ${cssid(parentId)}`)!.insertBefore($targetLeaf, $(`.leafs ${cssid(nextFolderId)}`));
-          $(`.folders ${cssid(parentId)}`)!.insertBefore($targetFolder, $(`.folders ${cssid(nextFolderId)}`));
+          const position = dropClass === 'drop-top' ? 'beforebegin' : 'afterend';
+          $targetLeaf.insertAdjacentElement(position, $(`.leafs ${cssid($target.id)}`));
+          $targetFolder.insertAdjacentElement(position, $(`.folders ${cssid($target.id)}`));
         }
         if (parentId !== currentParentId) {
           const children = Number($targetFolder.parentElement.dataset.children) + 1;
@@ -572,6 +546,8 @@ export function setEventListners() {
           // });
           // $anchor.setAttribute('title', ret.title);
           // $anchor.textContent = value;
+          const changes = { [EditBookmarkType.title]: value };
+          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)(changes));
           updateAnker({ url, title: value });
           setAnimationClass($leaf, 'hilite');
           break;

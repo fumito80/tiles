@@ -13,6 +13,9 @@ import {
 } from './types';
 // import { cbToResolve } from './utils';
 import { makeLeaf, makeNode } from './html';
+import {
+  pipe, prop, propEq, propNe,
+} from './utils';
 
 export const mapStateToResponse = {
   // [xr.CliMessageTypes.initialize]: ({ state }: ReduxHandlers) => ({
@@ -187,32 +190,27 @@ export const mapStateToResponse = {
 export type MapStateToResponse = typeof mapStateToResponse;
 
 function digBookmarks(isNode = false) {
-  return ({
-    id, title, url, parentId, children,
-  }: chrome.bookmarks.BookmarkTreeNode): string => {
-    if (isNode && url) {
-      return '';
+  return (node: chrome.bookmarks.BookmarkTreeNode): string => {
+    if (node.url) {
+      return isNode ? '' : makeLeaf(node);
     }
-    if (url) {
-      return makeLeaf({
-        id, title, url, parentId,
-      });
-    }
-    const nodes = children?.map(digBookmarks(isNode)) ?? [];
-    return makeNode({
-      id, title, children: nodes.join(''), length: nodes.length,
-    });
+    const children = node.children?.map(digBookmarks(isNode)).join('') ?? '';
+    const { length } = node.children?.filter((el) => !el.url) ?? [];
+    return makeNode({ ...node, children, length });
   };
 }
+
+const concat = (a: string[] = []) => (b: string = '') => b.concat(a.join(''));
 
 function makeHtmlBookmarks() {
   chrome.bookmarks.getTree(([{ children }]) => {
     const leafs = children?.map(digBookmarks()).join('') || '';
-    const rootTree = children?.find(({ id }) => id === '1');
-    const rootBookmarks = rootTree?.children?.filter(({ url }) => !!url).map(makeLeaf).join('') || '';
-    const mainFolders = children?.find(({ id }) => id === '1')?.children?.map(digBookmarks(true)).join('') || '';
-    const otherFolders = children?.filter(({ id }) => id !== '1').map(digBookmarks(true)).join('');
-    const folders = `${rootBookmarks}${mainFolders}${otherFolders}`;
+    const rootTree = children?.find(propEq('id', '1'))?.children;
+    const folders = pipe(
+      concat(rootTree?.filter(prop('url')).map(makeLeaf)),
+      concat(rootTree?.map(digBookmarks(true))),
+      concat(children?.filter(propNe('id', '1')).map(digBookmarks(true))),
+    )();
     const html: IHtml = { leafs, folders };
     chrome.storage.local.set({ html });
   });
