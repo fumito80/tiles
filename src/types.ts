@@ -135,3 +135,10 @@ export type RequestCallback<T> = (
 export type MessageStateMapObject<M extends MapStateToResponse> = {
   [K in keyof M]: M[K] extends RequestCallback<infer S> ? S : never;
 }
+
+type InsertPosition = Parameters<Element['insertAdjacentElement']>[0];
+export const positions: { [key: string]: InsertPosition } = {
+  'drop-top': 'beforebegin',
+  'drop-bottom': 'afterend',
+  'drop-folder': 'beforeend',
+};

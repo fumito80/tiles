@@ -189,13 +189,13 @@ export const mapStateToResponse = {
 
 export type MapStateToResponse = typeof mapStateToResponse;
 
-function digBookmarks(isNode = false) {
+function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {
     if (node.url) {
       return isNode ? '' : makeLeaf(node);
     }
     const children = node.children?.map(digBookmarks(isNode)).join('') ?? '';
-    const { length } = node.children?.filter((el) => !el.url) ?? [];
+    const { length } = node.children?.filter(propEq('url', undefined)) ?? [];
     return makeNode({ ...node, children, length });
   };
 }
@@ -204,24 +204,27 @@ const concat = (a: string[] = []) => (b: string = '') => b.concat(a.join(''));
 
 function makeHtmlBookmarks() {
   chrome.bookmarks.getTree(([{ children }]) => {
-    const leafs = children?.map(digBookmarks()).join('') || '';
+    const leafs = children?.map(digBookmarks(false)).join('') || '';
     const rootTree = children?.find(propEq('id', '1'))?.children;
     const folders = pipe(
       concat(rootTree?.filter(prop('url')).map(makeLeaf)),
-      concat(rootTree?.map(digBookmarks(true))),
-      concat(children?.filter(propNe('id', '1')).map(digBookmarks(true))),
+      concat(rootTree?.map(digBookmarks())),
+      concat(children?.filter(propNe('id', '1')).map(digBookmarks())),
     )();
     const html: IHtml = { leafs, folders };
     chrome.storage.local.set({ html });
   });
 }
 
-chrome.bookmarks.onChanged.addListener(makeHtmlBookmarks);
-chrome.bookmarks.onChildrenReordered.addListener(makeHtmlBookmarks);
-chrome.bookmarks.onCreated.addListener(makeHtmlBookmarks);
-chrome.bookmarks.onImportEnded.addListener(makeHtmlBookmarks);
-chrome.bookmarks.onMoved.addListener(makeHtmlBookmarks);
-chrome.bookmarks.onRemoved.addListener(makeHtmlBookmarks);
+const bookmarksEvents = [
+  chrome.bookmarks.onChanged,
+  chrome.bookmarks.onCreated,
+  chrome.bookmarks.onImportEnded,
+  chrome.bookmarks.onMoved,
+  chrome.bookmarks.onRemoved,
+];
+
+bookmarksEvents.forEach((listener) => listener.addListener(makeHtmlBookmarks));
 
 const settings = initialSettings;
 const clientState = {};

@@ -3,6 +3,7 @@
 
 import {
   dropClasses,
+  positions,
   CliMessageTypes,
   OpenBookmarkType,
   EditBookmarkType,
@@ -272,6 +273,10 @@ async function addFolder(parentId = '1') {
   setAnimationFolder($target.parentElement!, 'hilite');
 }
 
+function setHasChildren($target: HTMLElement) {
+  $target.setAttribute('data-children', String($target.children.length - 1));
+}
+
 const $inputQuery = $('.query')! as HTMLInputElement;
 let lastQueryValue = '';
 
@@ -427,66 +432,43 @@ export function setEventListners() {
       const $target = $dropTarget.parentElement!.id
         ? $dropTarget.parentElement!
         : $dropTarget.parentElement!.parentElement!;
-      // let parentNode;
-      let parentId;
-      let index;
-      // let nextFolderId = null;
-      switch (dropClass) {
-        case 'drop-folder': {
-          parentId = $target.id;
-          index = $target.children.length - 1;
-          await cbToResolve(curry3(chrome.bookmarks.move)(id)({ parentId }));
-          break;
+      let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $target.id };
+      if (dropClass !== 'drop-folder') {
+        const parentNode = $target.parentElement;
+        const parentId = parentNode?.id! || '1';
+        const subTree = await getSubTree(parentId);
+        const findIndex = subTree.children?.findIndex(propEq('id', $target.id));
+        if (findIndex == null) {
+          alert('Operation failed with unknown error.');
+          return;
         }
-        default: {
-          const parentNode = $target.parentElement;
-          parentId = parentNode?.id! || '1';
-          const subTree = await getSubTree(parentId);
-          const findIndex = subTree.children?.findIndex(propEq('id', $target.id));
-          if (findIndex == null) {
-            alert('Operation failed with unknown error.');
-            return;
-          }
-          index = findIndex + (dropClass === 'drop-bottom' ? 1 : 0);
-          await cbToResolve(curry3(chrome.bookmarks.move)(id)({ parentId, index }));
-        }
+        const index = findIndex + (dropClass === 'drop-bottom' ? 1 : 0);
+        bookmarkDest = { parentId, index };
       }
+      const parentId = bookmarkDest.parentId!;
+      await cbToResolve(curry3(chrome.bookmarks.move)(id)(bookmarkDest));
       const $dragSource = $(cssid(id))!;
+      const position = positions[dropClass];
+      const [$targetLeaf, $targetFolder] = $$(cssid(id));
       if ($dragSource.classList.contains('leaf')) {
         if (parentId === '1') {
-          const $foldersTarget = $(`.folders > div:nth-child(${index + 1})`)!;
-          const $leaf = ($dragSource.parentElement!.id === '1') ? $(`.folders ${cssid(id)}`)! : $dragSource.cloneNode(true);
-          setAnimationClass($('.folders')!.insertBefore($leaf, $foldersTarget) as HTMLElement, 'hilite');
+          const $leaf = ($dragSource.parentElement!.id === '1') ? $targetFolder : $dragSource.cloneNode(true) as HTMLElement;
+          $target.insertAdjacentElement(position, $leaf);
+          setAnimationClass($leaf, 'hilite');
         } else if ($dragSource.parentElement!.id === '1') {
           $(`.folders ${cssid(id)}`)!.remove();
         }
-        $(`.leafs ${cssid(parentId)}`)!.insertBefore($dragSource, $(`.leafs ${cssid(parentId)} > div:nth-child(${index + 2})`));
+        $(`.leafs ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetLeaf);
         if (parentId !== '1') {
           setAnimationClass($dragSource, 'hilite');
           ($dragSource as any).scrollIntoViewIfNeeded();
         }
       } else {
-        const [$targetLeaf, $targetFolder] = $$(cssid(id));
-        const currentParentId = $dragSource.parentElement!.id;
-        if (parentId !== currentParentId) {
-          const children = Number($targetFolder.parentElement.dataset.children) - 1;
-          $targetFolder.parentElement.dataset.children = String(children);
-        }
-        if (parentId === '1') {
-          $(`.leafs ${cssid(1)}`)!.insertBefore($dragSource, $(`.leafs ${cssid(1)} > div:nth-child(${index + 2})`));
-          $('.folders')!.insertBefore($targetFolder, $(`.folders > div:nth-child(${index + 1})`));
-        } else if (dropClass === 'drop-folder') {
-          $(`.leafs ${cssid(parentId)}`)!.append($targetLeaf);
-          $(`.folders ${cssid(parentId)}`)!.append($targetFolder);
-        } else {
-          const position = dropClass === 'drop-top' ? 'beforebegin' : 'afterend';
-          $targetLeaf.insertAdjacentElement(position, $(`.leafs ${cssid($target.id)}`));
-          $targetFolder.insertAdjacentElement(position, $(`.folders ${cssid($target.id)}`));
-        }
-        if (parentId !== currentParentId) {
-          const children = Number($targetFolder.parentElement.dataset.children) + 1;
-          $targetFolder.parentElement.dataset.children = String(children);
-        }
+        const $lastParantElement = $targetFolder.parentElement;
+        $(`.leafs ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetLeaf);
+        $(`.folders ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetFolder);
+        setHasChildren($lastParantElement);
+        setHasChildren($targetFolder.parentElement);
         setAnimationClass($(':scope > .marker', $targetFolder)!, 'hilite');
       }
     },
@@ -763,7 +745,7 @@ export function setEventListners() {
           $marker.addEventListener('animationend', () => {
             const $parent = $folder.parentElement!;
             $folder.remove();
-            $parent.dataset.children = String($parent.children.length - 1);
+            setHasChildren($parent);
             $('.title', $parent)!.click();
           }, { once: true });
           $marker.classList.remove('hilite');

@@ -425,7 +425,7 @@ export function propEq(name: any, value: any) {
 
 export function propNe<T, U extends keyof T, V extends T[U]>(name: U, value: V): (target: T)
   => boolean;
-export function propNe(name: any, value: any) {
+export function propNe(name: string, value: any) {
   return (target: any) => target[name] !== value;
 }
 
