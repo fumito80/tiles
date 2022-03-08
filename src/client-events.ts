@@ -426,18 +426,18 @@ export function setEventListners() {
       $('.draggable-clone')!.innerHTML = '';
     },
     drop: async (e) => {
-      const $dropTarget = e.target as HTMLElement;
-      const id = e.dataTransfer?.getData('application/bx-move')!;
-      const dropClass = whichClass(dropClasses, $dropTarget)!;
-      const $target = $dropTarget.parentElement!.id
-        ? $dropTarget.parentElement!
-        : $dropTarget.parentElement!.parentElement!;
-      let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $target.id };
+      const $dropArea = e.target as HTMLElement;
+      const sourceId = e.dataTransfer?.getData('application/bx-move')!;
+      const dropClass = whichClass(dropClasses, $dropArea)!;
+      const $dropTarget = $dropArea.parentElement?.id
+        ? $dropArea.parentElement!
+        : $dropArea.parentElement!.parentElement!;
+      const destId = $dropTarget.id;
+      let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
       if (dropClass !== 'drop-folder') {
-        const parentNode = $target.parentElement;
-        const parentId = parentNode?.id! || '1';
+        const parentId = $dropTarget.parentElement?.id! || '1';
         const subTree = await getSubTree(parentId);
-        const findIndex = subTree.children?.findIndex(propEq('id', $target.id));
+        const findIndex = subTree.children?.findIndex(propEq('id', $dropTarget.id));
         if (findIndex == null) {
           alert('Operation failed with unknown error.');
           return;
@@ -445,32 +445,28 @@ export function setEventListners() {
         const index = findIndex + (dropClass === 'drop-bottom' ? 1 : 0);
         bookmarkDest = { parentId, index };
       }
-      const parentId = bookmarkDest.parentId!;
-      await cbToResolve(curry3(chrome.bookmarks.move)(id)(bookmarkDest));
-      const $dragSource = $(cssid(id))!;
+      await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
       const position = positions[dropClass];
-      const [$targetLeaf, $targetFolder] = $$(cssid(id));
-      if ($dragSource.classList.contains('leaf')) {
-        if (parentId === '1') {
-          const $leaf = ($dragSource.parentElement!.id === '1') ? $targetFolder : $dragSource.cloneNode(true) as HTMLElement;
-          $target.insertAdjacentElement(position, $leaf);
-          setAnimationClass($leaf, 'hilite');
-        } else if ($dragSource.parentElement!.id === '1') {
-          $(`.folders ${cssid(id)}`)!.remove();
-        }
-        $(`.leafs ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetLeaf);
-        if (parentId !== '1') {
-          setAnimationClass($dragSource, 'hilite');
-          ($dragSource as any).scrollIntoViewIfNeeded();
-        }
-      } else {
-        const $lastParantElement = $targetFolder.parentElement;
-        $(`.leafs ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetLeaf);
-        $(`.folders ${cssid($target.id)}`)!.insertAdjacentElement(position, $targetFolder);
+      const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+      const [$destLeafs, $destFolders] = $$(cssid(destId));
+      const isRootTo = $destLeafs.parentElement.id === '1' && dropClass !== 'drop-folder';
+      const isRootFrom = $sourceLeafs.parentElement.id === '1';
+      const isLeafFrom = $sourceLeafs.classList.contains('leaf');
+      if (isLeafFrom && isRootFrom && !isRootTo) {
+        $sourceFolders.remove();
+      } else if (isLeafFrom && isRootTo) {
+        const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true);
+        $destFolders.insertAdjacentElement(position, $source);
+        setAnimationClass($source, 'hilite');
+      } else if (!isLeafFrom) {
+        const $lastParantElement = $sourceFolders.parentElement;
+        $destFolders.insertAdjacentElement(position, $sourceFolders);
         setHasChildren($lastParantElement);
-        setHasChildren($targetFolder.parentElement);
-        setAnimationClass($(':scope > .marker', $targetFolder)!, 'hilite');
+        setHasChildren($sourceFolders.parentElement);
+        setAnimationClass($(':scope > .marker', $sourceFolders)!, 'hilite');
       }
+      $destLeafs.insertAdjacentElement(position, $sourceLeafs);
+      setAnimationClass($sourceLeafs, 'hilite');
     },
   });
 
