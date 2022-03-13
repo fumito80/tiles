@@ -1,9 +1,10 @@
 import './popup.scss';
 
 import {
-  startTime,
+  // startTime,
   // IClientState,
-  IHtml,
+  // IHtml,
+  HtmlBookmarks,
   ISettings,
   IState,
   // CliMessageTypes,
@@ -26,31 +27,33 @@ import {
   // getParentElement,
   addRules,
   makeStyleIcon,
+  // makeHistoryRow,
 } from './utils';
 
 import { setEventListners } from './client-events';
+import setVScroll from './vscroll';
 
-function makeHistoryRow(item: chrome.history.HistoryItem) {
-  const dt = item.lastVisitTime ? `\n${(new Date(item.lastVisitTime)).toLocaleString()}` : '';
-  const style = makeStyleIcon(item.url!);
-  return `<div id="hst-${item.id}" title="${item.title}${dt}" style="${style}">${item.title}</div>`;
-}
+// function makeHistoryRow(item: chrome.history.HistoryItem) {
+//   const dt = item.lastVisitTime ? `\n${(new Date(item.lastVisitTime)).toLocaleString()}` : '';
+//   const style = makeStyleIcon(item.url!);
+//   return `<div id="hst-${item.id}" title="${item.title}${dt}" style="${style}">${item.title}</div>`;
+// }
 
-function setHistory({ historyMax: { rows } }: IState['settings']) {
-  chrome.history.search({ text: '', maxResults: rows, startTime }, (items) => {
-    const $paneHistory = $('.pane-history')!;
-    let displayRows = items.map(makeHistoryRow);
-    if (displayRows.length === rows) {
-      const maxDisplayRow = `<div class="limit" ${displayRows[rows - 1].substring(4)}`;
-      displayRows = [...displayRows.slice(0, rows - 1), maxDisplayRow];
-      chrome.history.search({ text: '', maxResults: 99999, startTime }, (itemsAll) => {
-        const remainRows = itemsAll.slice(rows).map(makeHistoryRow);
-        $paneHistory.insertAdjacentHTML('beforeend', remainRows.join(''));
-      });
-    }
-    $paneHistory.innerHTML = displayRows.join('');
-  });
-}
+// function setHistory({ historyMax: { rows } }: IState['settings']) {
+//   chrome.history.search({ text: '', maxResults: rows, startTime }, (items) => {
+//     const $paneHistory = $('.pane-history')!;
+//     let displayRows = items.map(makeHistoryRow);
+//     if (displayRows.length === rows) {
+//       const maxDisplayRow = `<div class="limit" ${displayRows[rows - 1].substring(4)}`;
+//       displayRows = [...displayRows.slice(0, rows - 1), maxDisplayRow];
+//       chrome.history.search({ text: '', maxResults: 99999, startTime }, (itemsAll) => {
+//         const remainRows = itemsAll.slice(rows).map(makeHistoryRow);
+//         $paneHistory.insertAdjacentHTML('beforeend', remainRows.join(''));
+//       });
+//     }
+//     $paneHistory.innerHTML = displayRows.join('');
+//   });
+// }
 
 function setTabs() {
   chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
@@ -69,6 +72,13 @@ function setTabs() {
     });
   });
 }
+
+// function addRemainsHistory({ historyMax: { rows } }: IState['settings']) {
+//   chrome.history.search({ text: '', maxResults: 99999, startTime }, (itemsAll) => {
+//     const remainRows = itemsAll.slice(rows).map(makeHistoryRow);
+//     $('#tmpl-history')!.insertAdjacentHTML('beforeend', remainRows.join(''));
+//   });
+// }
 
 function setOptions(settings: ISettings) {
   addRules('body', [
@@ -94,13 +104,14 @@ function setOptions(settings: ISettings) {
   if (settings.tabs) {
     setTabs();
   }
-  if (settings.history) {
-    setHistory(settings);
-  }
+  // if (settings.history) {
+  //   setHistory(settings);
+  // }
+  // addRemainsHistory(settings);
   setEventListners();
 }
 
-function repaleceHtml(html: IHtml) {
+function repaleceHtml(html: HtmlBookmarks) {
   $('.leafs')!.innerHTML = html.leafs;
   const $folders = $('.folders')!;
   $folders.innerHTML = html.folders;
@@ -110,17 +121,33 @@ function repaleceHtml(html: IHtml) {
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
-async function init({ settings, html }: IState) {
+async function init({
+  settings, htmlBookmarks, htmlHistory, histories,
+}: IState) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
   setOptions(settings);
-  repaleceHtml(html);
+  repaleceHtml(htmlBookmarks);
+  // $('.pane-tabs')!.innerHTML = htmlTabs;
+  const $paneHistory = $<HTMLDivElement>('.pane-history')!;
+  $paneHistory.firstElementChild!.innerHTML = htmlHistory;
+  setVScroll($paneHistory, histories);
 }
 
 // const { options, html, clState } = await postMessage({ type: CliMessageTypes.initialize });
 
-chrome.storage.local.get(['settings', 'html'], init as any);
+type TT = Parameters<Parameters<typeof chrome.storage.local.get>[1]>[0];
+
+const keys: Array<keyof IState> = [
+  'settings',
+  'htmlBookmarks',
+  'htmlTabs',
+  'htmlHistory',
+  'histories',
+];
+
+chrome.storage.local.get(keys, init as (items: TT) => Promise<void>);
 
 // setOptions(options);
 // repaleceHtml(html);

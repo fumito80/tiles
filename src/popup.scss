@@ -599,7 +599,8 @@ input.query {
 .folders::-webkit-scrollbar,
 .leafs::-webkit-scrollbar,
 .pane-tabs::-webkit-scrollbar,
-.pane-history::-webkit-scrollbar {
+// .pane-history::-webkit-scrollbar,
+.v-scroll-bar::-webkit-scrollbar {
   width: 8px;
 }
 
@@ -853,30 +854,32 @@ input.query {
 // History
 .pane-history {
   grid-row-start: span 2;
-  overflow-y: auto;
-  > div {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    cursor: default;
-    margin: 2px;
-    padding: 3px;
-    padding-left: 20px;
-    background-repeat: no-repeat;
-    background-position: 1px center;
+  // overflow-y: auto;
+  .rows {
+    > div {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: default;
+      margin: 2px;
+      padding: 3px;
+      padding-left: 20px;
+      background-repeat: no-repeat;
+      background-position: 1px center;
+    }
+    > div:hover {
+      background-color: $hover-color;
+    }
   }
-  > div:hover {
-    background-color: $hover-color;
-  }
-  > .limit ~ div {
-    display: none;
-  }
-  > .match {
-    display: block !important;
-  }
-  > .unmatch {
-    display: none;
-  }
+  // > .limit ~ div {
+  //   display: none;
+  // }
+  // > .match {
+  //   display: block !important;
+  // }
+  // > .unmatch {
+  //   display: none;
+  // }
 }
 
 .pane-tabs {
@@ -887,9 +890,9 @@ input.query {
   position: relative;
   overflow-y: auto;
   > div {
-    border: 1px solid #222;
+    border: 2px solid #222;
     border-radius: 6px;
-    border-top: 5px solid #222;
+    // border-top: 5px solid #222;
     margin-right: 2px;
     padding-right: 1px;
     > div {
@@ -921,3 +924,20 @@ input.query {
   border-radius: 3px;
 }
 
+.v-scroll {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+}
+
+.v-scroll .rows {
+  width: 100%;
+  overflow: hidden;
+}
+
+.v-scroll-bar {
+  overflow-y: scroll;
+}
+
+.scroll-filler {
+  width: 1px;
+}

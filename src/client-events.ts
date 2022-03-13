@@ -142,7 +142,7 @@ function sendStateOpenedPath(foldersFolder: HTMLElement) {
   // });
 }
 
-function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => any) {
+function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
   const mouseMoveHandlerWrapper = (e: MouseEvent) => {
     e.preventDefault();
     mouseMoveHandler(e);
@@ -760,9 +760,9 @@ export function setEventListners() {
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
-  $('.pane-history')!.addEventListener('click', (e) => {
+  $('.pane-history > .rows')!.addEventListener('click', (e) => {
     const style = (e.target as HTMLDivElement).getAttribute('style')!;
-    const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\)$/.exec(style) || [];
+    const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\);$/.exec(style) || [];
     chrome.tabs.create({ url, active: true });
   });
 }

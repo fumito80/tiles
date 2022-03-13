@@ -31,7 +31,7 @@ export const initialSettings = {
   tabs: true,
   history: true,
   historyMax: {
-    rows: 100,
+    rows: 30,
     days: null,
   },
 };
@@ -43,13 +43,16 @@ export type IClientState = {
   paths?: Array<string>;
 }
 
-export type IHtml = {
+export type HtmlBookmarks = {
   leafs: string;
   folders: string;
 }
 
 export type IState = {
-  html: IHtml,
+  htmlBookmarks: HtmlBookmarks,
+  htmlTabs: string,
+  htmlHistory: string,
+  histories: chrome.history.HistoryItem[],
   clientState: IClientState,
   settings: ISettings,
 }

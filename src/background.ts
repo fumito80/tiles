@@ -1,9 +1,10 @@
 import {
+  startTime,
   initialSettings,
   IClientState,
-  IHtml,
+  HtmlBookmarks,
   // ISettings,
-  // IState,
+  IState,
   // CliMessageTypes,
   // OpenBookmarkType,
   EditBookmarkTypes,
@@ -14,7 +15,13 @@ import {
 // import { cbToResolve } from './utils';
 import { makeLeaf, makeNode } from './html';
 import {
-  pipe, prop, propEq, propNe,
+  pipe,
+  prop,
+  propEq,
+  propNe,
+  regsterChromeEvents,
+  makeHistoryRow,
+  setStorage,
 } from './utils';
 
 export const mapStateToResponse = {
@@ -211,8 +218,8 @@ function makeHtmlBookmarks() {
       concat(rootTree?.map(digBookmarks())),
       concat(children?.filter(propNe('id', '1')).map(digBookmarks())),
     )();
-    const html: IHtml = { leafs, folders };
-    chrome.storage.local.set({ html });
+    const htmlBookmarks: HtmlBookmarks = { leafs, folders };
+    chrome.storage.local.set({ htmlBookmarks });
   });
 }
 
@@ -224,10 +231,72 @@ const bookmarksEvents = [
   chrome.bookmarks.onRemoved,
 ];
 
-bookmarksEvents.forEach((listener) => listener.addListener(makeHtmlBookmarks));
+regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
+
+// function makeHtmlTabs() {
+//   chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
+//     const { windowId, id } = currentTab;
+//     chrome.tabs.query({}, (tabs) => {
+//       const htmlByWindow = tabs.reduce((acc, tab) => {
+//         const { [tab.windowId]: prev = '', ...rest } = acc;
+//         const classProp = tab.id === id ? ' class="current-tab"' : '';
+//         const style = makeStyleIcon(tab.url!);
+//         const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${tab.url}" style="${style}">${tab.title}</div>`;
+//         return { ...rest, [tab.windowId]: html };
+//       }, {} as { [key: number]: string });
+//       const { [windowId]: currentTabs, ...rest } = htmlByWindow;
+//       const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
+//       const htmlTabs = `<div id="win-${windowId}">${currentTabs}</div>${html}`;
+//       chrome.storage.local.set({ htmlTabs });
+//     });
+//   });
+// }
+
+// const tabsEvents = [
+//   chrome.tabs.onActivated,
+//   chrome.tabs.onAttached,
+//   chrome.tabs.onCreated,
+//   chrome.tabs.onDetached,
+//   chrome.tabs.onMoved,
+//   chrome.tabs.onRemoved,
+//   chrome.tabs.onReplaced,
+//   chrome.tabs.onUpdated,
+// ];
+
+// regsterChromeEvents(makeHtmlTabs)(tabsEvents);
+
+async function makeHtmlHistory() {
+  const { historyMax: { rows } }: IState['settings'] = await new Promise((resolve) => {
+    chrome.storage.local.get('settings', ({ settings }) => resolve(settings));
+  });
+  chrome.history.search({ text: '', startTime, maxResults: 99999 }, (histories) => {
+    // const $paneHistory = $('.pane-history')!;
+    // let displayRows = items.map(makeHistoryRow);
+    // if (displayRows.length === rows) {
+    //   const maxDisplayRow = `<div class="limit" ${displayRows[rows - 1].substring(4)}`;
+    //   displayRows = [...displayRows.slice(0, rows - 1), maxDisplayRow];
+    //   // chrome.history.search({ text: '', maxResults: 99999, startTime }, (itemsAll) => {
+    //   //   const remainRows = itemsAll.slice(rows).map(makeHistoryRow);
+    //   //   $paneHistory.insertAdjacentHTML('beforeend', remainRows.join(''));
+    //   // });
+    // }
+    // const htmlHistory = displayRows.join('');
+    const htmlHistory = histories.slice(0, rows).map(makeHistoryRow).join('');
+    setStorage({ htmlHistory, histories });
+  });
+}
+
+const historyEvents = [
+  chrome.history.onVisited,
+  chrome.history.onVisitRemoved,
+];
+
+regsterChromeEvents(makeHtmlHistory)(historyEvents);
 
 const settings = initialSettings;
 const clientState = {};
-chrome.storage.local.set({ settings, clientState });
+setStorage({ settings, clientState });
 
 makeHtmlBookmarks();
+// makeHtmlTabs();
+makeHtmlHistory();

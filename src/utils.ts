@@ -1,6 +1,11 @@
 /* eslint-disable no-redeclare */
 
-import { PayloadAction, MapStateToResponse, MessageStateMapObject } from './types';
+import {
+  PayloadAction,
+  MapStateToResponse,
+  MessageStateMapObject,
+  IState,
+} from './types';
 
 export function $<T extends HTMLElement>(
   selector: string,
@@ -14,6 +19,15 @@ export function $$<T extends HTMLElement>(
   parent: HTMLElement | DocumentFragment | Document = document,
 ) {
   return [...parent.querySelectorAll(selector)] as Array<T>;
+}
+
+export function when<T>(e: boolean) {
+  return {
+    get: (value: T) => (e ? value : null),
+    then: (value: T) => ({
+      else: (elseValue: T) => (e ? value : elseValue),
+    }),
+  };
 }
 
 export function eq<T>(a: T) {
@@ -433,7 +447,7 @@ export function propNe(name: string, value: any) {
 // const faviconUrl = chrome.runtime.getURL('_favicon');
 
 export function makeStyleIcon(url?: string) {
-  return url ? `background-image: url('chrome://favicon/${url}')` : '';
+  return url ? `background-image: url('chrome://favicon/${url}');` : '';
   // return `background-image: url('${faviconUrl}/?page_url=${url}')`;
 }
 
@@ -455,4 +469,18 @@ export function showMenu($target: HTMLElement, menuSelector: string) {
   } else {
     $menu.style.top = `${rect.top + rect.height}px`;
   }
+}
+
+export function regsterChromeEvents(listener: Function) {
+  return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
+}
+
+export function makeHistoryRow(item: chrome.history.HistoryItem) {
+  const dt = item.lastVisitTime ? `\n${(new Date(item.lastVisitTime)).toLocaleString()}` : '';
+  const style = makeStyleIcon(item.url!);
+  return `<div id="hst-${item.id}" title="${item.title}${dt}" style="${style}">${item.title}</div>`;
+}
+
+export function setStorage(state: Partial<IState>) {
+  chrome.storage.local.set(state);
 }
