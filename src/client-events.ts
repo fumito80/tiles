@@ -25,6 +25,7 @@ import {
   showMenu,
   propEq,
   setStorage,
+  when,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -279,12 +280,9 @@ function submit() {
         folder = folder.parentElement;
       }
     });
-  let selector = 'div';
-  if (lastQueryValue !== '' && value.startsWith(lastQueryValue)) {
-    selector = '.match';
-  } else if (lastQueryValue.startsWith(value)) {
-    selector = '.unmatch';
-  }
+  const selector = when(lastQueryValue !== '' && value.startsWith(lastQueryValue)).then('.match')
+    .when(lastQueryValue.startsWith(value)).then('.unmatch')
+    .else('div');
   lastQueryValue = value;
   $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
     const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];

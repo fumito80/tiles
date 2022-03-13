@@ -21,12 +21,55 @@ export function $$<T extends HTMLElement>(
   return [...parent.querySelectorAll(selector)] as Array<T>;
 }
 
-export function when(e: boolean) {
+type AnyFunction = (...p: any[]) => any;
+
+function whenGetter<T extends any | AnyFunction>(
+  valueOrFunction: T,
+): T extends AnyFunction ? ReturnType<T> : T;
+function whenGetter(valueOrFunction: any) {
+  if (typeof valueOrFunction === 'function') {
+    return valueOrFunction();
+  }
+  return valueOrFunction;
+}
+
+function thenConst<T>(a: T) {
   return {
-    get: <T>(value: T) => (e ? value : null),
-    then: <T>(value: T) => ({
-      else: (elseValue: T) => (e ? value : elseValue),
-      when,
+    get: () => whenGetter<T>(a),
+    // eslint-disable-next-line no-use-before-define
+    then: () => whenConst<T>(a),
+    else: () => whenGetter<T>(a),
+  };
+}
+
+function whenConst<T>(a: T) {
+  return {
+    when: () => thenConst<T>(a),
+    else: () => whenGetter<T>(a),
+  };
+}
+
+export function when(test: boolean) {
+  return {
+    get: <T extends AnyFunction | any>(valueOrFunction: T) => {
+      if (!test) {
+        return null;
+      }
+      return whenGetter<T>(valueOrFunction);
+    },
+    then: <T extends AnyFunction | any>(valueOrFunction: T) => ({
+      else: (elseValueOrFunction: T) => {
+        if (test) {
+          return whenGetter<T>(valueOrFunction);
+        }
+        return whenGetter<T>(elseValueOrFunction);
+      },
+      when: (testNext: boolean) => {
+        if (test) {
+          return thenConst<T>(valueOrFunction);
+        }
+        return when(testNext);
+      },
     }),
   };
 }

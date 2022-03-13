@@ -1,6 +1,6 @@
 import { Collection, Model } from './types';
 import {
-  $, getStorage, makeStyleIcon, pick,
+  $, getStorage, makeStyleIcon, pick, when,
 } from './utils';
 
 export function rowSetterHistory(
@@ -22,7 +22,7 @@ export function rowSetterHistory(
   };
 }
 
-function getRowHeight(el: HTMLElement) {
+function getRowHeight(el: HTMLElement): number {
   const props = pick<Model, string>('height', 'marginTop', 'paddingTop', 'paddingBottom')(getComputedStyle(el));
   return Object.values(props).reduce((acc, value) => acc + Number.parseFloat(String(value)), 0);
 }
@@ -39,12 +39,14 @@ export function setVScroll(container: HTMLDivElement, setter: VScrollRowSetter, 
   if (!firstRow || !rows || !vscroll || !vscrollFiller) {
     return;
   }
-  let rowHeight = getRowHeight(firstRow);
-  if (firstRow.offsetHeight === 0) {
-    firstRow.textContent = "'";
-    rowHeight = getRowHeight(firstRow);
-    firstRow.firstChild!.remove();
-  }
+  const rowHeight = when(firstRow.offsetHeight !== 0)
+    .then(() => getRowHeight(firstRow))
+    .else(() => {
+      firstRow.textContent = "'";
+      const heights = getRowHeight(firstRow);
+      firstRow.firstChild!.remove();
+      return heights;
+    });
   vscrollFiller.style.height = `${rowHeight * data.length}px`;
   if (vScrollHandler) {
     vscroll.removeEventListener('scroll', vScrollHandler);
