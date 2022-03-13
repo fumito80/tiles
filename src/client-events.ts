@@ -24,16 +24,15 @@ import {
   getCurrentTab,
   showMenu,
   propEq,
+  setStorage,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
 
 function checkDroppable(e: DragEvent) {
-  // console.log(e);
   const $target = e.target as HTMLElement;
   const dropClass = whichClass(dropClasses, $target);
   // false when not drop target
-  // console.log(dropClass);
   if (dropClass == null) {
     return false;
   }
@@ -78,12 +77,7 @@ async function openBookmark(
   openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
 ) {
   const { id } = (target as HTMLAnchorElement).parentElement!;
-  // postMessage({
-  //   type: CliMessageTypes.openBookmark,
-  //   payload: { id, openType },
-  // });
   const { url } = await getBookmark(id);
-  // const url = state.bookmarks.entities[payload.id]?.url;
   switch (openType) {
     case OpenBookmarkType.tab: {
       const tab = await getCurrentTab();
@@ -123,7 +117,7 @@ function clearQuery() {
   $('.form-query [type="submit"]')!.click();
 }
 
-function sendStateOpenedPath(foldersFolder: HTMLElement) {
+function saveStateOpenedPath(foldersFolder: HTMLElement) {
   $$('.path').forEach((el) => el.classList.remove('path'));
   let paths: Array<string> = [];
   let folder = foldersFolder;
@@ -132,14 +126,11 @@ function sendStateOpenedPath(foldersFolder: HTMLElement) {
     paths = [...paths, folder.id];
     folder = folder.parentElement!;
   }
-  // Send client state
-  // postMessage({
-  //   type: CliMessageTypes.saveState,
-  //   payload: {
-  //     paths,
-  //     open: foldersFolder.id,
-  //   },
-  // });
+  const clientState = {
+    paths,
+    open: foldersFolder.id,
+  };
+  setStorage({ clientState });
 }
 
 function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
@@ -198,18 +189,6 @@ async function addBookmark(parentId = '1') {
     title: title!, url: url!, parentId, index,
   };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  // const { id, html, exists } = await postMessage({
-  //   type: CliMessageTypes.addBookmark,
-  //   payload: folderId,
-  // });
-  // if (exists) {
-  //   alert('This bookmark already exists in this folder.');
-  //   return;
-  // }
-  // if (html == null) {
-  //   alert('This bookmark could not be added with unkown error.');
-  //   return;
-  // }
   const htmlAnchor = makeLeaf({ id, ...params });
   if (parentId === '1') {
     $('.folders')!.insertAdjacentHTML('afterbegin', htmlAnchor);
@@ -239,29 +218,13 @@ async function addFolder(parentId = '1') {
   const htmlNode = makeNode({
     id, children: '', length: 0, ...params,
   });
-  // const { id, html, exists } = await postMessage({
-  //   type: CliMessageTypes.addFolder,
-  //   payload: {
-  //     title,
-  //     parentId,
-  //   },
-  // });
-  // if (exists) {
-  //   alert('The same name folder already exists.');
-  //   return;
-  // }
-  // if (html == null) {
-  //   alert('The folder could not be added with unkown error.');
-  //   return;
-  // }
   if (parentId === '1') {
     $('.folders')!.insertAdjacentHTML('afterbegin', htmlNode);
     $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
       $targetFolder.insertAdjacentHTML('beforeend', htmlNode);
-      // eslint-disable-next-line no-param-reassign
-      $targetFolder.dataset.children = String($targetFolder.children.length - 1);
+      $targetFolder.setAttribute('data-children', String($targetFolder.children.length - 1));
       const $title = $(':scope > .marker > .title', $targetFolder);
       if ($title) {
         $title.click();
@@ -350,31 +313,7 @@ export function setEventListners() {
       }
       if ($target.classList.contains('leaf-menu-button')) {
         showMenu($target, '.leaf-menu');
-        // const $menu = $('.leaf-menu')!;
-        // $menu.style.top = '';
-        // $menu.style.left = '';
-        // // $menu.style.right = '';
-        // if ($target.parentElement !== $menu.parentElement) {
-        //   $target.insertAdjacentElement('afterend', $menu);
-        // }
-        // // if ($target.parentElement!.parentElement!.classList.contains('folders')) {
-        // const rect = $target.getBoundingClientRect();
-        // const { width, height } = $menu.getBoundingClientRect();
-        // $menu.style.left = `${rect.left - width + rect.width}px`;
-        // // if ((rect.top + rect.height + height) >= ($('.folders')!.offsetHeight - 4)) {
-        // if ((rect.top + rect.height + height) >= (document.body.offsetHeight + 4)) {
-        //   $menu.style.top = `${rect.top - height}px`;
-        // } else {
-        //   $menu.style.top = `${rect.top + rect.height}px`;
-        // }
         return;
-        // }
-        // const [, marginRight] = /(\d+)px/.exec(getComputedStyle($target).marginRight) || [];
-        // $menu.style.right = `${Number(marginRight) + 1}px`;
-        // $target.classList.remove('menu-pos-top');
-        // const { top, height } = $menu.getBoundingClientRect();
-        // get.classList.toggle('menu-pos-top', (top + height) >= ($('.leafs')!.offsetHeight - 4));
-        // return;
       }
       $('.query')!.focus();
     },
@@ -470,31 +409,6 @@ export function setEventListners() {
     },
   });
 
-  // const $scrollContainers = $$('.leafs, .folders');
-  // eslint-disable-next-line no-undef
-  // let timerScrollbar: NodeJS.Timeout;
-  // setEvents($$('.scrollbar-area'), {
-  //   mouseenter: (e) => {
-  //     function endScrolling(e2: MouseEvent) {
-  //       if (!(e2.relatedTarget as HTMLElement)?.classList.contains('scrollbar-area')) {
-  //         clearTimeout(timerScrollbar);
-  //         $scrollContainers.forEach(($target) => {
-  //           $target.classList.remove('scrolling');
-  //           $target.removeEventListener('mouseover', endScrolling);
-  //           $target.removeEventListener('mouseleave', endScrolling);
-  //         });
-  //       }
-  //     }
-  //     setEvents($scrollContainers, {
-  //       mouseover: endScrolling,
-  //       mouseleave: endScrolling,
-  //     });
-  //     const $target = (e.currentTarget as HTMLElement)!.previousElementSibling! as HTMLElement;
-  //     clearTimeout(timerScrollbar);
-  //     timerScrollbar = setTimeout(() => $target.classList.add('scrolling'), 100);
-  //   },
-  // });
-
   setEvents($$('.leaf-menu'), {
     click: async (e) => {
       const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
@@ -514,60 +428,30 @@ export function setEventListners() {
             break;
           }
           const { url = '' } = await getBookmark($leaf.id);
-          // const ret = await postMessage({
-          //   type: CliMessageTypes.editBookmark,
-          //   payload: {
-          //     value,
-          //     editType: EditBookmarkType.title,
-          //     id: $leaf!.id,
-          //   },
-          // });
-          // $anchor.setAttribute('title', ret.title);
-          // $anchor.textContent = value;
           const changes = { [EditBookmarkType.title]: value };
           await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)(changes));
-          updateAnker({ url, title: value });
+          updateAnker($leaf.id, { url, title: value });
           setAnimationClass($leaf, 'hilite');
           break;
         }
         case 'edit-url': {
-          // const url = postMessage({ type: CliMessageTypes.getUrl, payload: $leaf!.id });
           const { url = '', title } = await getBookmark($leaf.id);
           // eslint-disable-next-line no-alert
           const value = prompt('Edit url', url);
           if (value == null) {
             break;
           }
-          // const { title, style } = await postMessage({
-
-          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url }));
-          // $anchor.setAttribute('title', title);
-          // $anchor.setAttribute('style', style);
-          updateAnker({ title, url: value });
+          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
+          updateAnker($leaf.id, { title, url: value });
           setAnimationClass($leaf, 'hilite');
-
-          // postMessage({
-          //   type: CliMessageTypes.editBookmark,
-          //   payload: {
-          //     value,
-          //     editType: EditBookmarkType.url,
-          //     id: $leaf!.id,
-          //   },
-          // });
           break;
         }
         case 'remove': {
-          // const succeed = await postMessage({
-          //   type: CliMessageTypes.removeBookmark,
-          //   payload: $leaf!.id,
-          // });
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          // if (succeed) {
           document.body.appendChild($('.leaf-menu')!);
           $leaf.addEventListener('animationend', () => $leaf.remove(), { once: true });
           $leaf.classList.remove('hilite');
           setAnimationClass($leaf, 'remove-hilite');
-          // }
           break;
         }
         case 'show-in-folder': {
@@ -617,26 +501,12 @@ export function setEventListners() {
         }
         $$('.open').forEach((el) => el.classList.remove('open'));
         folders.forEach((el) => el?.classList.add('open'));
-        sendStateOpenedPath(foldersFolder);
+        saveStateOpenedPath(foldersFolder);
         $$('.hilite').map((el) => el.classList.remove('hilite'));
         break;
       }
       case 'folder-menu-button': {
         showMenu(target, '.folder-menu');
-        // const $menu = $('.folder-menu')!;
-        // $menu.style.top = '';
-        // $menu.style.left = '';
-        // if (target.parentElement !== $menu.parentElement) {
-        //   target.parentElement?.insertBefore($menu, null);
-        // }
-        // const rect = target.getBoundingClientRect();
-        // const { width, height } = $menu.getBoundingClientRect();
-        // $menu.style.left = `${rect.left - width + rect.width}px`;
-        // if ((rect.top + rect.height + height) >= (document.body.offsetHeight + 4)) {
-        //   $menu.style.top = `${rect.top - height}px`;
-        // } else {
-        //   $menu.style.top = `${rect.top + rect.height}px`;
-        // }
         e.stopImmediatePropagation();
         break;
       }
@@ -712,17 +582,8 @@ export function setEventListners() {
             break;
           }
           await cbToResolve(curry3(chrome.bookmarks.update)($folder.id)({ title }));
-          // const succeed = await postMessage({
-          //   type: CliMessageTypes.editFolder,
-          //   payload: {
-          //     title,
-          //     id: $folder.id,
-          //   },
-          // });
-          // if (succeed) {
           $title.textContent = title;
           setAnimationFolder($title.parentElement!.parentElement!, 'hilite');
-          // }
           break;
         }
         case 'add-folder': {
@@ -730,12 +591,7 @@ export function setEventListners() {
           break;
         }
         case 'remove': {
-          // const succeed = await postMessage({
-          //   type: CliMessageTypes.removeFolder,
-          //   payload: $folder!.id,
-          // });
           await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-          // if (succeed) {
           document.body.appendChild($('.folder-menu')!);
           const $marker = $('.marker', $folder)!;
           $marker.addEventListener('animationend', () => {
@@ -746,7 +602,6 @@ export function setEventListners() {
           }, { once: true });
           $marker.classList.remove('hilite');
           setAnimationFolder($marker, 'remove-hilite');
-          // }
           break;
         }
         default:

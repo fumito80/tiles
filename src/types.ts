@@ -1,15 +1,6 @@
-// import {
-//   PayloadAction,
-//   ReduxHandlers,
-// } from './redux-provider';
-
 import {
   MapStateToResponse,
 } from './background';
-
-// export type {
-//   PayloadAction,
-// } from './redux-provider';
 
 export type {
   MapStateToResponse,
@@ -48,14 +39,16 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
-export type IState = {
-  htmlBookmarks: HtmlBookmarks,
-  htmlTabs: string,
-  htmlHistory: string,
-  histories: chrome.history.HistoryItem[],
-  clientState: IClientState,
-  settings: ISettings,
-}
+export const initalState = {
+  htmlBookmarks: {} as HtmlBookmarks,
+  htmlTabs: '',
+  htmlHistory: '',
+  histories: [] as chrome.history.HistoryItem[],
+  clientState: {} as IClientState,
+  settings: initialSettings,
+};
+
+export type IState = typeof initalState;
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
@@ -71,20 +64,6 @@ export const CliMessageTypes = {
   getUrl: 'cl-get-url',
   moveItem: 'cl-move-item',
 } as const;
-
-// export type RequestCallback<T> = (
-//   reduxHandlers: ReduxHandlers,
-//   { payload }: PayloadAction<T>
-// ) => any;
-
-// export type RequestCallback<T> = (
-//   // reduxHandlers: ReduxHandlers,
-//   state: IState,
-// ) => any;
-
-// export type MessageStateMapObject<M extends MapStateToResponse> = {
-//   [K in keyof M]: M[K] extends RequestCallback<infer S> ? S : never;
-// }
 
 export const OpenBookmarkType = {
   tab: 'tab',

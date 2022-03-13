@@ -1,4 +1,4 @@
-import { makeStyleIcon } from './utils';
+import { makeStyleIcon, $$, cssid } from './utils';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
   children: string,
@@ -30,10 +30,12 @@ export function makeNode({
   `;
 }
 
-export function updateAnker({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
+export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
   const style = makeStyleIcon(url);
-  return ($anchor: HTMLAnchorElement) => {
+  $$(cssid(id)).forEach((el) => {
+    const $anchor = el.firstElementChild as HTMLAnchorElement;
     $anchor.setAttribute('title', title);
     $anchor.setAttribute('style', style);
-  };
+    $anchor.textContent = title;
+  });
 }

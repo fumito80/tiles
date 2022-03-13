@@ -4,15 +4,19 @@ import {
   HtmlBookmarks,
   ISettings,
   IState,
+  IClientState,
   Model,
+  initalState,
 } from './types';
 
 import {
   $,
+  $$,
   cbToResolve,
   curry,
   addRules,
   makeStyleIcon,
+  cssid,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -72,8 +76,15 @@ function repaleceHtml(html: HtmlBookmarks) {
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
+function setClientState(clState: IClientState) {
+  clState.paths?.forEach((id) => $(`.folders ${cssid(id)}`)?.classList.add('path'));
+  if (clState.open) {
+    $$(cssid(clState.open))?.forEach((el) => el.classList.add('open'));
+  }
+}
+
 async function init({
-  settings, htmlBookmarks, htmlHistory, histories,
+  settings, htmlBookmarks, htmlHistory, histories, clientState,
 }: IState) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
@@ -82,15 +93,10 @@ async function init({
   repaleceHtml(htmlBookmarks);
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   $paneHistory.firstElementChild!.innerHTML = htmlHistory;
+  setClientState(clientState);
   setVScroll($paneHistory, rowSetterHistory, histories);
 }
 
-const keys: Array<keyof IState> = [
-  'settings',
-  'htmlBookmarks',
-  'htmlTabs',
-  'htmlHistory',
-  'histories',
-];
+const storageKeys = Object.keys(initalState);
 
-chrome.storage.local.get(keys, init as (items: Model) => Promise<void>);
+chrome.storage.local.get(storageKeys, init as (items: Model) => Promise<void>);

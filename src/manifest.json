@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "x-resources",
   "description": "You can your browsing resources as you like and make it one-stop searching.",
-  "version": "1.0.0",
+  "version": "0.8.0",
   "permissions": [
     "storage",
     "bookmarks",
