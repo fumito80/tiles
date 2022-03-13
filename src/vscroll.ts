@@ -1,6 +1,24 @@
+import { Collection } from './types';
 import { $, makeStyleIcon } from './utils';
 
-export default function setVScroll(container: HTMLDivElement, data: Array<{ [key: string]: any }>) {
+export function rowSetterHistory(
+  { data, rowTop, dataTop }: { data: Collection, rowTop: number, dataTop: number },
+) {
+  return (row: Element, index: number) => {
+    const { url, title, lastVisitTime } = data[dataTop + index];
+    const text = title ?? url;
+    const backgroundImage = makeStyleIcon(url);
+    const tooltip = `${text}\n${(new Date(lastVisitTime)).toLocaleString()}`;
+    // eslint-disable-next-line no-param-reassign
+    row.textContent = text;
+    row.setAttribute('style', `transform:translateY(${rowTop}px);${backgroundImage}`);
+    row.setAttribute('title', tooltip);
+  };
+}
+
+export type VScrollRowSetter = typeof rowSetterHistory;
+
+export function setVScroll(container: HTMLDivElement, setter: VScrollRowSetter, data: Collection) {
   const rows = $('.rows', container);
   const vscroll = $('.v-scroll-bar', container);
   const vscrollFiller = $('.scroll-filler', container);
@@ -10,30 +28,12 @@ export default function setVScroll(container: HTMLDivElement, data: Array<{ [key
   }
   const rowHeight = firstRow.offsetHeight;
   vscrollFiller.style.height = `${rowHeight * data.length}px`;
-  vscroll.addEventListener('scroll', (e: Event) => {
-    const scrollBar = e.target! as HTMLElement;
-    const { scrollTop } = scrollBar;
-    const cellTop = -(scrollTop % rowHeight);
-    const dataTop = Math.floor(scrollTop / rowHeight);
-    [...rows.children].forEach((row, i) => {
-      const {
-        url, title, lastVisitTime,
-      } = data[dataTop + i];
-      const text = title ?? url;
-      const backgroundImage = makeStyleIcon(url);
-      const tooltip = `${text}\n${(new Date(lastVisitTime)).toLocaleString()}`;
-      const oldTextNode = row.firstChild;
-      const textNode = document.createTextNode(text);
-      if (oldTextNode) {
-        row.replaceChild(textNode, oldTextNode);
-      } else {
-        row.appendChild(textNode);
-      }
-      row.setAttribute('style', `transform:translateY(${cellTop}px);${backgroundImage}`);
-      row.setAttribute('title', tooltip);
-    });
+  vscroll.addEventListener('scroll', () => {
+    const rowTop = -(vscroll.scrollTop % rowHeight);
+    const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
+    [...rows.children].forEach(setter({ data, rowTop, dataTop }));
   });
-  (rows as HTMLElement).addEventListener('wheel', (e: WheelEvent) => {
+  rows.addEventListener('wheel', (e: WheelEvent) => {
     vscroll.scrollTop += e.deltaY;
   });
 }

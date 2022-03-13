@@ -145,3 +145,6 @@ export const positions: { [key: string]: InsertPosition } = {
   'drop-bottom': 'afterend',
   'drop-folder': 'beforeend',
 };
+
+export type Model = { [key: string]: any };
+export type Collection = Array<Model>;
