@@ -51,7 +51,7 @@ body {
 main {
   display: grid;
   grid-template-columns: min-content 1fr min-content 1fr min-content 1fr min-content 1fr;
-  grid-template-rows: min-content 1fr;
+  grid-template-rows: min-content min-content 1fr;
   height: 100%;
 }
 
@@ -83,7 +83,7 @@ button {
 .resize-x,
 .split-h {
   height: 100%;
-  grid-row-start: span 2;
+  grid-row-start: span 3;
 }
 
 .split-h {
@@ -142,6 +142,7 @@ button {
 form {
   display: flex;
   align-items: center;
+  grid-row-start: span 2;
 }
 
 button[type='submit'] {
@@ -293,7 +294,6 @@ input.query {
 // Leafs pane
 
 .leafs {
-  height: 100%;
   padding: 2px;
   overflow-y: auto;
   grid-row-start: span 2;
@@ -409,7 +409,6 @@ input.query {
 // Folders pane
 
 .folders {
-  height: 100%;
   padding: 4px 2px 0 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -844,6 +843,9 @@ input.query {
     > div:hover {
       background-color: $hover-color;
     }
+    > div:empty {
+      display: none;
+    }
   }
 }
 
@@ -904,4 +906,10 @@ input.query {
 
 .scroll-filler {
   width: 1px;
+}
+
+.pane-title {
+  font-style: oblique;
+  font-size: 0.9em;
+  padding-bottom: 3px;
 }

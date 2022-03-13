@@ -28,6 +28,7 @@ import {
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
+import { resetHistory } from './vscroll';
 
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
@@ -253,7 +254,8 @@ function submit() {
   $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
   $$('.leafs .path').forEach((el) => el.classList.remove('path'));
   if (value.length <= 1) {
-    $$('.pane-history > div, .pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
+    $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
+    resetHistory(true);
     const openFolder = $('.folders .open');
     if (openFolder) {
       openFolder.classList.remove('open');
@@ -263,9 +265,9 @@ function submit() {
     $inputQuery.setAttribute('value', '');
     return false;
   }
-  const re = new RegExp(value, 'i');
+  const reFilter = new RegExp(value, 'i');
   $$('.leafs .leaf')
-    .filter((leaf) => re.test(leaf.firstElementChild?.textContent!))
+    .filter((leaf) => reFilter.test(leaf.firstElementChild?.textContent!))
     .map((el) => {
       el.classList.add('search-path');
       return el;
@@ -284,12 +286,13 @@ function submit() {
     selector = '.unmatch';
   }
   lastQueryValue = value;
-  const targets = $$(`.pane-history > ${selector}, .pane-tabs > div > ${selector}`);
+  const targets = $$(`.pane-tabs > div > ${selector}`);
   targets.forEach((el) => {
-    const [addClass, removeClass] = re.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
+    const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
     el.classList.add(addClass);
     el.classList.remove(removeClass);
   });
+  resetHistory(true, reFilter);
   return false;
 }
 
@@ -609,14 +612,17 @@ export function setEventListners() {
     },
     mousedown: (e) => e.preventDefault(),
   });
-  $('.pane-tabs')!.addEventListener('click', (e) => {
+  $('.pane-tabs')?.addEventListener('click', (e) => {
     const [, tabId] = (e.target as HTMLDivElement).id.split('-');
     const [, windowId] = (e.target as HTMLDivElement).parentElement!.id.split('-');
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
-  $('.pane-history > .rows')!.addEventListener('click', (e) => {
-    const style = (e.target as HTMLDivElement).getAttribute('style')!;
+  $('.pane-history > .rows')?.addEventListener('click', (e) => {
+    const style = (e.target as HTMLDivElement).getAttribute('style');
+    if (!style) {
+      return;
+    }
     const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\);$/.exec(style) || [];
     chrome.tabs.create({ url, active: true });
   });

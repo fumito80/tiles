@@ -20,7 +20,7 @@ import {
 } from './utils';
 
 import { setEventListners } from './client-events';
-import { setVScroll, rowSetterHistory } from './vscroll';
+import { resetHistory } from './vscroll';
 
 function setTabs() {
   chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
@@ -84,7 +84,7 @@ function setClientState(clState: IClientState) {
 }
 
 async function init({
-  settings, htmlBookmarks, htmlHistory, histories, clientState,
+  settings, htmlBookmarks, htmlHistory, clientState,
 }: IState) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
@@ -94,7 +94,7 @@ async function init({
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   $paneHistory.firstElementChild!.innerHTML = htmlHistory;
   setClientState(clientState);
-  setVScroll($paneHistory, rowSetterHistory, histories);
+  resetHistory();
 }
 
 const storageKeys = Object.keys(initalState);

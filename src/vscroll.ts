@@ -1,11 +1,15 @@
 import { Collection } from './types';
-import { $, makeStyleIcon } from './utils';
+import { $, getStorage, makeStyleIcon } from './utils';
 
 export function rowSetterHistory(
   { data, rowTop, dataTop }: { data: Collection, rowTop: number, dataTop: number },
 ) {
   return (row: Element, index: number) => {
-    const { url, title, lastVisitTime } = data[dataTop + index];
+    const item = data[dataTop + index];
+    if (!item) {
+      return;
+    }
+    const { url, title, lastVisitTime } = item;
     const text = title ?? url;
     const backgroundImage = makeStyleIcon(url);
     const tooltip = `${text}\n${(new Date(lastVisitTime)).toLocaleString()}`;
@@ -18,6 +22,8 @@ export function rowSetterHistory(
 
 export type VScrollRowSetter = typeof rowSetterHistory;
 
+let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
+
 export function setVScroll(container: HTMLDivElement, setter: VScrollRowSetter, data: Collection) {
   const rows = $('.rows', container);
   const vscroll = $('.v-scroll-bar', container);
@@ -28,12 +34,34 @@ export function setVScroll(container: HTMLDivElement, setter: VScrollRowSetter, 
   }
   const rowHeight = firstRow.offsetHeight;
   vscrollFiller.style.height = `${rowHeight * data.length}px`;
-  vscroll.addEventListener('scroll', () => {
+  if (vScrollHandler) {
+    vscroll.removeEventListener('scroll', vScrollHandler);
+  } else {
+    rows.addEventListener('wheel', (e: WheelEvent) => {
+      vscroll.scrollTop += e.deltaY;
+    });
+  }
+  vScrollHandler = () => {
     const rowTop = -(vscroll.scrollTop % rowHeight);
     const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
     [...rows.children].forEach(setter({ data, rowTop, dataTop }));
-  });
-  rows.addEventListener('wheel', (e: WheelEvent) => {
-    vscroll.scrollTop += e.deltaY;
-  });
+  };
+  vscroll.addEventListener('scroll', vScrollHandler);
+}
+
+export async function resetHistory(reset?: boolean, reFilter?: RegExp) {
+  const { histories } = await getStorage('histories');
+  const $paneHistory = $<HTMLDivElement>('.pane-history')!;
+  const rows = $('.rows', $paneHistory);
+  const data = !reFilter ? histories : histories.filter(({ title, url }) => reFilter.test(title || url || ''));
+  setVScroll($paneHistory, rowSetterHistory, data);
+  if (reFilter || reset) {
+    [...rows?.children || []].forEach((el) => {
+      el.removeAttribute('style');
+      el.removeAttribute('title');
+      el.firstChild?.remove();
+    });
+    const vscroll = $('.v-scroll-bar', $paneHistory)!;
+    vscroll.dispatchEvent(new Event('scroll'));
+  }
 }

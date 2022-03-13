@@ -21,11 +21,12 @@ export function $$<T extends HTMLElement>(
   return [...parent.querySelectorAll(selector)] as Array<T>;
 }
 
-export function when<T>(e: boolean) {
+export function when(e: boolean) {
   return {
-    get: (value: T) => (e ? value : null),
-    then: (value: T) => ({
+    get: <T>(value: T) => (e ? value : null),
+    then: <T>(value: T) => ({
       else: (elseValue: T) => (e ? value : elseValue),
+      when,
     }),
   };
 }
@@ -475,12 +476,18 @@ export function regsterChromeEvents(listener: Function) {
   return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
 }
 
-export function makeHistoryRow(item: chrome.history.HistoryItem) {
-  const dt = item.lastVisitTime ? `\n${(new Date(item.lastVisitTime)).toLocaleString()}` : '';
-  const style = makeStyleIcon(item.url!);
-  return `<div id="hst-${item.id}" title="${item.title}${dt}" style="${style}">${item.title}</div>`;
+export function makeHistoryRow({ url, title, lastVisitTime }: chrome.history.HistoryItem) {
+  const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
+  const style = makeStyleIcon(url!);
+  return `<div title="${title}${dt}" style="${style}">${title}</div>`;
 }
 
 export function setStorage(state: Partial<IState>) {
   chrome.storage.local.set(state);
+}
+
+export async function getStorage<T extends keyof IState>(keyName: T) {
+  return new Promise<{ [key in T]: IState[T] }>((resolve) => {
+    chrome.storage.local.get(keyName, (data) => resolve(data as { [key in T]: IState[T] }));
+  });
 }
