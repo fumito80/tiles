@@ -1,10 +1,10 @@
 import {
-  startTime,
+  pastMSec,
   initialSettings,
   // IClientState,
   HtmlBookmarks,
   // ISettings,
-  IState,
+  // IState,
   // CliMessageTypes,
   // OpenBookmarkType,
   // EditBookmarkTypes,
@@ -22,6 +22,7 @@ import {
   regsterChromeEvents,
   makeHistoryRow,
   setStorage,
+  getStorage,
 } from './utils';
 
 export const mapStateToResponse = {
@@ -70,10 +71,32 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
+// async function getHistory(
+//   startTime: number,
+//   endTime: number | null,
+//   prevResults: chrome.history.HistoryItem[],
+// ): Promise<chrome.history.HistoryItem[]> {
+//   const result = await new Promise<chrome.history.HistoryItem[]>((resolve) => {
+//     const query1 = {
+//       text: '', startTime, maxResults: 99999,
+//     };
+//     const query = endTime ? { ...query1, endTime } : query1;
+//     chrome.history.search(query, resolve);
+//   });
+//   const lastTime = result.at(-1)?.lastVisitTime!;
+//   const results = [...prevResults, ...result];
+//   if (lastTime < startTime) {
+//     return results;
+//   }
+//   return getHistory(startTime, lastTime, results);
+// }
+
 async function makeHtmlHistory() {
-  const { historyMax: { rows } }: IState['settings'] = await new Promise((resolve) => {
-    chrome.storage.local.get('settings', ({ settings }) => resolve(settings));
-  });
+  const { settings: { historyMax: { rows } } } = await getStorage('settings');
+  const startTime = Date.now() - pastMSec;
+  // const histories = await getHistory(startTime, null, []);
+  // const htmlHistory = histories.slice(0, rows).map(makeHistoryRow).join('');
+  // setStorage({ htmlHistory, histories });
   chrome.history.search({ text: '', startTime, maxResults: 99999 }, (histories) => {
     const htmlHistory = histories.slice(0, rows).map(makeHistoryRow).join('');
     setStorage({ htmlHistory, histories });

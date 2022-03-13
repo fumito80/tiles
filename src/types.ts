@@ -6,7 +6,7 @@ export type {
   MapStateToResponse,
 } from './background';
 
-export const startTime = 1000 * 60 * 60 * 24 * 365;
+export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
 export const initialSettings = {
   postPage: false,

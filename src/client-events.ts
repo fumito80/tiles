@@ -286,8 +286,7 @@ function submit() {
     selector = '.unmatch';
   }
   lastQueryValue = value;
-  const targets = $$(`.pane-tabs > div > ${selector}`);
-  targets.forEach((el) => {
+  $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
     const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
     el.classList.add(addClass);
     el.classList.remove(removeClass);
@@ -297,12 +296,7 @@ function submit() {
 }
 
 export function setEventListners() {
-  // eslint-disable-next-line no-undef
-  let inputTimer: NodeJS.Timeout;
-  $('.query')!.addEventListener('input', () => {
-    clearTimeout(inputTimer);
-    inputTimer = setTimeout(submit, 200);
-  });
+  $('.query')!.addEventListener('input', submit);
   $('.form-query')!.addEventListener('submit', (e) => {
     submit();
     e.preventDefault();
