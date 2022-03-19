@@ -394,9 +394,11 @@ export function pipeP(...fns: Array<any>) {
   };
 }
 
-export function pick<T, U extends Array<keyof T>>(...props: U): (target: T) => Pick<T, U[number]>;
-export function pick(...a: any) {
-  return (b: any) => a.reduce((acc: any, key: any) => ({ ...acc, [key]: b[key] }), {});
+export function pick<U extends Array<string>>(...props: U): <T>(target: T) =>
+  Pick<T, U[number] extends keyof T ? U[number] : never[number]>;
+export function pick(...props: any) {
+  return (target: any) => props
+    .reduce((acc: any, key: any) => ({ ...acc, [key]: target[key] }), {});
 }
 
 // eslint-disable-next-line no-undef

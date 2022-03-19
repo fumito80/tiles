@@ -1,4 +1,4 @@
-import { IState, Collection, Model } from './types';
+import { IState, Collection } from './types';
 import {
   $, getStorage, pick, setStorage,
 } from './utils';
@@ -30,7 +30,7 @@ function getRowHeight(rows: HTMLElement) {
   const tester = rows.appendChild(document.createElement('div'));
   tester.textContent = 'A';
   const styles = getComputedStyle(tester);
-  const props = pick<Model, string[]>('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
+  const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
   const elementHeight = Math.round(Number.parseFloat(styles.height));
   const rowHeight: number = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight) - 2;
