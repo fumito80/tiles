@@ -46,6 +46,10 @@ export const initalState = {
   histories: [] as chrome.history.HistoryItem[],
   clientState: {} as IClientState,
   settings: initialSettings,
+  vscrollProps: {
+    rowHeight: 0,
+    elementHeight: 0,
+  },
 };
 
 export type IState = typeof initalState;

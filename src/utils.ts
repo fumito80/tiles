@@ -394,9 +394,9 @@ export function pipeP(...fns: Array<any>) {
   };
 }
 
-export function pick<T, U extends keyof T>(...props: Array<U>): (target: T) => Pick<T, U>;
+export function pick<T, U extends Array<keyof T>>(...props: U): (target: T) => Pick<T, U[number]>;
 export function pick(...a: any) {
-  return (target: any) => a.reduce((acc: any, key: any) => ({ ...acc, [key]: target[key] }), {});
+  return (b: any) => a.reduce((acc: any, key: any) => ({ ...acc, [key]: b[key] }), {});
 }
 
 // eslint-disable-next-line no-undef
@@ -529,8 +529,8 @@ export function setStorage(state: Partial<IState>) {
   chrome.storage.local.set(state);
 }
 
-export async function getStorage<T extends keyof IState>(keyName: T) {
-  return new Promise<{ [key in T]: IState[T] }>((resolve) => {
-    chrome.storage.local.get(keyName, (data) => resolve(data as { [key in T]: IState[T] }));
+export async function getStorage<T extends Array<keyof IState>>(...keyNames: T) {
+  return new Promise<Pick<IState, T[number]>>((resolve) => {
+    chrome.storage.local.get(keyNames, (data) => resolve(data as Pick<IState, T[number]>));
   });
 }

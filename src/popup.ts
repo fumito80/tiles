@@ -49,11 +49,11 @@ function setOptions(settings: ISettings) {
   ]);
   const gridCols = [
     'min-content',
-    `${settings.grid1Width}px`,
+    `${settings.grid3Width}px`,
     'min-content',
     `${settings.grid2Width}px`,
     'min-content',
-    `${settings.grid3Width}px`,
+    `${settings.grid1Width}px`,
     'min-content',
     '1fr',
   ];
