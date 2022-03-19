@@ -25,7 +25,7 @@ export const initialSettings = {
     rows: 30,
     days: null,
   },
-};
+} as const;
 
 export type ISettings = typeof initialSettings;
 
@@ -39,11 +39,14 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
+export type MyHistoryItem = Partial<chrome.history.HistoryItem &
+  { lastVisitDate: string, headerDate: boolean }>;
+
 export const initalState = {
   htmlBookmarks: {} as HtmlBookmarks,
   htmlTabs: '',
   htmlHistory: '',
-  histories: [] as chrome.history.HistoryItem[],
+  histories: [] as Array<MyHistoryItem>,
   clientState: {} as IClientState,
   settings: initialSettings,
   vscrollProps: {
@@ -114,9 +117,7 @@ export type PayloadAction<P = void, T extends string = string, M = never, E = ne
   error: E;
 });
 
-export type RequestCallback<T> = (
-  { payload }: PayloadAction<T>
-) => any;
+export type RequestCallback<T> = ({ payload }: PayloadAction<T>) => any;
 
 export type MessageStateMapObject<M extends MapStateToResponse> = {
   [K in keyof M]: M[K] extends RequestCallback<infer S> ? S : never;

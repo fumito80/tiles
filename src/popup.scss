@@ -840,11 +840,27 @@ input.query {
       background-repeat: no-repeat;
       background-position: 1px center;
     }
-    > div:hover {
+    > div:not(.header-date):hover {
       background-color: $hover-color;
     }
     > div:empty {
       display: none;
+    }
+    .current-date {
+      position: absolute;
+      width: -webkit-fill-available;
+      z-index: 1;
+      margin-top: 0;
+    }
+    .header-date {
+      background-color: white;
+      background-color: darkgray;
+      padding-left: 2px;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      color: white;
+      border-radius: 2px;
     }
   }
 }
@@ -896,6 +912,7 @@ input.query {
 }
 
 .v-scroll .rows {
+  position: relative;
   width: 100%;
   overflow: hidden;
 }

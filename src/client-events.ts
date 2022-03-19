@@ -612,10 +612,10 @@ export function setEventListners() {
   });
   $('.pane-history > .rows')?.addEventListener('click', (e) => {
     const style = (e.target as HTMLDivElement).getAttribute('style');
-    if (!style) {
+    const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\);$/.exec(style || '') || [];
+    if (!url) {
       return;
     }
-    const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\);$/.exec(style) || [];
     chrome.tabs.create({ url, active: true });
   });
 }

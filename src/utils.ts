@@ -5,6 +5,7 @@ import {
   MapStateToResponse,
   MessageStateMapObject,
   IState,
+  MyHistoryItem,
 } from './types';
 
 export function $<T extends HTMLElement>(
@@ -521,10 +522,22 @@ export function regsterChromeEvents(listener: Function) {
   return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
 }
 
-export function makeHistoryRow({ url, title, lastVisitTime }: chrome.history.HistoryItem) {
+const escapes = new Map();
+escapes.set('&', '&amp;');
+escapes.set('"', '&quot;');
+escapes.set('<', '&lt;');
+escapes.set('>', '&gt;');
+
+export function makeHistoryRow({
+  url, title, lastVisitTime, headerDate, lastVisitDate,
+}: MyHistoryItem) {
+  if (headerDate) {
+    return `<div class="header-date">${lastVisitDate}</div>`;
+  }
   const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
   const style = makeStyleIcon(url!);
-  return `<div title="${title}${dt}" style="${style}">${title}</div>`;
+  const text = title!.replace(/[&"<>]/g, escapes.get);
+  return `<div title="${title}${dt}" style="${style}">${text}</div>`;
 }
 
 export function setStorage(state: Partial<IState>) {

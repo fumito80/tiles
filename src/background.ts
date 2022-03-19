@@ -5,11 +5,13 @@ import {
   HtmlBookmarks,
   // ISettings,
   // IState,
+  MyHistoryItem,
   // CliMessageTypes,
   // OpenBookmarkType,
   // EditBookmarkTypes,
   // dropClasses,
   CliMessageTypes,
+  // Collection,
   // PayloadAction,
 } from './types';
 // import { cbToResolve } from './utils';
@@ -71,34 +73,27 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
-// async function getHistory(
-//   startTime: number,
-//   endTime: number | null,
-//   prevResults: chrome.history.HistoryItem[],
-// ): Promise<chrome.history.HistoryItem[]> {
-//   const result = await new Promise<chrome.history.HistoryItem[]>((resolve) => {
-//     const query1 = {
-//       text: '', startTime, maxResults: 99999,
-//     };
-//     const query = endTime ? { ...query1, endTime } : query1;
-//     chrome.history.search(query, resolve);
-//   });
-//   const lastTime = result.at(-1)?.lastVisitTime!;
-//   const results = [...prevResults, ...result];
-//   if (lastTime < startTime) {
-//     return results;
-//   }
-//   return getHistory(startTime, lastTime, results);
-// }
-
 async function makeHtmlHistory() {
   const { settings: { historyMax: { rows } } } = await getStorage('settings');
   const startTime = Date.now() - pastMSec;
-  // const histories = await getHistory(startTime, null, []);
-  // const htmlHistory = histories.slice(0, rows).map(makeHistoryRow).join('');
-  // setStorage({ htmlHistory, histories });
-  chrome.history.search({ text: '', startTime, maxResults: 99999 }, (histories) => {
-    const htmlHistory = histories.slice(0, rows).map(makeHistoryRow).join('');
+  chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
+    const histories = results
+      .concat()
+      .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
+      .map((item) => ({
+        ...item,
+        lastVisitDate: (new Date(item.lastVisitTime!)).toLocaleDateString(),
+      }))
+      .reduce<MyHistoryItem[]>((acc, item) => {
+        const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
+        const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
+        if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
+          return [...acc, headerDate, item];
+        }
+        return [...acc, item];
+      }, []);
+    const htmlData = histories.slice(0, rows).map(makeHistoryRow).join('');
+    const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
     setStorage({ htmlHistory, histories });
   });
 }

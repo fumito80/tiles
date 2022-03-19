@@ -1,28 +1,53 @@
-import { IState, Collection } from './types';
+import { IState, Collection, MyHistoryItem } from './types';
 import {
-  $, getStorage, pick, setStorage,
+  $, getStorage, pick, setStorage, when,
 } from './utils';
 
 export function rowSetterHistory(
-  data: Collection,
+  data: MyHistoryItem[],
   rowTop: number,
   dataTop: number,
+  filterd: boolean,
 ) {
-  return (row: HTMLElement, index: number) => {
-    const item = data[dataTop + index];
-    if (!item) {
-      Object.assign(row.style, { transform: 'translateY(-10000px)' });
-      return;
+  const latestDate = data[0]?.lastVisitDate;
+  const $currentDate = $('.pane-history .current-date')!;
+  return (accLastVisitDate: string | null, row: HTMLElement, index: number) => {
+    if (index === 0) {
+      $currentDate.style.transform = `translateY(${filterd ? '-10000px' : 0})`;
+      return accLastVisitDate;
     }
-    const { url, title, lastVisitTime } = item;
+    const item = data[dataTop + index - 1];
+    if (!item) {
+      row.style.setProperty('transform', 'translateY(-10000px)');
+      return accLastVisitDate;
+    }
+    const {
+      url, title, lastVisitTime, lastVisitDate, headerDate,
+    } = item;
+    if (!filterd && index === 1) {
+      $currentDate.textContent = latestDate === lastVisitDate ? '' : lastVisitDate!;
+    }
+    if (headerDate) {
+      // eslint-disable-next-line no-param-reassign
+      row.textContent = lastVisitDate!;
+      row.style.setProperty('transform', `translateY(${rowTop}px)`);
+      row.style.removeProperty('background-image');
+      row.classList.add('header-date');
+      row.removeAttribute('title');
+      if (index === 2) {
+        $currentDate.style.transform = `translateY(${rowTop}px)`;
+      }
+      return lastVisitDate;
+    }
     const text = title ?? url;
-    const tooltip = `${text}\n${(new Date(lastVisitTime)).toLocaleString()}`;
-    Object.assign(row, { textContent: text });
-    Object.assign(row.style, {
-      transform: `translateY(${rowTop}px)`,
-      backgroundImage: `url('chrome://favicon/${url}')`,
-    });
+    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
+    // eslint-disable-next-line no-param-reassign
+    row.textContent = text!;
+    row.style.setProperty('transform', `translateY(${rowTop}px)`);
+    row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
     row.setAttribute('title', tooltip);
+    row.classList.remove('header-date');
+    return lastVisitDate;
   };
 }
 
@@ -35,7 +60,7 @@ function getRowHeight(rows: HTMLElement) {
   const rowHeight: number = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight) - 2;
   tester.remove();
-  [...rows.children].forEach((el) => Object.assign((el as HTMLElement).style, { height: `${elementHeight}px` }));
+  [...rows.children].forEach((el) => (el as HTMLElement).style.setProperty('height', `${elementHeight}px`));
   return { rowHeight, elementHeight };
 }
 
@@ -48,6 +73,7 @@ export function setVScroll(
   setter: VScrollRowSetter,
   data: Collection,
   { rowHeight }: IState['vscrollProps'],
+  filterd: boolean,
 ) {
   const rows = $('.rows', container);
   const vscroll = $('.v-scroll-bar', container);
@@ -68,7 +94,7 @@ export function setVScroll(
   vScrollHandler = () => {
     const rowTop = -(vscroll.scrollTop % rowHeight);
     const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
-    children.forEach(setter(data, rowTop, dataTop));
+    children.reduce<any>(setter(data, rowTop, dataTop, filterd), null);
   };
   vscroll.addEventListener('scroll', vScrollHandler);
 }
@@ -80,16 +106,28 @@ export async function resetHistory(reset?: boolean, reFilter?: RegExp) {
     const { rowHeight, elementHeight } = getRowHeight(rows);
     setStorage({ vscrollProps: { rowHeight, elementHeight } });
   }
-  const { histories, vscrollProps } = await getStorage('histories', 'vscrollProps');
+  const { histories: [init, ...tail], vscrollProps } = await getStorage('histories', 'vscrollProps');
+  const today = (new Date()).toLocaleDateString();
+  const histories = when(!reset && init.lastVisitDate !== today)
+    .then(() => {
+      const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate };
+      const histories2 = [headerDate, init, ...tail];
+      setStorage({ histories: histories2 });
+      rows.firstElementChild?.insertAdjacentHTML('afterend', `<div class="header-date">${init.lastVisitDate}</div>`);
+      return histories2 as MyHistoryItem[];
+    })
+    .else(() => [init, ...tail]);
   const data = !reFilter ? histories : histories.filter(({ title, url }) => reFilter.test(title || url || ''));
-  setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
+  setVScroll($paneHistory, rowSetterHistory, data, vscrollProps, !!reFilter);
   if (reFilter || reset) {
     [...rows?.children || []].forEach((el) => {
-      el.removeAttribute('style');
+      (el as HTMLElement).style.removeProperty('background-image');
       el.removeAttribute('title');
-      el.firstChild?.remove();
+      // eslint-disable-next-line no-param-reassign
+      el.textContent = '';
     });
     const vscroll = $('.v-scroll-bar', $paneHistory)!;
+    vscroll.scrollTop = 0;
     vscroll.dispatchEvent(new Event('scroll'));
   }
 }
