@@ -15,65 +15,58 @@
   &.fa-angle-right::before {
     content: '\f105';
   }
-
   &.fa-times::before {
     content: '\f00d';
   }
-
   &.fa-search::before {
     content: '\f002';
   }
-
   &.fa-plus::before {
     content: '\f067';
   }
-
   &.fa-edit::before {
     content: '\f044';
   }
-
   &.fa-trash-alt::before {
     content: '\f1f8';
   }
-
   &.fa-folder-plus::before {
     content: '\f114';
   }
-
   &.fa-ellipsis-v::before {
     content: '\f142';
   }
-
   &.fa-window-restore::before {
     content: '\f2d2';
   }
-
   &.fa-mask::before {
     content: '\f21b';
   }
-
   &.fa-font::before {
     content: '\f031';
   }
-
   &.fa-link::before {
     content: '\f0c1';
   }
-
   &.fa-star::before {
     content: '\f005';
   }
-
   &.fa-star-o::before {
     content: '\f006';
   }
-
   &.fa-cog::before {
     content: '\f013';
   }
-
   &.fa-sign-in-alt::before {
     content: '\f090';
   }
-
+  &.icon-clock-rotate-left-solid:before {
+    content: "\e900";
+  }
+  &.icon-bookmark:before {
+    content: "\e9d2";
+  }
+  &.icon-bookmarks:before {
+    content: "\e9d3";
+  }
 }

@@ -45,10 +45,10 @@ function setOptions(settings: Settings) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
-    ['background-color', settings.bodyBackgroundColor],
     ['color', settings.bodyColor],
   ]);
-  addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', settings.leafsBackgroundColor]]);
+  addRules('body, .bgcolor1', [['background-color', settings.frameBackgroundColor]]);
+  addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', settings.paneBackgroundColor]]);
   addRules('.folders .open > .marker > .title', [['background-color', settings.keyColor]]);
   addRules('.bookmark-button:hover > .fa-star-o', [['color', settings.keyColor]]);
   setSplitWidth(settings.paneWidth);

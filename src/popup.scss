@@ -278,6 +278,13 @@ input.query {
     display: none;
   }
   
+  > [data-value="options"] {
+    color: #bbb;
+    pointer-events: none;
+    > i {
+      color: #bbb;
+    }
+  }
 }
 
 [role="menuitem"] > i {
@@ -631,7 +638,7 @@ input.query {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px dotted $drop-border;
+        border-top: 2px solid $drop-border;
       }
     }
     > .drop-bottom {
@@ -641,7 +648,7 @@ input.query {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px dotted $drop-border;
+        border-top: 2px solid $drop-border;
       }
     }
     > .drop-top.drag-enter::after,
@@ -726,7 +733,7 @@ input.query {
     &.drag-enter::before {
       top: 50%;
       width: 100%;
-      border-top: 2px dotted $drop-border;
+      border-top: 2px solid $drop-border;
     }
     &.drag-enter::after {
       top: calc(50% - 4px);
@@ -737,7 +744,7 @@ input.query {
     top: 80%;
     height: 20%;
     &.drag-enter {
-      border-bottom: 2px dotted $drop-border;
+      border-bottom: 2px solid $drop-border;
     }
     &.drag-enter::after {
       top: 0.5px;
@@ -926,7 +933,33 @@ input.query {
 }
 
 .pane-title {
-  font-style: oblique;
-  font-size: 0.8em;
-  padding-bottom: 3px;
+  padding: 1px 1px 2px 3px;
+  > [title="Tabs"] {
+    display: flex;
+    :nth-child(1) {
+      border: 1.5px solid #999;
+      border-radius: 3px;
+      border-left: 0;
+      border-bottom: 0;
+      background-color: #999;
+      width: 18px;
+      height: 8px;
+      transform: translate(11px, 2px);
+    }
+    :nth-child(2) {
+      border: 1.5px solid #555;
+      border-bottom: 0;
+      border-radius: 3px;
+      background-color: white;
+      width: 15px;
+      height: 10px;
+      transform: translate(-23px, 1px);
+    }
+    :nth-child(3) {
+      border-top: 1.5px solid #555;
+      width: 38px;
+      height: 8px;
+      transform: translate(-43px, 10px);
+    }
+  }
 }

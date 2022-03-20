@@ -629,8 +629,8 @@ export function setEventListners() {
     chrome.tabs.update(Number(tabId), { active: true });
   });
   $('.pane-history > .rows')?.addEventListener('click', (e) => {
-    const style = (e.target as HTMLDivElement).getAttribute('style');
-    const [, url] = /background-image:\surl\('chrome:\/\/favicon\/(.*)'\);$/.exec(style || '') || [];
+    const { backgroundImage } = (e.target as HTMLDivElement).style;
+    const [, url] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(backgroundImage || '') || [];
     if (!url) {
       return;
     }

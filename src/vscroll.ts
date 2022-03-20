@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getStorage, pick, setStorage, when, htmlEscape,
+  $, getStorage, pick, setStorage, when,
 } from './utils';
 
 export function rowSetterHistory(
@@ -11,15 +11,15 @@ export function rowSetterHistory(
 ) {
   const latestDate = data[0]?.lastVisitDate;
   const $currentDate = $('.pane-history .current-date')!;
-  return (accLastVisitDate: string | null, row: HTMLElement, index: number) => {
+  $currentDate.style.transform = 'translateY(0)';
+  return (row: HTMLElement, index: number) => {
     if (index === 0) {
-      $currentDate.style.transform = `translateY(${filterd ? '-10000px' : 0})`;
-      return accLastVisitDate;
+      return;
     }
     const item = data[dataTop + index - 1];
     if (!item) {
       row.style.setProperty('transform', 'translateY(-10000px)');
-      return accLastVisitDate;
+      return;
     }
     const {
       url, title, lastVisitTime, lastVisitDate, headerDate,
@@ -27,27 +27,25 @@ export function rowSetterHistory(
     if (!filterd && index === 1) {
       $currentDate.textContent = latestDate === lastVisitDate ? '' : lastVisitDate!;
     }
+    row.style.setProperty('transform', `translateY(${rowTop}px)`);
     if (headerDate) {
       // eslint-disable-next-line no-param-reassign
       row.textContent = lastVisitDate!;
-      row.style.setProperty('transform', `translateY(${rowTop}px)`);
       row.style.removeProperty('background-image');
       row.classList.add('header-date');
       row.removeAttribute('title');
       if (index === 2) {
         $currentDate.style.transform = `translateY(${rowTop}px)`;
       }
-      return lastVisitDate;
+      return;
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
     // eslint-disable-next-line no-param-reassign
-    row.textContent = htmlEscape(text!);
-    row.style.setProperty('transform', `translateY(${rowTop}px)`);
+    row.textContent = text!;
     row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
     row.setAttribute('title', tooltip);
     row.classList.remove('header-date');
-    return lastVisitDate;
   };
 }
 
@@ -94,7 +92,7 @@ export function setVScroll(
   vScrollHandler = () => {
     const rowTop = -(vscroll.scrollTop % rowHeight);
     const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
-    children.reduce<any>(setter(data, rowTop, dataTop, filterd), null);
+    children.forEach(setter(data, rowTop, dataTop, filterd));
   };
   vscroll.addEventListener('scroll', vScrollHandler);
 }
