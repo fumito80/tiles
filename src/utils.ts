@@ -527,6 +527,10 @@ escapes.set('"', '&quot;');
 escapes.set('<', '&lt;');
 escapes.set('>', '&gt;');
 
+export function htmlEscape(text: string) {
+  return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
+}
+
 export function makeHistoryRow({
   url, title, lastVisitTime, headerDate, lastVisitDate,
 }: MyHistoryItem) {
@@ -539,8 +543,7 @@ export function makeHistoryRow({
   if (!text) {
     return '';
   }
-  const htmlText = text!.replace(/[&"<>]/g, (e) => escapes.get(e));
-  return `<div title="${title}${dt}" style="${style}">${htmlText}</div>`;
+  return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
 }
 
 export function setStorage(state: Partial<State>) {

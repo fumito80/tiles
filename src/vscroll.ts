@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getStorage, pick, setStorage, when,
+  $, getStorage, pick, setStorage, when, htmlEscape,
 } from './utils';
 
 export function rowSetterHistory(
@@ -39,10 +39,10 @@ export function rowSetterHistory(
       }
       return lastVisitDate;
     }
-    const text = title ?? url;
+    const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
     // eslint-disable-next-line no-param-reassign
-    row.textContent = text!;
+    row.textContent = htmlEscape(text!);
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
     row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
     row.setAttribute('title', tooltip);
