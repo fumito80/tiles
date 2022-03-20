@@ -12,9 +12,11 @@ export const initialSettings = {
   postPage: false,
   width: 800,
   height: 450,
-  grid1Width: 200,
-  grid2Width: 200,
-  grid3Width: 200,
+  paneWidth: {
+    pane1: 200,
+    pane2: 200,
+    pane3: 200,
+  },
   bodyColor: '#222222',
   bodyBackgroundColor: '#f6f6f6',
   leafsBackgroundColor: '#ffffff',
@@ -25,11 +27,11 @@ export const initialSettings = {
     rows: 30,
     days: null,
   },
-} as const;
+};
 
-export type ISettings = typeof initialSettings;
+export type Settings = typeof initialSettings;
 
-export type IClientState = {
+export type ClientState = {
   open?: string;
   paths?: Array<string>;
 }
@@ -47,7 +49,7 @@ export const initalState = {
   htmlTabs: '',
   htmlHistory: '',
   histories: [] as Array<MyHistoryItem>,
-  clientState: {} as IClientState,
+  clientState: {} as ClientState,
   settings: initialSettings,
   vscrollProps: {
     rowHeight: 0,
@@ -55,7 +57,7 @@ export const initalState = {
   },
 };
 
-export type IState = typeof initalState;
+export type State = typeof initalState;
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
@@ -102,6 +104,10 @@ export const dropClasses = [
 
 export type DropClasses = typeof dropClasses[number];
 
+export const splitterClasses = ['pane1', 'pane2', 'pane3'] as const;
+
+export type SplitterClasses = { [key in typeof splitterClasses[number]]: number };
+
 export type PayloadMoveItem = {
   id: string;
   targetId: string;
@@ -132,3 +138,5 @@ export const positions: { [key: string]: InsertPosition } = {
 
 export type Model = { [key: string]: any };
 export type Collection = Array<Model>;
+
+export type Nil = undefined | null;

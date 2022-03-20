@@ -4,8 +4,9 @@ import {
   PayloadAction,
   MapStateToResponse,
   MessageStateMapObject,
-  IState,
+  State,
   MyHistoryItem,
+  SplitterClasses,
 } from './types';
 
 export function $<T extends HTMLElement>(
@@ -470,7 +471,8 @@ export function whichClass<T extends ReadonlyArray<string>>(classNames: T, eleme
 
 export function addRules(selector: string, ruleProps: [string, string][]) {
   const rules = ruleProps.map(([prop, value]) => `${prop}:${value};`).join('');
-  document.styleSheets[0].insertRule(`${selector} {${rules}}`);
+  const [sheet] = document.styleSheets;
+  sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
 }
 
 export function prop<T, U extends keyof T>(name: U): (target: T) => T[U];
@@ -502,15 +504,12 @@ export function showMenu($target: HTMLElement, menuSelector: string) {
   const $menu = $(menuSelector)!;
   $menu.style.top = '';
   $menu.style.left = '';
-  // $menu.style.right = '';
   if ($target.parentElement !== $menu.parentElement) {
     $target.insertAdjacentElement('afterend', $menu);
   }
-  // if ($target.parentElement!.parentElement!.classList.contains('folders')) {
   const rect = $target.getBoundingClientRect();
   const { width, height } = $menu.getBoundingClientRect();
   $menu.style.left = `${rect.left - width + rect.width}px`;
-  // if ((rect.top + rect.height + height) >= ($('.folders')!.offsetHeight - 4)) {
   if ((rect.top + rect.height + height) >= (document.body.offsetHeight + 4)) {
     $menu.style.top = `${rect.top - height}px`;
   } else {
@@ -540,12 +539,43 @@ export function makeHistoryRow({
   return `<div title="${title}${dt}" style="${style}">${text}</div>`;
 }
 
-export function setStorage(state: Partial<IState>) {
+export function setStorage(state: Partial<State>) {
   chrome.storage.local.set(state);
 }
 
-export async function getStorage<T extends Array<keyof IState>>(...keyNames: T) {
-  return new Promise<Pick<IState, T[number]>>((resolve) => {
-    chrome.storage.local.get(keyNames, (data) => resolve(data as Pick<IState, T[number]>));
+export async function getStorage<T extends Array<keyof State>>(...keyNames: T) {
+  return new Promise<Pick<State, T[number]>>((resolve) => {
+    chrome.storage.local.get(keyNames, (data) => resolve(data as Pick<State, T[number]>));
   });
+}
+
+export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
+  const $target = $('main')!;
+  const { gridTemplateColumns } = $target.style;
+  const [, ...widths] = /^.+?(\d+?)px.+?(\d+?)px.+?(\d+?)px/.exec(gridTemplateColumns) || [];
+  const [pane3, pane2, pane1] = widths.map(Number);
+  const paneWidths = { pane3, pane2, pane1 };
+  const newPaneWidths = { ...paneWidths, ...newPaneWidth };
+  const gridCols = [
+    'min-content',
+    `${newPaneWidths.pane3}px`,
+    'min-content',
+    `${newPaneWidths.pane2}px`,
+    'min-content',
+    `${newPaneWidths.pane1}px`,
+    'min-content',
+    '1fr',
+  ];
+  return {
+    result: gridCols.join(' '),
+    pane3,
+    pane2,
+    pane1,
+  };
+}
+
+export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
+  const $target = $('main')!;
+  const { result } = getGridTemplateColumns(newPaneWidth);
+  $target.style.setProperty('grid-template-columns', result);
 }

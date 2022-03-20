@@ -1,4 +1,4 @@
-import { IState, Collection, MyHistoryItem } from './types';
+import { State, Collection, MyHistoryItem } from './types';
 import {
   $, getStorage, pick, setStorage, when,
 } from './utils';
@@ -72,7 +72,7 @@ export function setVScroll(
   container: HTMLDivElement,
   setter: VScrollRowSetter,
   data: Collection,
-  { rowHeight }: IState['vscrollProps'],
+  { rowHeight }: State['vscrollProps'],
   filterd: boolean,
 ) {
   const rows = $('.rows', container);
@@ -99,27 +99,29 @@ export function setVScroll(
   vscroll.addEventListener('scroll', vScrollHandler);
 }
 
-export async function resetHistory(reset?: boolean, reFilter?: RegExp) {
+type ResetParams = { initialize?: boolean, reFilter?: RegExp };
+
+export async function resetHistory({ initialize, reFilter }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   const rows = $('.rows', $paneHistory)!;
-  if (!reset) {
+  if (initialize) {
     const { rowHeight, elementHeight } = getRowHeight(rows);
     setStorage({ vscrollProps: { rowHeight, elementHeight } });
   }
   const { histories: [init, ...tail], vscrollProps } = await getStorage('histories', 'vscrollProps');
   const today = (new Date()).toLocaleDateString();
-  const histories = when(!reset && init.lastVisitDate !== today)
+  const histories2 = when(!!initialize && init.lastVisitDate !== today && !init.headerDate)
     .then(() => {
       const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate };
-      const histories2 = [headerDate, init, ...tail];
-      setStorage({ histories: histories2 });
+      const histories = [headerDate, init, ...tail];
       rows.firstElementChild?.insertAdjacentHTML('afterend', `<div class="header-date">${init.lastVisitDate}</div>`);
-      return histories2 as MyHistoryItem[];
+      setStorage({ histories, htmlHistory: rows.innerHTML });
+      return histories as MyHistoryItem[];
     })
     .else(() => [init, ...tail]);
-  const data = !reFilter ? histories : histories.filter(({ title, url }) => reFilter.test(title || url || ''));
+  const data = !reFilter ? histories2 : histories2.filter(({ title, url }) => reFilter.test(title || url || ''));
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps, !!reFilter);
-  if (reFilter || reset) {
+  if (reFilter || !initialize) {
     [...rows?.children || []].forEach((el) => {
       (el as HTMLElement).style.removeProperty('background-image');
       el.removeAttribute('title');

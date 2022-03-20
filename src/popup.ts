@@ -2,9 +2,9 @@ import './popup.scss';
 
 import {
   HtmlBookmarks,
-  ISettings,
-  IState,
-  IClientState,
+  Settings,
+  State,
+  ClientState,
   Model,
   initalState,
 } from './types';
@@ -17,6 +17,7 @@ import {
   addRules,
   makeStyleIcon,
   cssid,
+  setSplitWidth,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -40,27 +41,17 @@ function setTabs() {
   });
 }
 
-function setOptions(settings: ISettings) {
+function setOptions(settings: Settings) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
     ['background-color', settings.bodyBackgroundColor],
     ['color', settings.bodyColor],
   ]);
-  const gridCols = [
-    'min-content',
-    `${settings.grid3Width}px`,
-    'min-content',
-    `${settings.grid2Width}px`,
-    'min-content',
-    `${settings.grid1Width}px`,
-    'min-content',
-    '1fr',
-  ];
-  addRules('main', [['gridTemplateColumns', gridCols.join(' ')]]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', settings.leafsBackgroundColor]]);
   addRules('.folders .open > .marker > .title', [['background-color', settings.keyColor]]);
   addRules('.bookmark-button:hover > .fa-star-o', [['color', settings.keyColor]]);
+  setSplitWidth(settings.paneWidth);
   if (settings.tabs) {
     setTabs();
   }
@@ -76,7 +67,7 @@ function repaleceHtml(html: HtmlBookmarks) {
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
-function setClientState(clState: IClientState) {
+function setClientState(clState: ClientState) {
   clState.paths?.forEach((id) => $(`.folders ${cssid(id)}`)?.classList.add('path'));
   if (clState.open) {
     $$(cssid(clState.open))?.forEach((el) => el.classList.add('open'));
@@ -85,7 +76,7 @@ function setClientState(clState: IClientState) {
 
 async function init({
   settings, htmlBookmarks, htmlHistory, clientState,
-}: IState) {
+}: State) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
@@ -94,7 +85,7 @@ async function init({
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   $paneHistory.firstElementChild!.innerHTML = htmlHistory;
   setClientState(clientState);
-  resetHistory();
+  resetHistory({ initialize: true });
 }
 
 const storageKeys = Object.keys(initalState);

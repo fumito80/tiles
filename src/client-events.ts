@@ -3,10 +3,12 @@
 
 import {
   dropClasses,
+  splitterClasses,
   positions,
-  CliMessageTypes,
+  // CliMessageTypes,
   OpenBookmarkType,
   EditBookmarkType,
+  Nil,
 } from './types';
 
 import {
@@ -17,7 +19,7 @@ import {
   whichClass,
   cssid,
   getParentElement,
-  postMessage,
+  // postMessage,
   curry,
   curry3,
   cbToResolve,
@@ -26,6 +28,9 @@ import {
   propEq,
   setStorage,
   when,
+  getStorage,
+  setSplitWidth,
+  getGridTemplateColumns,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -113,6 +118,9 @@ function onClickAngle(e: MouseEvent) {
 
 function clearQuery() {
   const $query = $<HTMLInputElement>('.query')!;
+  if ($query.value === '') {
+    return;
+  }
   $query.value = '';
   $query.setAttribute('value', '');
   $query.focus();
@@ -141,24 +149,30 @@ function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
     mouseMoveHandler(e);
   };
   document.addEventListener('mousemove', mouseMoveHandlerWrapper, false);
-  document.addEventListener('mouseup', () => {
+  document.addEventListener('mouseup', async () => {
     document.removeEventListener('mousemove', mouseMoveHandlerWrapper);
-    postMessage({
-      type: CliMessageTypes.saveOptions,
-      payload: {
-        width: document.body.offsetWidth,
-        height: document.body.offsetHeight,
-        rightWidth: $('main > :last-child')!.offsetWidth,
+    const { pane3, pane2, pane1 } = getGridTemplateColumns({});
+    const saved = await getStorage('settings');
+    const settings = {
+      ...saved.settings,
+      paneWidth: {
+        pane3,
+        pane2,
+        pane1,
       },
-    });
+      width: document.body.offsetWidth,
+      height: document.body.offsetHeight,
+    };
+    setStorage({ settings });
   }, { once: true });
 }
 
-function resizeSplitHandler() {
-  const target = $('main')!;
+function resizeSplitHandler($splitter: HTMLElement) {
   return (e: MouseEvent) => {
-    const width = Number(document.body.dataset.rightPane) - e.x;
-    target.style.gridTemplateColumns = `min-content 1fr min-content ${width}px`;
+    const className = whichClass(splitterClasses, $splitter)!;
+    const $targetPane = $splitter.previousElementSibling as HTMLElement;
+    const width = e.clientX - $targetPane.offsetLeft;
+    setSplitWidth({ [className]: width });
   };
 }
 
@@ -179,7 +193,10 @@ function setAnimationClass(el: HTMLElement, className: 'hilite' | 'remove-hilite
   el.classList.add(className);
 }
 
-function setAnimationFolder(el: HTMLElement, className: string) {
+function setAnimationFolder(el: HTMLElement | Nil, className: string) {
+  if (!el) {
+    return;
+  }
   el.addEventListener('animationend', () => el.classList.remove(className), { once: true });
   el.classList.add(className);
 }
@@ -202,9 +219,11 @@ async function addBookmark(parentId = '1') {
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
     $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
   }
-  const $target = $(`.leafs ${cssid(id)}`) || $(`.folders ${cssid(id)}`)!;
-  ($target.firstElementChild as HTMLAnchorElement).focus();
-  setAnimationClass($target, 'hilite');
+  const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
+  if ($target) {
+    ($target as any).scrollIntoViewIfNeeded();
+    setAnimationClass($target, 'hilite');
+  }
 }
 
 async function addFolder(parentId = '1') {
@@ -235,7 +254,7 @@ async function addFolder(parentId = '1') {
     });
   }
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
-  setAnimationFolder($target.parentElement!, 'hilite');
+  setAnimationFolder($target.parentElement, 'hilite');
 }
 
 function setHasChildren($target: HTMLElement) {
@@ -256,7 +275,7 @@ function submit() {
   $$('.leafs .path').forEach((el) => el.classList.remove('path'));
   if (value.length <= 1) {
     $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
-    resetHistory(true);
+    resetHistory();
     const openFolder = $('.folders .open');
     if (openFolder) {
       openFolder.classList.remove('open');
@@ -289,7 +308,7 @@ function submit() {
     el.classList.add(addClass);
     el.classList.remove(removeClass);
   });
-  resetHistory(true, reFilter);
+  resetHistory({ reFilter });
   return false;
 }
 
@@ -520,27 +539,26 @@ export function setEventListners() {
     }
   });
 
-  $('.bookmark-button')!.addEventListener('click', () => {
+  $('.bookmark-button')?.addEventListener('click', () => {
     const id = $('.open')?.id;
     addBookmark(id || '1');
   });
 
-  $('.main-menu-button')!.addEventListener('click', (e) => {
+  $('.main-menu-button')?.addEventListener('click', (e) => {
     e.preventDefault();
     return false;
   });
 
-  $('.split-h')!.addEventListener('mousedown', (e) => {
-    document.body.dataset.rightPane = String($('main > :last-child')!.offsetWidth + e.x);
-    setMouseEventListener(resizeSplitHandler());
-  });
+  $$('.split-h').forEach((el) => el.addEventListener('mousedown', (e) => {
+    setMouseEventListener(resizeSplitHandler(e.target as HTMLElement));
+  }));
 
-  $('.resize-x')!.addEventListener('mousedown', (e) => {
+  $('.resize-x')?.addEventListener('mousedown', (e) => {
     document.body.dataset.startX = String(document.body.offsetWidth + e.screenX);
     setMouseEventListener(resizeWidthHandler);
   });
 
-  $('.resize-y')!.addEventListener('mousedown', (e) => {
+  $('.resize-y')?.addEventListener('mousedown', (e) => {
     document.body.dataset.startY = String(document.body.offsetHeight - e.screenY);
     setMouseEventListener(resizeHeightHandler);
   });
@@ -578,7 +596,7 @@ export function setEventListners() {
           }
           await cbToResolve(curry3(chrome.bookmarks.update)($folder.id)({ title }));
           $title.textContent = title;
-          setAnimationFolder($title.parentElement!.parentElement!, 'hilite');
+          setAnimationFolder($title.parentElement?.parentElement, 'hilite');
           break;
         }
         case 'add-folder': {
@@ -606,7 +624,7 @@ export function setEventListners() {
   });
   $('.pane-tabs')?.addEventListener('click', (e) => {
     const [, tabId] = (e.target as HTMLDivElement).id.split('-');
-    const [, windowId] = (e.target as HTMLDivElement).parentElement!.id.split('-');
+    const [, windowId] = (e.target as HTMLDivElement).parentElement?.id.split('-') || [];
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
