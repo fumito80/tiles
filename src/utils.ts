@@ -535,8 +535,12 @@ export function makeHistoryRow({
   }
   const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
   const style = makeStyleIcon(url!);
-  const text = title!.replace(/[&"<>]/g, escapes.get);
-  return `<div title="${title}${dt}" style="${style}">${text}</div>`;
+  const text = title || url;
+  if (!text) {
+    return '';
+  }
+  const htmlText = text!.replace(/[&"<>]/g, (e) => escapes.get(e));
+  return `<div title="${title}${dt}" style="${style}">${htmlText}</div>`;
 }
 
 export function setStorage(state: Partial<State>) {
