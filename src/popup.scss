@@ -947,7 +947,7 @@ input.query {
       transform: translate(11px, 2px);
     }
     :nth-child(2) {
-      border: 1.5px solid #555;
+      border: 1.5px solid #222;
       border-bottom: 0;
       border-radius: 3px;
       background-color: white;
@@ -956,10 +956,16 @@ input.query {
       transform: translate(-23px, 1px);
     }
     :nth-child(3) {
-      border-top: 1.5px solid #555;
+      border-top: 1.5px solid #222;
       width: 38px;
       height: 8px;
       transform: translate(-43px, 10px);
     }
+  }
+  .icon-bookmarks {
+    transform: scale(1.2,1);
+  }
+  > [title="History"] {
+    color: #222;
   }
 }

@@ -428,6 +428,31 @@ export function setEventListners() {
       const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
       switch ((e.target as HTMLElement).dataset.value) {
+        case 'find-in-tabs': {
+          const { id } = $anchor.parentElement!;
+          const { url } = await getBookmark(id);
+          const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
+            chrome.tabs.query({}, (tabs) => {
+              chrome.windows.getCurrent((win) => {
+                const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
+                const sorted = [
+                  ...tabs.slice(0, findIndex),
+                  ...tabs.slice(findIndex + 1),
+                  tabs[findIndex],
+                ];
+                const firstTab = sorted.find((t) => t.url?.startsWith(url!));
+                resolve(firstTab);
+              });
+            });
+          });
+          if (tab?.id == null) {
+            openBookmark($anchor);
+            return;
+          }
+          chrome.windows.update(tab.windowId, { focused: true });
+          chrome.tabs.update(tab.id, { active: true });
+          break;
+        }
         case 'open-new-window':
           openBookmark($anchor, OpenBookmarkType.window);
           break;
