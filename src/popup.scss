@@ -278,13 +278,6 @@ input.query {
     display: none;
   }
   
-  > [data-value="options"] {
-    color: #bbb;
-    pointer-events: none;
-    > i {
-      color: #bbb;
-    }
-  }
 }
 
 [role="menuitem"] > i {

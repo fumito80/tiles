@@ -5,8 +5,7 @@ import {
   Settings,
   State,
   ClientState,
-  Model,
-  initalState,
+  initialState,
 } from './types';
 
 import {
@@ -18,6 +17,7 @@ import {
   makeStyleIcon,
   cssid,
   setSplitWidth,
+  getStorage,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -52,12 +52,6 @@ function setOptions(settings: Settings) {
   addRules('.folders .open > .marker > .title', [['background-color', settings.keyColor]]);
   addRules('.bookmark-button:hover > .fa-star-o', [['color', settings.keyColor]]);
   setSplitWidth(settings.paneWidth);
-  if (settings.tabs) {
-    setTabs();
-  }
-  if (settings.history) {
-    setEventListners();
-  }
 }
 
 function repaleceHtml(html: HtmlBookmarks) {
@@ -74,20 +68,28 @@ function setClientState(clState: ClientState) {
   }
 }
 
+function toggleElement(selector: string, isShow = true, shownDisplayType = 'block') {
+  $(selector)?.style.setProperty('display', isShow ? shownDisplayType : 'none');
+}
+
 async function init({
-  settings, htmlBookmarks, htmlHistory, clientState,
+  settings, htmlBookmarks, htmlHistory, clientState, options,
 }: State) {
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
+  setTabs();
   setOptions(settings);
   repaleceHtml(htmlBookmarks);
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   $paneHistory.firstElementChild!.innerHTML = htmlHistory;
   setClientState(clientState);
   resetHistory({ initialize: true });
+  toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
+  toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
+  setEventListners(options);
 }
 
-const storageKeys = Object.keys(initalState);
+const storageKeys = Object.keys(initialState) as Array<keyof typeof initialState>;
 
-chrome.storage.local.get(storageKeys, init as (items: Model) => Promise<void>);
+getStorage(...storageKeys).then(init);

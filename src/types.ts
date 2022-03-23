@@ -44,7 +44,14 @@ export type HtmlBookmarks = {
 export type MyHistoryItem = Partial<chrome.history.HistoryItem &
   { lastVisitDate: string, headerDate: boolean }>;
 
-export const initalState = {
+export const options = {
+  newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
+  findTabsFirst: false,
+  externalSearch: false,
+  externalSearchUrl: 'https://www.google.com/search?q=',
+};
+
+export const initialState = {
   htmlBookmarks: {} as HtmlBookmarks,
   htmlTabs: '',
   htmlHistory: '',
@@ -55,9 +62,10 @@ export const initalState = {
     rowHeight: 0,
     elementHeight: 0,
   },
+  options,
 };
 
-export type State = typeof initalState;
+export type State = typeof initialState;
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
@@ -135,8 +143,5 @@ export const positions: { [key: string]: InsertPosition } = {
   'drop-bottom': 'afterend',
   'drop-folder': 'beforeend',
 };
-
-export type Model = { [key: string]: any };
-export type Collection = Array<Model>;
 
 export type Nil = undefined | null;

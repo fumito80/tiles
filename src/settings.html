@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" href="settings.css">
+  <title>Settings</title>
+</head>
+
+<body>
+  <main>
+    <header>
+      <h5><span class="extension-name"></span>Settings<span class="version ms-3">Version 0.8.0</span></h5>
+    </header>
+    <article>
+      <form>
+        <div class="heading">General</div>
+        <div class="item">- New tab position</div>
+        <div class="d-flex gap-3 mt-1 ms-3">
+          <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
+          <label><input type="radio" name="new-tab-position" value="re">Right end</label>
+          <label><input type="radio" name="new-tab-position" value="ls">Left side</label>
+          <label><input type="radio" name="new-tab-position" value="le">Left end</label>
+        </div>
+        <label class="item"><input type="checkbox" name="find-tabs-first">Find tab first when open a bookmark (URL prefix match)</label>
+        <label class="item"><input type="checkbox" name="external-search">In search box press enter key, the input string passes as a parameter to the following URL</label>
+        <label class="w-75"><input type="text" name="external-search-url" class="form-control mt-1 mx-3">
+        </label>
+      </form>
+    </article>
+  </main>
+  <script src="settings.js"></script>
+</body>
+
+</html>

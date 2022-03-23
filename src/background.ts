@@ -1,6 +1,7 @@
 import {
   pastMSec,
   initialSettings,
+  options,
   // IClientState,
   HtmlBookmarks,
   // ISettings,
@@ -107,7 +108,7 @@ regsterChromeEvents(makeHtmlHistory)(historyEvents);
 
 const settings = initialSettings;
 const clientState = {};
-setStorage({ settings, clientState });
+setStorage({ settings, clientState, options });
 
 makeHtmlBookmarks();
 makeHtmlHistory();

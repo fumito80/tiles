@@ -11,7 +11,7 @@ module.exports = {
   entry: {
     popup: './src/popup.ts',
     background: './src/background.ts',
-    // background: './src/redux-provider.ts',
+    settings: './src/settings.ts',
   },
   output: {
     filename: '[name].js',
@@ -31,7 +31,7 @@ module.exports = {
         ],
       },
       {
-        test: /\.scss$/,
+        test: /\.(scss|css)$/,
         use: [
           MiniCssExtractPlugin.loader,
           'css-loader',
@@ -50,12 +50,13 @@ module.exports = {
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'popup.css',
+      filename: '[name].css',
     }),
     new CopyPlugin({
       patterns: [
         { from: '*.html', context: 'src/' },
         { from: '*.json', context: 'src/' },
+        { from: '*.css', context: 'src/' },
       ],
     }),
     new ESLintPlugin({

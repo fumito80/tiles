@@ -8,6 +8,7 @@ import {
   // CliMessageTypes,
   OpenBookmarkType,
   EditBookmarkType,
+  State,
   Nil,
 } from './types';
 
@@ -312,7 +313,32 @@ function submit() {
   return false;
 }
 
-export function setEventListners() {
+async function findInTabsBookmark($anchor: HTMLElement) {
+  const { id } = $anchor.parentElement!;
+  const { url } = await getBookmark(id);
+  const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
+    chrome.tabs.query({}, (tabs) => {
+      chrome.windows.getCurrent((win) => {
+        const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
+        const sorted = [
+          ...tabs.slice(0, findIndex),
+          ...tabs.slice(findIndex + 1),
+          tabs[findIndex],
+        ];
+        const firstTab = sorted.find((t) => t.url?.startsWith(url!));
+        resolve(firstTab);
+      });
+    });
+  });
+  if (tab?.id == null) {
+    openBookmark($anchor);
+    return;
+  }
+  chrome.windows.update(tab.windowId, { focused: true });
+  chrome.tabs.update(tab.id, { active: true });
+}
+
+export function setEventListners(options: State['options']) {
   $('.query')!.addEventListener('input', submit);
   $('.form-query')!.addEventListener('submit', (e) => {
     submit();
@@ -429,30 +455,12 @@ export function setEventListners() {
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
-          const { id } = $anchor.parentElement!;
-          const { url } = await getBookmark(id);
-          const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
-            chrome.tabs.query({}, (tabs) => {
-              chrome.windows.getCurrent((win) => {
-                const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
-                const sorted = [
-                  ...tabs.slice(0, findIndex),
-                  ...tabs.slice(findIndex + 1),
-                  tabs[findIndex],
-                ];
-                const firstTab = sorted.find((t) => t.url?.startsWith(url!));
-                resolve(firstTab);
-              });
-            });
-          });
-          if (tab?.id == null) {
-            openBookmark($anchor);
-            return;
-          }
-          chrome.windows.update(tab.windowId, { focused: true });
-          chrome.tabs.update(tab.id, { active: true });
+          findInTabsBookmark($anchor);
           break;
         }
+        case 'open-new-tab':
+          openBookmark($anchor);
+          break;
         case 'open-new-window':
           openBookmark($anchor, OpenBookmarkType.window);
           break;
@@ -510,7 +518,7 @@ export function setEventListners() {
   });
 
   $('.folders')!.addEventListener('click', (e) => {
-    const target = e.target as HTMLDivElement;
+    const $target = e.target as HTMLDivElement;
     const targetClasses = [
       'anchor',
       'marker',
@@ -518,20 +526,20 @@ export function setEventListners() {
       'folder-menu-button',
       'fa-angle-right',
     ] as const;
-    const targetClass = whichClass(targetClasses, target);
+    const targetClass = whichClass(targetClasses, $target);
     switch (targetClass) {
       case 'anchor':
-        openBookmark(e.target!);
+        (options.findTabsFirst ? findInTabsBookmark : openBookmark)($target!);
         break;
       case 'marker':
-        $('.title', target)!.click();
+        $('.title', $target)!.click();
         break;
       case 'fa-angle-right':
         onClickAngle(e);
         break;
       case 'title': {
         clearQuery();
-        const foldersFolder = target.parentElement?.parentElement!;
+        const foldersFolder = $target.parentElement?.parentElement!;
         const folders = [foldersFolder, $(`.leafs ${cssid(foldersFolder.id)}`)];
         const isOpen = foldersFolder.classList.contains('open');
         if (isOpen) {
@@ -545,7 +553,7 @@ export function setEventListners() {
         break;
       }
       case 'folder-menu-button': {
-        showMenu(target, '.folder-menu');
+        showMenu($target, '.folder-menu');
         e.stopImmediatePropagation();
         break;
       }
@@ -555,11 +563,11 @@ export function setEventListners() {
   });
 
   $('.leafs')!.addEventListener('click', (e) => {
-    const target = e.target as HTMLDivElement;
-    if (target.classList.contains('anchor')) {
-      openBookmark(e.target!);
-    } else if ([...target.classList].find((className) => ['title', 'fa-angle-right'].includes(className))) {
-      const folder = target.parentElement?.parentElement!;
+    const $target = e.target as HTMLDivElement;
+    if ($target.classList.contains('anchor')) {
+      (options.findTabsFirst ? findInTabsBookmark : openBookmark)($target!);
+    } else if ([...$target.classList].find((className) => ['title', 'fa-angle-right'].includes(className))) {
+      const folder = $target.parentElement?.parentElement!;
       folder.classList.toggle('path');
     }
   });
@@ -597,6 +605,9 @@ export function setEventListners() {
         }
         case 'add-folder':
           addFolder();
+          break;
+        case 'settings':
+          chrome.runtime.openOptionsPage();
           break;
         default:
       }
