@@ -76,6 +76,30 @@ export function when(test: boolean) {
   };
 }
 
+function caseConst<T>(a: T) {
+  return {
+    case: () => thenConst<T>(a),
+    else: () => a,
+  };
+}
+
+function caseGetter<T, U>(value: T) {
+  return {
+    case: (testValue: T) => ({
+      then: (thenValue: U) => {
+        if (value === testValue) {
+          return caseConst<U>(thenValue);
+        }
+        return caseGetter<T, U>(value);
+      },
+    }),
+  };
+}
+
+export function cases<T, U>(value: T) {
+  return caseGetter<T, U>(value);
+}
+
 export function eq<T>(a: T) {
   return (b: T) => a === b;
 }

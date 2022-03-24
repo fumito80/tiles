@@ -78,8 +78,7 @@ async function makeHtmlHistory() {
   const { settings: { historyMax: { rows } } } = await getStorage('settings');
   const startTime = Date.now() - pastMSec;
   chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
-    const histories = results
-      .concat()
+    const histories = [...results]
       .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
       .map((item) => ({
         ...item,

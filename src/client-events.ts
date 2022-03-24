@@ -29,6 +29,7 @@ import {
   propEq,
   setStorage,
   when,
+  // cases,
   getStorage,
   setSplitWidth,
   getGridTemplateColumns,
@@ -81,6 +82,7 @@ function getSubTree(id: string) {
 }
 
 async function openBookmark(
+  options: State['options'],
   target: EventTarget | HTMLElement,
   openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
 ) {
@@ -88,12 +90,16 @@ async function openBookmark(
   const { url } = await getBookmark(id);
   switch (openType) {
     case OpenBookmarkType.tab: {
-      const tab = await getCurrentTab();
-      chrome.tabs.create({
-        index: tab.index + 1,
-        windowId: tab.windowId,
-        url,
-      });
+      const { windowId, ...rest } = await getCurrentTab();
+      const index = (() => {
+        switch (options.newTabPosition) {
+          case 'le': return 0;
+          case 'rs': return rest.index + 1;
+          case 'ls': return rest.index;
+          default: return undefined;
+        }
+      })();
+      chrome.tabs.create({ index, url, windowId });
       break;
     }
     case OpenBookmarkType.window: {
@@ -313,7 +319,7 @@ function submit() {
   return false;
 }
 
-async function findInTabsBookmark($anchor: HTMLElement) {
+async function findInTabsBookmark(options: State['options'], $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
   const { url } = await getBookmark(id);
   const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
@@ -331,7 +337,7 @@ async function findInTabsBookmark($anchor: HTMLElement) {
     });
   });
   if (tab?.id == null) {
-    openBookmark($anchor);
+    openBookmark(options, $anchor);
     return;
   }
   chrome.windows.update(tab.windowId, { focused: true });
@@ -339,6 +345,7 @@ async function findInTabsBookmark($anchor: HTMLElement) {
 }
 
 export function setEventListners(options: State['options']) {
+  const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
   $('.query')!.addEventListener('input', submit);
   $('.form-query')!.addEventListener('submit', (e) => {
     submit();
@@ -455,17 +462,17 @@ export function setEventListners(options: State['options']) {
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
-          findInTabsBookmark($anchor);
+          findInTabsBookmark(options, $anchor);
           break;
         }
         case 'open-new-tab':
-          openBookmark($anchor);
+          openBookmark(options, $anchor);
           break;
         case 'open-new-window':
-          openBookmark($anchor, OpenBookmarkType.window);
+          openBookmark(options, $anchor, OpenBookmarkType.window);
           break;
         case 'open-incognito':
-          openBookmark($anchor, OpenBookmarkType.incognito);
+          openBookmark(options, $anchor, OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
           const title = $anchor.textContent;
@@ -529,7 +536,7 @@ export function setEventListners(options: State['options']) {
     const targetClass = whichClass(targetClasses, $target);
     switch (targetClass) {
       case 'anchor':
-        (options.findTabsFirst ? findInTabsBookmark : openBookmark)($target!);
+        findTabsFirstOrNot(options, $target!);
         break;
       case 'marker':
         $('.title', $target)!.click();
@@ -565,7 +572,7 @@ export function setEventListners(options: State['options']) {
   $('.leafs')!.addEventListener('click', (e) => {
     const $target = e.target as HTMLDivElement;
     if ($target.classList.contains('anchor')) {
-      (options.findTabsFirst ? findInTabsBookmark : openBookmark)($target!);
+      findTabsFirstOrNot(options, $target!);
     } else if ([...$target.classList].find((className) => ['title', 'fa-angle-right'].includes(className))) {
       const folder = $target.parentElement?.parentElement!;
       folder.classList.toggle('path');

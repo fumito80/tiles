@@ -5,9 +5,18 @@ import {
   $, $$, cbToResolve, curry, getStorage, setStorage, objectEqaul,
 } from './utils';
 
-function getFormValue(name: string, form: HTMLFormElement) {
-  const snakeCase = name.split('')
-    .map((s) => (s === s.toUpperCase() ? `-${s.toLowerCase()}` : s)).join('');
+function camelToSnake(value: string) {
+  return value.split('').map((s) => {
+    const smallChr = s.toLowerCase();
+    if (s === smallChr) {
+      return s;
+    }
+    return `-${smallChr}`;
+  }).join('');
+}
+
+function getInputValue(name: string, form: HTMLFormElement) {
+  const snakeCase = camelToSnake(name);
   const [control, ...controls] = $$(`[name="${snakeCase}"]`, form);
   if (control.type === 'checkbox') {
     return (control as HTMLInputElement).checked;
@@ -18,9 +27,8 @@ function getFormValue(name: string, form: HTMLFormElement) {
   return control.value;
 }
 
-function setFormValue(name: string, value: any, form: HTMLFormElement) {
-  const snakeCase = name.split('')
-    .map((s) => (s === s.toUpperCase() ? `-${s.toLowerCase()}` : s)).join('');
+function setInputValue(name: string, value: any, form: HTMLFormElement) {
+  const snakeCase = camelToSnake(name);
   const [control, ...controls] = $$(`[name="${snakeCase}"]`, form);
   if (control.type === 'checkbox') {
     (control as HTMLInputElement).checked = !!value;
@@ -34,17 +42,19 @@ function setFormValue(name: string, value: any, form: HTMLFormElement) {
 }
 
 function initOptions(options: State['options'], $form: HTMLFormElement) {
-  Object.entries(options).forEach(([k, v]) => setFormValue(k, v, $form));
+  Object.entries(options).forEach(([k, v]) => setInputValue(k, v, $form));
 }
 
 function saveOptions(optionsIn: State['options'], $form: HTMLFormElement) {
+  let preOptions = optionsIn;
   return () => {
     const options = Object.keys(optionsIn)
-      .reduce((acc, key) => ({ ...acc, [key]: getFormValue(key, $form) }), {}) as typeof optionsIn;
-    if (objectEqaul(optionsIn, options)) {
+      .reduce((acc, key) => ({ ...acc, [key]: getInputValue(key, $form) }), {}) as typeof optionsIn;
+    if (objectEqaul(preOptions, options)) {
       return;
     }
     setStorage({ options });
+    preOptions = options;
   };
 }
 
@@ -54,9 +64,7 @@ async function init({ options }: Pick<State, 'options'>) {
   }
   const $form = $<HTMLFormElement>('form')!;
   initOptions(options, $form);
-  const save = saveOptions(options, $form);
-  $form.addEventListener('click', save);
-  $form.addEventListener('change', save);
+  $form.addEventListener('change', saveOptions(options, $form));
 }
 
 getStorage('options').then(init);
