@@ -86,8 +86,8 @@ async function makeHtmlHistory() {
       }))
       .reduce<MyHistoryItem[]>((acc, item) => {
         const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
-        const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
         if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
+          const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
           return [...acc, headerDate, item];
         }
         return [...acc, item];

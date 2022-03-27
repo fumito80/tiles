@@ -144,4 +144,7 @@ export const positions: { [key: string]: InsertPosition } = {
   'drop-folder': 'beforeend',
 };
 
+export type Model = { [key: string]: any };
+export type Collection = Array<Model>;
+
 export type Nil = undefined | null;

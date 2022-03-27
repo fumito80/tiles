@@ -862,6 +862,9 @@ input.query {
       color: white;
       border-radius: 2px;
     }
+    > .header-date:nth-child(2) {
+      margin-top: 0;
+    }
   }
 }
 
