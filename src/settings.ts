@@ -2,8 +2,12 @@ import './settings.scss';
 
 import { State } from './types';
 import {
-  $, $$, cbToResolve, curry, getStorage, setStorage, objectEqaul,
+  $, $$, cbToResolve, curry, getStorage, setStorage, pipe,
 } from './utils';
+
+type Options = State['options'];
+type OptionNames = keyof State['options'];
+type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
 
 function camelToSnake(value: string) {
   return value.split('').map((s) => {
@@ -15,56 +19,60 @@ function camelToSnake(value: string) {
   }).join('');
 }
 
-function getInputValue(name: string, form: HTMLFormElement) {
-  const snakeCase = camelToSnake(name);
-  const [control, ...controls] = $$(`[name="${snakeCase}"]`, form);
+function getInputValue(input: Inputs[OptionNames]) {
+  const [control, ...controls] = input;
   if (control.type === 'checkbox') {
     return (control as HTMLInputElement).checked;
   }
   if (control.type === 'radio') {
-    return [control, ...controls].find((el) => el.checked).value;
+    return [control, ...controls].find((el) => el.checked)!.value;
   }
   return control.value;
 }
 
-function setInputValue(name: string, value: any, form: HTMLFormElement) {
-  const snakeCase = camelToSnake(name);
-  const [control, ...controls] = $$(`[name="${snakeCase}"]`, form);
+function setInputValue(input: Inputs[OptionNames], value: any) {
+  const [control, ...controls] = input;
   if (control.type === 'checkbox') {
     (control as HTMLInputElement).checked = !!value;
     return;
   }
   if (control.type === 'radio') {
-    [control, ...controls].find((el) => el.value === value).checked = true;
+    [control, ...controls].find((el) => el.value === value)!.checked = true;
     return;
   }
   control.value = value;
 }
 
-function initOptions(options: State['options'], $form: HTMLFormElement) {
-  Object.entries(options).forEach(([k, v]) => setInputValue(k, v, $form));
+function initInputs(options: Options) {
+  const $form = $<HTMLFormElement>('form')!;
+  return Object.entries(options).reduce((acc, [key, value]) => {
+    const inputName = camelToSnake(key);
+    const inputElements = $$<HTMLInputElement>(`[name="${inputName}"]`, $form);
+    setInputValue(inputElements, value);
+    return { ...acc, [key]: inputElements };
+  }, {} as Inputs);
 }
 
-function saveOptions(optionsIn: State['options'], $form: HTMLFormElement) {
-  let preOptions = optionsIn;
+function saveOptions(inputs: Inputs) {
   return () => {
-    const options = Object.keys(optionsIn)
-      .reduce((acc, key) => ({ ...acc, [key]: getInputValue(key, $form) }), {}) as typeof optionsIn;
-    if (objectEqaul(preOptions, options)) {
-      return;
-    }
+    const options = Object.entries(inputs).reduce((acc, [key, input]) => {
+      const value = getInputValue(input);
+      return { ...acc, [key]: value };
+    }, {} as State['options']);
     setStorage({ options });
-    preOptions = options;
   };
 }
 
-async function init({ options }: Pick<State, 'options'>) {
+async function init() {
+  const { options } = await getStorage('options');
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
-  const $form = $<HTMLFormElement>('form')!;
-  initOptions(options, $form);
-  $form.addEventListener('change', saveOptions(options, $form));
+  pipe(
+    initInputs,
+    saveOptions,
+    curry(document.addEventListener)('change'),
+  )(options);
 }
 
-getStorage('options').then(init);
+init();
