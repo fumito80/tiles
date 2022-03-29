@@ -8,7 +8,7 @@ import {
   // CliMessageTypes,
   OpenBookmarkType,
   EditBookmarkType,
-  State,
+  Options,
   Nil,
 } from './types';
 
@@ -81,8 +81,21 @@ function getSubTree(id: string) {
   });
 }
 
+async function createNewTab(options: Options, url: string) {
+  const { windowId, ...rest } = await getCurrentTab();
+  const index = (() => {
+    switch (options.newTabPosition) {
+      case 'le': return 0;
+      case 'rs': return rest.index + 1;
+      case 'ls': return rest.index;
+      default: return undefined;
+    }
+  })();
+  chrome.tabs.create({ index, url, windowId });
+}
+
 async function openBookmark(
-  options: State['options'],
+  options: Options,
   target: EventTarget | HTMLElement,
   openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
 ) {
@@ -90,16 +103,7 @@ async function openBookmark(
   const { url } = await getBookmark(id);
   switch (openType) {
     case OpenBookmarkType.tab: {
-      const { windowId, ...rest } = await getCurrentTab();
-      const index = (() => {
-        switch (options.newTabPosition) {
-          case 'le': return 0;
-          case 'rs': return rest.index + 1;
-          case 'ls': return rest.index;
-          default: return undefined;
-        }
-      })();
-      chrome.tabs.create({ index, url, windowId });
+      createNewTab(options, url!);
       break;
     }
     case OpenBookmarkType.window: {
@@ -271,55 +275,62 @@ function setHasChildren($target: HTMLElement) {
 const $inputQuery = $('.query')! as HTMLInputElement;
 let lastQueryValue = '';
 
-function submit() {
-  const value = $inputQuery.value.trim();
-  if (lastQueryValue === '' && value.length === 1) {
-    return false;
-  }
-  $inputQuery.setAttribute('value', value);
-  $('.leafs .open')?.classList.remove('open');
-  $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
-  $$('.leafs .path').forEach((el) => el.classList.remove('path'));
-  if (value.length <= 1) {
-    $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
-    resetHistory();
-    const openFolder = $('.folders .open');
-    if (openFolder) {
-      openFolder.classList.remove('open');
-      $(':scope > .marker > .title', openFolder)?.click();
+function submit(options: Options) {
+  return (e: Event) => {
+    const value = $inputQuery.value.trim();
+    if (lastQueryValue === '' && value.length === 1) {
+      return false;
     }
-    lastQueryValue = '';
-    $inputQuery.setAttribute('value', '');
-    return false;
-  }
-  const reFilter = new RegExp(value, 'i');
-  $$('.leafs .leaf')
-    .filter((leaf) => reFilter.test(leaf.firstElementChild?.textContent!))
-    .map((el) => {
-      el.classList.add('search-path');
-      return el;
-    })
-    .forEach((el) => {
-      let folder = el.parentElement;
-      while (folder?.classList.contains('folder')) {
-        folder.classList.add('search-path', 'path');
-        folder = folder.parentElement;
+    $inputQuery.setAttribute('value', value);
+    $('.leafs .open')?.classList.remove('open');
+    $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
+    $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+    if (value.length <= 1) {
+      $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
+      resetHistory();
+      const openFolder = $('.folders .open');
+      if (openFolder) {
+        openFolder.classList.remove('open');
+        $(':scope > .marker > .title', openFolder)?.click();
       }
+      lastQueryValue = '';
+      $inputQuery.setAttribute('value', '');
+      return false;
+    }
+    if (e.type === 'submit' && options.externalSearch) {
+      const url = options.externalSearchUrl + encodeURIComponent(value);
+      createNewTab(options, url);
+      return false;
+    }
+    const reFilter = new RegExp(value, 'i');
+    $$('.leafs .leaf')
+      .filter((leaf) => reFilter.test(leaf.firstElementChild?.textContent!))
+      .map((el) => {
+        el.classList.add('search-path');
+        return el;
+      })
+      .forEach((el) => {
+        let folder = el.parentElement;
+        while (folder?.classList.contains('folder')) {
+          folder.classList.add('search-path', 'path');
+          folder = folder.parentElement;
+        }
+      });
+    const selector = when(lastQueryValue !== '' && value.startsWith(lastQueryValue)).then('.match')
+      .when(lastQueryValue.startsWith(value)).then('.unmatch')
+      .else('div');
+    lastQueryValue = value;
+    $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
+      const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
+      el.classList.add(addClass);
+      el.classList.remove(removeClass);
     });
-  const selector = when(lastQueryValue !== '' && value.startsWith(lastQueryValue)).then('.match')
-    .when(lastQueryValue.startsWith(value)).then('.unmatch')
-    .else('div');
-  lastQueryValue = value;
-  $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
-    const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
-    el.classList.add(addClass);
-    el.classList.remove(removeClass);
-  });
-  resetHistory({ reFilter });
-  return false;
+    resetHistory({ reFilter });
+    return false;
+  };
 }
 
-async function findInTabsBookmark(options: State['options'], $anchor: HTMLElement) {
+async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
   const { url } = await getBookmark(id);
   const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
@@ -344,11 +355,11 @@ async function findInTabsBookmark(options: State['options'], $anchor: HTMLElemen
   chrome.tabs.update(tab.id, { active: true });
 }
 
-export function setEventListners(options: State['options']) {
+export function setEventListners(options: Options) {
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
-  $('.query')!.addEventListener('input', submit);
-  $('.form-query')!.addEventListener('submit', (e) => {
-    submit();
+  $('.query')!.addEventListener('input', submit(options));
+  $('.form-query')!.addEventListener('submit', (e: Event) => {
+    submit(options)(e);
     e.preventDefault();
   });
   $('.form-query .fa-times')?.addEventListener('click', clearQuery);
@@ -677,6 +688,6 @@ export function setEventListners(options: State['options']) {
     if (!url) {
       return;
     }
-    chrome.tabs.create({ url, active: true });
+    createNewTab(options, url);
   });
 }

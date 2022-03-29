@@ -54,6 +54,18 @@ function setOptions(settings: Settings) {
   setSplitWidth(settings.paneWidth);
 }
 
+function setExternalUrl(options: State['options']) {
+  if (!options.externalSearch) {
+    return;
+  }
+  addRules('.query:not([value=""]) + button > i', [['visibility', 'hidden']]);
+  addRules('.query:not([value=""])', [
+    ['background-image', `url("chrome://favicon/${options.externalSearchUrl}")`],
+    ['background-repeat', 'no-repeat'],
+    ['background-position', '6px center'],
+  ]);
+}
+
 function repaleceHtml(html: HtmlBookmarks) {
   $('.leafs')!.innerHTML = html.leafs;
   const $folders = $('.folders')!;
@@ -88,6 +100,7 @@ async function init({
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
   setEventListners(options);
+  setExternalUrl(options);
 }
 
 const storageKeys = Object.keys(initialState) as Array<keyof typeof initialState>;

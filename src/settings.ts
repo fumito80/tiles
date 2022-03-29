@@ -6,7 +6,7 @@ import {
 } from './utils';
 
 type Options = State['options'];
-type OptionNames = keyof State['options'];
+type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
 
 function camelToSnake(value: string) {
@@ -19,28 +19,30 @@ function camelToSnake(value: string) {
   }).join('');
 }
 
-function getInputValue(input: Inputs[OptionNames]) {
-  const [control, ...controls] = input;
-  if (control.type === 'checkbox') {
-    return (control as HTMLInputElement).checked;
+function getInputValue(inputs: Inputs[OptionNames]) {
+  const [input, ...rest] = inputs;
+  switch (input.type) {
+    case 'checkbox':
+      return (input as HTMLInputElement).checked;
+    case 'radio':
+      return [input, ...rest].find((el) => el.checked)!.value;
+    default:
+      return input.value;
   }
-  if (control.type === 'radio') {
-    return [control, ...controls].find((el) => el.checked)!.value;
-  }
-  return control.value;
 }
 
-function setInputValue(input: Inputs[OptionNames], value: any) {
-  const [control, ...controls] = input;
-  if (control.type === 'checkbox') {
-    (control as HTMLInputElement).checked = !!value;
-    return;
+function setInputValue(inputs: Inputs[OptionNames], value: any) {
+  const [input, ...rest] = inputs;
+  switch (input.type) {
+    case 'checkbox':
+      (input as HTMLInputElement).checked = !!value;
+      break;
+    case 'radio':
+      [input, ...rest].find((el) => el.value === value)!.checked = true;
+      break;
+    default:
+      input.value = value;
   }
-  if (control.type === 'radio') {
-    [control, ...controls].find((el) => el.value === value)!.checked = true;
-    return;
-  }
-  control.value = value;
 }
 
 function initInputs(options: Options) {
@@ -58,7 +60,7 @@ function saveOptions(inputs: Inputs) {
     const options = Object.entries(inputs).reduce((acc, [key, input]) => {
       const value = getInputValue(input);
       return { ...acc, [key]: value };
-    }, {} as State['options']);
+    }, {} as Options);
     setStorage({ options });
   };
 }

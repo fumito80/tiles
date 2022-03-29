@@ -66,6 +66,7 @@ export const initialState = {
 };
 
 export type State = typeof initialState;
+export type Options = State['options'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
