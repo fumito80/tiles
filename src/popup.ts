@@ -18,6 +18,7 @@ import {
   cssid,
   setSplitWidth,
   getStorage,
+  checkOptionExternalUrl,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -27,7 +28,8 @@ function setTabs(currentWindowId: number) {
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
-      const classProp = tab.active ? ' class="current-tab"' : '';
+      // const classProp = tab.active ? ' class="current-tab"' : '';
+      const classProp = tab.active && tab.windowId === currentWindowId ? ' class="current-tab"' : '';
       const style = makeStyleIcon(tab.url!);
       const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${tab.url}" style="${style}">${tab.title}</div>`;
       return { ...rest, [tab.windowId]: html };
@@ -52,7 +54,7 @@ function setOptions(settings: Settings) {
 }
 
 function setExternalUrl(options: State['options']) {
-  if (!options.externalSearch) {
+  if (!checkOptionExternalUrl(options)) {
     return;
   }
   addRules('.query:not([value=""]) + button > i', [['visibility', 'hidden']]);

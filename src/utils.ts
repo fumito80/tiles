@@ -610,3 +610,7 @@ export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { result } = getGridTemplateColumns(newPaneWidth);
   $target.style.setProperty('grid-template-columns', result);
 }
+
+export function checkOptionExternalUrl(options: State['options']) {
+  return options.externalSearch && /https?:\/\/[\w!?/+-_~=;.,*&@#$%()'[\]]+/.test(options.externalSearchUrl);
+}

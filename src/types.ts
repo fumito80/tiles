@@ -48,7 +48,7 @@ export const options = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   findTabsFirst: false,
   externalSearch: false,
-  externalSearchUrl: 'https://www.google.com/search?q=',
+  externalSearchUrl: '',
 };
 
 export const initialState = {

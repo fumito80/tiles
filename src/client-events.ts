@@ -33,6 +33,7 @@ import {
   getStorage,
   setSplitWidth,
   getGridTemplateColumns,
+  checkOptionExternalUrl,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -297,7 +298,7 @@ function submit(options: Options) {
       $inputQuery.setAttribute('value', '');
       return false;
     }
-    if (e.type === 'submit' && options.externalSearch) {
+    if (e.type === 'submit' && checkOptionExternalUrl(options)) {
       const url = options.externalSearchUrl + encodeURIComponent(value);
       createNewTab(options, url);
       return false;
