@@ -23,21 +23,18 @@ import {
 import { setEventListners } from './client-events';
 import { resetHistory } from './vscroll';
 
-function setTabs() {
-  chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
-    const { windowId, id } = currentTab;
-    chrome.tabs.query({}, (tabs) => {
-      const htmlByWindow = tabs.reduce((acc, tab) => {
-        const { [tab.windowId]: prev = '', ...rest } = acc;
-        const classProp = tab.id === id ? ' class="current-tab"' : '';
-        const style = makeStyleIcon(tab.url!);
-        const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${tab.url}" style="${style}">${tab.title}</div>`;
-        return { ...rest, [tab.windowId]: html };
-      }, {} as { [key: number]: string });
-      const { [windowId]: currentTabs, ...rest } = htmlByWindow;
-      const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
-      $('.pane-tabs')!.innerHTML = `<div id="win-${windowId}">${currentTabs}</div>${html}`;
-    });
+function setTabs(currentWindowId: number) {
+  chrome.tabs.query({}, (tabs) => {
+    const htmlByWindow = tabs.reduce((acc, tab) => {
+      const { [tab.windowId]: prev = '', ...rest } = acc;
+      const classProp = tab.active ? ' class="current-tab"' : '';
+      const style = makeStyleIcon(tab.url!);
+      const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${tab.url}" style="${style}">${tab.title}</div>`;
+      return { ...rest, [tab.windowId]: html };
+    }, {} as { [key: number]: string });
+    const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
+    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
+    $('.pane-tabs')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
   });
 }
 
@@ -84,17 +81,18 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
   $(selector)?.style.setProperty('display', isShow ? shownDisplayType : 'none');
 }
 
-async function init({
-  settings, htmlBookmarks, htmlHistory, clientState, options,
-}: State) {
+async function init() {
+  const storageKeys = Object.keys(initialState) as Array<keyof typeof initialState>;
+  const {
+    settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
+  } = await getStorage(...storageKeys);
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }
-  setTabs();
+  setTabs(currentWindowId);
   setOptions(settings);
   repaleceHtml(htmlBookmarks);
-  const $paneHistory = $<HTMLDivElement>('.pane-history')!;
-  $paneHistory.firstElementChild!.innerHTML = htmlHistory;
+  $<HTMLDivElement>('.pane-history')!.firstElementChild!.innerHTML = htmlHistory;
   setClientState(clientState);
   resetHistory({ initialize: true });
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
@@ -103,6 +101,4 @@ async function init({
   setExternalUrl(options);
 }
 
-const storageKeys = Object.keys(initialState) as Array<keyof typeof initialState>;
-
-getStorage(...storageKeys).then(init);
+init();

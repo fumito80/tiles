@@ -218,7 +218,7 @@ input.query {
   }
 }
 
-.query[value=""] + .fa-times {
+.query[value=""] ~ .fa-times {
   display: none;
 }
 

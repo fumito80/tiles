@@ -111,3 +111,14 @@ setStorage({ settings, clientState, options });
 
 makeHtmlBookmarks();
 makeHtmlHistory();
+
+function updateCurrentWindow(currentWindowId?: number) {
+  if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
+    return;
+  }
+  setStorage({ currentWindowId });
+}
+
+const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+chrome.windows.onFocusChanged.addListener(updateCurrentWindow, queryOptions);
+chrome.windows.getCurrent(queryOptions, (win) => updateCurrentWindow(win.id));

@@ -63,6 +63,7 @@ export const initialState = {
     elementHeight: 0,
   },
   options,
+  currentWindowId: chrome.windows.WINDOW_ID_NONE as number,
 };
 
 export type State = typeof initialState;
