@@ -63,8 +63,8 @@ function saveOptions(inputs: Inputs) {
 
 function setSyncListener(inputs: Inputs) {
   $('.chrome-sync')?.addEventListener('click', async (e) => {
-    const className = whichClass(['upload-sync', 'download-sync'], e.target as HTMLButtonElement);
-    switch (className!) {
+    const className = whichClass(['upload-sync', 'download-sync'] as const, e.target as HTMLButtonElement);
+    switch (className) {
       case 'upload-sync':
         pipe(getOptions, setSync)(inputs);
         break;

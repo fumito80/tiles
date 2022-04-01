@@ -179,22 +179,33 @@ function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
   }, { once: true });
 }
 
-function resizeSplitHandler($splitter: HTMLElement) {
+function resizeSplitHandler($splitter: HTMLElement, subWidth: number) {
   return (e: MouseEvent) => {
     const className = whichClass(splitterClasses, $splitter)!;
     const $targetPane = $splitter.previousElementSibling as HTMLElement;
-    const width = e.clientX - $targetPane.offsetLeft;
+    const width = Math.max(e.clientX - $targetPane.offsetLeft, 100);
+    if (document.body.offsetWidth - ($targetPane.offsetLeft + width + subWidth) < 120) {
+      return;
+    }
     setSplitWidth({ [className]: width });
   };
 }
 
-function resizeWidthHandler(e: MouseEvent) {
-  const width = Number(document.body.dataset.startX) - e.screenX;
-  document.body.style.width = `${width}px`;
+function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
+  return (e: MouseEvent) => {
+    const width = startWidth - e.screenX;
+    if (width - $ref.offsetLeft < 100) {
+      return;
+    }
+    document.body.style.width = `${width}px`;
+  };
 }
 
 function resizeHeightHandler(e: MouseEvent) {
-  const height = Number(document.body.dataset.startY) + e.screenY;
+  const height = e.clientY - 6;
+  if (height < 200) {
+    return;
+  }
   document.body.style.height = `${height}px`;
 }
 
@@ -601,18 +612,24 @@ export function setEventListners(options: Options) {
   });
 
   $$('.split-h').forEach((el) => el.addEventListener('mousedown', (e) => {
-    setMouseEventListener(resizeSplitHandler(e.target as HTMLElement));
+    const $splitter = e.target as HTMLElement;
+    let subWidth = 0;
+    let nextElement = $splitter.nextElementSibling as HTMLElement;
+    while (nextElement) {
+      if (nextElement?.classList.contains('form-query')) {
+        break;
+      }
+      subWidth += nextElement.offsetWidth;
+      nextElement = nextElement.nextElementSibling as HTMLElement;
+    }
+    setMouseEventListener(resizeSplitHandler($splitter, subWidth));
   }));
 
   $('.resize-x')?.addEventListener('mousedown', (e) => {
-    document.body.dataset.startX = String(document.body.offsetWidth + e.screenX);
-    setMouseEventListener(resizeWidthHandler);
+    setMouseEventListener(resizeWidthHandler($('.form-query')!, document.body.offsetWidth + e.screenX));
   });
 
-  $('.resize-y')?.addEventListener('mousedown', (e) => {
-    document.body.dataset.startY = String(document.body.offsetHeight - e.screenY);
-    setMouseEventListener(resizeHeightHandler);
-  });
+  $('.resize-y')?.addEventListener('mousedown', () => setMouseEventListener(resizeHeightHandler));
 
   setEvents($$('.main-menu'), {
     click: async (e) => {
