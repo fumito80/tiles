@@ -297,6 +297,7 @@ function submit(options: Options) {
     $('.leafs .open')?.classList.remove('open');
     $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
     $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+    $('.leafs')!.scrollTop = 0;
     if (value.length <= 1) {
       $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
       resetHistory();
@@ -536,6 +537,7 @@ export function setEventListners(options: Options) {
           $target.click();
           $target.focus();
           ($leaf.firstElementChild as HTMLAnchorElement).focus();
+          ($leaf as any).scrollIntoViewIfNeeded();
           setAnimationClass($leaf, 'hilite');
           break;
         }
