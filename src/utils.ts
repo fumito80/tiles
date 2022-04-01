@@ -388,7 +388,7 @@ export function pipeP<T, R1, R2, R3, R4>(
   fn2: (a: R1) => R2,
   fn3: (a: R2) => R3,
   fn4: (a: R3) => R4,
-): (a: Promise<T>) => Promise<R4>;
+): (a: Promise<T> | T) => Promise<R4>;
 export function pipeP<T, R1, R2, R3, R4, R5>(
   fn1: (a: T) => R1,
   fn2: (a: R1) => R2,
@@ -611,6 +611,19 @@ export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   $target.style.setProperty('grid-template-columns', result);
 }
 
-export function checkOptionExternalUrl(options: State['options']) {
-  return options.externalSearch && /https?:\/\/[\w!?/+-_~=;.,*&@#$%()'[\]]+/.test(options.externalSearchUrl);
+export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {
+  const result = getStorage(...storageKeys);
+  if (document.readyState === 'loading') {
+    await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
+  }
+  return result;
+}
+
+export function getKeys<T>(object: T) {
+  return Object.keys(object) as unknown as Array<keyof T>;
+}
+
+export function extractUrl(faviconUrl: string) {
+  const [, url] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(faviconUrl || '') || [];
+  return url;
 }

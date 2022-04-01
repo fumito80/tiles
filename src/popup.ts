@@ -11,14 +11,12 @@ import {
 import {
   $,
   $$,
-  cbToResolve,
-  curry,
   addRules,
   makeStyleIcon,
   cssid,
   setSplitWidth,
-  getStorage,
-  checkOptionExternalUrl,
+  bootstrap,
+  getKeys,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -28,10 +26,11 @@ function setTabs(currentWindowId: number) {
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
-      // const classProp = tab.active ? ' class="current-tab"' : '';
       const classProp = tab.active && tab.windowId === currentWindowId ? ' class="current-tab"' : '';
+      const [, domain] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(tab.url || '') || [];
+      const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${tab.url}" style="${style}">${tab.title}</div>`;
+      const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${title}" style="${style}">${tab.title}</div>`;
       return { ...rest, [tab.windowId]: html };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
@@ -54,12 +53,12 @@ function setOptions(settings: Settings) {
 }
 
 function setExternalUrl(options: State['options']) {
-  if (!checkOptionExternalUrl(options)) {
+  if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
   addRules('.query:not([value=""]) + button > i', [['visibility', 'hidden']]);
   addRules('.query:not([value=""])', [
-    ['background-image', `url("chrome://favicon/${options.externalSearchUrl}")`],
+    ['background-image', `url("chrome://favicon/${options.externalUrl}")`],
     ['background-repeat', 'no-repeat'],
     ['background-position', '6px center'],
   ]);
@@ -83,14 +82,9 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
   $(selector)?.style.setProperty('display', isShow ? shownDisplayType : 'none');
 }
 
-async function init() {
-  const storageKeys = Object.keys(initialState) as Array<keyof typeof initialState>;
-  const {
-    settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
-  } = await getStorage(...storageKeys);
-  if (document.readyState === 'loading') {
-    await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
-  }
+function init({
+  settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
+}: State) {
   setTabs(currentWindowId);
   setOptions(settings);
   repaleceHtml(htmlBookmarks);
@@ -103,4 +97,4 @@ async function init() {
   setExternalUrl(options);
 }
 
-init();
+bootstrap(...getKeys(initialState)).then(init);

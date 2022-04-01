@@ -33,7 +33,7 @@ import {
   getStorage,
   setSplitWidth,
   getGridTemplateColumns,
-  checkOptionExternalUrl,
+  extractUrl,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -298,35 +298,34 @@ function submit(options: Options) {
       $inputQuery.setAttribute('value', '');
       return false;
     }
-    if (e.type === 'submit' && checkOptionExternalUrl(options)) {
-      const url = options.externalSearchUrl + encodeURIComponent(value);
+    if (e.type === 'submit' && options.enableExternalUrl && options.externalUrl) {
+      const url = options.externalUrl + encodeURIComponent(value);
       createNewTab(options, url);
       return false;
     }
     const reFilter = new RegExp(value, 'i');
-    $$('.leafs .leaf')
-      .filter((leaf) => reFilter.test(leaf.firstElementChild?.textContent!))
-      .map((el) => {
-        el.classList.add('search-path');
-        return el;
-      })
-      .forEach((el) => {
-        let folder = el.parentElement;
+    $$('.leafs .leaf').forEach((leaf) => {
+      const $anchor = leaf.firstElementChild as HTMLAnchorElement;
+      if (reFilter.test($anchor.textContent!)
+        || (options.includeUrl && reFilter.test(extractUrl($anchor.style.backgroundImage)))) {
+        leaf.classList.add('search-path');
+        let folder = leaf.parentElement;
         while (folder?.classList.contains('folder')) {
           folder.classList.add('search-path', 'path');
           folder = folder.parentElement;
         }
-      });
+      }
+    });
     const selector = when(lastQueryValue !== '' && value.startsWith(lastQueryValue)).then('.match')
       .when(lastQueryValue.startsWith(value)).then('.unmatch')
       .else('div');
     lastQueryValue = value;
     $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
-      const [addClass, removeClass] = reFilter.test(el.textContent!) ? ['match', 'unmatch'] : ['unmatch', 'match'];
+      const [addClass, removeClass] = (reFilter.test(el.textContent!) || (options.includeUrl && reFilter.test(el.title))) ? ['match', 'unmatch'] : ['unmatch', 'match'];
       el.classList.add(addClass);
       el.classList.remove(removeClass);
     });
-    resetHistory({ reFilter });
+    resetHistory({ reFilter, includeUrl: options.includeUrl });
     return false;
   };
 }
@@ -684,8 +683,7 @@ export function setEventListners(options: Options) {
     chrome.tabs.update(Number(tabId), { active: true });
   });
   $('.pane-history > .rows')?.addEventListener('click', (e) => {
-    const { backgroundImage } = (e.target as HTMLDivElement).style;
-    const [, url] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(backgroundImage || '') || [];
+    const url = extractUrl((e.target as HTMLDivElement).style.backgroundImage);
     if (!url) {
       return;
     }

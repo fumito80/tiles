@@ -2,7 +2,7 @@ import './settings.scss';
 
 import { State } from './types';
 import {
-  $, $$, cbToResolve, curry, getStorage, setStorage, pipe,
+  $, $$, curry, setStorage, bootstrap, pipeP,
 } from './utils';
 
 type Options = State['options'];
@@ -27,7 +27,7 @@ function getInputValue(inputs: Inputs[OptionNames]) {
     case 'radio':
       return [input, ...rest].find((el) => el.checked)!.value;
     default:
-      return input.value;
+      return input.validity.valid ? input.value : null;
   }
 }
 
@@ -45,7 +45,7 @@ function setInputValue(inputs: Inputs[OptionNames], value: any) {
   }
 }
 
-function initInputs(options: Options) {
+function initInputs({ options }: Pick<State, 'options'>) {
   const $form = $<HTMLFormElement>('form')!;
   return Object.entries(options).reduce((acc, [key, value]) => {
     const inputName = camelToSnake(key);
@@ -65,16 +65,8 @@ function saveOptions(inputs: Inputs) {
   };
 }
 
-async function init() {
-  const { options } = await getStorage('options');
-  if (document.readyState === 'loading') {
-    await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
-  }
-  pipe(
-    initInputs,
-    saveOptions,
-    curry(document.addEventListener)('change'),
-  )(options);
-}
-
-init();
+pipeP(
+  initInputs,
+  saveOptions,
+  curry(document.addEventListener)('change'),
+)(bootstrap('options'));

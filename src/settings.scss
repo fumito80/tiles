@@ -1,5 +1,5 @@
 main {
-  width: 600px;
+  width: 800px;
   margin: 8px 15px 15px 15px;
   background: white;
   padding-right: 15px;
@@ -8,7 +8,7 @@ main {
 
 header {
   position: fixed;
-  width: 600px;
+  width: 800px;
   height: 45px;
   top: 15px;
   background: linear-gradient(white, rgba(255, 255, 255, 0.8));
@@ -42,4 +42,23 @@ form label > [type='checkbox'] {
   display: flex;
   align-items: baseline;
   margin-top: 0.8rem;
+}
+
+[name='external-url'] {
+  grid-column-start: span 2;
+}
+
+[name='enable-external-url']:checked {
+  ~ [name='external-url'] {
+    &:placeholder-shown,
+    &:invalid {
+      outline: 1px solid red !important;
+      border-color: red;
+      box-shadow: none;
+    }
+  }
+}
+
+.grid-columns-2 {
+  grid-template-columns: max-content max-content;
 }

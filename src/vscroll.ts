@@ -95,9 +95,9 @@ export function setVScroll(
   vscroll.addEventListener('scroll', vScrollHandler);
 }
 
-type ResetParams = { initialize?: boolean, reFilter?: RegExp };
+type ResetParams = { initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean };
 
-export async function resetHistory({ initialize, reFilter }: ResetParams = {}) {
+export async function resetHistory({ initialize, reFilter, includeUrl }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   const rows = $('.rows', $paneHistory)!;
   if (initialize) {
@@ -120,7 +120,7 @@ export async function resetHistory({ initialize, reFilter }: ResetParams = {}) {
     if (el.headerDate) {
       return [result, el];
     }
-    if (!reFilter.test(el.title || el.url || '')) {
+    if (!reFilter.test(el.title || el.url || '') && !(includeUrl && reFilter.test(el.url || ''))) {
       return [result, prevHeaderDate];
     }
     if (!prevHeaderDate) {

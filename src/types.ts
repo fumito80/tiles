@@ -46,9 +46,10 @@ export type MyHistoryItem = Partial<chrome.history.HistoryItem &
 
 export const options = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
-  findTabsFirst: false,
-  externalSearch: false,
-  externalSearchUrl: '',
+  includeUrl: true,
+  findTabsFirst: true,
+  enableExternalUrl: false,
+  externalUrl: '',
 };
 
 export const initialState = {
