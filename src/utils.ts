@@ -489,8 +489,11 @@ export function cssid(id: string | number) {
   return `#${CSS.escape(id as string)}`;
 }
 
-export function whichClass<T extends ReadonlyArray<string>>(classNames: T, element: HTMLElement) {
-  return classNames.find((name) => element.classList.contains(name)) as T[number] | undefined;
+export function whichClass<T extends ReadonlyArray<string>>(
+  classNames: T,
+  element: HTMLElement,
+): T[number] | undefined {
+  return classNames.find((name) => element.classList.contains(name));
 }
 
 export function addRules(selector: string, ruleProps: [string, string][]) {
@@ -570,14 +573,31 @@ export function makeHistoryRow({
   return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
 }
 
-export function setStorage(state: Partial<State>) {
+export function setLocal(state: Partial<State>) {
   chrome.storage.local.set(state);
+  return state;
 }
 
-export async function getStorage<T extends Array<keyof State>>(...keyNames: T) {
+export function setSync(state: Partial<State>) {
+  chrome.storage.sync.set(state);
+  return state;
+}
+
+async function getStorage<T extends Array<keyof State>>(
+  storageArea: chrome.storage.LocalStorageArea | chrome.storage.SyncStorageArea,
+  ...keyNames: T
+) {
   return new Promise<Pick<State, T[number]>>((resolve) => {
-    chrome.storage.local.get(keyNames, (data) => resolve(data as Pick<State, T[number]>));
+    storageArea.get(keyNames, (data) => resolve(data as Pick<State, T[number]>));
   });
+}
+
+export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
+  return getStorage(chrome.storage.local, ...keyNames);
+}
+
+export function getSync<T extends Array<keyof State>>(...keyNames: T) {
+  return getStorage(chrome.storage.sync, ...keyNames);
 }
 
 export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
@@ -612,7 +632,7 @@ export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {
-  const result = getStorage(...storageKeys);
+  const result = getLocal(...storageKeys);
   if (document.readyState === 'loading') {
     await cbToResolve(curry(document.addEventListener)('DOMContentLoaded'));
   }

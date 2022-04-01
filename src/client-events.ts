@@ -27,10 +27,10 @@ import {
   getCurrentTab,
   showMenu,
   propEq,
-  setStorage,
+  getLocal,
+  setLocal,
   when,
   // cases,
-  getStorage,
   setSplitWidth,
   getGridTemplateColumns,
   extractUrl,
@@ -152,7 +152,7 @@ function saveStateOpenedPath(foldersFolder: HTMLElement) {
     paths,
     open: foldersFolder.id,
   };
-  setStorage({ clientState });
+  setLocal({ clientState });
 }
 
 function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
@@ -164,7 +164,7 @@ function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
   document.addEventListener('mouseup', async () => {
     document.removeEventListener('mousemove', mouseMoveHandlerWrapper);
     const { pane3, pane2, pane1 } = getGridTemplateColumns({});
-    const saved = await getStorage('settings');
+    const saved = await getLocal('settings');
     const settings = {
       ...saved.settings,
       paneWidth: {
@@ -175,7 +175,7 @@ function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
       width: document.body.offsetWidth,
       height: document.body.offsetHeight,
     };
-    setStorage({ settings });
+    setLocal({ settings });
   }, { once: true });
 }
 

@@ -1,16 +1,22 @@
+$blink-bgcolor: rgb(204, 229, 255);
+$article-bgcolor: #F6F6F6;
+
+@import 'glyphs';
+
 main {
   width: 800px;
   margin: 8px 15px 15px 15px;
   background: white;
-  padding-right: 15px;
   margin-top: 60px;
 }
 
 header {
   position: fixed;
+  display: flex;
   width: 800px;
   height: 45px;
   top: 15px;
+  align-items: center;
   background: linear-gradient(white, rgba(255, 255, 255, 0.8));
 }
 
@@ -21,7 +27,7 @@ header {
 
 article {
   padding: 5px 20px 30px 20px;
-  background-color: #F6F6F6;
+  background-color: $article-bgcolor;
   border-radius: 5px;
   border: 1px solid #ccc;
 }
@@ -61,4 +67,26 @@ form label > [type='checkbox'] {
 
 .grid-columns-2 {
   grid-template-columns: max-content max-content;
+}
+
+.chrome-sync {
+  button {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+
+    i {
+      font-size: 1.4em;
+    }
+  }
+}
+
+@keyframes hilite-fade-out {
+  from { background-color: $blink-bgcolor; }
+  to { background-color: $article-bgcolor; }
+}
+
+.blink {
+  animation-name: hilite-fade-out !important;
+  animation-duration: 1.5s !important;
 }

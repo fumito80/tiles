@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getStorage, pick, setStorage, when,
+  $, getLocal, setLocal, pick, when,
 } from './utils';
 
 export function rowSetterHistory(
@@ -102,9 +102,9 @@ export async function resetHistory({ initialize, reFilter, includeUrl }: ResetPa
   const rows = $('.rows', $paneHistory)!;
   if (initialize) {
     const { rowHeight, elementHeight } = getRowHeight(rows);
-    setStorage({ vscrollProps: { rowHeight, elementHeight } });
+    setLocal({ vscrollProps: { rowHeight, elementHeight } });
   }
-  const { histories: [init, ...tail], vscrollProps } = await getStorage('histories', 'vscrollProps');
+  const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
   const today = (new Date()).toLocaleDateString();
   const histories2 = when(!!initialize && init.lastVisitDate !== today && !init.headerDate)
     .then(() => {
@@ -112,7 +112,7 @@ export async function resetHistory({ initialize, reFilter, includeUrl }: ResetPa
       const histories = [headerDate, init, ...tail];
       const headerDateHtml = `<div class="header-date" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
       rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-      setStorage({ histories, htmlHistory: rows.innerHTML });
+      setLocal({ histories, htmlHistory: rows.innerHTML });
       return histories as MyHistoryItem[];
     })
     .else(() => [init, ...tail]);

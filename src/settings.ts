@@ -2,7 +2,7 @@ import './settings.scss';
 
 import { State } from './types';
 import {
-  $, $$, curry, setStorage, bootstrap, pipeP,
+  $, $$, curry, getSync, setSync, setLocal, bootstrap, pipeP, whichClass, pipe, tap, objectEqaul,
 } from './utils';
 
 type Options = State['options'];
@@ -10,13 +10,7 @@ type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
 
 function camelToSnake(value: string) {
-  return value.split('').map((s) => {
-    const smallChr = s.toLowerCase();
-    if (s === smallChr) {
-      return s;
-    }
-    return `-${smallChr}`;
-  }).join('');
+  return value.split('').map((s) => [s, s.toLowerCase()]).map(([s, smallS]) => (s === smallS ? s : `-${smallS}`)).join('');
 }
 
 function getInputValue(inputs: Inputs[OptionNames]) {
@@ -55,18 +49,53 @@ function initInputs({ options }: Pick<State, 'options'>) {
   }, {} as Inputs);
 }
 
+function getOptions(inputs: Inputs) {
+  const options = Object.entries(inputs).reduce((acc, [key, input]) => {
+    const value = getInputValue(input);
+    return { ...acc, [key]: value };
+  }, {} as Options);
+  return { options };
+}
+
 function saveOptions(inputs: Inputs) {
-  return () => {
-    const options = Object.entries(inputs).reduce((acc, [key, input]) => {
-      const value = getInputValue(input);
-      return { ...acc, [key]: value };
-    }, {} as Options);
-    setStorage({ options });
-  };
+  return () => pipe(getOptions, setLocal)(inputs);
+}
+
+function setSyncListener(inputs: Inputs) {
+  $('.chrome-sync')?.addEventListener('click', async (e) => {
+    const className = whichClass(['upload-sync', 'download-sync'], e.target as HTMLButtonElement);
+    switch (className!) {
+      case 'upload-sync':
+        pipe(getOptions, setSync)(inputs);
+        break;
+      case 'download-sync': {
+        const options = await getSync('options');
+        const currentOptions = getOptions(inputs);
+        if (objectEqaul(options, currentOptions, true)) {
+          break;
+        }
+        pipe(tap(initInputs), setLocal)(options);
+        const $article = $('article')!;
+        $article.addEventListener('animationend', () => $article.classList.remove('blink'), { once: true });
+        $article.classList.remove('blink');
+        $article.classList.add('blink');
+        break;
+      }
+      default:
+    }
+  });
+  chrome.storage.onChanged.addListener((_, areaName) => {
+    if (areaName === 'sync') {
+      // eslint-disable-next-line no-alert
+      alert('Changes uploaded.');
+    }
+  });
+  return inputs;
 }
 
 pipeP(
   initInputs,
+  setSyncListener,
   saveOptions,
   curry(document.addEventListener)('change'),
 )(bootstrap('options'));

@@ -10,7 +10,6 @@
   font: normal normal normal 14px/1 FontAwesome;
   font-size: inherit;
   text-rendering: auto;
-  color: #555;
 
   &.fa-angle-right::before {
     content: '\f105';
@@ -67,9 +66,15 @@
     content: "\e9d2";
   }
   &.icon-bookmarks:before {
-    content: "\e9d3";
+    content: "\e905";
   }
   &.icon-tab:before {
     content: "\e903";
+  }  
+  &.cloud-arrow-down:before {
+    content: "\e904";
+  }  
+  &.cloud-arrow-up:before {
+    content: "\e902";
   }  
 }

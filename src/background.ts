@@ -24,8 +24,8 @@ import {
   propNe,
   regsterChromeEvents,
   makeHistoryRow,
-  setStorage,
-  getStorage,
+  setLocal,
+  getLocal,
 } from './utils';
 
 export const mapStateToResponse = {
@@ -75,7 +75,7 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function makeHtmlHistory() {
-  const { settings: { historyMax: { rows } } } = await getStorage('settings');
+  const { settings: { historyMax: { rows } } } = await getLocal('settings');
   const startTime = Date.now() - pastMSec;
   chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
     const histories = [...results]
@@ -94,7 +94,7 @@ async function makeHtmlHistory() {
       }, []);
     const htmlData = histories.slice(0, rows).map(makeHistoryRow).join('');
     const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
-    setStorage({ htmlHistory, histories });
+    setLocal({ htmlHistory, histories });
   });
 }
 
@@ -107,7 +107,7 @@ regsterChromeEvents(makeHtmlHistory)(historyEvents);
 
 const settings = initialSettings;
 const clientState = {};
-setStorage({ settings, clientState, options });
+setLocal({ settings, clientState, options });
 
 makeHtmlBookmarks();
 makeHtmlHistory();
@@ -116,7 +116,7 @@ function updateCurrentWindow(currentWindowId?: number) {
   if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
     return;
   }
-  setStorage({ currentWindowId });
+  setLocal({ currentWindowId });
 }
 
 const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
