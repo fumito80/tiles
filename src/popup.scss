@@ -44,7 +44,6 @@ $star-color: #1da1f2;
 body {
   margin: 4px 0 0 0;
   margin-right: 0;
-  font-family: 'Helvetica Neue', 'BIZ UDPGothic', 'Hiragino SansHiragino Kaku Gothic ProN', 'Meiryo UI', sans-serif;
   font-size: 0.9em;
 }
 
@@ -288,7 +287,6 @@ input.query {
 [role=menuitem] > .fa-star-o {
   font-size: 1.2em;
   width: 2em;
-  margin-top: -2px;
 }
 
 // Leafs pane
@@ -572,10 +570,6 @@ input.query {
 
 // Scroll bar
 
-.scrollbar-area {
-  position: absolute;
-}
-
 .folders::-webkit-scrollbar,
 .leafs::-webkit-scrollbar,
 .pane-tabs::-webkit-scrollbar,
@@ -853,12 +847,11 @@ input.query {
       margin-top: 0;
     }
     .header-date {
+      display: flex;
+      padding-left: 0.3em;
+      align-items: center;
       background-color: white;
       background-color: darkgray;
-      padding-left: 2px;
-      font-size: 0.9em;
-      display: flex;
-      align-items: center;
       color: white;
       border-radius: 2px;
     }
