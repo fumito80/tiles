@@ -4,10 +4,8 @@ $drag-source-bgcolor: #cce5ff;
 $drop-folder-bgcolor0: #d1ecf1;
 $drop-folder-bgcolor: #cce5ff;
 $hilite-bgcolor: #feefc3;
-$folder-open-bgcolor: #1da1f2;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
 $drop-border: rgb(0, 123, 255);
-$star-color: #1da1f2;
 
 @import 'glyphs';
 
@@ -382,7 +380,7 @@ input.query {
   }
 
   .anchor:not(:hover) {
-    color: #222;
+    // color: #222;
     text-decoration: none;
   }
 
@@ -424,8 +422,6 @@ input.query {
   .open > .marker {
 
     > .title {
-      color: white;
-      // background: $folder-open-bgcolor;
       border-radius: 3px;
 
       &::before {
@@ -743,7 +739,7 @@ input.query {
   .drag-source {
     background-color: $drag-source-bgcolor;
     > .anchor {
-      color: #222;
+      // color: #222;
       text-decoration: none;
       z-index: 3;
     }
@@ -897,8 +893,6 @@ input.query {
 }
 
 .current-tab {
-  color: white;
-  background: #1da1f2;
   border-radius: 3px;
 }
 

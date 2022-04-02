@@ -3,24 +3,24 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
-const MODE = 'development';
-
 module.exports = {
-  mode: MODE,
   devtool: 'inline-source-map',
   entry: {
     popup: './src/popup.ts',
     background: './src/background.ts',
     settings: './src/settings.ts',
+    'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+    'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
   },
   output: {
+    globalObject: 'self',
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.ts$/,
         use: [
           {
             loader: 'ts-loader',
@@ -41,7 +41,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.json'],
+    extensions: ['.ts', '.js', '.json'],
   },
   target: ['web', 'es2020'],
   cache: true,
@@ -57,6 +57,7 @@ module.exports = {
         { from: '*.html', context: 'src/' },
         { from: '*.json', context: 'src/' },
         { from: '*.css', context: 'src/' },
+        { from: '*.js', context: 'src/' },
       ],
     }),
     new ESLintPlugin({

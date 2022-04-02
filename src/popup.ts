@@ -40,7 +40,7 @@ function setTabs(currentWindowId: number) {
   });
 }
 
-function setOptions(settings: Settings) {
+function setOptions(settings: Settings, options: State['options']) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
@@ -48,9 +48,18 @@ function setOptions(settings: Settings) {
   ]);
   addRules('body, .bgcolor1', [['background-color', settings.frameBackgroundColor]]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', settings.paneBackgroundColor]]);
-  addRules('.folders .open > .marker > .title', [['background-color', settings.keyColor]]);
+  addRules('.folders .open > .marker > .title, .current-tab', [
+    ['background-color', settings.keyColor],
+    ['color', settings.keyForeColor],
+  ]);
   addRules('.bookmark-button:hover > .fa-star-o', [['color', settings.keyColor]]);
   setSplitWidth(settings.paneWidth);
+  const [sheet] = document.styleSheets;
+  options.css
+    .split('}\n')
+    .filter(Boolean)
+    .map((rule) => rule.concat('}'))
+    .forEach((rule) => sheet.insertRule(rule, sheet.cssRules.length));
 }
 
 function setExternalUrl(options: State['options']) {
@@ -87,7 +96,7 @@ function init({
   settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
 }: State) {
   setTabs(currentWindowId);
-  setOptions(settings);
+  setOptions(settings, options);
   repaleceHtml(htmlBookmarks);
   $<HTMLDivElement>('.pane-history')!.firstElementChild!.innerHTML = htmlHistory;
   setClientState(clientState);

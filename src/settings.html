@@ -41,9 +41,22 @@
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
+        <div class="heading"><a role="button" data-bs-toggle="collapse" href="#customize-css" aria-expanded="false">Style <i class="fa fa-angle-right ms-1"></i></a></div>
+        <div id="customize-css" class="collapse">
+          <div class="item mt-0 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
+            <div>Customize CSS</div>
+            <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">
+                <option value="vs">Light</option>
+                <option value="vs-dark">Dark</option>
+              </select></label>
+            </div>
+            <div class="css-editor mt-1"></div>
+          </div>
+        <input is="monaco-editor" type="hidden" name="css">
       </form>
     </article>
   </main>
+  <script src="bootstrap.bundle.min.js"></script>
   <script src="settings.js"></script>
 </body>
 

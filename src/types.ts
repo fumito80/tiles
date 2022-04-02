@@ -21,6 +21,7 @@ export const initialSettings = {
   frameBackgroundColor: '#f6f6f6',
   paneBackgroundColor: '#ffffff',
   keyColor: '#1da1f2',
+  keyForeColor: '#ffffff',
   tabs: true,
   history: true,
   historyMax: {
@@ -44,6 +45,12 @@ export type HtmlBookmarks = {
 export type MyHistoryItem = Partial<chrome.history.HistoryItem &
   { lastVisitDate: string, headerDate: boolean }>;
 
+const css = [
+  'body {',
+  '    font-size: 0.9em;',
+  '}',
+].join('\n').concat('\n');
+
 export const options = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   includeUrl: true,
@@ -51,6 +58,8 @@ export const options = {
   enableExternalUrl: false,
   externalUrl: '',
   findTabsMatches: 'domain' as 'domain' | 'prefix',
+  css,
+  editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
 };
 
 export const initialState = {
