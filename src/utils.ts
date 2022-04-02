@@ -643,7 +643,12 @@ export function getKeys<T>(object: T) {
   return Object.keys(object) as unknown as Array<keyof T>;
 }
 
-export function extractUrl(faviconUrl: string) {
-  const [, url] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(faviconUrl || '') || [];
+export function extractUrl(faviconUrl?: string) {
+  const [, url = ''] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(faviconUrl || '') || [];
   return url;
+}
+
+export function extractDomain(url?: string) {
+  const [, domain = ''] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(url || '') || [];
+  return domain;
 }

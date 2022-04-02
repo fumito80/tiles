@@ -13,15 +13,17 @@
     <header>
       <h5><span class="extension-name"></span>Settings<span class="version ms-3">Version 0.8.0</span></h5>
       <div class="chrome-sync ms-auto">
-        <button class="btn btn-sm btn-outline-success upload-sync"><i class="fa cloud-arrow-up"></i> Upload sync</button>
-        <button class="btn btn-sm btn-outline-primary download-sync"><i class="fa cloud-arrow-down"></i> Download sync</button>
+        <button class="btn btn-sm btn-outline-success upload-sync"><i class="fa cloud-arrow-up"></i> Upload
+          sync</button>
+        <button class="btn btn-sm btn-outline-primary download-sync"><i class="fa cloud-arrow-down"></i> Download
+          sync</button>
       </div>
     </header>
     <article>
       <form>
         <div class="heading">General</div>
-        <div class="item">- New tab position</div>
-        <div class="d-flex gap-3 mt-1 ms-3">
+        <div class="item"><input type="checkbox" class="bullet" tabindex="-1">New tab position</div>
+        <div class="d-flex gap-4 mt-1 ms-3">
           <label><input type="radio" name="new-tab-position" value="le">Left end</label>
           <label><input type="radio" name="new-tab-position" value="ls">Left side</label>
           <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
@@ -29,8 +31,13 @@
         </div>
         <label class="item"><input type="checkbox" name="include-url">Include URL in search</label>
         <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
-          first (URL prefix match)</label>
-        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search box press enter
+          first</label>
+        <div class="d-flex gap-4 mt-1 ms-3">
+          <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
+          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
+        </div>
+        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search box
+            press enter
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>

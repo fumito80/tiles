@@ -40,7 +40,13 @@ article {
   display: none;
 }
 
-form label > [type='checkbox'] {
+form label {
+  > input[type="radio"] {
+    margin-right: 3px;
+  }
+}
+
+[type="checkbox"] {
   margin-right: 3px;
 }
 
@@ -48,6 +54,16 @@ form label > [type='checkbox'] {
   display: flex;
   align-items: baseline;
   margin-top: 0.8rem;
+}
+
+input.bullet {
+  height: 0;
+  pointer-events: none;
+  &::after {
+    content: '-';
+    text-align: center;
+    display: block;
+  }
 }
 
 [name='external-url'] {

@@ -34,6 +34,7 @@ import {
   setSplitWidth,
   getGridTemplateColumns,
   extractUrl,
+  extractDomain,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -344,7 +345,10 @@ function submit(options: Options) {
 
 async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
-  const { url } = await getBookmark(id);
+  const { url = '' } = await getBookmark(id);
+  const finder = options.findTabsMatches === 'prefix'
+    ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
+    : (tab: chrome.tabs.Tab) => extractDomain(tab.url) === extractDomain(url);
   const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
     chrome.tabs.query({}, (tabs) => {
       chrome.windows.getCurrent((win) => {
@@ -354,7 +358,7 @@ async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
           ...tabs.slice(findIndex + 1),
           tabs[findIndex],
         ];
-        const firstTab = sorted.find((t) => t.url?.startsWith(url!));
+        const firstTab = sorted.find(finder);
         resolve(firstTab);
       });
     });

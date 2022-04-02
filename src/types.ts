@@ -50,6 +50,7 @@ export const options = {
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',
+  findTabsMatches: 'domain' as 'domain' | 'prefix',
 };
 
 export const initialState = {

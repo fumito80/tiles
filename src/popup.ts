@@ -17,6 +17,7 @@ import {
   setSplitWidth,
   bootstrap,
   getKeys,
+  extractDomain,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -27,7 +28,7 @@ function setTabs(currentWindowId: number) {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
       const classProp = tab.active && tab.windowId === currentWindowId ? ' class="current-tab"' : '';
-      const [, domain] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(tab.url || '') || [];
+      const domain = extractDomain(tab.url);
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
       const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${title}" style="${style}">${tab.title}</div>`;
