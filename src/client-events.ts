@@ -700,8 +700,14 @@ export function setEventListners(options: Options) {
     mousedown: (e) => e.preventDefault(),
   });
   $('.pane-tabs')?.addEventListener('click', (e) => {
-    const [, tabId] = (e.target as HTMLDivElement).id.split('-');
-    const [, windowId] = (e.target as HTMLDivElement).parentElement?.id.split('-') || [];
+    const $target = e.target as HTMLElement;
+    const $parent = $target.parentElement!;
+    const [, tabId] = ($target.id || $parent.id).split('-');
+    const [, windowId] = ($target.id ? $target : $parent).parentElement?.id.split('-') || [];
+    if ($target.classList.contains('icon-x')) {
+      chrome.tabs.remove(Number(tabId), () => $parent.remove());
+      return;
+    }
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });

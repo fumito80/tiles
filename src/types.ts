@@ -54,6 +54,8 @@ const css = [
 export const options = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   includeUrl: true,
+  showCloseTab: true,
+  showCloseHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',

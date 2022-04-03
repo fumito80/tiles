@@ -23,7 +23,36 @@ import {
 import { setEventListners } from './client-events';
 import { resetHistory } from './vscroll';
 
-function setTabs(currentWindowId: number) {
+type Options = State['options'];
+
+function makeHtmlTabWithCloseBtn(
+  prev: string,
+  id: number,
+  classProp: string,
+  title: string,
+  style: string,
+  content: string,
+) {
+  return `
+    ${prev}<div id="tab-${id}"${classProp} title="${title}" style="${style}">
+      <span>${content}</span><i class="icon-x"></i>
+    </div>
+  `;
+}
+
+function makeHtmlTab(
+  prev: string,
+  id: number,
+  classProp: string,
+  title: string,
+  style: string,
+  content: string,
+) {
+  return `${prev}<div id="tab-${id}"${classProp} title="${title}" style="${style}"><span>${content}</span></div>`;
+}
+
+function setTabs(options: Options, currentWindowId: number) {
+  const makeHtml = options.showCloseTab ? makeHtmlTabWithCloseBtn : makeHtmlTab;
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
@@ -31,7 +60,7 @@ function setTabs(currentWindowId: number) {
       const domain = extractDomain(tab.url);
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const html = `${prev}<div id="tab-${tab.id}"${classProp} title="${title}" style="${style}">${tab.title}</div>`;
+      const html = makeHtml(prev, tab.id!, classProp, title, style, tab.title!);
       return { ...rest, [tab.windowId]: html };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
@@ -40,7 +69,7 @@ function setTabs(currentWindowId: number) {
   });
 }
 
-function setOptions(settings: Settings, options: State['options']) {
+function setOptions(settings: Settings, options: Options) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
@@ -62,7 +91,7 @@ function setOptions(settings: Settings, options: State['options']) {
     .forEach((rule) => sheet.insertRule(rule, sheet.cssRules.length));
 }
 
-function setExternalUrl(options: State['options']) {
+function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
@@ -95,7 +124,7 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
 function init({
   settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
 }: State) {
-  setTabs(currentWindowId);
+  setTabs(options, currentWindowId);
   setOptions(settings, options);
   repaleceHtml(htmlBookmarks);
   $<HTMLDivElement>('.pane-history')!.firstElementChild!.innerHTML = htmlHistory;

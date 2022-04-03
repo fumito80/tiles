@@ -870,24 +870,43 @@ input.query {
     margin-right: 2px;
     padding-right: 1px;
     > div {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      display: flex;
       cursor: default;
       margin: 2px 0;
       padding: 3px;
       padding-left: 21px;
       background-repeat: no-repeat;
       background-position: 2px center;
+      > span {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;  
+      }
     }
     > div:not(.current-tab):hover {
       background-color: $hover-color;
+    }
+    > div:hover > i {
+      display: inline-block;
     }
     > .match {
       display: block !important;
     }
     > .unmatch {
       display: none;
+    }
+  }
+  .icon-x {
+    margin-left: auto;
+    margin-right: -2px;
+    font-size: 1.3em;
+    color: #222;
+    background-color: transparent;
+    transition: background-color .4s;
+    display: none;
+    &:hover {
+      background-color: red;
+      color: white;
     }
   }
 }
