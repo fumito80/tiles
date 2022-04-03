@@ -702,12 +702,18 @@ export function setEventListners(options: Options) {
   $('.pane-tabs')?.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
+    const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
-    const [, windowId] = ($target.id ? $target : $parent).parentElement?.id.split('-') || [];
     if ($target.classList.contains('icon-x')) {
-      chrome.tabs.remove(Number(tabId), () => $parent.remove());
+      chrome.tabs.remove(Number(tabId), () => {
+        $parent.remove();
+        if ($window.childElementCount === 0) {
+          $window.remove();
+        }
+      });
       return;
     }
+    const [, windowId] = $window.id.split('-') || [];
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
