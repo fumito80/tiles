@@ -1,7 +1,7 @@
 import {
   pastMSec,
   initialSettings,
-  options,
+  initialOptions,
   // IClientState,
   HtmlBookmarks,
   // ISettings,
@@ -74,28 +74,29 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
-async function makeHtmlHistory() {
-  const { settings: { historyMax: { rows } } } = await getLocal('settings');
-  const startTime = Date.now() - pastMSec;
-  chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
-    const histories = [...results]
-      .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
-      .map((item) => ({
-        ...item,
-        lastVisitDate: (new Date(item.lastVisitTime!)).toLocaleDateString(),
-      }))
-      .reduce<MyHistoryItem[]>((acc, item) => {
-        const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
-        if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
-          const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
-          return [...acc, headerDate, item];
-        }
-        return [...acc, item];
-      }, []);
-    const htmlData = histories.slice(0, rows).map(makeHistoryRow).join('');
-    const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
-    setLocal({ htmlHistory, histories });
-  });
+function makeHtmlHistory(rows: number) {
+  return () => {
+    const startTime = Date.now() - pastMSec;
+    chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
+      const histories = [...results]
+        .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
+        .map((item) => ({
+          ...item,
+          lastVisitDate: (new Date(item.lastVisitTime!)).toLocaleDateString(),
+        }))
+        .reduce<MyHistoryItem[]>((acc, item) => {
+          const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
+          if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
+            const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
+            return [...acc, headerDate, item];
+          }
+          return [...acc, item];
+        }, []);
+      const htmlData = histories.slice(0, rows).map(makeHistoryRow).join('');
+      const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
+      setLocal({ htmlHistory, histories });
+    });
+  };
 }
 
 const historyEvents = [
@@ -103,14 +104,15 @@ const historyEvents = [
   chrome.history.onVisitRemoved,
 ];
 
-regsterChromeEvents(makeHtmlHistory)(historyEvents);
-
-const settings = initialSettings;
-const clientState = {};
-setLocal({ settings, clientState, options });
-
-makeHtmlBookmarks();
-makeHtmlHistory();
+getLocal('settings', 'clientState', 'options').then((storage) => {
+  const settings = { ...initialSettings, ...storage.settings };
+  const clientState = storage.clientState || {};
+  const options = { ...initialOptions, ...storage.options };
+  makeHtmlBookmarks();
+  makeHtmlHistory(settings.historyMax.rows)();
+  setLocal({ settings, clientState, options });
+  regsterChromeEvents(makeHtmlHistory(settings.historyMax.rows))(historyEvents);
+});
 
 function updateCurrentWindow(currentWindowId?: number) {
   if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {

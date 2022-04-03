@@ -29,7 +29,7 @@ export function rowSetterHistory(
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
     if (headerDate) {
       // eslint-disable-next-line no-param-reassign
-      row.textContent = lastVisitDate!;
+      row.firstElementChild!.textContent = lastVisitDate!;
       row.style.removeProperty('background-image');
       row.classList.add('header-date');
       row.removeAttribute('title');
@@ -41,7 +41,7 @@ export function rowSetterHistory(
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
     // eslint-disable-next-line no-param-reassign
-    row.textContent = text!;
+    row.firstElementChild!.textContent = text!;
     row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
     row.setAttribute('title', tooltip);
     row.classList.remove('header-date');
@@ -134,7 +134,7 @@ export async function resetHistory({ initialize, reFilter, includeUrl }: ResetPa
       (el as HTMLElement).style.removeProperty('background-image');
       el.removeAttribute('title');
       // eslint-disable-next-line no-param-reassign
-      el.textContent = '';
+      (el.firstElementChild || el).textContent = '';
     });
     const vscroll = $('.v-scroll-bar', $paneHistory)!;
     vscroll.scrollTop = 0;

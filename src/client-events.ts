@@ -718,8 +718,17 @@ export function setEventListners(options: Options) {
     chrome.tabs.update(Number(tabId), { active: true });
   });
   $('.pane-history > .rows')?.addEventListener('click', (e) => {
-    const url = extractUrl((e.target as HTMLDivElement).style.backgroundImage);
+    const $target = e.target as HTMLElement;
+    const $parent = $target.parentElement!;
+    const $url = $target.title ? $target : $parent;
+    const url = extractUrl($url.style.backgroundImage);
     if (!url) {
+      return;
+    }
+    if ($target.classList.contains('icon-x')) {
+      chrome.history.deleteUrl({ url }, () => {
+        $url.style.setProperty('transform', 'translateY(-10000px)');
+      });
       return;
     }
     createNewTab(options, url);

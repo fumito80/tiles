@@ -570,7 +570,7 @@ export function makeHistoryRow({
   if (!text) {
     return '';
   }
-  return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
+  return `<div title="${title}${dt}" style="${style}"><span>${htmlEscape(text)}</span><i class="icon-x"></i></div>`;
 }
 
 export function setLocal(state: Partial<State>) {

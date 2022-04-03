@@ -51,11 +51,11 @@ const css = [
   '}',
 ].join('\n').concat('\n');
 
-export const options = {
+export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   includeUrl: true,
   showCloseTab: true,
-  showCloseHistory: true,
+  showCloseHistory: false, // Pending
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',
@@ -75,7 +75,7 @@ export const initialState = {
     rowHeight: 0,
     elementHeight: 0,
   },
-  options,
+  options: initialOptions,
   currentWindowId: chrome.windows.WINDOW_ID_NONE as number,
 };
 

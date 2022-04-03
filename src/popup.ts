@@ -82,6 +82,9 @@ function setOptions(settings: Settings, options: Options) {
     ['color', settings.keyForeColor],
   ]);
   addRules('.bookmark-button:hover > .icon-fa-star-o', [['color', settings.keyColor]]);
+  if (options.showCloseHistory) {
+    addRules('.pane-history > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
+  }
   setSplitWidth(settings.paneWidth);
   const [sheet] = document.styleSheets;
   options.css
