@@ -887,7 +887,7 @@ input.query {
       background-color: $hover-color;
     }
     > div:hover > i {
-      display: inline-block;
+      display: inline-flex;
     }
     > .match {
       display: flex !important;
