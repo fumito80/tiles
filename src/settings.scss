@@ -118,10 +118,10 @@ label.theme {
   height: 300px;
 }
 
-.fa-angle-right {
+.icon-fa-angle-right {
   transform: rotate(-90deg);
 }
 
-[aria-expanded="true"] .fa-angle-right {
+[aria-expanded="true"] .icon-fa-angle-right {
   transform: rotate(90deg);
 }

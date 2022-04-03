@@ -378,7 +378,7 @@ export function setEventListners(options: Options) {
     submit(options)(e);
     e.preventDefault();
   });
-  $('.form-query .fa-times')?.addEventListener('click', clearQuery);
+  $('.form-query .icon-x')?.addEventListener('click', clearQuery);
   setEvents([document.body], {
     click: (e) => {
       const $target = e.target as HTMLElement;
@@ -559,7 +559,7 @@ export function setEventListners(options: Options) {
       'marker',
       'title',
       'folder-menu-button',
-      'fa-angle-right',
+      'icon-fa-angle-right',
     ] as const;
     const targetClass = whichClass(targetClasses, $target);
     switch (targetClass) {
@@ -569,7 +569,7 @@ export function setEventListners(options: Options) {
       case 'marker':
         $('.title', $target)!.click();
         break;
-      case 'fa-angle-right':
+      case 'icon-fa-angle-right':
         onClickAngle(e);
         break;
       case 'title': {
@@ -601,7 +601,7 @@ export function setEventListners(options: Options) {
     const $target = e.target as HTMLDivElement;
     if ($target.classList.contains('anchor')) {
       findTabsFirstOrNot(options, $target!);
-    } else if ([...$target.classList].find((className) => ['title', 'fa-angle-right'].includes(className))) {
+    } else if ([...$target.classList].find((className) => ['title', 'icon-fa-angle-right'].includes(className))) {
       const folder = $target.parentElement?.parentElement!;
       folder.classList.toggle('path');
     }

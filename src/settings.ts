@@ -151,7 +151,6 @@ function initMonacoEditor({ options }: Pick<State, 'options'>) {
     language: 'css',
     automaticLayout: true,
   });
-  monaco.editor.setTheme(options.editorTheme);
   $<MonacoEditor>('[name="css"]')!.setEditor(editor);
   $<EditorTheme>('[name="editor-theme"]')!.setEditor(monaco.editor);
   return { options };

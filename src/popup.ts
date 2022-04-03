@@ -52,7 +52,7 @@ function setOptions(settings: Settings, options: State['options']) {
     ['background-color', settings.keyColor],
     ['color', settings.keyForeColor],
   ]);
-  addRules('.bookmark-button:hover > .fa-star-o', [['color', settings.keyColor]]);
+  addRules('.bookmark-button:hover > .icon-fa-star-o', [['color', settings.keyColor]]);
   setSplitWidth(settings.paneWidth);
   const [sheet] = document.styleSheets;
   options.css

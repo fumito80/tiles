@@ -57,12 +57,12 @@ button {
   background-color: transparent;
   border-radius: 3px;
 
-  > .fa {
+  > i {
     color: rgba(0, 0, 0, .4);
   }
 
-  &:hover > .fa,
-  &:focus > .fa {
+  &:hover > i,
+  &:focus > i {
     color: rgba(0, 0, 0, .5);
   }
   
@@ -120,7 +120,7 @@ button {
   transition: .4s;
   font-size: 1.2em;
 
-  > .fa-ellipsis-v {
+  > .icon-fa-ellipsis-v {
     pointer-events: none;
   }
 
@@ -166,9 +166,10 @@ input.query {
   text-overflow: ellipsis;
 }
 
-.form-query .fa-times {
+.form-query .icon-x {
   position: absolute;
-  right: 56px;
+  right: 50px;
+  font-size: 1.4em;
   cursor: pointer;
   display: inherit;
 }
@@ -206,7 +207,7 @@ input.query {
     }
   }
 
-  > .fa-ellipsis-v {
+  > .icon-fa-ellipsis-v {
     pointer-events: none;
   }
 
@@ -215,7 +216,7 @@ input.query {
   }
 }
 
-.query[value=""] ~ .fa-times {
+.query[value=""] ~ .icon-x {
   display: none;
 }
 
@@ -239,7 +240,6 @@ input.query {
   transition: opacity .218s;
   border: 1px solid rgba(0,0,0,.2);
   outline: none;
-  font-size: 13px;
   cursor: default;
 
   > div {
@@ -249,7 +249,7 @@ input.query {
     border: 1px solid transparent;
     letter-spacing: .01428571em;
     font-family: Roboto,Arial,sans-serif;
-    font-size: .875rem;
+    font-size: .875em;
     font-weight: 400;
     line-height: 1.25rem;
     padding: 2px 12px 2px 0;
@@ -282,7 +282,7 @@ input.query {
   text-align: center;
 }
 
-[role=menuitem] > .fa-star-o {
+[role=menuitem] > .icon-fa-star-o {
   font-size: 1.2em;
   width: 2em;
 }
@@ -456,7 +456,7 @@ input.query {
           display: flex;
         }
       }
-      > .fa-angle-right {
+      > .icon-fa-angle-right {
         z-index: 2;
       }  
     }
@@ -519,18 +519,18 @@ input.query {
   display: block;
 }
 
-.leafs .folder.path > .marker > .fa-angle-right,
-.folders .path > .marker > .fa-angle-right {
+.leafs .folder.path > .marker > .icon-fa-angle-right,
+.folders .path > .marker > .icon-fa-angle-right {
   transform: rotate(90deg);
 }
 
-.fa-angle-right {
+.icon-fa-angle-right {
   padding: 0 4px;
   transition: .1s;
   cursor: pointer;
 }
 
-[data-children='0'] .fa-angle-right {
+[data-children='0'] .icon-fa-angle-right {
   visibility: hidden;
   pointer-events: none;
 }
@@ -553,7 +553,7 @@ input.query {
   &::before {
     content: '\f07b';
     display: inline-block;
-    font: normal normal normal 14px/1 FontAwesome;
+    font-family: 'glyphs';
     font-size: inherit;
     text-rendering: auto;
     margin-left: 1px;
@@ -794,7 +794,7 @@ input.query {
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
-    > .fa-angle-right {
+    > .icon-fa-angle-right {
       display: none;
     }
     > .anchor,
@@ -916,6 +916,8 @@ input.query {
 }
 
 .pane-title {
+  display: flex;
+  align-items: center;
   padding: 1px 1px 2px 3px;
   > [title="Tabs"] {
     display: flex;

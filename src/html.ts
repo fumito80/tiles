@@ -11,7 +11,7 @@ export function makeLeaf({
   const style = makeStyleIcon(url);
   return `
     <div class="leaf" id="${id}" data-parent-id="${parentId}">
-      <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="fa fa-ellipsis-v"></i></button>
+      <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div>
     </div>
   `;
@@ -23,7 +23,7 @@ export function makeNode({
   return `
     <div class="folder" id="${id}" data-children="${length}">
       <div class="marker" draggable="true">
-        <div class="drop-folder"></div><i class="fa fa-angle-right"></i><div class="title" tabindex="2"><span>${title}</span></div><div class="button-wrapper"><button class="folder-menu-button"><i class="fa fa-ellipsis-v"></i></button></div><div class="drop-top"></div><div class="drop-bottom"></div>
+        <div class="drop-folder"></div><i class="icon-fa-angle-right"></i><div class="title" tabindex="2"><span>${title}</span></div><div class="button-wrapper"><button class="folder-menu-button"><i class="icon-fa-ellipsis-v"></i></button></div><div class="drop-top"></div><div class="drop-bottom"></div>
       </div>
       ${children}
     </div>
