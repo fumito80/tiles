@@ -1,0 +1,5 @@
+---
+settings:
+  import/resolver:
+    webpack:
+      config: 'webpack.dev.common.js'

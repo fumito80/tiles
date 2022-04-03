@@ -81,7 +81,7 @@ function setOptions(settings: Settings, options: Options) {
     ['background-color', settings.keyColor],
     ['color', settings.keyForeColor],
   ]);
-  addRules('.bookmark-button:hover > .icon-fa-star-o', [['color', settings.keyColor]]);
+  addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', settings.keyColor]]);
   if (options.showCloseHistory) {
     addRules('.pane-history > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }

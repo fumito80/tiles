@@ -1,10 +1,9 @@
-const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-  devtool: 'inline-source-map',
   entry: {
     popup: './src/popup.ts',
     background: './src/background.ts',
@@ -15,7 +14,6 @@ module.exports = {
   output: {
     globalObject: 'self',
     filename: '[name].js',
-    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
@@ -58,11 +56,13 @@ module.exports = {
         { from: '*.json', context: 'src/' },
         { from: '*.css', context: 'src/' },
         { from: '*.js', context: 'src/' },
+        { from: '*.png', context: 'src/' },
       ],
     }),
     new ESLintPlugin({
       extensions: ['.ts', '.js'],
       exclude: 'node_modules',
     }),
+    new CleanWebpackPlugin(),
   ],
 };

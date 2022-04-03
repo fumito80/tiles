@@ -115,7 +115,6 @@ button {
   height: 20px;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
   border: 0;
   transition: .4s;
   font-size: 1.2em;
@@ -170,8 +169,8 @@ input.query {
   position: absolute;
   right: 50px;
   font-size: 1.4em;
-  cursor: pointer;
   display: inherit;
+  cursor: pointer;
 }
 
 .split-h {
@@ -183,18 +182,17 @@ input.query {
   margin: 0 3px;
 }
 
-.bookmark-button {
+.pin-bookmark {
   margin-left: 5px;
 }
 
 .main-menu-button,
-.bookmark-button {
+.pin-bookmark {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 18px;
   height: 20px;
-  cursor: pointer;
   border: 0;
   transition: background-color .4s;
   font-size: 1.2em;
@@ -254,7 +252,6 @@ input.query {
     line-height: 1.25rem;
     padding: 2px 12px 2px 0;
     color: #333;
-    cursor: pointer;
     list-style: none;
     margin: 0;
     white-space: nowrap;
@@ -893,7 +890,7 @@ input.query {
       display: inline-block;
     }
     > .match {
-      display: block !important;
+      display: flex !important;
     }
     > .unmatch {
       display: none;

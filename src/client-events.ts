@@ -607,9 +607,8 @@ export function setEventListners(options: Options) {
     }
   });
 
-  $('.bookmark-button')?.addEventListener('click', () => {
-    const id = $('.open')?.id;
-    addBookmark(id || '1');
+  $('.pin-bookmark')?.addEventListener('click', () => {
+    addBookmark();
   });
 
   $('.main-menu-button')?.addEventListener('click', (e) => {
@@ -641,7 +640,8 @@ export function setEventListners(options: Options) {
     click: async (e) => {
       switch ((e.target as HTMLElement).dataset.value) {
         case 'add-bookmark': {
-          addBookmark();
+          const id = $('.open')?.id;
+          addBookmark(id || '1');
           break;
         }
         case 'add-folder':

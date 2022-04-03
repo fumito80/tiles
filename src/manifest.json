@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "x-resources",
-  "description": "One-stop search for your browsing resources.",
+  "name": "Popup'n My Resources",
+  "description": "One-stop search/views for your browsing resources.",
   "version": "0.8.0",
   "permissions": [
     "storage",
@@ -12,8 +12,9 @@
   ],
   "options_page": "settings.html",
   "browser_action": {
-    "default_title": "x-resources",
-    "default_popup": "popup.html"
+    "default_title": "Popup'n My Resources",
+    "default_popup": "popup.html",
+    "default_icon": "p.png"
   },
   "commands": {
     "_execute_browser_action": {
