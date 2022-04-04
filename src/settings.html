@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="utf-8">
+  <link rel="icon" href="p28.png" />
   <link rel="stylesheet" href="bootstrap.min.css">
   <link rel="stylesheet" href="settings.css">
   <title>Settings</title>
@@ -11,7 +12,7 @@
 <body>
   <main>
     <header>
-      <h5><span class="extension-name"></span>Settings<span class="version ms-3">Version 0.8.0</span></h5>
+      <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
       <div class="chrome-sync ms-auto">
         <button class="btn btn-sm btn-outline-success upload-sync"><i class="fa cloud-arrow-up"></i> Upload
           sync</button>
@@ -45,6 +46,9 @@
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
         <div class="heading"><a role="button" data-bs-toggle="collapse" href="#customize-css" aria-expanded="false">Style <i class="icon-fa-angle-right ms-1"></i></a></div>
         <div id="customize-css" class="collapse">
+          <div class="item mt-0 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
+            <div>Color scheme</div>
+          </div>
           <div class="item mt-0 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
             <div>Customize CSS</div>
             <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">

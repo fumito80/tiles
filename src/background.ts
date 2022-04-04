@@ -26,6 +26,7 @@ import {
   makeHistoryRow,
   setLocal,
   getLocal,
+  setBrowserIcon,
 } from './utils';
 
 export const mapStateToResponse = {
@@ -108,6 +109,8 @@ getLocal('settings', 'clientState', 'options').then((storage) => {
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options };
+  setBrowserIcon('#F08650');
+  // setBrowserIcon(settings.keyColor);
   makeHtmlBookmarks();
   makeHtmlHistory(settings.historyMax.rows)();
   setLocal({ settings, clientState, options });

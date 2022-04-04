@@ -88,10 +88,11 @@ function setOptions(settings: Settings, options: Options) {
   setSplitWidth(settings.paneWidth);
   const [sheet] = document.styleSheets;
   options.css
-    .split('}\n')
+    .replaceAll('\n', '').trim()
+    .split('}')
     .filter(Boolean)
-    .map((rule) => rule.concat('}'))
-    .forEach((rule) => sheet.insertRule(rule, sheet.cssRules.length));
+    .map((rule) => rule.trim().concat('}'))
+    .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
 }
 
 function setExternalUrl(options: Options) {

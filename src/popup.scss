@@ -6,6 +6,7 @@ $drop-folder-bgcolor: #cce5ff;
 $hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
 $drop-border: rgb(0, 123, 255);
+$pane-radius: 6px;
 
 @import 'glyphs';
 
@@ -290,6 +291,7 @@ input.query {
   padding: 2px;
   overflow-y: auto;
   grid-row-start: span 2;
+  border-radius: $pane-radius;
 
   .leaf-menu-button:focus + .leaf-menu {
     position: fixed;
@@ -815,6 +817,7 @@ input.query {
 // History
 .pane-history {
   grid-row-start: span 2;
+  border-radius: $pane-radius;
   .rows {
     > div {
       display: flex;
@@ -840,11 +843,11 @@ input.query {
       position: absolute;
       width: -webkit-fill-available;
       z-index: 1;
-      margin-top: 0;
     }
     .header-date {
       display: flex;
-      padding-left: 0.3em;
+      padding: 0;
+      justify-content: center;
       align-items: center;
       background-color: white;
       background-color: darkgray;
@@ -865,8 +868,8 @@ input.query {
   position: relative;
   overflow-y: auto;
   > div {
+    border-radius: $pane-radius;
     border: 2px solid #222;
-    border-radius: 6px;
     margin-right: 2px;
     padding-right: 1px;
     > div {

@@ -48,8 +48,19 @@ export type MyHistoryItem = Partial<chrome.history.HistoryItem &
 const css = [
   'body {',
   '    font-size: 0.9em;',
-  '}',
-].join('\n').concat('\n');
+  '}\n',
+  '/* Scroll-bar width */',
+  '.folders::-webkit-scrollbar,',
+  '.leafs::-webkit-scrollbar,',
+  '.pane-tabs::-webkit-scrollbar,',
+  '.v-scroll-bar::-webkit-scrollbar {',
+  '    width: 8px;',
+  '}\n',
+  '/* Scroll-bar color */',
+  '::-webkit-scrollbar-thumb {',
+  '    background-color: rgba(0, 0, 0, 0.2);',
+  '}\n',
+].join('\n');
 
 export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',

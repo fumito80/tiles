@@ -58,6 +58,9 @@ function initInputs({ options }: Pick<State, 'options'>) {
   return Object.entries(options).reduce((acc, [key, value]) => {
     const inputName = camelToSnake(key);
     const inputElements = $$<HTMLInputElement>(`[name="${inputName}"]`, $form);
+    if (inputElements.length === 0) {
+      return acc;
+    }
     setInputValue(inputElements, value);
     return { ...acc, [key]: inputElements };
   }, {} as Inputs);
@@ -107,7 +110,7 @@ function setSyncListener(inputs: Inputs) {
   return inputs;
 }
 
-class MonacoEditor extends HTMLInputElement {
+class InputMonacoEditor extends HTMLInputElement {
   editor?: monaco.editor.IStandaloneCodeEditor;
   get value() {
     return this.editor?.getValue() ?? '';
@@ -115,7 +118,7 @@ class MonacoEditor extends HTMLInputElement {
   set value(value: string) {
     this.editor?.setValue(value);
   }
-  setEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+  initialize(editor: monaco.editor.IStandaloneCodeEditor) {
     this.editor = editor;
     const $form = $<HTMLFormElement>('form')!;
     this.editor.getModel()?.onDidChangeContent(() => {
@@ -124,9 +127,9 @@ class MonacoEditor extends HTMLInputElement {
   }
 }
 
-customElements.define('monaco-editor', MonacoEditor, { extends: 'input' });
+customElements.define('monaco-editor', InputMonacoEditor, { extends: 'input' });
 
-class EditorTheme extends HTMLSelectElement {
+class SelectEditorTheme extends HTMLSelectElement {
   editor?: typeof monaco.editor;
   get value() {
     return super.value;
@@ -135,7 +138,7 @@ class EditorTheme extends HTMLSelectElement {
     super.value = value;
     this.setTheme(value);
   }
-  setEditor(editor: typeof monaco.editor) {
+  initialize(editor: typeof monaco.editor) {
     this.editor = editor;
     this.addEventListener('change', () => this.setTheme(super.value));
   }
@@ -144,19 +147,24 @@ class EditorTheme extends HTMLSelectElement {
   }
 }
 
-customElements.define('monaco-editor-theme', EditorTheme, { extends: 'select' });
+customElements.define('monaco-editor-theme', SelectEditorTheme, { extends: 'select' });
 
 function initMonacoEditor({ options }: Pick<State, 'options'>) {
   const editor = monaco.editor.create($('.css-editor')!, {
     language: 'css',
     automaticLayout: true,
   });
-  $<MonacoEditor>('[name="css"]')!.setEditor(editor);
-  $<EditorTheme>('[name="editor-theme"]')!.setEditor(monaco.editor);
+  $<InputMonacoEditor>('[name="css"]')!.initialize(editor);
+  $<SelectEditorTheme>('[name="editor-theme"]')!.initialize(monaco.editor);
   return { options };
 }
 
+function setVersion() {
+  $('.version')!.textContent = `Version ${chrome.runtime.getManifest().version}`;
+}
+
 pipeP(
+  tap(setVersion),
   initMonacoEditor,
   initInputs,
   setSyncListener,

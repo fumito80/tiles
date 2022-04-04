@@ -652,3 +652,34 @@ export function extractDomain(url?: string) {
   const [, domain = ''] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(url || '') || [];
   return domain;
 }
+
+function base64Encode(...parts: string[]) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const [, base64] = (reader.result as string)!.split(',');
+      resolve(base64);
+    };
+    reader.readAsDataURL(new Blob(parts));
+  });
+}
+
+export async function setBrowserIcon(keyColor: string) {
+  const d = 'M5 3 L15 3 C15 9 14 11 8 11 M8 10 C7 15 7 15 3 16';
+  const svg = `
+    <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path stroke-width="5" stroke="${keyColor}" stroke-linecap="round" d="${d}"/>
+      <path stroke-width="3" stroke="#ffffff" stroke-linecap="round" d="${d}"/>
+    </svg>
+  `;
+  const base64 = await base64Encode(svg);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = new OffscreenCanvas(19, 19);
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, 19, 19);
+    const imageData = ctx.getImageData(0, 0, 19, 19);
+    chrome.browserAction.setIcon({ imageData });
+  };
+  img.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;
+}
