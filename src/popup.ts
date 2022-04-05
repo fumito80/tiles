@@ -18,6 +18,7 @@ import {
   bootstrap,
   getKeys,
   extractDomain,
+  getColorWhiteness,
 } from './utils';
 
 import { setEventListners } from './client-events';
@@ -75,13 +76,18 @@ function setOptions(settings: Settings, options: Options) {
     ['height', `${settings.height}px`],
     ['color', settings.bodyColor],
   ]);
+  const lightColor = '#efefef';
+  const darkColor = '#222222';
   const [
     [paneBg, paneColor, isLightPaneBg],
     [searchingBg, searchingColor],
     [frameBg],
     [itemHoverBg, itemHoverColor, isLightHoverBg],
     [keyBg, keyColor, isLightKeyBg],
-  ] = options.colorPalette.map(([colorCode, isLight]) => [`#${colorCode}`, isLight ? '#222222' : '#EFEFEF', isLight]);
+  ] = options.colorPalette
+    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map(([bgColor, whiteness]) => [bgColor, whiteness > 0.6] as [string, boolean])
+    .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body, .bgcolor1', [['background-color', frameBg]]);
   addRules('.folders .open > .marker > .title, .current-tab', [
@@ -98,7 +104,7 @@ function setOptions(settings: Settings, options: Options) {
   if (!isLightPaneBg) {
     addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
     addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
-    addRules('.leafs .title::before', [['color', paneColor]]);
+    addRules('.leafs .title::before', [['color', lightColor]]);
   }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);

@@ -18,10 +18,6 @@ export const initialSettings = {
     pane3: 200,
   },
   bodyColor: '#222222',
-  // frameBackgroundColor: '#f6f6f6',
-  // paneBackgroundColor: '#ffffff',
-  // keyColor: '#1da1f2',
-  // keyForeColor: '#ffffff',
   tabs: true,
   history: true,
   historyMax: {
@@ -63,20 +59,14 @@ const css = [
 ].join('\n');
 
 export type ColorPalette = [
-  paneBg: [colorCode: string, isLight: boolean],
-  searching: [colorCode: string, isLight: boolean],
-  frameBg: [colorCode: string, isLight: boolean],
-  itemHover: [colorCode: string, isLight: boolean],
-  keyColor: [colorCode: string, isLight: boolean],
+  paneBg: string,
+  searching: string,
+  frameBg: string,
+  itemHover: string,
+  keyColor: string,
 ];
 
-const colorPalette: ColorPalette = [
-  ['FFFFFF', true],
-  ['cce5ff', true],
-  ['f6f6f6', true],
-  ['e8e8e9', true],
-  ['1da1f2', false],
-];
+const colorPalette: ColorPalette = ['FFFFFF', 'cce5ff', 'f6f6f6', 'e8e8e9', '1da1f2'];
 
 export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',

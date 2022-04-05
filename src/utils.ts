@@ -135,7 +135,7 @@ export function find<T extends Array<any>>(
   return (array: T) => array.find(f) as T[number];
 }
 
-export function tap<T>(f: (a: T) => any) {
+export function tap<T>(f: (a: T) => any | PromiseLike<any> | never) {
   return (a: T) => {
     f(a);
     return a;
@@ -413,6 +413,16 @@ export function pipeP<T, R1, R2, R3, R4, R5, R6, R7>(
   fn6: (a: R5) => R6,
   fn7: (a: R6) => R7,
 ): (a: Promise<T>) => Promise<R7>;
+export function pipeP<T, R1, R2, R3, R4, R5, R6, R7, R8>(
+  fn1: (a: T) => R1,
+  fn2: (a: R1) => R2,
+  fn3: (a: R2) => R3,
+  fn4: (a: R3) => R4,
+  fn5: (a: R4) => R5,
+  fn6: (a: R5) => R6,
+  fn7: (a: R6) => R7,
+  fn8: (a: R7) => R8,
+): (a: Promise<T>) => Promise<R8>;
 
 export function pipeP(...fns: Array<any>) {
   return (p1: Promise<any>) => {
@@ -676,17 +686,21 @@ function getColorChroma(colorCode: string) {
   return (iMax - iMin) / iMax;
 }
 
-function getColorWhiteness(colorCode: string) {
+export function getColorWhiteness(colorCode: string) {
   const [r, g, b] = getRGB(colorCode);
   return Math.max((r * g) / (0xFF * 0xFF), (g * b) / (0xFF * 0xFF));
 }
 
 export async function setBrowserIcon(colorPalette: State['options']['colorPalette']) {
-  const [[first], ...rest] = colorPalette;
-  const outer = rest.reduce((acc, [color]) => {
+  const [first, ...rest] = colorPalette;
+  const outer = rest.reduce((acc, color) => {
     const whiteness = getColorWhiteness(color);
     if (whiteness > 0.8) {
       return acc;
+    }
+    const whitenessAcc = getColorWhiteness(acc);
+    if (whitenessAcc > 0.8) {
+      return color;
     }
     if (getColorChroma(acc) >= getColorChroma(color)) {
       return acc;

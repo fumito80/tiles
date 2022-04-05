@@ -116,6 +116,12 @@ label.theme {
 .css-editor {
   width: 100%;
   height: 300px;
+  > div { 
+    border-radius: 5px;
+    > div {
+      border-radius: 5px;
+    }
+  }
 }
 
 .icon-fa-angle-right {
@@ -133,7 +139,9 @@ label.theme {
   grid-template-columns: 1fr 1fr 1fr;
   grid-column-gap: 20px;
   grid-row-gap: 15px;
-  padding: 8px;
+  padding: 10px;
+  border: 1px solid #CCC;
+  border-radius: 5px;
   > div {
     display: flex;
     width: 100%;
@@ -182,4 +190,25 @@ label.theme {
       border-bottom-right-radius: 5px;
     }
   }
+}
+
+.item-collaplse {
+  display: flex;
+  align-items: baseline;
+  margin-top: 0.8rem;
+  width: fit-content;
+  > a {
+    display: flex;
+    gap: 5px;
+    text-decoration: none;
+    height: auto;
+    align-items: center;
+  }
+}
+
+label.theme {
+  position: absolute;
+  top: -30px;
+  z-index: 1;
+  right: 0;
 }
