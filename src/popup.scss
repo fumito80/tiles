@@ -1,4 +1,4 @@
-$hover-color: rgb(232, 232, 233);
+$hover-color: #e8e8e9;
 $drag-source-bgcolor0: rgb(232, 240, 254);
 $drag-source-bgcolor: #cce5ff;
 $drop-folder-bgcolor0: #d1ecf1;
@@ -6,7 +6,7 @@ $drop-folder-bgcolor: #cce5ff;
 $hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
 $drop-border: rgb(0, 123, 255);
-$pane-radius: 6px;
+$pane-radius: 5px;
 
 @import 'glyphs';
 
@@ -820,18 +820,15 @@ input.query {
   border-radius: $pane-radius;
   .rows {
     > div {
-      display: flex;
       cursor: default;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;  
       margin: 2px;
       padding: 3px;
       padding-left: 20px;
       background-repeat: no-repeat;
       background-position: 1px center;
-      > span {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;  
-      }
     }
     > div:not(.header-date):hover {
       background-color: $hover-color;
@@ -944,40 +941,40 @@ input.query {
 .pane-title {
   display: flex;
   align-items: center;
-  padding: 1px 1px 2px 3px;
+  padding: 1px 1px 3px 3px;
   > [title="Tabs"] {
     display: flex;
     :nth-child(1) {
-      border: 1.5px solid #999;
+      border: 1.5px solid #999999;
       border-radius: 3px;
       border-left: 0;
       border-bottom: 0;
-      background-color: #999;
+      background-color: #999999;
       width: 18px;
       height: 8px;
       transform: translate(11px, 2px);
     }
     :nth-child(2) {
-      border: 1.5px solid #222;
+      border: 1.5px solid #222222;
       border-bottom: 0;
       border-radius: 3px;
-      background-color: white;
+      background-color: #EFEFEF;
       width: 15px;
       height: 10px;
       transform: translate(-23px, 1px);
     }
     :nth-child(3) {
-      border-top: 1.5px solid #222;
+      border-top: 1.5px solid #222222;
       width: 38px;
       height: 8px;
       transform: translate(-43px, 10px);
     }
   }
   .icon-bookmarks {
-    color: #222;
+    color: #222222;
     transform: scale(1.2,1);
   }
   > [title="History"] {
-    color: #222;
+    color: #222222;
   }
 }

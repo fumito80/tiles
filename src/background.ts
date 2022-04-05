@@ -109,8 +109,7 @@ getLocal('settings', 'clientState', 'options').then((storage) => {
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options };
-  setBrowserIcon('#F08650');
-  // setBrowserIcon(settings.keyColor);
+  setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
   makeHtmlHistory(settings.historyMax.rows)();
   setLocal({ settings, clientState, options });

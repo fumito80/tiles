@@ -46,10 +46,12 @@
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
         <div class="heading"><a role="button" data-bs-toggle="collapse" href="#customize-css" aria-expanded="false">Style <i class="icon-fa-angle-right ms-1"></i></a></div>
         <div id="customize-css" class="collapse">
-          <div class="item mt-0 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
+          <div class="item mt-0 pt-2 mb-2 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
             <div>Color scheme</div>
+            <div is="color-palette" name="color-palette" class="ms-2"></div>
           </div>
-          <div class="item mt-0 w-auto"><input type="checkbox" class="bullet" tabindex="-1">
+          <div class="color-palettes"></div>
+          <div class="item w-auto"><input type="checkbox" class="bullet" tabindex="-1">
             <div>Customize CSS</div>
             <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">
                 <option value="vs">Light</option>

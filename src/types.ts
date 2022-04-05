@@ -18,10 +18,10 @@ export const initialSettings = {
     pane3: 200,
   },
   bodyColor: '#222222',
-  frameBackgroundColor: '#f6f6f6',
-  paneBackgroundColor: '#ffffff',
-  keyColor: '#1da1f2',
-  keyForeColor: '#ffffff',
+  // frameBackgroundColor: '#f6f6f6',
+  // paneBackgroundColor: '#ffffff',
+  // keyColor: '#1da1f2',
+  // keyForeColor: '#ffffff',
   tabs: true,
   history: true,
   historyMax: {
@@ -62,6 +62,22 @@ const css = [
   '}\n',
 ].join('\n');
 
+export type ColorPalette = [
+  paneBg: [colorCode: string, isLight: boolean],
+  searching: [colorCode: string, isLight: boolean],
+  frameBg: [colorCode: string, isLight: boolean],
+  itemHover: [colorCode: string, isLight: boolean],
+  keyColor: [colorCode: string, isLight: boolean],
+];
+
+const colorPalette: ColorPalette = [
+  ['FFFFFF', true],
+  ['cce5ff', true],
+  ['f6f6f6', true],
+  ['e8e8e9', true],
+  ['1da1f2', false],
+];
+
 export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   includeUrl: true,
@@ -73,6 +89,7 @@ export const initialOptions = {
   findTabsMatches: 'domain' as 'domain' | 'prefix',
   css,
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
+  colorPalette,
 };
 
 export const initialState = {

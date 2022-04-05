@@ -570,7 +570,7 @@ export function makeHistoryRow({
   if (!text) {
     return '';
   }
-  return `<div title="${title}${dt}" style="${style}"><span>${htmlEscape(text)}</span><i class="icon-x"></i></div>`;
+  return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
 }
 
 export function setLocal(state: Partial<State>) {
@@ -664,21 +664,49 @@ function base64Encode(...parts: string[]) {
   });
 }
 
-export async function setBrowserIcon(keyColor: string) {
+function getRGB(colorCode: string) {
+  return [colorCode.substring(0, 2), colorCode.substring(2, 4), colorCode.substring(4, 6)]
+    .map((hex) => parseInt(hex, 16));
+}
+
+function getColorChroma(colorCode: string) {
+  const [r, g, b] = getRGB(colorCode);
+  const iMax = Math.max(r, g, b);
+  const iMin = Math.min(r, g, b);
+  return (iMax - iMin) / iMax;
+}
+
+function getColorWhiteness(colorCode: string) {
+  const [r, g, b] = getRGB(colorCode);
+  return Math.max((r * g) / (0xFF * 0xFF), (g * b) / (0xFF * 0xFF));
+}
+
+export async function setBrowserIcon(colorPalette: State['options']['colorPalette']) {
+  const [[first], ...rest] = colorPalette;
+  const outer = rest.reduce((acc, [color]) => {
+    const whiteness = getColorWhiteness(color);
+    if (whiteness > 0.8) {
+      return acc;
+    }
+    if (getColorChroma(acc) >= getColorChroma(color)) {
+      return acc;
+    }
+    return color;
+  }, first);
   const d = 'M5 3 L15 3 C15 9 14 11 8 11 M8 10 C7 15 7 15 3 16';
   const svg = `
     <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path stroke-width="5" stroke="${keyColor}" stroke-linecap="round" d="${d}"/>
-      <path stroke-width="3" stroke="#ffffff" stroke-linecap="round" d="${d}"/>
+      <path stroke-width="5" stroke="#${outer}" stroke-linecap="round" stroke-linejoin="round" d="${d}"/>
+      <path stroke-width="2" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" d="${d}"/>
     </svg>
   `;
   const base64 = await base64Encode(svg);
   const img = new Image();
   img.onload = () => {
-    const canvas = new OffscreenCanvas(19, 19);
+    const canvas = new OffscreenCanvas(28, 28);
     const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(img, 0, 0, 19, 19);
-    const imageData = ctx.getImageData(0, 0, 19, 19);
+    ctx.drawImage(img, 0, 0, 28, 28);
+    const imageData = ctx.getImageData(0, 0, 28, 28);
     chrome.browserAction.setIcon({ imageData });
   };
   img.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;

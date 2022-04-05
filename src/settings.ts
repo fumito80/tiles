@@ -1,12 +1,14 @@
 /* eslint-disable max-classes-per-file */
 
 import './settings.scss';
-import * as monaco from 'monaco-editor';
 
-import { State } from './types';
+import { State, ColorPalette } from './types';
 import {
   $, $$, curry, getSync, setSync, setLocal, bootstrap, pipeP, whichClass, pipe, tap, objectEqaul,
 } from './utils';
+import {
+  InputMonacoEditor, SelectEditorTheme, ColorPaletteClass, monaco,
+} from './settings-classes';
 
 type Options = State['options'];
 type OptionNames = keyof Options;
@@ -110,45 +112,6 @@ function setSyncListener(inputs: Inputs) {
   return inputs;
 }
 
-class InputMonacoEditor extends HTMLInputElement {
-  editor?: monaco.editor.IStandaloneCodeEditor;
-  get value() {
-    return this.editor?.getValue() ?? '';
-  }
-  set value(value: string) {
-    this.editor?.setValue(value);
-  }
-  initialize(editor: monaco.editor.IStandaloneCodeEditor) {
-    this.editor = editor;
-    const $form = $<HTMLFormElement>('form')!;
-    this.editor.getModel()?.onDidChangeContent(() => {
-      $form.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  }
-}
-
-customElements.define('monaco-editor', InputMonacoEditor, { extends: 'input' });
-
-class SelectEditorTheme extends HTMLSelectElement {
-  editor?: typeof monaco.editor;
-  get value() {
-    return super.value;
-  }
-  set value(value: string) {
-    super.value = value;
-    this.setTheme(value);
-  }
-  initialize(editor: typeof monaco.editor) {
-    this.editor = editor;
-    this.addEventListener('change', () => this.setTheme(super.value));
-  }
-  setTheme(theme: string) {
-    this.editor?.setTheme(theme);
-  }
-}
-
-customElements.define('monaco-editor-theme', SelectEditorTheme, { extends: 'select' });
-
 function initMonacoEditor({ options }: Pick<State, 'options'>) {
   const editor = monaco.editor.create($('.css-editor')!, {
     language: 'css',
@@ -163,9 +126,38 @@ function setVersion() {
   $('.version')!.textContent = `Version ${chrome.runtime.getManifest().version}`;
 }
 
+async function setColorPalette({ options }: Pick<State, 'options'>) {
+  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
+  const htmlList = palettes
+    .filter(([,, [, frameIsLight]]) => frameIsLight)
+    .map((palette) => {
+      const colors = palette
+        .map(([color, isLight]) => `<div data-color="${color}" data-is-light="${isLight}" style="background-color: #${color};"></div>`)
+        .join('');
+      if (objectEqaul(palette, options.colorPalette, true)) {
+        return `<div class="selected">${colors}</div>`;
+      }
+      return `<div>${colors}</div>`;
+    }).join('');
+  const $colorPalettes = $('.color-palettes')!;
+  $colorPalettes.innerHTML = htmlList;
+  $colorPalettes.addEventListener('click', (e) => {
+    const $target = e.target as HTMLElement;
+    if ($target.parentElement !== $colorPalettes) {
+      return;
+    }
+    const palette = ([...$target.children] as HTMLElement[])
+      .map((el) => [el.dataset.color as string, el.dataset.isLight === 'true']) as ColorPalette;
+    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
+    $('.selected')?.classList.remove('selected');
+    $target.classList.add('selected');
+  });
+}
+
 pipeP(
   tap(setVersion),
   initMonacoEditor,
+  tap(setColorPalette),
   initInputs,
   setSyncListener,
   saveOptions,

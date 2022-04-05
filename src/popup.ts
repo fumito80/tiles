@@ -75,13 +75,34 @@ function setOptions(settings: Settings, options: Options) {
     ['height', `${settings.height}px`],
     ['color', settings.bodyColor],
   ]);
-  addRules('body, .bgcolor1', [['background-color', settings.frameBackgroundColor]]);
-  addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', settings.paneBackgroundColor]]);
+  const [
+    [paneBg, paneColor, isLightPaneBg],
+    [searchingBg, searchingColor],
+    [frameBg],
+    [itemHoverBg, itemHoverColor, isLightHoverBg],
+    [keyBg, keyColor, isLightKeyBg],
+  ] = options.colorPalette.map(([colorCode, isLight]) => [`#${colorCode}`, isLight ? '#222222' : '#EFEFEF', isLight]);
+  addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('body, .bgcolor1', [['background-color', frameBg]]);
   addRules('.folders .open > .marker > .title, .current-tab', [
-    ['background-color', settings.keyColor],
-    ['color', settings.keyForeColor],
+    ['background-color', keyBg],
+    ['color', keyColor],
   ]);
-  addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', settings.keyColor]]);
+  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5)' : '#EFEFEF']]);
+  addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
+  addRules('.query:not([value=""])', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules(
+    '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > div:not(.current-tab):hover, .pane-history .rows > div:not(.header-date):hover',
+    [['background-color', itemHoverBg], ['color', itemHoverColor]],
+  );
+  if (!isLightPaneBg) {
+    addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
+    addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
+    addRules('.leafs .title::before', [['color', paneColor]]);
+  }
+  if (!isLightHoverBg) {
+    addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
+  }
   if (options.showCloseHistory) {
     addRules('.pane-history > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }
