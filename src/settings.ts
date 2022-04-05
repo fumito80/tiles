@@ -20,15 +20,24 @@ import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 
 class ColorPaletteClass extends HTMLDivElement {
   #value?: ColorPalette;
+  #inputs: HTMLInputElement[];
+  constructor() {
+    super();
+    this.#inputs = [...this.children] as HTMLInputElement[];
+    this.#inputs.forEach((el) => {
+      el.addEventListener('change', () => {
+        this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
+      });
+    });
+  }
   get value() {
     return this.#value!;
   }
   set value(value: ColorPalette) {
     this.#value = value;
     value.forEach((color, i) => {
-      const el = this.children[i] as HTMLDivElement || this.appendChild(document.createElement('div'));
-      el.style.setProperty('background-color', `#${color}`);
-      el.dataset.color = color;
+      const input = this.children[i] as HTMLInputElement;
+      input.value = `#${color}`;
     });
     this.dispatchEvent(new Event('change', { bubbles: true }));
     setBrowserIcon(value);

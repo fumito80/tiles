@@ -97,6 +97,7 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5)' : '#EFEFEF']]);
   addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
   addRules('.query:not([value=""])', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
     '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > div:not(.current-tab):hover, .pane-history .rows > div:not(.header-date):hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],

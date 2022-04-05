@@ -14,9 +14,9 @@
     <header>
       <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
       <div class="chrome-sync ms-auto">
-        <button class="btn btn-sm btn-outline-success upload-sync"><i class="fa cloud-arrow-up"></i> Upload
+        <button class="btn btn-sm btn-outline-success upload-sync"><i class="icon-cloud-arrow-up"></i> Upload
           sync</button>
-        <button class="btn btn-sm btn-outline-primary download-sync"><i class="fa cloud-arrow-down"></i> Download
+        <button class="btn btn-sm btn-outline-primary download-sync"><i class="icon-cloud-arrow-down"></i> Download
           sync</button>
       </div>
     </header>
@@ -51,7 +51,13 @@
           <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
             <div>Color scheme</div><i class="icon-fa-angle-right ms-1"></i>
           </a>
-          <div is="color-palette" name="color-palette" class="ms-4"></div>
+          <div is="color-palette" name="color-palette" class="ms-4">
+            <input type="color">
+            <input type="color">
+            <input type="color">
+            <input type="color">
+            <input type="color">
+          </div>
         </div>
         <div id="color-palettes" class="collapse mt-2">
           <div class="color-palettes"></div>

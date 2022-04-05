@@ -178,16 +178,28 @@ label.theme {
   border-radius: 5px;
   border: 1px solid #efefef;
   align-self: center;
-  > div {
+  > input {
     height: 30px;
     width: 50px;
-    &:first-child {
+    border: none;
+    &::-webkit-color-swatch {
+      border: none;
+      margin: -2px;
+    }
+    &:first-child::-webkit-color-swatch {
       border-top-left-radius: 5px;
       border-bottom-left-radius: 5px;
     }
-    &:last-child {
+    &:last-child::-webkit-color-swatch {
       border-top-right-radius: 5px;
       border-bottom-right-radius: 5px;
+    }
+    &:hover {
+      box-shadow: 3px 3px 5px 2px rgb(0 0 0 / 20%);
+      transform: scale(1.05);
+      &::-webkit-color-swatch {
+        border-radius: 5px;
+      }
     }
   }
 }
