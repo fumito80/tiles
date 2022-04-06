@@ -60,11 +60,11 @@ export function when(test: boolean) {
       return whenGetter<T>(valueOrFunction);
     },
     then: <T extends AnyFunction | any>(valueOrFunction: T) => ({
-      else: (elseValueOrFunction: T) => {
+      else: <U extends AnyFunction | any>(elseValueOrFunction: U) => {
         if (test) {
           return whenGetter<T>(valueOrFunction);
         }
-        return whenGetter<T>(elseValueOrFunction);
+        return whenGetter<U>(elseValueOrFunction);
       },
       when: (testNext: boolean) => {
         if (test) {
@@ -76,28 +76,39 @@ export function when(test: boolean) {
   };
 }
 
-function caseConst<T>(a: T) {
+function swichesConst<T>(a: T) {
   return {
-    case: () => thenConst<T>(a),
-    else: () => a,
+    // eslint-disable-next-line no-use-before-define
+    case: () => caseThenConst<T>(a),
+    else: () => whenGetter<T>(a),
   };
 }
 
-function caseGetter<T, U>(value: T) {
+function caseThenConst<T>(a: T) {
+  return {
+    then: () => swichesConst<T>(a),
+  };
+}
+
+export function switches<T>(value: T) {
   return {
     case: (testValue: T) => ({
-      then: (thenValue: U) => {
-        if (value === testValue) {
-          return caseConst<U>(thenValue);
-        }
-        return caseGetter<T, U>(value);
-      },
+      then: <U>(thenValue: U) => ({
+        case: (testValueNext: T) => {
+          if (value === testValue) {
+            return caseThenConst<U>(thenValue);
+          }
+          return switches<T>(value).case(testValueNext);
+        },
+        else: <V>(elseValue: V) => {
+          if (value === testValue) {
+            return whenGetter<U>(thenValue);
+          }
+          return whenGetter<V>(elseValue);
+        },
+      }),
     }),
   };
-}
-
-export function cases<T, U>(value: T) {
-  return caseGetter<T, U>(value);
 }
 
 export function eq<T>(a: T) {

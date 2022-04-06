@@ -21,47 +21,22 @@ import {
   getColorWhiteness,
 } from './utils';
 
+import { makeTab } from './html';
 import { setEventListners } from './client-events';
 import { resetHistory } from './vscroll';
 
 type Options = State['options'];
 
-function makeHtmlTabWithCloseBtn(
-  prev: string,
-  id: number,
-  classProp: string,
-  title: string,
-  style: string,
-  content: string,
-) {
-  return `
-    ${prev}<div id="tab-${id}"${classProp} title="${title}" style="${style}">
-      <span>${content}</span><i class="icon-x"></i>
-    </div>
-  `;
-}
-
-function makeHtmlTab(
-  prev: string,
-  id: number,
-  classProp: string,
-  title: string,
-  style: string,
-  content: string,
-) {
-  return `${prev}<div id="tab-${id}"${classProp} title="${title}" style="${style}"><span>${content}</span></div>`;
-}
-
 function setTabs(options: Options, currentWindowId: number) {
-  const makeHtml = options.showCloseTab ? makeHtmlTabWithCloseBtn : makeHtmlTab;
+  // const makeHtml = options.showCloseTab ? makeTabWithCloseBtn : makeTab;
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
-      const classProp = tab.active && tab.windowId === currentWindowId ? ' class="current-tab"' : '';
+      const addClass = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
       const domain = extractDomain(tab.url);
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const html = makeHtml(prev, tab.id!, classProp, title, style, tab.title!);
+      const html = makeTab(prev, tab.id!, addClass, title, style, tab.title!);
       return { ...rest, [tab.windowId]: html };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
@@ -109,6 +84,9 @@ function setOptions(settings: Settings, options: Options) {
   }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
+  }
+  if (options.showCloseTab) {
+    addRules('.pane-tabs > div > div:hover > i', [['display', 'inline-block']]);
   }
   if (options.showCloseHistory) {
     addRules('.pane-history > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);

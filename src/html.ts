@@ -39,3 +39,42 @@ export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.Bo
     $anchor.textContent = title;
   });
 }
+
+export function makeTab(
+  prev: string,
+  id: number,
+  addClass: string,
+  title: string,
+  style: string,
+  content: string,
+) {
+  return `
+    ${prev}
+    <div id="tab-${id}" class="tab-wrap ${addClass}">
+      <span class="tab" draggable="true" style="${style}" title="${title}">${content}</span><i class="icon-x"></i>
+      <div class="drop-top"></div>
+    </div>
+  `;
+  // return `
+  //   ${prev}<div id="tab-${id}"${classProp} title="${title}" style="${style}">
+  //     <span>${content}</span><i class="icon-x"></i>
+  //   </div>
+  // `;
+}
+
+// export function makeTab(
+//   prev: string,
+//   id: number,
+//   classProp: string,
+//   title: string,
+//   style: string,
+//   content: string,
+// ) {
+//   return `
+//     ${prev}
+//     <div id="tab-${id}"${classProp} title="${title}" style="${style}">
+//       <span draggable="true">${content}</span>
+//       <div class="drop-top"></div>
+//     </div>
+//   `;
+// }

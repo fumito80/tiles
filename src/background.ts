@@ -76,6 +76,7 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 function makeHtmlHistory(rows: number) {
+  const aDay = 1000 * 60 * 60 * 24;
   return () => {
     const startTime = Date.now() - pastMSec;
     chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
@@ -88,7 +89,11 @@ function makeHtmlHistory(rows: number) {
         .reduce<MyHistoryItem[]>((acc, item) => {
           const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
           if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
-            const headerDate = { headerDate: true, lastVisitDate: item.lastVisitDate };
+            const headerDate = {
+              headerDate: true,
+              lastVisitDate: item.lastVisitDate,
+              lastVisitTime: item.lastVisitTime! - (item.lastVisitTime! % aDay),
+            };
             return [...acc, headerDate, item];
           }
           return [...acc, item];

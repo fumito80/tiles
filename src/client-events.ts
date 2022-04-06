@@ -30,7 +30,7 @@ import {
   getLocal,
   setLocal,
   when,
-  // cases,
+  switches,
   setSplitWidth,
   getGridTemplateColumns,
   extractUrl,
@@ -296,11 +296,12 @@ function submit(options: Options) {
     }
     $inputQuery.setAttribute('value', value);
     $('.leafs .open')?.classList.remove('open');
-    $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
-    $$('.leafs .path').forEach((el) => el.classList.remove('path'));
     $('.leafs')!.scrollTop = 0;
     if (value.length <= 1) {
+      $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
+      $$('.leafs .path').forEach((el) => el.classList.remove('path'));
       $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
+      $$('.empty').forEach((el) => el.classList.remove('empty'));
       resetHistory();
       const openFolder = $('.folders .open');
       if (openFolder) {
@@ -317,7 +318,27 @@ function submit(options: Options) {
       return false;
     }
     const reFilter = new RegExp(value, 'i');
-    $$('.leafs .leaf').forEach((leaf) => {
+    const [searchType, selectorTabs] = when(lastQueryValue !== '' && value.startsWith(lastQueryValue))
+      .then(['forward', '.match'] as const)
+      .when(lastQueryValue.startsWith(value))
+      .then(['back', '.unmatch'] as const)
+      .else(['new', 'div'] as const);
+    const targetBookmarks = switches(searchType)
+      .case('forward')
+      .then(() => {
+        const target = $$('.leafs .search-path');
+        target.forEach((el) => el.classList.remove('search-path'));
+        $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+        return target;
+      })
+      .case('back')
+      .then(() => $$('.leafs .leaf:not(.search-path)'))
+      .else(() => {
+        $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
+        $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+        return $$('.leafs .leaf');
+      });
+    targetBookmarks.forEach((leaf) => {
       const $anchor = leaf.firstElementChild as HTMLAnchorElement;
       if (reFilter.test($anchor.textContent!)
         || (options.includeUrl && reFilter.test(extractUrl($anchor.style.backgroundImage)))) {
@@ -329,16 +350,20 @@ function submit(options: Options) {
         }
       }
     });
-    const selector = when(lastQueryValue !== '' && value.startsWith(lastQueryValue)).then('.match')
-      .when(lastQueryValue.startsWith(value)).then('.unmatch')
-      .else('div');
-    lastQueryValue = value;
-    $$(`.pane-tabs > div > ${selector}`).forEach((el) => {
-      const [addClass, removeClass] = (reFilter.test(el.textContent!) || (options.includeUrl && reFilter.test(el.title))) ? ['match', 'unmatch'] : ['unmatch', 'match'];
-      el.classList.add(addClass);
-      el.classList.remove(removeClass);
+    $$('.pane-tabs > div').forEach((win) => {
+      const hits = $$(selectorTabs, win).filter((el) => {
+        const isMatch = reFilter.test(el.textContent!)
+          || (options.includeUrl && reFilter.test(el.title));
+        el.classList.toggle('match', isMatch);
+        el.classList.toggle('unmatch', !isMatch);
+        return isMatch;
+      });
+      win.classList.toggle('empty', hits.length === 0);
     });
-    resetHistory({ reFilter, includeUrl: options.includeUrl });
+    resetHistory({
+      reFilter, includeUrl: options.includeUrl, searchType, queryValue: value, lastQueryValue,
+    });
+    lastQueryValue = value;
     return false;
   };
 }
@@ -393,32 +418,38 @@ export function setEventListners(options: Options) {
     },
     dragstart: (e) => {
       const [targetClass, $target, id] = ((target) => {
-        const className = whichClass(['anchor', 'leaf', 'marker'] as const, target);
-        if (className === 'leaf') {
-          return ['drag-start-leaf', target, target.id] as const;
+        const className = whichClass(['anchor', 'leaf', 'marker', 'tab'] as const, target);
+        switch (className) {
+          // case 'leaf':
+          //   return ['drag-start-leaf', target, target.id] as const;
+          case 'marker':
+            return ['drag-start-folder', target, target.parentElement!.id] as const;
+          case 'anchor': {
+            const $leaf = (target as HTMLElement).parentElement as HTMLElement;
+            return ['drag-start-leaf', $leaf, $leaf.id] as const;
+          }
+          case 'tab': {
+            const $tab = (target as HTMLElement).parentElement as HTMLElement;
+            return ['drag-start-tab', $tab, $tab.id] as const;
+          }
+          default:
+            return ['', null, ''] as const;
         }
-        if (className === 'marker') {
-          return ['drag-start-folder', target, target.parentElement!.id] as const;
-        }
-        if (className === 'anchor') {
-          const $leaf = (target as HTMLElement).parentElement as HTMLElement;
-          return ['drag-start-leaf', $leaf, $leaf.id] as const;
-        }
-        return ['', null, ''] as const;
       })(e.target as HTMLElement);
-      if ($target != null) {
-        $target.classList.remove('hilite');
-        const draggable = pipe(
-          (target) => target.cloneNode(true) as HTMLAnchorElement,
-          (clone) => $('.draggable-clone')!.appendChild(clone),
-        )($target);
-        e.dataTransfer!.setDragImage(draggable, 10, 10);
-        const title = $('.title, .anchor', $target)!.textContent || '';
-        e.dataTransfer!.setData('text/plain', title);
-        e.dataTransfer!.setData('application/bx-move', id);
-        $target.classList.add('drag-source');
-        $('main')!.classList.add(targetClass);
+      if (!$target) {
+        return;
       }
+      $target.classList.remove('hilite');
+      const draggable = pipe(
+        (target) => target.cloneNode(true) as HTMLAnchorElement,
+        (clone) => $('.draggable-clone')!.appendChild(clone),
+      )($target);
+      e.dataTransfer!.setDragImage(draggable, 10, 10);
+      const title = $('.title, .anchor, .tab', $target)!.textContent || '';
+      e.dataTransfer!.setData('text/plain', title);
+      e.dataTransfer!.setData('application/bx-move', id);
+      $target.classList.add('drag-source');
+      $('main')!.classList.add(targetClass);
     },
     dragover: (e) => {
       if (checkDroppable(e)) {

@@ -215,12 +215,16 @@ input.query {
   }
 }
 
-.query[value=""] ~ .icon-x {
-  display: none;
-}
-
-.query:not([value=""]) {
-  background-color: #cce5ff;  
+.query {
+  &[value=""] ~ .icon-x {
+    display: none;
+  }  
+  &:not([value=""]) {
+    background-color: #cce5ff;
+    + button {
+      cursor: pointer;
+    }
+  }
 }
 
 [role="menu"] {
@@ -358,7 +362,7 @@ input.query {
 .leaf {
   position: relative;
   display: flex;
-  margin: 2px 0;
+  margin: 0;
   align-items: center;
 
   &.hilite {
@@ -369,8 +373,7 @@ input.query {
   .anchor {
     width: 100%;
     margin-left: 2px;
-    padding: 3px;
-    padding-left: 20px;
+    padding: 4px 0 4px 21px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -497,11 +500,6 @@ input.query {
 
 // Leafs, Folders
 
-.leafs .folder.search-path,
-.folders .folder {
-  margin: 2px 0 2px 2px;
-}
-
 .leafs .folder .folder.search-path,
 .folders .folder .folder {
   padding-inline-start: 12px;
@@ -511,6 +509,7 @@ input.query {
 .folders .marker {
   display: flex;
   align-items: center;
+  padding: 2px 0 2px 2px;
 }
 
 .leafs .folder.search-path.path > .folder,
@@ -787,8 +786,7 @@ input.query {
 .draggable-clone {
   position: relative;
   top: -1000px;
-  > .leaf,
-  > .marker {
+  > div {
     min-width: 50px;
     max-width: 200px;
     overflow: hidden;
@@ -797,10 +795,11 @@ input.query {
       display: none;
     }
     > .anchor,
+    > .tab,
     > .title {
-      display: inline-block;
       min-width: 50px;
       max-width: 200px;
+      display: inline-block;
       margin-left: 12px;
       padding-right: 4px;
       color: white !important;
@@ -810,6 +809,9 @@ input.query {
     > .anchor {
       padding-left: 22px;
       background-position: 3px center;
+    }
+    > .icon-x {
+      display: none;
     }
   }
 }
@@ -824,8 +826,8 @@ input.query {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;  
-      margin: 2px;
-      padding: 3px;
+      margin: 0 2px;
+      padding: 4px 0;
       padding-left: 20px;
       background-repeat: no-repeat;
       background-position: 1px center;
@@ -868,26 +870,9 @@ input.query {
     border-radius: $pane-radius;
     border: 2px solid #222;
     margin-right: 2px;
-    padding-right: 1px;
-    > div {
-      display: flex;
-      cursor: default;
-      margin: 2px 0;
-      padding: 3px;
-      padding-left: 21px;
-      background-repeat: no-repeat;
-      background-position: 2px center;
-      > span {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;  
-      }
-    }
-    > div:not(.current-tab):hover {
+    padding: 1px;
+    > .tab:not(.current-tab):hover {
       background-color: $hover-color;
-    }
-    > div:hover > i {
-      display: inline-flex;
     }
     > .match {
       display: flex !important;
@@ -896,19 +881,38 @@ input.query {
       display: none;
     }
   }
+  > .empty {
+    padding: 0;
+  }
+}
+
+.tab-wrap {
+  display: flex;
+  align-items: center;
+  margin: 0;
+    .tab {
+    width: 100%;
+    margin: 0;
+    padding: 4px 0 4px 21px;
+    background-repeat: no-repeat;
+    background-position: 2px center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;  
+    cursor: default;
+  }
 }
 
 .pane-tabs,
 .pane-history {
   .icon-x {
     margin-left: auto;
-    margin-right: -2px;
     font-size: 1.3em;
     color: #222;
     background-color: transparent;
     transition: background-color .3s;
     display: none;
-    &:hover {
+    &:hover::before {
       background-color: red;
       color: white;
     }
