@@ -7,7 +7,6 @@ import {
   setSync,
   setLocal,
   bootstrap,
-  pipeP,
   whichClass,
   pipe,
   tap,
@@ -186,7 +185,6 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     $('.selected')?.classList.remove('selected');
     $target.classList.add('selected');
   });
-  return { options };
 }
 
 type InitParams = {
@@ -206,7 +204,7 @@ function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitPara
   });
 }
 
-pipeP(
+const init = pipe(
   tap(setColorPalette),
   tap(setVersion),
   initInputs,
@@ -219,4 +217,6 @@ pipeP(
     selectEditorTheme: $<SelectEditorTheme>('[name="editor-theme"]')!,
   }),
   initMonacoEditor,
-)(bootstrap('options'));
+);
+
+bootstrap('options').then(init);

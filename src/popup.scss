@@ -590,6 +590,7 @@ input.query {
 }
 
 .drag-start-leaf .leaf,
+.drag-start-leaf .tab-wrap,
 .drag-start-leaf .folders > .folder > .marker,
 .drag-start-folder .leaf,
 .drag-start-folder .marker {
@@ -606,7 +607,8 @@ input.query {
 
 .drag-start-leaf,
 .drag-start-folder .folders {
-  .leaf {
+  .leaf:not(.search-path),
+  .tab-wrap:not(.match):not(.unmatch) {
     > .drop-top,
     > .drop-bottom {
       position: absolute;
@@ -636,6 +638,13 @@ input.query {
     > .drop-bottom.drag-enter::after {
       top: calc(50% - 4px);
       left: -1px;
+    }
+  }
+  .tab-wrap {
+    > .drop-top {
+      left: 1px;
+      // right: 1px;
+      // width: 100%;
     }
   }
 }
@@ -735,21 +744,26 @@ input.query {
 
 .drag-start-leaf {
   .drag-source {
-    background-color: $drag-source-bgcolor;
-    > .anchor {
-      // color: #222;
+    background-color: $drag-source-bgcolor !important;
+    > .anchor,
+    > .tab {
+      color: #222;
       text-decoration: none;
       z-index: 3;
     }
-    + .leaf > .drop-top,
-    + .folder > .marker > .drop-top {
+    + .folder > .marker > .drop-top,
+    &.tab-wrap > .drop-top,
+    &.tab-wrap > .drop-bottom {
       z-index: 0;
       width: 0;
       height: 0;
     }
   }
-  :not(.drag-source) > .anchor {
-    pointer-events: none;
+  :not(.drag-source) {
+    > .anchor,
+    > .tab {
+      pointer-events: none;
+    }
   }
 }
 
@@ -864,16 +878,15 @@ input.query {
 }
 
 .pane-tabs {
-  grid-row-start: span 2;
-  gap: 5px;
-  display: flex;
-  flex-direction: column;
   position: relative;
+  grid-row-start: span 2;
   overflow-y: auto;
   > div {
+    overflow: hidden;
     border-radius: $pane-radius;
     border: 2px solid #222;
     margin-right: 2px;
+    margin-bottom: 5px;
     padding: 1px;
     > .tab:not(.current-tab):hover {
       background-color: $hover-color;
@@ -891,6 +904,7 @@ input.query {
 }
 
 .tab-wrap {
+  position: relative;
   display: flex;
   align-items: center;
   margin: 0;

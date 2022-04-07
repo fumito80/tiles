@@ -12,7 +12,7 @@ export function makeLeaf({
   return `
     <div class="leaf" id="${id}" data-parent-id="${parentId}">
       <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
-      <div class="drop-top"></div>
+      <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
 }
@@ -50,7 +50,7 @@ export function makeTab(
   return `
     <div id="tab-${id}" class="tab-wrap ${addClass}">
       <span class="tab" draggable="true" style="${style}" title="${title}">${content}</span><i class="icon-x"></i>
-      <div class="drop-top"></div>
+      <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
 }

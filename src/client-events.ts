@@ -16,7 +16,6 @@ import {
   $,
   $$,
   setEvents,
-  pipe,
   whichClass,
   cssid,
   getParentElement,
@@ -52,6 +51,9 @@ function checkDroppable(e: DragEvent) {
   // falses when same element
   if (targetParent === $dragSource) {
     return false;
+  }
+  if (targetParent.classList.contains('tab-wrap')) {
+    return true;
   }
   switch (dropClass) {
     case 'drop-bottom':
@@ -194,7 +196,7 @@ function resizeSplitHandler($splitter: HTMLElement, subWidth: number) {
 
 function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
   return (e: MouseEvent) => {
-    const width = startWidth - e.screenX;
+    const width = Math.min(startWidth - e.screenX, 800);
     if (width - $ref.offsetLeft < 100) {
       return;
     }
@@ -203,7 +205,7 @@ function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
 }
 
 function resizeHeightHandler(e: MouseEvent) {
-  const height = e.clientY - 6;
+  const height = Math.min(e.clientY - 6, 590);
   if (height < 200) {
     return;
   }
@@ -322,7 +324,7 @@ function submit(options: Options) {
       .then('.match' as const)
       .when(lastQueryValue.startsWith(value))
       .then('.unmatch' as const)
-      .else('div' as const);
+      .else('.tab' as const);
     const targetBookmarks = switches(selectorTabs)
       .case('.match')
       .then(() => {
@@ -354,8 +356,9 @@ function submit(options: Options) {
       const hits = $$(selectorTabs, win).filter((el) => {
         const isMatch = reFilter.test(el.textContent!)
           || (options.includeUrl && reFilter.test(el.title));
-        el.classList.toggle('match', isMatch);
-        el.classList.toggle('unmatch', !isMatch);
+        const $tabWrap = el.parentElement!;
+        $tabWrap.classList.toggle('match', isMatch);
+        $tabWrap.classList.toggle('unmatch', !isMatch);
         return isMatch;
       });
       win.classList.toggle('empty', hits.length === 0);
@@ -394,6 +397,57 @@ async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   chrome.tabs.update(tab.id, { active: true });
 }
 
+const sourceClasses = ['anchor', 'marker', 'tab'] as const;
+type SourceClass = (typeof sourceClasses)[number];
+
+function dropInTabs(
+  $dropTarget: HTMLElement,
+  sourceId: string,
+  sourceClass: SourceClass,
+  dropClass: (typeof dropClasses)[number],
+) {
+  const [, tabId] = $dropTarget.id.split('-');
+  chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
+    if (sourceClass === 'anchor') {
+      const index = rest.index + (dropClass === 'drop-top' ? 0 : 1);
+      const { url } = await getBookmark(sourceId);
+      chrome.tabs.create({ index, url, windowId }, () => {
+        chrome.windows.update(windowId, { focused: true });
+      });
+      return;
+    }
+    const [, sourceTabId] = sourceId.split('-');
+    chrome.tabs.get(Number(sourceTabId), async (sourceTab) => {
+      let index: number;
+      if (sourceTab.windowId === windowId) {
+        index = rest.index - (dropClass === 'drop-bottom' ? 0 : 1);
+        if (rest.index < sourceTab.index) {
+          // move to right
+          index = rest.index;
+        }
+      } else {
+        index = rest.index + (dropClass === 'drop-bottom' ? 1 : 0);
+      }
+      chrome.tabs.move([Number(sourceTabId)], { windowId, index }, () => {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+        let domIndex = index;
+        if (sourceTab.windowId === windowId && rest.index > sourceTab.index) {
+          domIndex += 1;
+        }
+        const $source = $(`#${sourceId}`)!;
+        const $sourceParent = $source.parentElement!;
+        const $destParent = $dropTarget.parentElement!;
+        $destParent?.insertBefore($source, $destParent.children[domIndex]);
+        if ($sourceParent.children.length === 0) {
+          $sourceParent.remove();
+        }
+      });
+    });
+  });
+}
+
 export function setEventListners(options: Options) {
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
   $('.query')!.addEventListener('input', submit(options));
@@ -415,38 +469,31 @@ export function setEventListners(options: Options) {
       $('.query')!.focus();
     },
     dragstart: (e) => {
-      const [targetClass, $target, id] = ((target) => {
-        const className = whichClass(['anchor', 'leaf', 'marker', 'tab'] as const, target);
+      const $target = e.target as HTMLElement;
+      const className = whichClass(sourceClasses, $target);
+      const [targetClass, $dragTarget, id] = (() => {
         switch (className) {
-          // case 'leaf':
-          //   return ['drag-start-leaf', target, target.id] as const;
           case 'marker':
-            return ['drag-start-folder', target, target.parentElement!.id] as const;
-          case 'anchor': {
-            const $leaf = (target as HTMLElement).parentElement as HTMLElement;
-            return ['drag-start-leaf', $leaf, $leaf.id] as const;
-          }
+            return ['drag-start-folder', $target, $target.parentElement!.id] as const;
+          case 'anchor':
           case 'tab': {
-            const $tab = (target as HTMLElement).parentElement as HTMLElement;
-            return ['drag-start-tab', $tab, $tab.id] as const;
+            const $leaf = $target.parentElement as HTMLElement;
+            return ['drag-start-leaf', $leaf, $leaf.id] as const;
           }
           default:
             return ['', null, ''] as const;
         }
-      })(e.target as HTMLElement);
-      if (!$target) {
+      })();
+      if (!$dragTarget) {
         return;
       }
-      $target.classList.remove('hilite');
-      const draggable = pipe(
-        (target) => target.cloneNode(true) as HTMLAnchorElement,
-        (clone) => $('.draggable-clone')!.appendChild(clone),
-      )($target);
+      $dragTarget.classList.remove('hilite');
+      const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
+      const draggable = $('.draggable-clone')!.appendChild(clone);
       e.dataTransfer!.setDragImage(draggable, 10, 10);
-      const title = $('.title, .anchor, .tab', $target)!.textContent || '';
-      e.dataTransfer!.setData('text/plain', title);
-      e.dataTransfer!.setData('application/bx-move', id);
-      $target.classList.add('drag-source');
+      e.dataTransfer!.setData('application/source-id', id);
+      e.dataTransfer!.setData('application/source-class', className!);
+      $dragTarget.classList.add('drag-source');
       $('main')!.classList.add(targetClass);
     },
     dragover: (e) => {
@@ -469,12 +516,17 @@ export function setEventListners(options: Options) {
     },
     drop: async (e) => {
       const $dropArea = e.target as HTMLElement;
-      const sourceId = e.dataTransfer?.getData('application/bx-move')!;
+      const sourceId = e.dataTransfer?.getData('application/source-id')!;
+      const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
       const dropClass = whichClass(dropClasses, $dropArea)!;
       const $dropTarget = $dropArea.parentElement?.id
         ? $dropArea.parentElement!
         : $dropArea.parentElement!.parentElement!;
       const destId = $dropTarget.id;
+      if ($dropTarget.classList.contains('tab-wrap')) {
+        dropInTabs($dropTarget, sourceId, sourceClass, dropClass);
+        return;
+      }
       let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
       if (dropClass !== 'drop-folder') {
         const parentId = $dropTarget.parentElement?.id! || '1';
@@ -743,6 +795,9 @@ export function setEventListners(options: Options) {
       return;
     }
     const [, windowId] = $window.id.split('-') || [];
+    if (windowId == null) {
+      return;
+    }
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
