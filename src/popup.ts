@@ -27,8 +27,7 @@ import { resetHistory } from './vscroll';
 
 type Options = State['options'];
 
-function setTabs(options: Options, currentWindowId: number) {
-  // const makeHtml = options.showCloseTab ? makeTabWithCloseBtn : makeTab;
+function setTabs(currentWindowId: number) {
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
@@ -36,8 +35,8 @@ function setTabs(options: Options, currentWindowId: number) {
       const domain = extractDomain(tab.url);
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const html = makeTab(prev, tab.id!, addClass, title, style, tab.title!);
-      return { ...rest, [tab.windowId]: html };
+      const htmlTabs = makeTab(tab.id!, addClass, title, style, tab.title!);
+      return { ...rest, [tab.windowId]: prev + htmlTabs };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
     const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
@@ -113,14 +112,14 @@ function setExternalUrl(options: Options) {
   ]);
 }
 
-function repaleceHtml(html: HtmlBookmarks) {
+function setBookmarks(html: HtmlBookmarks) {
   $('.leafs')!.innerHTML = html.leafs;
   const $folders = $('.folders')!;
   $folders.innerHTML = html.folders;
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
-function setClientState(clState: ClientState) {
+function setBookmarksState(clState: ClientState) {
   clState.paths?.forEach((id) => $(`.folders ${cssid(id)}`)?.classList.add('path'));
   if (clState.open) {
     $$(cssid(clState.open))?.forEach((el) => el.classList.add('open'));
@@ -134,11 +133,11 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
 function init({
   settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
 }: State) {
-  setTabs(options, currentWindowId);
+  setTabs(currentWindowId);
   setOptions(settings, options);
-  repaleceHtml(htmlBookmarks);
+  setBookmarks(htmlBookmarks);
+  setBookmarksState(clientState);
   $<HTMLDivElement>('.pane-history')!.firstElementChild!.innerHTML = htmlHistory;
-  setClientState(clientState);
   resetHistory({ initialize: true });
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);

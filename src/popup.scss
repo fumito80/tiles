@@ -821,6 +821,8 @@ input.query {
   grid-row-start: span 2;
   border-radius: $pane-radius;
   .rows {
+    padding-top: 2px;
+    padding-bottom: 2px;
     > div {
       cursor: default;
       overflow: hidden;
@@ -845,7 +847,9 @@ input.query {
     }
     .header-date {
       display: flex;
-      padding: 0;
+      padding: 2px 0;
+      margin-top: 2px;
+      margin-bottom: 2px;
       justify-content: center;
       align-items: center;
       background-color: white;

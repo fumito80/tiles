@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getLocal, setLocal, pick, when,
+  $, getLocal, setLocal, pick,
 } from './utils';
 
 export function rowSetterHistory(
@@ -10,7 +10,7 @@ export function rowSetterHistory(
 ) {
   const latestDate = (new Date()).toLocaleDateString();
   const $currentDate = $('.pane-history .current-date')!;
-  $currentDate.style.transform = 'translateY(0)';
+  $currentDate.style.transform = 'translateY(-2px)';
   return (row: HTMLElement, index: number) => {
     if (index === 0) {
       return;
@@ -53,9 +53,9 @@ function getRowHeight(rows: HTMLElement) {
   tester.textContent = 'A';
   const styles = getComputedStyle(tester);
   const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
-  const elementHeight = Math.round(Number.parseFloat(styles.height));
-  const rowHeight: number = Object.values(props)
-    .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight) - 2;
+  const elementHeight = Math.ceil(Number.parseFloat(styles.height));
+  const rowHeight = Object.values(props)
+    .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight);
   tester.remove();
   [...rows.children].forEach((el) => (el as HTMLElement).style.setProperty('height', `${elementHeight}px`));
   return { rowHeight, elementHeight };
@@ -95,6 +95,8 @@ export function setVScroll(
   vscroll.addEventListener('scroll', vScrollHandler);
 }
 
+const searchCache = new Map<string, Array<MyHistoryItem>>();
+
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
   const [results] = source.reduce(([result, prevHeaderDate], el) => {
     if (el.headerDate) {
@@ -111,51 +113,38 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
-type ResetParams = { initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean, searchType?: 'forward' | 'back' | 'new', queryValue?: string, lastQueryValue?: string };
+type ResetParams = { initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean };
 
 export async function resetHistory({
   initialize,
   reFilter,
   includeUrl,
-  searchType,
-  queryValue,
-  lastQueryValue,
 }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   const rows = $('.rows', $paneHistory)!;
   if (initialize) {
     const { rowHeight, elementHeight } = getRowHeight(rows);
-    setLocal({ vscrollProps: { rowHeight, elementHeight }, historiesCache: {} });
+    await setLocal({ vscrollProps: { rowHeight, elementHeight } });
   }
-  const {
-    histories: [init, ...tail],
-    vscrollProps,
-    historiesCache = {},
-  } = await getLocal('histories', 'vscrollProps', 'historiesCache');
+  const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
   const today = (new Date()).toLocaleDateString();
-  const histories2 = when(!!initialize && init.lastVisitDate !== today && !init.headerDate)
-    .then(() => {
-      const lastVisitTime = init.lastVisitTime! - (init.lastVisitTime! % (1000 * 60 * 60 * 24));
-      const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate, lastVisitTime };
-      const histories = [headerDate, init, ...tail];
-      const headerDateHtml = `<div class="header-date" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
-      rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-      setLocal({ histories, htmlHistory: rows.innerHTML });
-      return histories as MyHistoryItem[];
-    })
-    .else(() => [init, ...tail]);
-  let data: Array<MyHistoryItem>;
-  if (!reFilter) {
-    data = histories2;
-    setLocal({ historiesCache: {} });
-  } else if (searchType === 'back') {
-    data = historiesCache[queryValue!] || histories2;
-  } else if (searchType === 'forward') {
-    data = searchHistory(historiesCache[lastQueryValue!] || histories2, reFilter, includeUrl!);
-    setLocal({ historiesCache: { ...historiesCache, [queryValue!]: data } });
-  } else {
-    data = searchHistory(histories2, reFilter, includeUrl!);
-    setLocal({ historiesCache: { ...historiesCache, [queryValue!]: data } });
+  let histories = [init, ...tail];
+  if (!!initialize && init.lastVisitDate !== today && !init.headerDate) {
+    const lastVisitTime = init.lastVisitTime! - (init.lastVisitTime! % (1000 * 60 * 60 * 24));
+    const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate, lastVisitTime };
+    histories = [headerDate, init, ...tail];
+    const headerDateHtml = `<div class="header-date" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
+    rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
+    await setLocal({ histories, htmlHistory: rows.innerHTML });
+  }
+  const queryValue = reFilter?.source;
+  let data: MyHistoryItem[] | undefined = histories;
+  if (queryValue) {
+    data = searchCache.get(queryValue);
+    if (!data) {
+      data = searchHistory(histories, reFilter, includeUrl!);
+      searchCache.set(reFilter.source, data);
+    }
   }
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
   if (reFilter || !initialize) {

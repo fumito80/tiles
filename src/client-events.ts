@@ -317,21 +317,21 @@ function submit(options: Options) {
       createNewTab(options, url);
       return false;
     }
-    const reFilter = new RegExp(value, 'i');
-    const [searchType, selectorTabs] = when(lastQueryValue !== '' && value.startsWith(lastQueryValue))
-      .then(['forward', '.match'] as const)
+    const reFilter = new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
+    const selectorTabs = when(lastQueryValue !== '' && value.startsWith(lastQueryValue))
+      .then('.match' as const)
       .when(lastQueryValue.startsWith(value))
-      .then(['back', '.unmatch'] as const)
-      .else(['new', 'div'] as const);
-    const targetBookmarks = switches(searchType)
-      .case('forward')
+      .then('.unmatch' as const)
+      .else('div' as const);
+    const targetBookmarks = switches(selectorTabs)
+      .case('.match')
       .then(() => {
         const target = $$('.leafs .search-path');
         target.forEach((el) => el.classList.remove('search-path'));
         $$('.leafs .path').forEach((el) => el.classList.remove('path'));
         return target;
       })
-      .case('back')
+      .case('.unmatch')
       .then(() => $$('.leafs .leaf:not(.search-path)'))
       .else(() => {
         $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
@@ -360,9 +360,7 @@ function submit(options: Options) {
       });
       win.classList.toggle('empty', hits.length === 0);
     });
-    resetHistory({
-      reFilter, includeUrl: options.includeUrl, searchType, queryValue: value, lastQueryValue,
-    });
+    resetHistory({ reFilter, includeUrl: options.includeUrl });
     lastQueryValue = value;
     return false;
   };

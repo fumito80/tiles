@@ -87,7 +87,6 @@ export const initialState = {
   htmlTabs: '',
   htmlHistory: '',
   histories: [] as Array<MyHistoryItem>,
-  historiesCache: {} as { [key: string]: Array<MyHistoryItem> },
   clientState: {} as ClientState,
   settings: initialSettings,
   vscrollProps: {

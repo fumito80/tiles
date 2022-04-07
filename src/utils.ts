@@ -594,9 +594,16 @@ export function makeHistoryRow({
   return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
 }
 
-export function setLocal(state: Partial<State>) {
-  chrome.storage.local.set(state);
-  return state;
+export async function setLocal(state: Partial<State>) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set(state, () => {
+      if (chrome.runtime.lastError) {
+        // eslint-disable-next-line no-console
+        console.log(chrome.runtime.lastError.message);
+      }
+      resolve(state);
+    });
+  });
 }
 
 export function setSync(state: Partial<State>) {

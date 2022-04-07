@@ -1,18 +1,15 @@
 import {
+  State,
   pastMSec,
   initialSettings,
   initialOptions,
-  // IClientState,
   HtmlBookmarks,
-  // ISettings,
-  // IState,
   MyHistoryItem,
   // CliMessageTypes,
   // OpenBookmarkType,
   // EditBookmarkTypes,
   // dropClasses,
   CliMessageTypes,
-  // Collection,
   // PayloadAction,
 } from './types';
 // import { cbToResolve } from './utils';
@@ -110,7 +107,23 @@ const historyEvents = [
   chrome.history.onVisitRemoved,
 ];
 
-getLocal('settings', 'clientState', 'options').then((storage) => {
+function updateCurrentWindow(currentWindowId?: number) {
+  if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
+    return;
+  }
+  setLocal({ currentWindowId });
+}
+
+function regsterWindowEvent() {
+  const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+  chrome.windows.onFocusChanged.addListener(updateCurrentWindow, queryOptions);
+  chrome.windows.getCurrent(queryOptions, (win) => updateCurrentWindow(win.id));
+}
+
+type InitStateKeys = keyof Pick<State, 'settings' | 'clientState' | 'options'>;
+const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options'];
+
+function init(storage: Pick<State, InitStateKeys>) {
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options };
@@ -119,15 +132,7 @@ getLocal('settings', 'clientState', 'options').then((storage) => {
   makeHtmlHistory(settings.historyMax.rows)();
   setLocal({ settings, clientState, options });
   regsterChromeEvents(makeHtmlHistory(settings.historyMax.rows))(historyEvents);
-});
-
-function updateCurrentWindow(currentWindowId?: number) {
-  if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
-    return;
-  }
-  setLocal({ currentWindowId });
+  regsterWindowEvent();
 }
 
-const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-chrome.windows.onFocusChanged.addListener(updateCurrentWindow, queryOptions);
-chrome.windows.getCurrent(queryOptions, (win) => updateCurrentWindow(win.id));
+getLocal(...initStateKeys).then(init);
