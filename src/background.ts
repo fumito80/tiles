@@ -16,7 +16,6 @@ import {
 import { makeLeaf, makeNode } from './html';
 import {
   pipe,
-  prop,
   propEq,
   propNe,
   regsterChromeEvents,
@@ -38,7 +37,7 @@ export type MapStateToResponse = typeof mapStateToResponse;
 function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {
     if (node.url) {
-      return isNode ? '' : makeLeaf(node);
+      return (isNode && node.parentId !== '1') ? '' : makeLeaf(node);
     }
     const children = node.children?.map(digBookmarks(isNode)).join('') ?? '';
     const { length } = node.children?.filter(propEq('url', undefined)) ?? [];
@@ -53,7 +52,6 @@ function makeHtmlBookmarks() {
     const leafs = children?.map(digBookmarks(false)).join('') || '';
     const rootTree = children?.find(propEq('id', '1'))?.children;
     const folders = pipe(
-      concat(rootTree?.filter(prop('url')).map(makeLeaf)),
       concat(rootTree?.map(digBookmarks())),
       concat(children?.filter(propNe('id', '1')).map(digBookmarks())),
     )();

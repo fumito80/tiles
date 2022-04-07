@@ -49,7 +49,7 @@ const css = [
   '.folders::-webkit-scrollbar,',
   '.leafs::-webkit-scrollbar,',
   '.pane-tabs::-webkit-scrollbar,',
-  '.v-scroll-bar::-webkit-scrollbar {',
+  '.pane-history::-webkit-scrollbar {',
   '    width: 8px;',
   '}\n',
   '/* Scroll-bar color */',
@@ -137,13 +137,13 @@ export type EditBookmarkTypes = {
   id: string;
 }
 
-export const dropClasses = [
+export const dropAreaClasses = [
   'drop-top',
   'drop-bottom',
   'drop-folder',
 ] as const;
 
-export type DropClasses = typeof dropClasses[number];
+export type DropClasses = typeof dropAreaClasses[number];
 
 export const splitterClasses = ['pane1', 'pane2', 'pane3'] as const;
 

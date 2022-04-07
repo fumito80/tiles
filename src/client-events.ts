@@ -2,7 +2,7 @@
 /* eslint-disable import/prefer-default-export */
 
 import {
-  dropClasses,
+  dropAreaClasses,
   splitterClasses,
   positions,
   // CliMessageTypes,
@@ -41,9 +41,9 @@ import { resetHistory } from './vscroll';
 
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
-  const dropClass = whichClass(dropClasses, $target);
+  const dropAreaClass = whichClass(dropAreaClasses, $target);
   // false when not drop target
-  if (dropClass == null) {
+  if (dropAreaClass == null) {
     return false;
   }
   const $dragSource = $('.drag-source')!;
@@ -55,7 +55,7 @@ function checkDroppable(e: DragEvent) {
   if (targetParent.classList.contains('tab-wrap')) {
     return true;
   }
-  switch (dropClass) {
+  switch (dropAreaClass) {
     case 'drop-bottom':
       if (targetParent === $dragSource.previousElementSibling
         || targetParent.parentElement === $dragSource.parentElement!.previousElementSibling) {
@@ -227,23 +227,27 @@ function setAnimationFolder(el: HTMLElement | Nil, className: string) {
   el.classList.add(className);
 }
 
-async function addBookmark(parentId = '1') {
-  const { title, url } = await getCurrentTab();
-  const index = (parentId === '1') ? 0 : undefined;
+async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null) {
+  const { title, url } = paramsIn ?? await getCurrentTab();
+  const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
     title: title!, url: url!, parentId, index,
   };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlAnchor = makeLeaf({ id, ...params });
   if (parentId === '1') {
-    $('.folders')!.insertAdjacentHTML('afterbegin', htmlAnchor);
+    $('.folders')!.children[index!].insertAdjacentHTML('beforebegin', htmlAnchor);
   } else {
     if (parentId !== $('.open')?.id) {
       $$('.open').map((el) => el.classList.remove('open'));
       $$(cssid(parentId)).map((el) => el.classList.add('open'));
     }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
-    $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
+    if (index == null) {
+      $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
+    } else {
+      $targetFolder.children[index].insertAdjacentHTML('afterend', htmlAnchor);
+    }
   }
   const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
   if ($target) {
@@ -404,12 +408,19 @@ function dropInTabs(
   $dropTarget: HTMLElement,
   sourceId: string,
   sourceClass: SourceClass,
-  dropClass: (typeof dropClasses)[number],
+  dropAreaClass: (typeof dropAreaClasses)[number],
+  bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const [, tabId] = $dropTarget.id.split('-');
+  const isDropTab = $dropTarget.classList.contains('tab-wrap');
+  const [, tabId] = (isDropTab ? $dropTarget.id : sourceId).split('-');
   chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
+    if (!isDropTab) {
+      const { url, title } = rest;
+      addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+      return;
+    }
     if (sourceClass === 'anchor') {
-      const index = rest.index + (dropClass === 'drop-top' ? 0 : 1);
+      const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
       const { url } = await getBookmark(sourceId);
       chrome.tabs.create({ index, url, windowId }, () => {
         chrome.windows.update(windowId, { focused: true });
@@ -420,13 +431,13 @@ function dropInTabs(
     chrome.tabs.get(Number(sourceTabId), async (sourceTab) => {
       let index: number;
       if (sourceTab.windowId === windowId) {
-        index = rest.index - (dropClass === 'drop-bottom' ? 0 : 1);
+        index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
         if (rest.index < sourceTab.index) {
           // move to right
           index = rest.index;
         }
       } else {
-        index = rest.index + (dropClass === 'drop-bottom' ? 1 : 0);
+        index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
       }
       chrome.tabs.move([Number(sourceTabId)], { windowId, index }, () => {
         if (chrome.runtime.lastError) {
@@ -518,17 +529,14 @@ export function setEventListners(options: Options) {
       const $dropArea = e.target as HTMLElement;
       const sourceId = e.dataTransfer?.getData('application/source-id')!;
       const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
-      const dropClass = whichClass(dropClasses, $dropArea)!;
+      const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
       const $dropTarget = $dropArea.parentElement?.id
         ? $dropArea.parentElement!
         : $dropArea.parentElement!.parentElement!;
       const destId = $dropTarget.id;
-      if ($dropTarget.classList.contains('tab-wrap')) {
-        dropInTabs($dropTarget, sourceId, sourceClass, dropClass);
-        return;
-      }
+      const isDropTab = $dropTarget.classList.contains('tab-wrap');
       let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
-      if (dropClass !== 'drop-folder') {
+      if (!isDropTab && dropAreaClass !== 'drop-folder') {
         const parentId = $dropTarget.parentElement?.id! || '1';
         const subTree = await getSubTree(parentId);
         const findIndex = subTree.children?.findIndex(propEq('id', $dropTarget.id));
@@ -536,14 +544,18 @@ export function setEventListners(options: Options) {
           alert('Operation failed with unknown error.');
           return;
         }
-        const index = findIndex + (dropClass === 'drop-bottom' ? 1 : 0);
+        const index = findIndex + (dropAreaClass === 'drop-bottom' ? 1 : 0);
         bookmarkDest = { parentId, index };
       }
+      if (sourceClass === 'tab' || isDropTab) {
+        dropInTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
+        return;
+      }
       await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
-      const position = positions[dropClass];
+      const position = positions[dropAreaClass];
       const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
       const [$destLeafs, $destFolders] = $$(cssid(destId));
-      const isRootTo = $destLeafs.parentElement.id === '1' && dropClass !== 'drop-folder';
+      const isRootTo = $destLeafs.parentElement.id === '1' && dropAreaClass !== 'drop-folder';
       const isRootFrom = $sourceLeafs.parentElement.id === '1';
       const isLeafFrom = $sourceLeafs.classList.contains('leaf');
       if (isLeafFrom && isRootFrom && !isRootTo) {

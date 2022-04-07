@@ -64,7 +64,7 @@ function setOptions(settings: Settings, options: Options) {
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body, .bgcolor1', [['background-color', frameBg]]);
-  addRules('.folders .open > .marker > .title, .current-tab', [
+  addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
     ['background-color', keyBg],
     ['color', keyColor],
   ]);
