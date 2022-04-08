@@ -1,4 +1,5 @@
 import './settings.scss';
+import * as bootstrap from 'bootstrap';
 import {
   $,
   $$,
@@ -6,13 +7,17 @@ import {
   getSync,
   setSync,
   setLocal,
-  bootstrap,
+  bootstrap as myBootstrap,
   whichClass,
   pipe,
   tap,
   objectEqaul,
   getColorWhiteness,
+  getColorChroma,
   setBrowserIcon,
+  prop,
+  getRGB,
+  lightColorWhiteness,
 } from './utils';
 import { State, ColorPalette } from './types';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
@@ -155,23 +160,55 @@ function setVersion() {
   $('.version')!.textContent = `Version ${chrome.runtime.getManifest().version}`;
 }
 
+type ColorInfo = {
+  color: string;
+  whiteness: number;
+  chroma: number;
+  vivid: number;
+}
+
 async function setColorPalette({ options }: Pick<State, 'options'>) {
   const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
   const htmlList = palettes
-    .filter(([,, frameBg]) => getColorWhiteness(frameBg) > 0.6)
+    .map((palette) => palette.map((color) => ({
+      color,
+      whiteness: getColorWhiteness(color),
+      chroma: getColorChroma(color),
+    } as ColorInfo)))
+    .map((palette) => palette.map((color) => ({
+      ...color, vivid: color.chroma * (color.whiteness * 0.1),
+    })))
+    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
+    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
+    .map(([p, cl, cm, cr, m]) => {
+      if (cl.whiteness <= lightColorWhiteness) {
+        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
+      }
+      return [p, cl, cm, cr, m];
+    })
+    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness)
+    .map(([p, f, h1, h2, m]) => {
+      const [r, g, b] = getRGB(p.color);
+      const [r1, g1, b1] = getRGB(h1.color);
+      const [r2, g2, b2] = getRGB(h2.color);
+      return ((Math.abs(r1 - r) + Math.abs(g1 - g) + Math.abs(b1 - b))
+        > (Math.abs(r2 - r) + Math.abs(g2 - g) + Math.abs(b2 - b)))
+        ? [p, f, h1, h2, m]
+        : [p, f, h2, h1, m];
+    })
     .map((palette) => {
       const colors = palette
         .map((color) => {
-          const whiteness = getColorWhiteness(color);
-          const isLight = whiteness > 0.6;
-          return `<div data-color="${color}" style="background-color: #${color}; color: ${isLight ? 'black' : 'white'}"></div>`;
+          const isLight = color.whiteness > lightColorWhiteness;
+          return `<div data-color="${color.color}" style="background-color: #${color.color}; color: ${isLight ? 'black' : 'white'}"></div>`;
         })
         .join('');
-      if (objectEqaul(palette, options.colorPalette, true)) {
+      if (objectEqaul(palette.map(prop('color')), options.colorPalette, true)) {
         return `<div class="selected">${colors}</div>`;
       }
       return `<div>${colors}</div>`;
-    }).join('');
+    })
+    .join('');
   const $colorPalettes = $('.color-palettes')!;
   $colorPalettes.innerHTML = htmlList;
   $colorPalettes.addEventListener('click', (e) => {
@@ -204,6 +241,10 @@ function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitPara
   });
 }
 
+function initOthers() {
+  $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
+}
+
 const init = pipe(
   tap(setColorPalette),
   tap(setVersion),
@@ -217,6 +258,7 @@ const init = pipe(
     selectEditorTheme: $<SelectEditorTheme>('[name="editor-theme"]')!,
   }),
   initMonacoEditor,
+  initOthers,
 );
 
-bootstrap('options').then(init);
+myBootstrap('options').then(init);

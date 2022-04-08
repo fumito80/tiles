@@ -55,7 +55,7 @@ module.exports = {
         { from: '*.html', context: 'src/' },
         { from: '*.json', context: 'src/' },
         { from: '*.css', context: 'src/' },
-        { from: '*.js', context: 'src/' },
+        // { from: '*.js', context: 'src/' },
         { from: '*.png', context: 'src/' },
       ],
     }),

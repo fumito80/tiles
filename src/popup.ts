@@ -19,6 +19,7 @@ import {
   getKeys,
   extractDomain,
   getColorWhiteness,
+  lightColorWhiteness,
 } from './utils';
 
 import { makeTab } from './html';
@@ -54,26 +55,26 @@ function setOptions(settings: Settings, options: Options) {
   const darkColor = '#222222';
   const [
     [paneBg, paneColor, isLightPaneBg],
-    [searchingBg, searchingColor],
     [frameBg],
     [itemHoverBg, itemHoverColor, isLightHoverBg],
+    [searchingBg, searchingColor],
     [keyBg, keyColor, isLightKeyBg],
   ] = options.colorPalette
     .map((code) => [`#${code}`, getColorWhiteness(code)])
-    .map(([bgColor, whiteness]) => [bgColor, whiteness > 0.6] as [string, boolean])
+    .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body, .bgcolor1', [['background-color', frameBg]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
     ['background-color', keyBg],
-    ['color', keyColor],
+    ['color', `${keyColor} !important`],
   ]);
-  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5)' : '#EFEFEF']]);
+  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : '#EFEFEF !important']]);
   addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
   addRules('.query:not([value=""])', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > div:not(.current-tab):hover, .pane-history .rows > div:not(.header-date):hover',
+    '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   if (!isLightPaneBg) {

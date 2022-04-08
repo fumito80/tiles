@@ -68,7 +68,7 @@ export function makeHistory({
   url, title, lastVisitTime, headerDate, lastVisitDate, id,
 }: MyHistoryItem) {
   if (headerDate) {
-    return `<div class="header-date">${lastVisitDate}</div>`;
+    return `<div class="history header-date" draggable="true">${lastVisitDate}</div>`;
   }
   const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
   const style = makeStyleIcon(url!);

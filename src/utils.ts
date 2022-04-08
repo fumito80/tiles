@@ -673,21 +673,30 @@ function base64Encode(...parts: string[]) {
   });
 }
 
-function getRGB(colorCode: string) {
+export function getRGB(colorCode: string) {
   return [colorCode.substring(0, 2), colorCode.substring(2, 4), colorCode.substring(4, 6)]
     .map((hex) => parseInt(hex, 16));
 }
 
-function getColorChroma(colorCode: string) {
+export function getColorChroma(colorCode: string) {
   const [r, g, b] = getRGB(colorCode);
   const iMax = Math.max(r, g, b);
   const iMin = Math.min(r, g, b);
   return (iMax - iMin) / iMax;
 }
 
+export const lightColorWhiteness = 0.6;
+
 export function getColorWhiteness(colorCode: string) {
   const [r, g, b] = getRGB(colorCode);
-  return Math.max((r * g) / (0xFF * 0xFF), (g * b) / (0xFF * 0xFF));
+  // return Math.max((r * g) / (0xFF * 0xFF), (g * b) / (0xFF * 0xFF));
+  return Math.max(
+    ((r || 1) * (g || 1) * (b || 1)) / (0xFF * 0xFF * 0xFF),
+    (g * b) / (0xFF * 0xFF),
+    (r * b) / (0xFF * 0xFF),
+    (r * g) / (0xFF * 0xFF),
+  );
+  // return Math.max(r, g, b) / 0xFF;
 }
 
 export async function setBrowserIcon(colorPalette: State['options']['colorPalette']) {

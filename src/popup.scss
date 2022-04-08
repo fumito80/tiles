@@ -799,7 +799,7 @@ input.query {
 .draggable-clone {
   position: relative;
   top: -1000px;
-  min-width: 60px;
+  min-width: 100px;
   max-width: 200px;
   width: fit-content;
   overflow: hidden;
@@ -855,6 +855,7 @@ input.query {
       background-color: darkgray;
       color: white;
       border-radius: 2px;
+      -webkit-user-drag: none;
     }
     > .header-date:nth-child(2) {
       margin-top: 0;
@@ -886,7 +887,7 @@ input.query {
     margin-right: 2px;
     margin-bottom: 5px;
     padding: 1px;
-    > .tab:not(.current-tab):hover {
+    > .tab-wrap:not(.current-tab):hover {
       background-color: $hover-color;
     }
     > .match {

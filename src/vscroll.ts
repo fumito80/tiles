@@ -134,7 +134,7 @@ export async function resetHistory({
     const lastVisitTime = init.lastVisitTime! - (init.lastVisitTime! % (1000 * 60 * 60 * 24));
     const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate, lastVisitTime };
     histories = [headerDate, init, ...tail];
-    const headerDateHtml = `<div class="header-date" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
+    const headerDateHtml = `<div class="history header-date" draggable="true" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
     rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
     await setLocal({ histories, htmlHistory: rows.innerHTML });
   }
