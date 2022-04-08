@@ -1,16 +1,21 @@
 import { makeStyleIcon, $$, cssid } from './utils';
+import { MyHistoryItem } from './types';
+
+const escapes = new Map();
+escapes.set('&', '&amp;');
+escapes.set('"', '&quot;');
+escapes.set('<', '&lt;');
+escapes.set('>', '&gt;');
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
   children: string,
   length: number,
 }
 
-export function makeLeaf({
-  title, url, id, parentId,
-}: chrome.bookmarks.BookmarkTreeNode) {
+export function makeLeaf({ title, url, id }: chrome.bookmarks.BookmarkTreeNode) {
   const style = makeStyleIcon(url);
   return `
-    <div class="leaf" id="${id}" data-parent-id="${parentId}">
+    <div class="leaf" id="${id}">
       <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
@@ -53,4 +58,23 @@ export function makeTab(
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
+}
+
+export function htmlEscape(text: string) {
+  return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
+}
+
+export function makeHistory({
+  url, title, lastVisitTime, headerDate, lastVisitDate, id,
+}: MyHistoryItem) {
+  if (headerDate) {
+    return `<div class="header-date">${lastVisitDate}</div>`;
+  }
+  const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
+  const style = makeStyleIcon(url!);
+  const text = title || url;
+  if (!text) {
+    return '';
+  }
+  return `<div class="history" draggable="true" id="hst-${id}" title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
 }

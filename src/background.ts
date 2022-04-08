@@ -13,13 +13,12 @@ import {
   // PayloadAction,
 } from './types';
 // import { cbToResolve } from './utils';
-import { makeLeaf, makeNode } from './html';
+import { makeLeaf, makeNode, makeHistory } from './html';
 import {
   pipe,
   propEq,
   propNe,
   regsterChromeEvents,
-  makeHistoryRow,
   setLocal,
   getLocal,
   setBrowserIcon,
@@ -93,7 +92,7 @@ function makeHtmlHistory(rows: number) {
           }
           return [...acc, item];
         }, []);
-      const htmlData = histories.slice(0, rows).map(makeHistoryRow).join('');
+      const htmlData = histories.slice(0, rows).map(makeHistory).join('');
       const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
       setLocal({ htmlHistory, histories });
     });

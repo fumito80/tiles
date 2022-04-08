@@ -21,7 +21,7 @@ export function rowSetterHistory(
       return;
     }
     const {
-      url, title, lastVisitTime, lastVisitDate, headerDate,
+      url, title, lastVisitTime, lastVisitDate, headerDate, id,
     } = item;
     if (index === 1) {
       $currentDate.textContent = latestDate === lastVisitDate ? '' : lastVisitDate!;
@@ -40,6 +40,7 @@ export function rowSetterHistory(
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
+    row.setAttribute('id', `hst-${id}`);
     // eslint-disable-next-line no-param-reassign
     row.textContent = text!;
     row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);

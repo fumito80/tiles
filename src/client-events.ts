@@ -34,6 +34,7 @@ import {
   getGridTemplateColumns,
   extractUrl,
   extractDomain,
+  getHistoryById,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
@@ -328,7 +329,7 @@ function submit(options: Options) {
       .then('.match' as const)
       .when(lastQueryValue.startsWith(value))
       .then('.unmatch' as const)
-      .else('.tab' as const);
+      .else('.tab-wrap' as const);
     const targetBookmarks = switches(selectorTabs)
       .case('.match')
       .then(() => {
@@ -356,17 +357,16 @@ function submit(options: Options) {
         }
       }
     });
-    $$('.pane-tabs > div').forEach((win) => {
-      const hits = $$(selectorTabs, win).filter((el) => {
-        const isMatch = reFilter.test(el.textContent!)
-          || (options.includeUrl && reFilter.test(el.title));
-        const $tabWrap = el.parentElement!;
-        $tabWrap.classList.toggle('match', isMatch);
-        $tabWrap.classList.toggle('unmatch', !isMatch);
-        return isMatch;
-      });
-      win.classList.toggle('empty', hits.length === 0);
+    const $paneTabs = $('.pane-tabs')!;
+    $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
+      const tab = el.firstElementChild as HTMLElement;
+      const isMatch = reFilter.test(tab.textContent!)
+        || (options.includeUrl && reFilter.test(tab.title));
+      el.classList.toggle('match', isMatch);
+      el.classList.toggle('unmatch', !isMatch);
     });
+    ([...$paneTabs.children] as HTMLElement[])
+      .forEach((win) => win.classList.toggle('empty', win.offsetHeight < 10));
     resetHistory({ reFilter, includeUrl: options.includeUrl });
     lastQueryValue = value;
     return false;
@@ -401,20 +401,20 @@ async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   chrome.tabs.update(tab.id, { active: true });
 }
 
-const sourceClasses = ['anchor', 'marker', 'tab'] as const;
+const sourceClasses = ['anchor', 'marker', 'tab', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
-function dropInTabs(
+function dropWithTabs(
   $dropTarget: HTMLElement,
   sourceId: string,
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const isDropTab = $dropTarget.classList.contains('tab-wrap');
-  const [, tabId] = (isDropTab ? $dropTarget.id : sourceId).split('-');
+  const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
+  const [, tabId] = (isDroppedTab ? $dropTarget.id : sourceId).split('-');
   chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
-    if (!isDropTab) {
+    if (!isDroppedTab) {
       const { url, title } = rest;
       addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
       return;
@@ -459,6 +459,27 @@ function dropInTabs(
   });
 }
 
+async function dropFromHistory(
+  $dropTarget: HTMLElement,
+  sourceId: string,
+  dropAreaClass: (typeof dropAreaClasses)[number],
+  bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
+) {
+  const { url, title } = await getHistoryById(sourceId);
+  const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
+  if (!isDroppedTab) {
+    addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+    return;
+  }
+  const [, tabId] = $dropTarget.id.split('-');
+  chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
+    const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
+    chrome.tabs.create({ index, url, windowId }, () => {
+      chrome.windows.update(windowId, { focused: true });
+    });
+  });
+}
+
 export function setEventListners(options: Options) {
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
   $('.query')!.addEventListener('input', submit(options));
@@ -491,6 +512,9 @@ export function setEventListners(options: Options) {
             const $leaf = $target.parentElement as HTMLElement;
             return ['drag-start-leaf', $leaf, $leaf.id] as const;
           }
+          case 'history': {
+            return ['drag-start-leaf', $target, $target.id] as const;
+          }
           default:
             return ['', null, ''] as const;
         }
@@ -499,12 +523,12 @@ export function setEventListners(options: Options) {
         return;
       }
       $dragTarget.classList.remove('hilite');
+      $dragTarget.classList.add('drag-source');
       const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-      const draggable = $('.draggable-clone')!.appendChild(clone);
-      e.dataTransfer!.setDragImage(draggable, 10, 10);
+      const $draggable = $('.draggable-clone')!.appendChild(clone);
+      e.dataTransfer!.setDragImage($draggable, -12, 10);
       e.dataTransfer!.setData('application/source-id', id);
       e.dataTransfer!.setData('application/source-class', className!);
-      $dragTarget.classList.add('drag-source');
       $('main')!.classList.add(targetClass);
     },
     dragover: (e) => {
@@ -534,9 +558,9 @@ export function setEventListners(options: Options) {
         ? $dropArea.parentElement!
         : $dropArea.parentElement!.parentElement!;
       const destId = $dropTarget.id;
-      const isDropTab = $dropTarget.classList.contains('tab-wrap');
+      const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
       let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
-      if (!isDropTab && dropAreaClass !== 'drop-folder') {
+      if (!isDroppedTab && dropAreaClass !== 'drop-folder') {
         const parentId = $dropTarget.parentElement?.id! || '1';
         const subTree = await getSubTree(parentId);
         const findIndex = subTree.children?.findIndex(propEq('id', $dropTarget.id));
@@ -547,8 +571,12 @@ export function setEventListners(options: Options) {
         const index = findIndex + (dropAreaClass === 'drop-bottom' ? 1 : 0);
         bookmarkDest = { parentId, index };
       }
-      if (sourceClass === 'tab' || isDropTab) {
-        dropInTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
+      if (sourceClass === 'history') {
+        dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
+        return;
+      }
+      if (sourceClass === 'tab' || isDroppedTab) {
+        dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
         return;
       }
       await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
@@ -563,6 +591,7 @@ export function setEventListners(options: Options) {
       } else if (isLeafFrom && isRootTo) {
         const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true);
         $destFolders.insertAdjacentElement(position, $source);
+        $source.classList.remove('search-path');
         setAnimationClass($source, 'hilite');
       } else if (!isLeafFrom) {
         const $lastParantElement = $sourceFolders.parentElement;
@@ -813,11 +842,11 @@ export function setEventListners(options: Options) {
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
-  $('.pane-history > .rows')?.addEventListener('click', (e) => {
+  $('.pane-history > .rows')?.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
     const $url = $target.title ? $target : $parent;
-    const url = extractUrl($url.style.backgroundImage);
+    const { url } = await getHistoryById($url.id);
     if (!url) {
       return;
     }

@@ -5,8 +5,8 @@ import {
   MapStateToResponse,
   MessageStateMapObject,
   State,
-  MyHistoryItem,
   SplitterClasses,
+  MyHistoryItem,
 } from './types';
 
 export function $<T extends HTMLElement>(
@@ -569,31 +569,6 @@ export function regsterChromeEvents(listener: Function) {
   return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
 }
 
-const escapes = new Map();
-escapes.set('&', '&amp;');
-escapes.set('"', '&quot;');
-escapes.set('<', '&lt;');
-escapes.set('>', '&gt;');
-
-export function htmlEscape(text: string) {
-  return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
-}
-
-export function makeHistoryRow({
-  url, title, lastVisitTime, headerDate, lastVisitDate,
-}: MyHistoryItem) {
-  if (headerDate) {
-    return `<div class="header-date">${lastVisitDate}</div>`;
-  }
-  const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
-  const style = makeStyleIcon(url!);
-  const text = title || url;
-  if (!text) {
-    return '';
-  }
-  return `<div title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
-}
-
 export async function setLocal(state: Partial<State>) {
   return new Promise((resolve) => {
     chrome.storage.local.set(state, () => {
@@ -679,6 +654,12 @@ export function extractUrl(faviconUrl?: string) {
 export function extractDomain(url?: string) {
   const [, domain = ''] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(url || '') || [];
   return domain;
+}
+
+export async function getHistoryById(historyId: string): Promise<MyHistoryItem> {
+  const [, id] = historyId.split('-');
+  const { histories } = await getLocal('histories');
+  return histories.find(propEq('id', id))!;
 }
 
 function base64Encode(...parts: string[]) {

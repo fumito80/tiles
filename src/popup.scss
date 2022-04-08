@@ -350,11 +350,13 @@ input.query {
     display: block;
   }
 
-  .search-path .leaf,
-  .search-path .anchor,
   .search-path .marker {
     -webkit-user-drag: none;
   }
+  .folder[id="1"] > .search-path > .anchor {
+    margin-left: 0;
+  }
+
 }
 
 // Bookmarks
@@ -384,10 +386,6 @@ input.query {
   .anchor:not(:hover) {
     // color: #222;
     text-decoration: none;
-  }
-
-  &.search-path[data-parent-id="1"] > .anchor {
-    margin-left: 0;
   }
 
   &:hover {
@@ -746,7 +744,8 @@ input.query {
   .drag-source {
     background-color: $drag-source-bgcolor !important;
     > .anchor,
-    > .tab {
+    > .tab,
+    &.history {
       color: #222;
       text-decoration: none;
       z-index: 3;
@@ -800,29 +799,26 @@ input.query {
 .draggable-clone {
   position: relative;
   top: -1000px;
+  min-width: 60px;
+  max-width: 200px;
+  width: fit-content;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 3px;
+  color: white !important; 
+  background-color: $draggable-bgcolor;
   > div {
-    min-width: 50px;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding-right: 8px !important;
+    background-color: $draggable-bgcolor;
     > .icon-fa-angle-right {
       display: none;
-    }
-    > .anchor,
-    > .tab,
-    > .title {
-      min-width: 50px;
-      max-width: 200px;
-      display: inline-block;
-      margin-left: 12px;
-      padding-right: 4px;
-      color: white !important;
-      background-color: $draggable-bgcolor;
-      border-radius: 3px;
     }
     > .anchor {
       padding-left: 22px;
       background-position: 3px center;
+    }
+    &.search-path > .anchor {
+      margin-left: 12px;
     }
     > .icon-x {
       display: none;
@@ -837,18 +833,7 @@ input.query {
   .rows {
     padding-top: 2px;
     padding-bottom: 2px;
-    > div {
-      cursor: default;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;  
-      margin: 0 2px;
-      padding: 4px 0;
-      padding-left: 20px;
-      background-repeat: no-repeat;
-      background-position: 1px center;
-    }
-    > div:not(.header-date):hover {
+    > .history:not(.header-date):hover {
       background-color: $hover-color;
     }
     > div:empty {
@@ -875,6 +860,19 @@ input.query {
       margin-top: 0;
     }
   }
+}
+
+.history {
+  position: relative;
+  cursor: default;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;  
+  margin: 0 2px;
+  padding: 4px 0;
+  padding-left: 20px;
+  background-repeat: no-repeat;
+  background-position: 1px center;
 }
 
 .pane-tabs {
