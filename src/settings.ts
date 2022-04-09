@@ -230,8 +230,8 @@ type InitParams = {
   selectEditorTheme: SelectEditorTheme;
 }
 
-function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitParams) {
-  import('./monaco-editor').then(({ monaco }) => {
+async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitParams) {
+  return import('./monaco-editor').then(({ monaco }) => {
     const editor = monaco.editor.create(el, {
       language: 'css',
       automaticLayout: true,
@@ -243,6 +243,18 @@ function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitPara
 
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
+  $('[href="#customize-css"]')!.addEventListener('click', async () => {
+    const $editorCollapse = $('#customize-css')!;
+    if ($editorCollapse.classList.contains('loaded')) {
+      return;
+    }
+    await initMonacoEditor({
+      el: $('.css-editor')!,
+      inputMonacoEditor: $('[name="css"]')!,
+      selectEditorTheme: $('[name="editor-theme"]')!,
+    });
+    $editorCollapse.classList.add('loaded');
+  });
 }
 
 const init = pipe(
@@ -252,12 +264,6 @@ const init = pipe(
   setSyncListener,
   saveOptions,
   curry(document.addEventListener)('change'),
-  () => ({
-    el: $('.css-editor')!,
-    inputMonacoEditor: $<InputMonacoEditor>('[name="css"]')!,
-    selectEditorTheme: $<SelectEditorTheme>('[name="editor-theme"]')!,
-  }),
-  initMonacoEditor,
   initOthers,
 );
 

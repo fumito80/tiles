@@ -52,11 +52,16 @@
             <div>Color scheme</div><i class="icon-fa-angle-right ms-1"></i>
           </a>
           <div is="color-palette" name="color-palette" class="ms-4">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top" title="Background color of history, tabs, and bookmarks panes">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top" title="Background color of frame and folders">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top" title="Background color of item while hovering">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top" title="Background color of search box while typing">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top" title="Background color of selected folder and tab">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of history, tabs, and bookmarks panes">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of frame and folders">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of item while hovering">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of search box while typing">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of selected folder and tab">
           </div>
         </div>
         <div id="color-palettes" class="collapse mt-2">
@@ -74,6 +79,26 @@
               <option value="vs-dark">Dark</option>
             </select></label>
           <div class="customize-css css-editor mt-1"></div>
+          <div class="loading">
+            <div class="spinner-grow text-primary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-secondary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-success" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-danger" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-warning" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-info" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
         </div>
         <input is="monaco-editor" type="hidden" name="css">
       </form>
