@@ -66,7 +66,7 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-const colorPalette: ColorPalette = ['FFFFFF', 'cce5ff', 'f6f6f6', 'e8e8e9', '1da1f2'];
+const colorPalette: ColorPalette = ['FFFFFF', 'f6f6f6', 'cce5ff', 'e8e8e9', '1da1f2'];
 
 export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',

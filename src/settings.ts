@@ -156,8 +156,10 @@ function setSyncListener(inputs: Inputs) {
   return inputs;
 }
 
-function setVersion() {
-  $('.version')!.textContent = `Version ${chrome.runtime.getManifest().version}`;
+function setAppInfo() {
+  const { version, name } = chrome.runtime.getManifest() as chrome.runtime.Manifest;
+  $('.version')!.textContent = `Version ${version}`;
+  $('title')!.textContent = name;
 }
 
 type ColorInfo = {
@@ -243,7 +245,7 @@ async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: In
 
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
-  $('[href="#customize-css"]')!.addEventListener('click', async () => {
+  $('#customize-css')!.addEventListener('shown.bs.collapse', async () => {
     const $editorCollapse = $('#customize-css')!;
     if ($editorCollapse.classList.contains('loaded')) {
       return;
@@ -258,8 +260,8 @@ function initOthers() {
 }
 
 const init = pipe(
+  tap<Pick<State, 'options'>>(setAppInfo),
   tap(setColorPalette),
-  tap(setVersion),
   initInputs,
   setSyncListener,
   saveOptions,

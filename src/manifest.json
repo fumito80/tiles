@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Popup'n My Resources",
-  "description": "One-stop search/views for your browsing resources.",
-  "version": "0.8.2",
+  "description": "Search/view across bookmarks, tabs, and history for a one-stop access to your browsing resources.",
+  "version": "0.9.0",
   "permissions": [
     "storage",
     "bookmarks",
@@ -22,8 +22,8 @@
   "commands": {
     "_execute_browser_action": {
        "suggested_key": {
-          "mac": "Command+Shift+B",
-          "default": "Alt+B"
+          "mac": "Command+Shift+P",
+          "default": "Alt+Shift+P"
        }
     }
   },

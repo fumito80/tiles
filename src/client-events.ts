@@ -258,7 +258,7 @@ async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCr
 }
 
 async function addFolder(parentId = '1') {
-  const title = prompt('Create folder name');
+  const title = prompt('Folder name');
   if (title == null) {
     return;
   }
