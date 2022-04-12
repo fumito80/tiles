@@ -51,6 +51,7 @@ export function rowSetterHistory(
 
 function getRowHeight(rows: HTMLElement) {
   const tester = rows.appendChild(document.createElement('div'));
+  tester.className = 'history';
   tester.textContent = 'A';
   const styles = getComputedStyle(tester);
   const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
@@ -79,7 +80,9 @@ export function setVScroll(
   if (!firstRow || !rows || !vscroll || !vscrollFiller) {
     return;
   }
-  vscrollFiller.style.height = `${rowHeight * data.length}px`;
+  const { paddingTop, paddingBottom } = getComputedStyle(rows);
+  const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
+  vscrollFiller.style.height = `${rowHeight * data.length + padding}px`;
   if (vScrollHandler) {
     vscroll.removeEventListener('scroll', vScrollHandler);
   } else {

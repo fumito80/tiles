@@ -11,14 +11,14 @@ export class InputMonacoEditor extends HTMLInputElement {
   }
   set value(value: string) {
     super.value = value;
-    this.#editor?.setValue(value);
   }
   initialize(editor: monaco.editor.IStandaloneCodeEditor) {
     this.#editor = editor;
     this.#editor?.setValue(super.value);
     this.#editor.getModel()?.onDidChangeContent(() => {
-      this.form?.dispatchEvent(new Event('change', { bubbles: true }));
+      this.dispatchEvent(new Event('change', { bubbles: true }));
     });
+    super.value = '';
   }
 }
 
@@ -36,7 +36,7 @@ export class SelectEditorTheme extends HTMLSelectElement {
   initialize(editor: typeof monaco.editor) {
     this.#editor = editor;
     this.#setTheme();
-    this.addEventListener('change', () => this.#setTheme());
+    this.addEventListener('change', this.#setTheme);
   }
   #setTheme() {
     this.#editor?.setTheme(super.value);
