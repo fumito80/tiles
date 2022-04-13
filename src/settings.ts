@@ -1,4 +1,4 @@
-import './settings.scss';
+import './css/settings.scss';
 import * as bootstrap from 'bootstrap';
 import {
   $,

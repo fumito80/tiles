@@ -659,7 +659,10 @@ export function setEventListners(options: Options) {
         }
         case 'show-in-folder': {
           const id = $leaf.parentElement?.id;
-          const $target = $(`.folders ${cssid(id!)} > .marker > .title`)!;
+          const $target = $(`.folders ${cssid(id!)} > .marker > .title`);
+          if (!$target) {
+            break;
+          }
           $target.click();
           $target.focus();
           ($leaf.firstElementChild as HTMLAnchorElement).focus();

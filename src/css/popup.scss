@@ -963,7 +963,7 @@ input.query {
   display: flex;
   align-items: center;
   padding: 1px 1px 3px 3px;
-  > [title="Tabs"] {
+  > .tabs {
     display: flex;
     :nth-child(1) {
       border: 1.5px solid #999999;

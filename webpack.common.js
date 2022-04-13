@@ -41,7 +41,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js', '.json'],
   },
-  target: ['web', 'es2020'],
+  target: ['web', 'es2021'],
   cache: true,
   watchOptions: {
     poll: true,
@@ -52,11 +52,11 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: '*.html', context: 'src/' },
-        { from: '*.json', context: 'src/' },
-        { from: '*.css', context: 'src/' },
+        { from: '*.html', context: 'src/view/' },
+        { from: '*.json', context: 'src/json/' },
+        { from: '*.css', context: 'src/css/' },
         // { from: '*.js', context: 'src/' },
-        { from: '*.png', context: 'src/' },
+        { from: '*.png', context: 'src/images/' },
       ],
     }),
     new ESLintPlugin({

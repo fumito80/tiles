@@ -1,4 +1,4 @@
-import './popup.scss';
+import './css/popup.scss';
 
 import {
   HtmlBookmarks,
