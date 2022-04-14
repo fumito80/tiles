@@ -831,13 +831,15 @@ export function setEventListners(options: Options) {
     const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
     if ($target.classList.contains('icon-x')) {
-      $parent.addEventListener('animationend', () => $parent.remove(), { once: true });
+      $parent.addEventListener('animationend', () => {
+        chrome.tabs.remove(Number(tabId), () => {
+          $parent.remove();
+          if ($window.childElementCount === 0) {
+            $window.remove();
+          }
+        });
+      }, { once: true });
       setAnimationClass($parent, 'remove-hilite');
-      chrome.tabs.remove(Number(tabId), () => {
-        if ($window.childElementCount === 0) {
-          $window.remove();
-        }
-      });
       return;
     }
     const [, windowId] = $window.id.split('-') || [];
@@ -856,16 +858,12 @@ export function setEventListners(options: Options) {
       return;
     }
     if ($target.classList.contains('icon-x')) {
-      // setAnimationClass($parent, 'remove-hilite');
       chrome.history.deleteUrl({ url }, () => {
         const histories = getVScrollData();
         const removedHistory = removeUrlHistory(url)({ histories });
         setVScrollData(removedHistory);
         const vscroll = $('.pane-history .v-scroll-bar')!;
         vscroll.dispatchEvent(new Event('scroll'));
-        // $parent.addEventListener('animationend', () => {
-        //   $parent.classList.remove('remove-hilite');
-        // }, { once: true });
       });
       return;
     }
