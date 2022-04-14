@@ -35,10 +35,11 @@ import {
   extractUrl,
   extractDomain,
   getHistoryById,
+  removeUrlHistory,
 } from './utils';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
-import { resetHistory } from './vscroll';
+import { getVScrollData, resetHistory, setVScrollData } from './vscroll';
 
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
@@ -830,8 +831,9 @@ export function setEventListners(options: Options) {
     const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
     if ($target.classList.contains('icon-x')) {
+      $parent.addEventListener('animationend', () => $parent.remove(), { once: true });
+      setAnimationClass($parent, 'remove-hilite');
       chrome.tabs.remove(Number(tabId), () => {
-        $parent.remove();
         if ($window.childElementCount === 0) {
           $window.remove();
         }
@@ -854,8 +856,16 @@ export function setEventListners(options: Options) {
       return;
     }
     if ($target.classList.contains('icon-x')) {
+      // setAnimationClass($parent, 'remove-hilite');
       chrome.history.deleteUrl({ url }, () => {
-        $url.style.setProperty('transform', 'translateY(-10000px)');
+        const histories = getVScrollData();
+        const removedHistory = removeUrlHistory(url)({ histories });
+        setVScrollData(removedHistory);
+        const vscroll = $('.pane-history .v-scroll-bar')!;
+        vscroll.dispatchEvent(new Event('scroll'));
+        // $parent.addEventListener('animationend', () => {
+        //   $parent.classList.remove('remove-hilite');
+        // }, { once: true });
       });
       return;
     }

@@ -711,7 +711,7 @@ input.query {
   > .drop-bottom,
   > .drop-folder {
     position: absolute;
-    left: -2px;
+    // left: -2px;
     width: calc(100% - 3px);
   }
   > .drop-top {
@@ -864,6 +864,7 @@ input.query {
 
 .history {
   position: relative;
+  display: flex;
   cursor: default;
   overflow: hidden;
   white-space: nowrap;
@@ -873,6 +874,16 @@ input.query {
   padding-left: 20px;
   background-repeat: no-repeat;
   background-position: 1px center;
+  > span {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &.remove-hilite::before {
+    animation-name: hilite-fade-in !important;
+    animation-duration: .05s !important;
+    animation-timing-function: ease-out;
+  }
 }
 
 .pane-tabs {
@@ -886,6 +897,9 @@ input.query {
     margin-right: 2px;
     margin-bottom: 5px;
     padding: 1px;
+    &:last-child {
+      margin-bottom: 0;
+    }
     > .tab-wrap:not(.current-tab):hover {
       background-color: $hover-color;
     }
@@ -906,7 +920,7 @@ input.query {
   display: flex;
   align-items: center;
   margin: 0;
-    .tab {
+    > .tab {
     width: 100%;
     margin: 0;
     padding: 4px 0 4px 21px;
@@ -916,6 +930,11 @@ input.query {
     white-space: nowrap;
     text-overflow: ellipsis;  
     cursor: default;
+  }
+  &.remove-hilite::before {
+    animation-name: hilite-fade-in !important;
+    animation-duration: .3s !important;
+    animation-timing-function: ease-out;
   }
 }
 

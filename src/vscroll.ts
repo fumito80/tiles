@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getLocal, setLocal, pick,
+  $, getLocal, setLocal, pick, htmlEscape,
 } from './utils';
 
 export function rowSetterHistory(
@@ -29,7 +29,7 @@ export function rowSetterHistory(
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
     if (headerDate) {
       // eslint-disable-next-line no-param-reassign
-      row.textContent = lastVisitDate!;
+      row.innerHTML = lastVisitDate!;
       row.style.removeProperty('background-image');
       row.classList.add('header-date');
       row.removeAttribute('title');
@@ -42,7 +42,7 @@ export function rowSetterHistory(
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
     row.setAttribute('id', `hst-${id}`);
     // eslint-disable-next-line no-param-reassign
-    row.textContent = text!;
+    row.innerHTML = `<span>${htmlEscape(text!)}</span><i class="icon-x"></i>`;
     row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
     row.setAttribute('title', tooltip);
     row.classList.remove('header-date');
@@ -66,6 +66,7 @@ function getRowHeight(rows: HTMLElement) {
 export type VScrollRowSetter = typeof rowSetterHistory;
 
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
+let vScrollData: Collection;
 
 export function setVScroll(
   container: HTMLDivElement,
@@ -91,15 +92,25 @@ export function setVScroll(
     });
   }
   const children = [...rows.children] as HTMLElement[];
+  vScrollData = data;
   vScrollHandler = () => {
     const rowTop = -(vscroll.scrollTop % rowHeight);
     const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
-    children.forEach(setter(data, rowTop, dataTop));
+    children.forEach(setter(vScrollData, rowTop, dataTop));
   };
   vscroll.addEventListener('scroll', vScrollHandler);
 }
 
 const searchCache = new Map<string, Array<MyHistoryItem>>();
+
+export function getVScrollData() {
+  return vScrollData;
+}
+
+export function setVScrollData(data: Collection) {
+  vScrollData = data;
+  searchCache.clear();
+}
 
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
   const [results] = source.reduce(([result, prevHeaderDate], el) => {
@@ -117,7 +128,9 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
-type ResetParams = { initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean };
+type ResetParams = {
+  initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean, removedHistory?: boolean,
+};
 
 export async function resetHistory({
   initialize,
@@ -156,7 +169,7 @@ export async function resetHistory({
       (el as HTMLElement).style.removeProperty('background-image');
       el.removeAttribute('title');
       // eslint-disable-next-line no-param-reassign
-      el.textContent = '';
+      el.innerHTML = '';
     });
     const vscroll = $('.v-scroll-bar', $paneHistory)!;
     vscroll.scrollTop = 0;

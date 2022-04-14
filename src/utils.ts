@@ -733,3 +733,35 @@ export async function setBrowserIcon(colorPalette: State['options']['colorPalett
   };
   img.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;
 }
+
+const escapes = new Map();
+escapes.set('&', '&amp;');
+escapes.set('"', '&quot;');
+escapes.set('<', '&lt;');
+escapes.set('>', '&gt;');
+
+export function htmlEscape(text: string) {
+  return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
+}
+
+export function removeUrlHistory(url: string) {
+  return ({ histories }: { histories: MyHistoryItem[] }) => {
+    const findIndex = histories.findIndex((history) => history.url === url);
+    if (findIndex === -1) {
+      return histories;
+    }
+    if (histories[findIndex - 1]?.headerDate) {
+      const nextItem = histories[findIndex + 1];
+      if (!nextItem || nextItem.headerDate) {
+        return [
+          ...histories.slice(0, findIndex - 1),
+          ...histories.slice(findIndex + 1),
+        ];
+      }
+    }
+    return [
+      ...histories.slice(0, findIndex),
+      ...histories.slice(findIndex + 1),
+    ];
+  };
+}

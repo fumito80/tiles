@@ -1,11 +1,7 @@
-import { makeStyleIcon, $$, cssid } from './utils';
 import { MyHistoryItem } from './types';
-
-const escapes = new Map();
-escapes.set('&', '&amp;');
-escapes.set('"', '&quot;');
-escapes.set('<', '&lt;');
-escapes.set('>', '&gt;');
+import {
+  makeStyleIcon, $$, cssid, htmlEscape,
+} from './utils';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
   children: string,
@@ -16,7 +12,7 @@ export function makeLeaf({ title, url, id }: chrome.bookmarks.BookmarkTreeNode) 
   const style = makeStyleIcon(url);
   return `
     <div class="leaf" id="${id}">
-      <span class="anchor" draggable="true" title="${title}" style="${style}">${title}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
+      <span class="anchor" draggable="true" title="${title}" style="${style}">${htmlEscape(title)}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
@@ -28,7 +24,7 @@ export function makeNode({
   return `
     <div class="folder" id="${id}" data-children="${length}">
       <div class="marker" draggable="true">
-        <div class="drop-folder"></div><i class="icon-fa-angle-right"></i><div class="title" tabindex="2"><span>${title}</span></div><div class="button-wrapper"><button class="folder-menu-button"><i class="icon-fa-ellipsis-v"></i></button></div><div class="drop-top"></div><div class="drop-bottom"></div>
+        <div class="drop-folder"></div><i class="icon-fa-angle-right"></i><div class="title" tabindex="2"><span>${htmlEscape(title)}</span></div><div class="button-wrapper"><button class="folder-menu-button"><i class="icon-fa-ellipsis-v"></i></button></div><div class="drop-top"></div><div class="drop-bottom"></div>
       </div>
       ${children}
     </div>
@@ -53,15 +49,11 @@ export function makeTab(
   content: string,
 ) {
   return `
-    <div id="tab-${id}" class="tab-wrap ${addClass}">
-      <span class="tab" draggable="true" style="${style}" title="${title}">${content}</span><i class="icon-x"></i>
+    <div id="tab-${id}" class="tab-wrap ${addClass}" title="${title}">
+      <span class="tab" draggable="true" style="${style}">${htmlEscape(content)}</span><i class="icon-x"></i>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
-}
-
-export function htmlEscape(text: string) {
-  return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
 }
 
 export function makeHistory({
@@ -76,5 +68,9 @@ export function makeHistory({
   if (!text) {
     return '';
   }
-  return `<div class="history" draggable="true" id="hst-${id}" title="${title}${dt}" style="${style}">${htmlEscape(text)}</div>`;
+  return `
+    <div class="history" draggable="true" id="hst-${id}" title="${title}${dt}" style="${style}">
+      <span>${htmlEscape(text)}</span><i class="icon-x"></i>
+    </div>
+  `;
 }

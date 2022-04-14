@@ -72,7 +72,7 @@ export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   includeUrl: true,
   showCloseTab: true,
-  showCloseHistory: false, // Pending
+  showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',

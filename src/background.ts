@@ -8,12 +8,10 @@ import {
   // CliMessageTypes,
   // OpenBookmarkType,
   // EditBookmarkTypes,
-  // dropClasses,
   CliMessageTypes,
   // PayloadAction,
 } from './types';
-// import { cbToResolve } from './utils';
-import { makeLeaf, makeNode, makeHistory } from './html';
+import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import {
   pipe,
   propEq,
@@ -22,6 +20,7 @@ import {
   setLocal,
   getLocal,
   setBrowserIcon,
+  removeUrlHistory,
 } from './utils';
 
 export const mapStateToResponse = {
@@ -69,8 +68,9 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
-function makeHtmlHistory(rows: number) {
-  const aDay = 1000 * 60 * 60 * 24;
+const aDay = 1000 * 60 * 60 * 24;
+
+function makeHistory(rows: number) {
   return () => {
     const startTime = Date.now() - pastMSec;
     chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
@@ -92,17 +92,55 @@ function makeHtmlHistory(rows: number) {
           }
           return [...acc, item];
         }, []);
-      const htmlData = histories.slice(0, rows).map(makeHistory).join('');
-      const htmlHistory = `<div class="current-date header-date"></div>${htmlData}`;
+      const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
       setLocal({ htmlHistory, histories });
     });
   };
 }
 
-const historyEvents = [
-  chrome.history.onVisited,
-  chrome.history.onVisitRemoved,
-];
+function removeHistory(rows: number) {
+  return async ({ allHistory, urls }: chrome.history.RemovedResult) => {
+    if (allHistory) {
+      makeHistory(0)();
+      return;
+    }
+    const [url] = urls!;
+    const histories = await getLocal('histories').then(removeUrlHistory(url));
+    const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
+    setLocal({ htmlHistory, histories });
+  };
+}
+
+function addHistory(rows: number) {
+  return async (result: chrome.history.HistoryItem) => {
+    const histories = await getLocal('histories')
+      .then(removeUrlHistory(result.url!))
+      .then(async ([head, ...tail]) => {
+        const title = await new Promise<string>((resolve) => {
+          chrome.history.search({ text: '' }, (results) => {
+            const history = results.find((el) => el.id === result.id);
+            resolve(history?.title || result.title!);
+          });
+        });
+        const lastVisitDate = (new Date(result.lastVisitTime!)).toLocaleDateString();
+        const currentHistory = { ...result, title, lastVisitDate };
+        if (head.headerDate && head.lastVisitDate === lastVisitDate) {
+          return [head, currentHistory, ...tail];
+        }
+        if (!head.headerDate && head.lastVisitDate !== lastVisitDate) {
+          const headerDate = {
+            headerDate: true,
+            lastVisitDate: head.lastVisitDate,
+            lastVisitTime: head.lastVisitTime! - (head.lastVisitTime! % aDay),
+          };
+          return [currentHistory, headerDate, head, ...tail];
+        }
+        return [currentHistory, head, ...tail];
+      });
+    const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
+    setLocal({ htmlHistory, histories });
+  };
+}
 
 function updateCurrentWindow(currentWindowId?: number) {
   if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
@@ -124,11 +162,13 @@ function init(storage: Pick<State, InitStateKeys>) {
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options };
+  const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
-  makeHtmlHistory(settings.historyMax.rows)();
+  makeHistory(historyRows)();
   setLocal({ settings, clientState, options });
-  regsterChromeEvents(makeHtmlHistory(settings.historyMax.rows))(historyEvents);
+  regsterChromeEvents(addHistory(historyRows))([chrome.history.onVisited]);
+  regsterChromeEvents(removeHistory(historyRows))([chrome.history.onVisitRemoved]);
   regsterWindowEvent();
 }
 

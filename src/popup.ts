@@ -77,6 +77,7 @@ function setOptions(settings: Settings, options: Options) {
     '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
+  addRules('.marker:hover > .icon-fa-angle-right', [['color', itemHoverColor]]);
   if (!isLightPaneBg) {
     addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
     addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
@@ -84,11 +85,21 @@ function setOptions(settings: Settings, options: Options) {
   }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
+    addRules(
+      [
+        '.leaf:hover .icon-fa-ellipsis-v',
+        '.marker:hover .icon-fa-ellipsis-v',
+        '.tab-wrap:not(.current-tab):hover .icon-x',
+        '.history:hover .icon-x',
+      ].join(','),
+      [['color', 'darkgray']],
+    );
+    addRules('.leaf:hover button:hover, .leaf:hover button:focus, .marker:hover button:hover, .marker:hover button:focus', [['background-color', 'rgba(255, 255, 255, 0.2)']]);
   }
   if (options.showCloseTab) {
     addRules('.pane-tabs > div > div:hover > i', [['display', 'inline-block']]);
   }
-  if (options.showCloseHistory) {
+  if (options.showDeleteHistory) {
     addRules('.pane-history > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }
   setSplitWidth(settings.paneWidth);
@@ -131,6 +142,11 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
   $(selector)?.style.setProperty('display', isShow ? shownDisplayType : 'none');
 }
 
+function setHistory($target: HTMLElement, htmlHistory: string) {
+  const html = `<div class="current-date history header-date"></div>${htmlHistory}`;
+  $target.insertAdjacentHTML('afterbegin', html);
+}
+
 function init({
   settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
 }: State) {
@@ -138,7 +154,7 @@ function init({
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
-  $<HTMLDivElement>('.pane-history')!.firstElementChild!.innerHTML = htmlHistory;
+  setHistory($('.pane-history')!.firstElementChild as HTMLElement, htmlHistory);
   resetHistory({ initialize: true });
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
