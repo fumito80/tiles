@@ -5,11 +5,8 @@ import {
   initialOptions,
   HtmlBookmarks,
   MyHistoryItem,
-  // CliMessageTypes,
-  // OpenBookmarkType,
-  // EditBookmarkTypes,
   CliMessageTypes,
-  // PayloadAction,
+  PayloadAction,
 } from './types';
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import {
@@ -20,17 +17,12 @@ import {
   setLocal,
   getLocal,
   setBrowserIcon,
+  cbToResolve,
+  curry,
   removeUrlHistory,
-} from './utils';
+} from './common';
 
-export const mapStateToResponse = {
-  [CliMessageTypes.saveOptions]: () => true,
-  // ({ dispatch }: ReduxHandlers, { payload }: PayloadAction<bx.IOptions>) => {
-  //   dispatch(sliceOptions.actions.update(payload));
-  // },
-};
-
-export type MapStateToResponse = typeof mapStateToResponse;
+type Histories = State['histories'];
 
 function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {
@@ -70,76 +62,76 @@ regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 const aDay = 1000 * 60 * 60 * 24;
 
-function makeHistory(rows: number) {
-  return () => {
-    const startTime = Date.now() - pastMSec;
+function setHtmlHistory(histories: Histories) {
+  const htmlHistory = histories.slice(0, 30).map(makeHtmlHistory).join('');
+  return setLocal({ htmlHistory, histories }).then(() => histories);
+}
+
+function makeHistory() {
+  const startTime = Date.now() - pastMSec;
+  return new Promise<Histories>((resolve) => {
     chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
-      const histories = [...results]
-        .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
-        .map((item) => ({
-          ...item,
-          lastVisitDate: (new Date(item.lastVisitTime!)).toLocaleDateString(),
-        }))
+      const histories = results
+        // .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
         .reduce<MyHistoryItem[]>((acc, item) => {
+          const lastVisitDate = (new Date(item.lastVisitTime!)).toLocaleDateString();
           const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
-          if (prevLastVisitDate && prevLastVisitDate !== item.lastVisitDate) {
+          if (prevLastVisitDate && prevLastVisitDate !== lastVisitDate) {
             const headerDate = {
               headerDate: true,
-              lastVisitDate: item.lastVisitDate,
+              lastVisitDate,
               lastVisitTime: item.lastVisitTime! - (item.lastVisitTime! % aDay),
             };
-            return [...acc, headerDate, item];
+            return [...acc, headerDate, { ...item, lastVisitDate }];
           }
-          return [...acc, item];
+          return [...acc, { ...item, lastVisitDate }];
         }, []);
-      const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
-      setLocal({ htmlHistory, histories });
+      setHtmlHistory(histories);
+      resolve(histories);
     });
-  };
+  });
 }
 
-function removeHistory(rows: number) {
-  return async ({ allHistory, urls }: chrome.history.RemovedResult) => {
-    if (allHistory) {
-      makeHistory(0)();
-      return;
-    }
-    const [url] = urls!;
-    const histories = await getLocal('histories').then(removeUrlHistory(url));
-    const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
-    setLocal({ htmlHistory, histories });
-  };
+let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
+
+async function onVisitRemoved() {
+  clearTimeout(timeoutRemoveHistory);
+  timeoutRemoveHistory = setTimeout(makeHistory, 200);
 }
 
-function addHistory(rows: number) {
-  return async (result: chrome.history.HistoryItem) => {
-    const histories = await getLocal('histories')
-      .then(removeUrlHistory(result.url!))
-      .then(async ([head, ...tail]) => {
-        const title = await new Promise<string>((resolve) => {
-          chrome.history.search({ text: '' }, (results) => {
-            const history = results.find((el) => el.id === result.id);
-            resolve(history?.title || result.title!);
-          });
-        });
-        const lastVisitDate = (new Date(result.lastVisitTime!)).toLocaleDateString();
-        const currentHistory = { ...result, title, lastVisitDate };
-        if (head.headerDate && head.lastVisitDate === lastVisitDate) {
-          return [head, currentHistory, ...tail];
-        }
-        if (!head.headerDate && head.lastVisitDate !== lastVisitDate) {
-          const headerDate = {
-            headerDate: true,
-            lastVisitDate: head.lastVisitDate,
-            lastVisitTime: head.lastVisitTime! - (head.lastVisitTime! % aDay),
-          };
-          return [currentHistory, headerDate, head, ...tail];
-        }
-        return [currentHistory, head, ...tail];
-      });
-    const htmlHistory = histories.slice(0, rows).map(makeHtmlHistory).join('');
-    setLocal({ htmlHistory, histories });
+const timezoneOffset = (new Date()).getTimezoneOffset() * 60 * 1000;
+
+export async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
+  const now = Date.now();
+  const startTime = now - (now % aDay) + timezoneOffset;
+  const [topItem] = currents;
+  if (topItem.lastVisitTime! < startTime) {
+    return makeHistory();
+  }
+  const query = {
+    startTime,
+    text: '',
+    maxResults: 99999,
   };
+  const histories = await cbToResolve(curry(chrome.history.search)(query));
+  const todays = histories.map((history) => {
+    const lastVisitDate = (new Date(history.lastVisitTime!)).toLocaleDateString();
+    return { ...history, lastVisitDate };
+  });
+  const { id } = todays.at(-1)!;
+  const findIndex = currents.findIndex((el) => el.id === id);
+  return [...todays, ...currents.slice(findIndex + 1)];
+}
+
+let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
+
+function addHistory() {
+  clearTimeout(timeoutRefreshHistoryTitle);
+  timeoutRefreshHistoryTitle = setTimeout(() => {
+    getLocal('histories')
+      .then(({ histories }) => mergeHistoryLatest(histories))
+      .then(setHtmlHistory);
+  }, 2000);
 }
 
 function updateCurrentWindow(currentWindowId?: number) {
@@ -162,14 +154,51 @@ function init(storage: Pick<State, InitStateKeys>) {
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options };
-  const historyRows = settings.historyMax.rows;
+  // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
-  makeHistory(historyRows)();
+  makeHistory();
   setLocal({ settings, clientState, options });
-  regsterChromeEvents(addHistory(historyRows))([chrome.history.onVisited]);
-  regsterChromeEvents(removeHistory(historyRows))([chrome.history.onVisitRemoved]);
+  regsterChromeEvents(addHistory)([chrome.history.onVisited]);
+  regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
   regsterWindowEvent();
 }
 
 getLocal(...initStateKeys).then(init);
+
+// Messagings popup to background
+
+let seriesRemoveHistory = Promise.resolve(false);
+
+export const mapStateToResponse = {
+  [CliMessageTypes.removeHistory]: async ({ payload }: PayloadAction<string>) => {
+    seriesRemoveHistory = seriesRemoveHistory.then(() => {
+      chrome.history.onVisitRemoved.removeListener(onVisitRemoved);
+      return new Promise<boolean>((resolve) => {
+        chrome.history.deleteUrl({ url: payload }, async () => {
+          await getLocal('histories')
+            .then(removeUrlHistory(payload))
+            .then(setHtmlHistory);
+          chrome.history.onVisitRemoved.addListener(onVisitRemoved);
+        });
+        resolve(true);
+      });
+    });
+    return seriesRemoveHistory;
+  },
+};
+
+export type MapStateToResponse = typeof mapStateToResponse;
+
+async function onClientRequest(
+  message: { type: keyof MapStateToResponse } & PayloadAction<any>,
+  _: chrome.runtime.MessageSender,
+  sendResponse: (response?: any) => void,
+) {
+  // eslint-disable-next-line no-console
+  console.log(message);
+  const responseState = await mapStateToResponse[message.type](message);
+  sendResponse(responseState);
+}
+
+chrome.runtime.onMessage.addListener(onClientRequest);

@@ -20,11 +20,11 @@ import {
   extractDomain,
   getColorWhiteness,
   lightColorWhiteness,
-} from './utils';
+} from './common';
 
 import { makeTab } from './html';
 import { setEventListners } from './client-events';
-import { resetHistory } from './vscroll';
+import { refreshVScroll, resetHistory, resetVScrollData } from './vscroll';
 
 type Options = State['options'];
 
@@ -145,17 +145,22 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
 function setHistory($target: HTMLElement, htmlHistory: string) {
   const html = `<div class="current-date history header-date"></div>${htmlHistory}`;
   $target.insertAdjacentHTML('afterbegin', html);
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.histories) {
+      resetVScrollData(() => changes.histories.newValue as State['histories']);
+    }
+  });
 }
 
 function init({
-  settings, htmlBookmarks, htmlHistory, clientState, options, currentWindowId,
+  settings, htmlBookmarks, clientState, options, currentWindowId, htmlHistory,
 }: State) {
   setTabs(currentWindowId);
+  setHistory($('.pane-history')!.firstElementChild as HTMLElement, htmlHistory);
+  resetHistory({ initialize: true }).then(refreshVScroll);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
-  setHistory($('.pane-history')!.firstElementChild as HTMLElement, htmlHistory);
-  resetHistory({ initialize: true });
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
   setEventListners(options);

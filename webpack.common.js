@@ -54,7 +54,7 @@ module.exports = {
       patterns: [
         { from: '*.html', context: 'src/view/' },
         { from: '*.json', context: 'src/json/' },
-        { from: '*.css', context: 'src/css/' },
+        // { from: '*.css', context: 'src/css/' },
         // { from: '*.js', context: 'src/' },
         { from: '*.png', context: 'src/images/' },
       ],

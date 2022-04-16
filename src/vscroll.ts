@@ -1,7 +1,11 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
   $, getLocal, setLocal, pick, htmlEscape,
-} from './utils';
+} from './common';
+
+const searchCache = new Map<string, Array<MyHistoryItem>>();
+let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
+let vScrollData: Collection;
 
 export function rowSetterHistory(
   data: MyHistoryItem[],
@@ -27,6 +31,7 @@ export function rowSetterHistory(
       $currentDate.textContent = latestDate === lastVisitDate ? '' : lastVisitDate!;
     }
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
+    row.classList.remove('hilite');
     if (headerDate) {
       // eslint-disable-next-line no-param-reassign
       row.innerHTML = lastVisitDate!;
@@ -65,9 +70,6 @@ function getRowHeight(rows: HTMLElement) {
 
 export type VScrollRowSetter = typeof rowSetterHistory;
 
-let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
-let vScrollData: Collection;
-
 export function setVScroll(
   container: HTMLDivElement,
   setter: VScrollRowSetter,
@@ -101,15 +103,17 @@ export function setVScroll(
   vscroll.addEventListener('scroll', vScrollHandler);
 }
 
-const searchCache = new Map<string, Array<MyHistoryItem>>();
-
-export function getVScrollData() {
-  return vScrollData;
+export function refreshVScroll() {
+  const vscroll = $('.pane-history .v-scroll-bar')!;
+  vscroll.dispatchEvent(new Event('scroll'));
 }
 
-export function setVScrollData(data: Collection) {
-  vScrollData = data;
+export function resetVScrollData(
+  cbVScrollData: (data: Collection) => Collection,
+) {
+  vScrollData = cbVScrollData(vScrollData);
   searchCache.clear();
+  refreshVScroll();
 }
 
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {

@@ -879,10 +879,9 @@ input.query {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  &.remove-hilite::before {
-    animation-name: hilite-fade-in !important;
-    animation-duration: .05s !important;
-    animation-timing-function: ease-out;
+  &.hilite {
+    animation-name: hilite-fade-out !important;
+    animation-duration: 1.0s !important;
   }
 }
 

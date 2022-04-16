@@ -18,7 +18,7 @@ import {
   prop,
   getRGB,
   lightColorWhiteness,
-} from './utils';
+} from './common';
 import { State, ColorPalette } from './types';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 

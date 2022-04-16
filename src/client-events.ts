@@ -5,7 +5,6 @@ import {
   dropAreaClasses,
   splitterClasses,
   positions,
-  // CliMessageTypes,
   OpenBookmarkType,
   EditBookmarkType,
   Options,
@@ -19,7 +18,7 @@ import {
   whichClass,
   cssid,
   getParentElement,
-  // postMessage,
+  postMessage,
   curry,
   curry3,
   cbToResolve,
@@ -36,10 +35,10 @@ import {
   extractDomain,
   getHistoryById,
   removeUrlHistory,
-} from './utils';
+} from './common';
 
 import { makeLeaf, makeNode, updateAnker } from './html';
-import { getVScrollData, resetHistory, setVScrollData } from './vscroll';
+import { resetHistory, resetVScrollData } from './vscroll';
 
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
@@ -858,13 +857,11 @@ export function setEventListners(options: Options) {
       return;
     }
     if ($target.classList.contains('icon-x')) {
-      chrome.history.deleteUrl({ url }, () => {
-        const histories = getVScrollData();
-        const removedHistory = removeUrlHistory(url)({ histories });
-        setVScrollData(removedHistory);
-        const vscroll = $('.pane-history .v-scroll-bar')!;
-        vscroll.dispatchEvent(new Event('scroll'));
-      });
+      setAnimationClass($parent, 'hilite');
+      const result = await postMessage({ type: 'cl-remove-history', payload: url });
+      if (result) {
+        resetVScrollData(removeUrlHistory(url));
+      }
       return;
     }
     createNewTab(options, url);

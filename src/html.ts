@@ -1,7 +1,7 @@
 import { MyHistoryItem } from './types';
 import {
   makeStyleIcon, $$, cssid, htmlEscape,
-} from './utils';
+} from './common';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
   children: string,

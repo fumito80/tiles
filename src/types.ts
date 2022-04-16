@@ -102,17 +102,17 @@ export type Options = State['options'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
-  saveOptions: 'cl-save-options',
-  saveState: 'cl-save-state',
-  openBookmark: 'cl-open-bookmark',
-  addBookmark: 'cl-add-bookmark',
-  removeBookmark: 'cl-remove-bookmark',
-  editBookmark: 'cl-edit-bookmark',
-  addFolder: 'cl-add-folder',
-  editFolder: 'cl-edit-folder',
-  removeFolder: 'cl-remove-folder',
-  getUrl: 'cl-get-url',
-  moveItem: 'cl-move-item',
+  removeHistory: 'cl-remove-history',
+  // saveState: 'cl-save-state',
+  // openBookmark: 'cl-open-bookmark',
+  // addBookmark: 'cl-add-bookmark',
+  // removeBookmark: 'cl-remove-bookmark',
+  // editBookmark: 'cl-edit-bookmark',
+  // addFolder: 'cl-add-folder',
+  // editFolder: 'cl-edit-folder',
+  // removeFolder: 'cl-remove-folder',
+  // getUrl: 'cl-get-url',
+  // moveItem: 'cl-move-item',
 } as const;
 
 export const OpenBookmarkType = {

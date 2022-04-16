@@ -223,8 +223,12 @@ export function swap<T, U, V>(f: (a: T, b: U) => V) {
   return (b: U, a: T) => f(a, b) as V;
 }
 
-export async function cbToResolve<T>(f: (cb: (value: T | PromiseLike<T>) => void) => any) {
-  return new Promise<T>((resolve) => {
+export async function cbToResolve<T>(
+  f: (cb: (value: T | PromiseLike<T>) => void) => any,
+): Promise<T>;
+export async function cbToResolve(f: (cb: () => void) => any): Promise<void>;
+export async function cbToResolve(f: (cb: (value?: any) => void) => any) {
+  return new Promise((resolve) => {
     f(resolve);
   });
 }
@@ -744,24 +748,44 @@ export function htmlEscape(text: string) {
   return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
 }
 
-export function removeUrlHistory(url: string) {
-  return ({ histories }: { histories: MyHistoryItem[] }) => {
-    const findIndex = histories.findIndex((history) => history.url === url);
+export function removeUrlHistory(url: string, lastVisitTime?: number) {
+  return (data: Pick<State, 'histories'> | State['histories']) => {
+    const { histories } = Array.isArray(data) ? { histories: data } : data;
+    const findIndex = histories.findIndex(
+      (history) => history.url === url || history.lastVisitTime === lastVisitTime,
+    );
     if (findIndex === -1) {
       return histories;
+    }
+    let tails = histories.slice(findIndex + 1);
+    const findIndex2 = tails.findIndex(
+      (history) => history.url === url || history.lastVisitTime === lastVisitTime,
+    );
+    if (findIndex2 >= 0) {
+      tails = [...tails.slice(0, findIndex2), ...tails.slice(findIndex2 + 1)];
     }
     if (histories[findIndex - 1]?.headerDate) {
       const nextItem = histories[findIndex + 1];
       if (!nextItem || nextItem.headerDate) {
         return [
           ...histories.slice(0, findIndex - 1),
-          ...histories.slice(findIndex + 1),
+          ...tails,
+        ];
+      }
+    }
+    if (tails[findIndex2 - 1]?.headerDate) {
+      const nextItem = tails[findIndex2];
+      if (!nextItem || nextItem.headerDate) {
+        return [
+          ...histories.slice(0, findIndex),
+          ...tails.slice(0, findIndex2),
+          ...tails.slice(findIndex2),
         ];
       }
     }
     return [
       ...histories.slice(0, findIndex),
-      ...histories.slice(findIndex + 1),
+      ...tails,
     ];
   };
 }
