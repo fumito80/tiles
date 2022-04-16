@@ -2,12 +2,16 @@
 
 import {
   PayloadAction,
-  MapStateToResponse,
+  MapMessagesPtoB,
+  MapMessagesBtoP,
   MessageStateMapObject,
   State,
   SplitterClasses,
   MyHistoryItem,
+  Model,
 } from './types';
+
+export const aDayMSec = 1000 * 60 * 60 * 24;
 
 export function $<T extends HTMLElement>(
   selector: string,
@@ -504,10 +508,19 @@ export function getParentElement(el: HTMLElement, level: number): HTMLElement | 
 const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime) as
   (message: any, responseCallback: (response: any) => void) => void;
 
-export async function postMessage<T extends keyof MapStateToResponse>(
-  msg: { type: T } & Partial<PayloadAction<MessageStateMapObject<MapStateToResponse>[T]>>,
-): Promise<ReturnType<MapStateToResponse[T]>> {
-  return cbToResolve(curry(sendMessage)(msg));
+type MapMessages = MapMessagesPtoB & MapMessagesBtoP;
+
+export async function postMessage<T extends keyof MapMessages>(
+  msg: { type: T } & Partial<PayloadAction<MessageStateMapObject<MapMessages>[T]>>,
+) {
+  return new Promise<ReturnType<MapMessages[T]>>((resolve) => {
+    sendMessage(msg, (resp) => {
+      if (!chrome.runtime.lastError) {
+        resolve(resp);
+      }
+      return true;
+    });
+  });
 }
 
 export function cssid(id: string | number) {
@@ -788,4 +801,18 @@ export function removeUrlHistory(url: string, lastVisitTime?: number) {
       ...tails,
     ];
   };
+}
+
+export function setMessageListener<T extends Model>(messageMap: T) {
+  async function onMessage(
+    message: { type: keyof T } & PayloadAction<any>,
+    _: chrome.runtime.MessageSender,
+    sendResponse: (response?: any) => void,
+  ) {
+    // eslint-disable-next-line no-console
+    // console.log(message);
+    const responseState = await messageMap[message.type](message);
+    sendResponse(responseState);
+  }
+  chrome.runtime.onMessage.addListener(onMessage);
 }

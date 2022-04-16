@@ -151,8 +151,7 @@ export async function resetHistory({
   const today = (new Date()).toLocaleDateString();
   let histories = [init, ...tail];
   if (!!initialize && init.lastVisitDate !== today && !init.headerDate) {
-    const lastVisitTime = init.lastVisitTime! - (init.lastVisitTime! % (1000 * 60 * 60 * 24));
-    const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate, lastVisitTime };
+    const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate };
     histories = [headerDate, init, ...tail];
     const headerDateHtml = `<div class="history header-date" draggable="true" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
     rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);

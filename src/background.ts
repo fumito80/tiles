@@ -10,6 +10,7 @@ import {
 } from './types';
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import {
+  aDayMSec,
   pipe,
   propEq,
   propNe,
@@ -20,6 +21,8 @@ import {
   cbToResolve,
   curry,
   removeUrlHistory,
+  setMessageListener,
+  postMessage,
 } from './common';
 
 type Histories = State['histories'];
@@ -60,10 +63,9 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
-const aDay = 1000 * 60 * 60 * 24;
-
 function setHtmlHistory(histories: Histories) {
-  const htmlHistory = histories.slice(0, 30).map(makeHtmlHistory).join('');
+  const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
+  const htmlHistory = `<div class="current-date history header-date"></div>${html}`;
   return setLocal({ htmlHistory, histories }).then(() => histories);
 }
 
@@ -77,11 +79,7 @@ function makeHistory() {
           const lastVisitDate = (new Date(item.lastVisitTime!)).toLocaleDateString();
           const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
           if (prevLastVisitDate && prevLastVisitDate !== lastVisitDate) {
-            const headerDate = {
-              headerDate: true,
-              lastVisitDate,
-              lastVisitTime: item.lastVisitTime! - (item.lastVisitTime! % aDay),
-            };
+            const headerDate = { headerDate: true, lastVisitDate };
             return [...acc, headerDate, { ...item, lastVisitDate }];
           }
           return [...acc, { ...item, lastVisitDate }];
@@ -101,9 +99,9 @@ async function onVisitRemoved() {
 
 const timezoneOffset = (new Date()).getTimezoneOffset() * 60 * 1000;
 
-export async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
+async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
   const now = Date.now();
-  const startTime = now - (now % aDay) + timezoneOffset;
+  const startTime = now - (now % aDayMSec) + (aDayMSec + timezoneOffset);
   const [topItem] = currents;
   if (topItem.lastVisitTime! < startTime) {
     return makeHistory();
@@ -130,7 +128,8 @@ function addHistory() {
   timeoutRefreshHistoryTitle = setTimeout(() => {
     getLocal('histories')
       .then(({ histories }) => mergeHistoryLatest(histories))
-      .then(setHtmlHistory);
+      .then(setHtmlHistory)
+      .then(() => postMessage({ type: 'bkg-update-history' }));
   }, 2000);
 }
 
@@ -170,8 +169,8 @@ getLocal(...initStateKeys).then(init);
 
 let seriesRemoveHistory = Promise.resolve(false);
 
-export const mapStateToResponse = {
-  [CliMessageTypes.removeHistory]: async ({ payload }: PayloadAction<string>) => {
+export const mapMessagesPtoB = {
+  [CliMessageTypes.removeHistory]: ({ payload }: PayloadAction<string>) => {
     seriesRemoveHistory = seriesRemoveHistory.then(() => {
       chrome.history.onVisitRemoved.removeListener(onVisitRemoved);
       return new Promise<boolean>((resolve) => {
@@ -188,17 +187,6 @@ export const mapStateToResponse = {
   },
 };
 
-export type MapStateToResponse = typeof mapStateToResponse;
+setMessageListener(mapMessagesPtoB);
 
-async function onClientRequest(
-  message: { type: keyof MapStateToResponse } & PayloadAction<any>,
-  _: chrome.runtime.MessageSender,
-  sendResponse: (response?: any) => void,
-) {
-  // eslint-disable-next-line no-console
-  console.log(message);
-  const responseState = await mapStateToResponse[message.type](message);
-  sendResponse(responseState);
-}
-
-chrome.runtime.onMessage.addListener(onClientRequest);
+export type MapMessagesPtoB = typeof mapMessagesPtoB;

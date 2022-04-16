@@ -1,10 +1,8 @@
-import {
-  MapStateToResponse,
-} from './background';
+import { MapMessagesPtoB } from './background';
+import { MapMessagesBtoP } from './popup';
 
-export type {
-  MapStateToResponse,
-} from './background';
+export type { MapMessagesPtoB } from './background';
+export type { MapMessagesBtoP } from './popup';
 
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
@@ -103,16 +101,10 @@ export type Options = State['options'];
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
   removeHistory: 'cl-remove-history',
-  // saveState: 'cl-save-state',
-  // openBookmark: 'cl-open-bookmark',
-  // addBookmark: 'cl-add-bookmark',
-  // removeBookmark: 'cl-remove-bookmark',
-  // editBookmark: 'cl-edit-bookmark',
-  // addFolder: 'cl-add-folder',
-  // editFolder: 'cl-edit-folder',
-  // removeFolder: 'cl-remove-folder',
-  // getUrl: 'cl-get-url',
-  // moveItem: 'cl-move-item',
+} as const;
+
+export const BkgMessageTypes = {
+  updateHistory: 'bkg-update-history',
 } as const;
 
 export const OpenBookmarkType = {
@@ -166,7 +158,7 @@ export type PayloadAction<P = void, T extends string = string, M = never, E = ne
 
 export type RequestCallback<T> = ({ payload }: PayloadAction<T>) => any;
 
-export type MessageStateMapObject<M extends MapStateToResponse> = {
+export type MessageStateMapObject<M extends MapMessagesPtoB | MapMessagesBtoP> = {
   [K in keyof M]: M[K] extends RequestCallback<infer S> ? S : never;
 }
 

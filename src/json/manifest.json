@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Popup'n My Resources",
   "description": "Search/view across bookmarks, tabs, and history for a one-stop access to your browsing resources.",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "permissions": [
     "storage",
     "bookmarks",

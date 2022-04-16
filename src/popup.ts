@@ -6,6 +6,7 @@ import {
   State,
   ClientState,
   initialState,
+  BkgMessageTypes,
 } from './types';
 
 import {
@@ -20,11 +21,12 @@ import {
   extractDomain,
   getColorWhiteness,
   lightColorWhiteness,
+  setMessageListener,
 } from './common';
 
 import { makeTab } from './html';
 import { setEventListners } from './client-events';
-import { refreshVScroll, resetHistory, resetVScrollData } from './vscroll';
+import { refreshVScroll, resetHistory } from './vscroll';
 
 type Options = State['options'];
 
@@ -143,13 +145,7 @@ function toggleElement(selector: string, isShow = true, shownDisplayType = 'bloc
 }
 
 function setHistory($target: HTMLElement, htmlHistory: string) {
-  const html = `<div class="current-date history header-date"></div>${htmlHistory}`;
-  $target.insertAdjacentHTML('afterbegin', html);
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.histories) {
-      resetVScrollData(() => changes.histories.newValue as State['histories']);
-    }
-  });
+  $target.insertAdjacentHTML('afterbegin', htmlHistory);
 }
 
 function init({
@@ -168,3 +164,13 @@ function init({
 }
 
 bootstrap(...getKeys(initialState)).then(init);
+
+export const mapMessagesBtoP = {
+  [BkgMessageTypes.updateHistory]: () => {
+    resetHistory();
+  },
+};
+
+setMessageListener(mapMessagesBtoP);
+
+export type MapMessagesBtoP = typeof mapMessagesBtoP;

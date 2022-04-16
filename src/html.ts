@@ -62,7 +62,7 @@ export function makeHistory({
   if (headerDate) {
     return `<div class="history header-date" draggable="true">${lastVisitDate}</div>`;
   }
-  const dt = lastVisitTime ? `\n${(new Date(lastVisitTime)).toLocaleString()}` : '';
+  const dt = `\n${(new Date(lastVisitTime!)).toLocaleString()}`;
   const style = makeStyleIcon(url!);
   const text = title || url;
   if (!text) {
