@@ -1,8 +1,8 @@
-import { MapMessagesPtoB } from './background';
-import { MapMessagesBtoP } from './popup';
+import { mapMessagesPtoB } from './background';
+import { mapMessagesBtoP } from './popup';
 
-export type { MapMessagesPtoB } from './background';
-export type { MapMessagesBtoP } from './popup';
+export type MapMessagesPtoB = typeof mapMessagesPtoB;
+export type MapMessagesBtoP = typeof mapMessagesBtoP;
 
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
@@ -155,10 +155,12 @@ export type PayloadAction<P = void, T extends string = string, M = never, E = ne
   error: E;
 });
 
-export type RequestCallback<T> = ({ payload }: PayloadAction<T>) => any;
+export type PayloadActionType<T> = ({ payload }: PayloadAction<T>) => any;
 
-export type MessageStateMapObject<M extends MapMessagesPtoB | MapMessagesBtoP> = {
-  [K in keyof M]: M[K] extends RequestCallback<infer S> ? S : never;
+type MapMessages = MapMessagesPtoB & MapMessagesBtoP;
+
+export type MessageTypePayloadAction<M extends MapMessages> = {
+  [K in keyof M]: M[K] extends PayloadActionType<infer S> ? S : never;
 }
 
 type InsertPosition = Parameters<Element['insertAdjacentElement']>[0];

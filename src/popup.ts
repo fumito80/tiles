@@ -1,3 +1,5 @@
+/* eslint-disable import/prefer-default-export */
+
 import './css/popup.scss';
 
 import {
@@ -172,5 +174,3 @@ export const mapMessagesBtoP = {
 };
 
 setMessageListener(mapMessagesBtoP);
-
-export type MapMessagesBtoP = typeof mapMessagesBtoP;

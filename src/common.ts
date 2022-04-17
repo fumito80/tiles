@@ -4,7 +4,7 @@ import {
   PayloadAction,
   MapMessagesPtoB,
   MapMessagesBtoP,
-  MessageStateMapObject,
+  MessageTypePayloadAction,
   State,
   SplitterClasses,
   MyHistoryItem,
@@ -511,7 +511,7 @@ const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime) as
 type MapMessages = MapMessagesPtoB & MapMessagesBtoP;
 
 export async function postMessage<T extends keyof MapMessages>(
-  msg: { type: T } & Partial<PayloadAction<MessageStateMapObject<MapMessages>[T]>>,
+  msg: { type: T } & Partial<PayloadAction<MessageTypePayloadAction<MapMessages>[T]>>,
 ) {
   return new Promise<ReturnType<MapMessages[T]>>((resolve) => {
     sendMessage(msg, (resp) => {

@@ -1,3 +1,5 @@
+/* eslint-disable import/prefer-default-export */
+
 import {
   State,
   pastMSec,
@@ -8,7 +10,7 @@ import {
   CliMessageTypes,
   PayloadAction,
 } from './types';
-import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
+
 import {
   aDayMSec,
   pipe,
@@ -25,6 +27,8 @@ import {
   postMessage,
   isDateEq,
 } from './common';
+
+import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 
 type Histories = State['histories'];
 
@@ -184,8 +188,7 @@ export const mapMessagesPtoB = {
     });
     return seriesRemoveHistory;
   },
+  [CliMessageTypes.initialize]: ({ payload }: PayloadAction<number>) => payload.toString(),
 };
 
 setMessageListener(mapMessagesPtoB);
-
-export type MapMessagesPtoB = typeof mapMessagesPtoB;
