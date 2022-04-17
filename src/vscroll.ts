@@ -1,7 +1,8 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getLocal, setLocal, pick, htmlEscape,
+  $, getLocal, setLocal, pick, htmlEscape, getLocaleDate, isDateEq,
 } from './common';
+import { makeHistory } from './html';
 
 const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
@@ -12,7 +13,7 @@ export function rowSetterHistory(
   rowTop: number,
   dataTop: number,
 ) {
-  const latestDate = (new Date()).toLocaleDateString();
+  const today = getLocaleDate();
   const $currentDate = $('.pane-history .current-date')!;
   $currentDate.style.transform = 'translateY(-2px)';
   return (row: HTMLElement, index: number) => {
@@ -25,14 +26,16 @@ export function rowSetterHistory(
       return;
     }
     const {
-      url, title, lastVisitTime, lastVisitDate, headerDate, id,
+      url, title, lastVisitTime, headerDate, id,
     } = item;
     if (index === 1) {
-      $currentDate.textContent = latestDate === lastVisitDate ? '' : lastVisitDate!;
+      const lastVisitDate = getLocaleDate(lastVisitTime);
+      $currentDate.textContent = today === lastVisitDate ? '' : lastVisitDate!;
     }
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
     row.classList.remove('hilite');
     if (headerDate) {
+      const lastVisitDate = getLocaleDate(lastVisitTime);
       // eslint-disable-next-line no-param-reassign
       row.innerHTML = lastVisitDate!;
       row.style.removeProperty('background-image');
@@ -148,12 +151,12 @@ export async function resetHistory({
     await setLocal({ vscrollProps: { rowHeight, elementHeight } });
   }
   const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
-  const today = (new Date()).toLocaleDateString();
   let histories = [init, ...tail];
-  if (!!initialize && init.lastVisitDate !== today && !init.headerDate) {
-    const headerDate = { headerDate: true, lastVisitDate: init.lastVisitDate };
+  if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
+    const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
     histories = [headerDate, init, ...tail];
-    const headerDateHtml = `<div class="history header-date" draggable="true" style="height: ${vscrollProps.elementHeight}px">${init.lastVisitDate}</div>`;
+    const headerStyle = `height: ${vscrollProps.elementHeight}px`;
+    const headerDateHtml = makeHistory({ ...headerDate, headerStyle });
     rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
     await setLocal({ histories, htmlHistory: rows.innerHTML });
   }

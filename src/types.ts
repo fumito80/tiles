@@ -36,8 +36,7 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
-export type MyHistoryItem = Partial<chrome.history.HistoryItem &
-  { lastVisitDate: string, headerDate: boolean }>;
+export type MyHistoryItem = Partial<chrome.history.HistoryItem & { headerDate: boolean }>;
 
 const css = [
   'body {',

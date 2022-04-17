@@ -23,6 +23,7 @@ import {
   removeUrlHistory,
   setMessageListener,
   postMessage,
+  isDateEq,
 } from './common';
 
 type Histories = State['histories'];
@@ -76,13 +77,15 @@ function makeHistory() {
       const histories = results
         // .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
         .reduce<MyHistoryItem[]>((acc, item) => {
-          const lastVisitDate = (new Date(item.lastVisitTime!)).toLocaleDateString();
-          const prevLastVisitDate = acc.at(-1)?.lastVisitDate;
-          if (prevLastVisitDate && prevLastVisitDate !== lastVisitDate) {
-            const headerDate = { headerDate: true, lastVisitDate };
-            return [...acc, headerDate, { ...item, lastVisitDate }];
+          const prevLastVisitTime = acc.at(-1)?.lastVisitTime;
+          if (!prevLastVisitTime || isDateEq(prevLastVisitTime, item.lastVisitTime)) {
+            return [...acc, item];
           }
-          return [...acc, { ...item, lastVisitDate }];
+          return [
+            ...acc,
+            { headerDate: true, lastVisitTime: item.lastVisitTime },
+            item,
+          ];
         }, []);
       setHtmlHistory(histories);
       resolve(histories);
@@ -111,11 +114,7 @@ async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
     text: '',
     maxResults: 99999,
   };
-  const histories = await cbToResolve(curry(chrome.history.search)(query));
-  const todays = histories.map((history) => {
-    const lastVisitDate = (new Date(history.lastVisitTime!)).toLocaleDateString();
-    return { ...history, lastVisitDate };
-  });
+  const todays = await cbToResolve(curry(chrome.history.search)(query));
   const { id } = todays.at(-1)!;
   const findIndex = currents.findIndex((el) => el.id === id);
   return [...todays, ...currents.slice(findIndex + 1)];

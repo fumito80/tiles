@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  makeStyleIcon, $$, cssid, htmlEscape,
+  makeStyleIcon, $$, cssid, htmlEscape, getLocaleDate,
 } from './common';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
@@ -57,10 +57,11 @@ export function makeTab(
 }
 
 export function makeHistory({
-  url, title, lastVisitTime, headerDate, lastVisitDate, id,
-}: MyHistoryItem) {
+  url, title, lastVisitTime, headerDate, id, headerStyle = '',
+}: MyHistoryItem & { headerStyle?: string }) {
   if (headerDate) {
-    return `<div class="history header-date" draggable="true">${lastVisitDate}</div>`;
+    const lastVisitDate = getLocaleDate(lastVisitTime);
+    return `<div class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</div>`;
   }
   const dt = `\n${(new Date(lastVisitTime!)).toLocaleString()}`;
   const style = makeStyleIcon(url!);

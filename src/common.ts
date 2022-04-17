@@ -761,7 +761,7 @@ export function htmlEscape(text: string) {
   return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
 }
 
-export function removeUrlHistory(url: string, lastVisitTime?: number) {
+export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
   return (data: Pick<State, 'histories'> | State['histories']) => {
     const { histories } = Array.isArray(data) ? { histories: data } : data;
     const findIndex = histories.findIndex(
@@ -801,6 +801,22 @@ export function removeUrlHistory(url: string, lastVisitTime?: number) {
       ...tails,
     ];
   };
+}
+
+export function getLocaleDate(dateOrSerial?: Date | number) {
+  if (dateOrSerial == null) {
+    return (new Date()).toLocaleDateString();
+  }
+  return (new Date(dateOrSerial)).toLocaleDateString();
+}
+
+export function isDateEq(dateOrSerial1?: Date | number, dateOrSerial2?: Date | number) {
+  const date1 = (new Date(dateOrSerial1!)).toLocaleDateString();
+  const date2 = (new Date(dateOrSerial2!)).toLocaleDateString();
+  if (date1 === 'Invalid Date' || date2 === 'Invalid Date') {
+    return false;
+  }
+  return date1 === date2;
 }
 
 export function setMessageListener<T extends Model>(messageMap: T) {
