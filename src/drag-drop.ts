@@ -101,29 +101,26 @@ async function dropFromHistory(
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
   const dropAreaClass = whichClass(dropAreaClasses, $target);
-  // false when not drop target
+  // return false when not drop target
   if (dropAreaClass == null) {
     return false;
   }
   const $dragSource = $('.drag-source')!;
-  const targetParent = $target.parentElement!;
-  // falses when same element
-  if (targetParent === $dragSource) {
+  const $targetParent = $target.parentElement!;
+  // return falses when drop self
+  if ($targetParent === $dragSource) {
     return false;
-  }
-  if (targetParent.classList.contains('tab-wrap')) {
-    return true;
   }
   switch (dropAreaClass) {
     case 'drop-bottom':
-      if (targetParent === $dragSource.previousElementSibling
-        || targetParent.parentElement === $dragSource.parentElement!.previousElementSibling) {
+      if ($targetParent === $dragSource.previousElementSibling
+        || $targetParent.parentElement === $dragSource.parentElement!.previousElementSibling) {
         return false;
       }
       break;
     case 'drop-top':
-      if (targetParent === $dragSource.nextElementSibling
-        || targetParent.parentElement === $dragSource.parentElement!.nextElementSibling) {
+      if ($targetParent === $dragSource.nextElementSibling
+        || $targetParent.parentElement === $dragSource.parentElement!.nextElementSibling) {
         return false;
       }
       break;

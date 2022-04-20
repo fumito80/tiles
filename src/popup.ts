@@ -75,7 +75,7 @@ function setOptions(settings: Settings, options: Options) {
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : '#EFEFEF !important']]);
   addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
-  addRules('.query:not([value=""])', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules('.query[data-searching]', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
     '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover',
@@ -120,8 +120,8 @@ function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
-  addRules('.query:not([value=""]) + button > i', [['visibility', 'hidden']]);
-  addRules('.query:not([value=""])', [
+  addRules('.query[data-searching] + button > i', [['visibility', 'hidden']]);
+  addRules('.query[data-searching]', [
     ['background-image', `url("chrome://favicon/${options.externalUrl}")`],
     ['background-repeat', 'no-repeat'],
     ['background-position', '6px center'],

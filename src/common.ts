@@ -17,7 +17,7 @@ export function $<T extends HTMLElement>(
   selector: string,
   parent: HTMLElement | DocumentFragment | Document = document,
 ) {
-  return parent.querySelector(selector) as T | null;
+  return parent.querySelector<T>(selector);
 }
 
 export function $$<T extends HTMLElement>(

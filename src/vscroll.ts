@@ -41,7 +41,9 @@ export function rowSetterHistory(
       row.style.removeProperty('background-image');
       row.classList.add('header-date');
       row.removeAttribute('title');
-      if (index === 2) {
+      if (index === 1) {
+        row.style.setProperty('transform', 'translateY(-10000px)');
+      } else if (index === 2) {
         $currentDate.style.transform = `translateY(${rowTop}px)`;
       }
       return;

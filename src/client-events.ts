@@ -199,7 +199,7 @@ function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
 }
 
 function resizeHeightHandler(e: MouseEvent) {
-  const height = Math.min(e.clientY - 6, 590);
+  const height = Math.min(e.clientY - 6, 570);
   if (height < 200) {
     return;
   }

@@ -170,7 +170,7 @@ input.query {
   position: absolute;
   right: 50px;
   font-size: 1.4em;
-  display: inherit;
+  display: none;
   cursor: pointer;
 }
 
@@ -216,10 +216,10 @@ input.query {
 }
 
 .query {
-  &[value=""] ~ .icon-x {
-    display: none;
-  }  
-  &:not([value=""]) {
+  &[data-searching] ~ .icon-x {
+    display: inline-block;
+  }
+  &[data-searching] {
     background-color: #cce5ff;
     + button {
       cursor: pointer;
@@ -641,8 +641,6 @@ input.query {
   .tab-wrap {
     > .drop-top {
       left: 1px;
-      // right: 1px;
-      // width: 100%;
     }
   }
 }

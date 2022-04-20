@@ -15,10 +15,10 @@ let lastQueryValue = '';
 export default function search(options: Options) {
   return (e: Event) => {
     const value = $inputQuery.value.trim();
-    if (lastQueryValue === '' && value.length === 1) {
+    if (lastQueryValue === '' && value.length <= 1) {
       return false;
     }
-    $inputQuery.setAttribute('value', value);
+    $inputQuery.setAttribute('data-searching', '1');
     $('.leafs .open')?.classList.remove('open');
     $('.leafs')!.scrollTop = 0;
     if (value.length <= 1) {
@@ -33,7 +33,8 @@ export default function search(options: Options) {
         $(':scope > .marker > .title', openFolder)?.click();
       }
       lastQueryValue = '';
-      $inputQuery.setAttribute('value', '');
+      $inputQuery.removeAttribute('data-searching');
+      $inputQuery.value = value;
       return false;
     }
     if (e.type === 'submit' && options.enableExternalUrl && options.externalUrl) {

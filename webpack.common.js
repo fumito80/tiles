@@ -54,9 +54,9 @@ module.exports = {
       patterns: [
         { from: '*.html', context: 'src/view/' },
         { from: '*.json', context: 'src/json/' },
-        // { from: '*.css', context: 'src/css/' },
-        // { from: '*.js', context: 'src/' },
         { from: '*.png', context: 'src/images/' },
+        { from: '*.json', context: 'src/_locales/en/', to: '_locales/en' },
+        { from: '*.json', context: 'src/_locales/ja/', to: '_locales/ja' },
       ],
     }),
     new ESLintPlugin({
