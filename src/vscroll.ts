@@ -8,21 +8,20 @@ const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
 let vScrollData: Collection;
 
-export function rowSetterHistory(
-  data: MyHistoryItem[],
-  rowTop: number,
-  dataTop: number,
-) {
+export function rowSetterHistory() {
   const today = getLocaleDate();
   const $currentDate = $('.pane-history .current-date')!;
-  $currentDate.style.transform = 'translateY(-2px)';
-  return (row: HTMLElement, index: number) => {
+  return (
+    data: MyHistoryItem[],
+    rowTop: number,
+    dataTop: number,
+  ) => (row: HTMLElement, index: number) => {
     if (index === 0) {
+      $currentDate.style.setProperty('transform', 'translateY(-2px)');
       return;
     }
     const item = data[dataTop + index - 1];
     if (!item) {
-      row.style.setProperty('transform', 'translateY(-10000px)');
       return;
     }
     const {
@@ -30,24 +29,26 @@ export function rowSetterHistory(
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
+      // eslint-disable-next-line no-param-reassign
       $currentDate.textContent = today === lastVisitDate ? '' : lastVisitDate!;
+      if (headerDate && rowTop !== 0) {
+        row.style.setProperty('transform', 'translateY(-10000px)');
+        return;
+      }
     }
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
-    row.classList.remove('hilite');
     if (headerDate) {
-      const lastVisitDate = getLocaleDate(lastVisitTime);
+      if (index === 2) {
+        $currentDate.style.setProperty('transform', `translateY(${rowTop}px)`);
+      }
       // eslint-disable-next-line no-param-reassign
-      row.innerHTML = lastVisitDate!;
+      row.innerHTML = getLocaleDate(lastVisitTime)!;
       row.style.removeProperty('background-image');
       row.classList.add('header-date');
       row.removeAttribute('title');
-      if (index === 1) {
-        row.style.setProperty('transform', 'translateY(-10000px)');
-      } else if (index === 2) {
-        $currentDate.style.transform = `translateY(${rowTop}px)`;
-      }
       return;
     }
+    row.classList.remove('hilite');
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
     row.setAttribute('id', `hst-${id}`);
@@ -77,7 +78,7 @@ export type VScrollRowSetter = typeof rowSetterHistory;
 
 export function setVScroll(
   container: HTMLDivElement,
-  setter: VScrollRowSetter,
+  rowSetter: VScrollRowSetter,
   data: Collection,
   { rowHeight }: State['vscrollProps'],
 ) {
@@ -98,6 +99,7 @@ export function setVScroll(
       vscroll.scrollTop += e.deltaY;
     });
   }
+  const setter = rowSetter();
   const children = [...rows.children] as HTMLElement[];
   vScrollData = data;
   vScrollHandler = () => {
