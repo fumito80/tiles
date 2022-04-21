@@ -1,6 +1,6 @@
 import { Options } from './types';
 import { resetHistory } from './vscroll';
-import { createNewTab } from './re-exports';
+import { createNewTab } from './client';
 import {
   $,
   $$,

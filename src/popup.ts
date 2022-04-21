@@ -27,7 +27,7 @@ import {
 } from './common';
 
 import { makeTab } from './html';
-import { setEventListners } from './client-events';
+import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
 
 type Options = State['options'];

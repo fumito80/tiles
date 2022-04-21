@@ -620,25 +620,31 @@ export function getSync<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.sync, ...keyNames);
 }
 
-export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
-  const $target = $('main')!;
-  const { gridTemplateColumns } = $target.style;
-  const [, ...widths] = /^.+?(\d+?)px.+?(\d+?)px.+?(\d+?)px/.exec(gridTemplateColumns) || [];
-  const [pane3, pane2, pane1] = widths.map(Number);
-  const paneWidths = { pane3, pane2, pane1 };
-  const newPaneWidths = { ...paneWidths, ...newPaneWidth };
-  const gridCols = [
-    'min-content',
-    `${newPaneWidths.pane3}px`,
-    'min-content',
-    `${newPaneWidths.pane2}px`,
-    'min-content',
-    `${newPaneWidths.pane1}px`,
-    'min-content',
-    '1fr',
-  ];
+// export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
+export function getGridTemplateColumns() {
+  // const $target = $('main')!;
+  // const { gridTemplateColumns } = $target.style;
+  // const [, ...widths] = /^.+?(\d+?)px.+?(\d+?)px.+?(\d+?)px/.exec(gridTemplateColumns) || [];
+  const [pane3, pane2, pane1] = [
+    $('.leafs')!.style.width,
+    $('.pane-history')!.style.width,
+    $('.pane-tabs')!.style.width,
+  ].map(Number.parseInt);
+  // const [pane3, pane2, pane1] = widths.map(Number);
+  // const paneWidths = { pane3, pane2, pane1 };
+  // const newPaneWidths = { ...paneWidths, ...newPaneWidth };
+  // const gridCols = [
+  //   'min-content',
+  //   `${newPaneWidths.pane3}px`,
+  //   'min-content',
+  //   `${newPaneWidths.pane2}px`,
+  //   'min-content',
+  //   `${newPaneWidths.pane1}px`,
+  //   'min-content',
+  //   '1fr',
+  // ];
   return {
-    result: gridCols.join(' '),
+    // result: gridCols.join(' '),
     pane3,
     pane2,
     pane1,
@@ -646,9 +652,13 @@ export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
 }
 
 export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  const $target = $('main')!;
-  const { result } = getGridTemplateColumns(newPaneWidth);
-  $target.style.setProperty('grid-template-columns', result);
+  // const $target = $('main')!;
+  // const { result } = getGridTemplateColumns(newPaneWidth);
+  // $target.style.setProperty('grid-template-columns', result);
+  const { pane1, pane2, pane3 } = newPaneWidth;
+  $('.leafs')!.style.width = `${pane1}px`;
+  $('.pane-history')!.style.width = `${pane2}px`;
+  $('.pane-tabs')!.style.width = `${pane3}px`;
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {

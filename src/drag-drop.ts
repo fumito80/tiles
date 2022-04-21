@@ -10,8 +10,8 @@ import {
   getHistoryById,
 } from './common';
 import {
-  addBookmark, getBookmark, setHasChildren, setAnimationClass,
-} from './re-exports';
+  addBookmark, getBookmark, setHasChildren, setAnimationClass, zoomOut,
+} from './client';
 
 const sourceClasses = ['anchor', 'marker', 'tab', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -151,6 +151,10 @@ const dragAndDropEvents = {
     })();
     if (!$dragTarget) {
       return;
+    }
+    const $main = $('main')!;
+    if ($main.classList.contains('zoom-pane')) {
+      zoomOut($main)();
     }
     $dragTarget.classList.remove('hilite');
     $dragTarget.classList.add('drag-source');

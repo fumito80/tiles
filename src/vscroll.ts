@@ -22,6 +22,7 @@ export function rowSetterHistory() {
     }
     const item = data[dataTop + index - 1];
     if (!item) {
+      row.style.setProperty('transform', 'translateY(-10000px)');
       return;
     }
     const {
