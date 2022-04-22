@@ -263,52 +263,95 @@ export async function findInTabsBookmark(options: Options, $anchor: HTMLElement)
   chrome.tabs.update(tab.id, { active: true });
 }
 
-export function zoomOut($main: HTMLElement, mouseenter?: () => void) {
+function relocateGrid($target: HTMLElement, $main: HTMLElement) {
+  const gridColStart = getComputedStyle($target).gridColumnStart;
+  const $title = $main.children[Number(gridColStart) - 1] as HTMLElement;
+  $title.insertAdjacentElement('beforeend', $('.form-query')!);
+  $('.query')!.focus();
+}
+
+function restoreGrid($main: HTMLElement) {
+  $main.insertBefore($('.form-query')!, $('.pane-history'));
+  $('.query')!.focus();
+}
+
+export function zoomOut(
+  $main: HTMLElement,
+  mouseenter?: (_: MouseEvent) => void,
+) {
   return () => {
-    const $shade1 = $('.shade')!;
-    const $shade2 = $('.shade2')!;
+    const $shadeLeft = $('.shade-left')!;
+    const $shadeRight = $('.shade-right')!;
     $('.pane-title > i')!.style.removeProperty('transform');
     $main.style.removeProperty('transform');
     $main.classList.add('zoom-fade-out');
-    $shade1.addEventListener('transitionend', () => $main.classList.remove('zoom-pane', 'zoom-fade-out'), { once: true });
-    getLocal('settings').then(({ settings: { paneWidth } }) => setSplitWidth(paneWidth));
-    if (!mouseenter) {
-      return;
+    const promise1 = new Promise<void>((resolve) => {
+      $shadeLeft.addEventListener('transitionend', () => {
+        $main.classList.remove('zoom-pane', 'zoom-fade-out');
+        restoreGrid($main);
+        resolve();
+      }, { once: true });
+    });
+    const promise2 = getLocal('settings').then(({ settings: { paneWidth } }) => setSplitWidth(paneWidth));
+    if (mouseenter) {
+      $shadeLeft.removeEventListener('mouseenter', mouseenter);
+      $shadeRight.removeEventListener('mouseenter', mouseenter);
     }
-    $shade1.removeEventListener('mouseenter', mouseenter);
-    $shade2.removeEventListener('mouseenter', mouseenter);
+    return [promise1, promise2];
   };
 }
 
 let timerZoom: ReturnType<typeof setTimeout>;
+
+async function enterZoom(
+  $target: HTMLElement,
+  $main: HTMLElement,
+  $shadeLeft: HTMLElement,
+  $shadeRight: HTMLElement,
+) {
+  const isCenter = [...$target.classList].some((className) => ['leafs', 'pane-tabs'].includes(className));
+  const width = $main.offsetWidth * 0.7; // (2 / 3);
+  const promise = new Promise<void>((resolve) => {
+    $target.addEventListener('transitionend', () => {
+      $main.classList.add('zoom-pane');
+      relocateGrid($target, $main);
+      resolve();
+    }, { once: true });
+  });
+  $target.style.setProperty('width', `${width}px`);
+  $shadeRight.style.setProperty('left', `${$target.offsetLeft + width + 4}px`);
+  $shadeLeft.style.setProperty('left', `calc(-100% + ${$target.offsetLeft - 4}px)`);
+  if (isCenter) {
+    const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
+    $main.style.setProperty('transform', `translateX(${offset}px)`);
+    $('.pane-title > i')!.style.setProperty('transform', `translateX(${-offset}px)`);
+  }
+  async function mouseenter(ev: MouseEvent) {
+    clearTimeout(timerZoom);
+    const $shade = ev.target as HTMLElement;
+    if ($shade.classList.contains('shade-left')) {
+      await Promise.all(zoomOut($main, mouseenter)());
+      enterZoom($('.pane-history')!, $main, $shadeLeft, $shadeRight);
+      return;
+    }
+    timerZoom = setTimeout(zoomOut($main, mouseenter), 500);
+  }
+  $shadeLeft.addEventListener('mouseenter', mouseenter);
+  $shadeRight.addEventListener('mouseenter', mouseenter);
+  return promise;
+}
+
 export function setZoomSetting($main: HTMLElement) {
-  const $shade1 = $('.shade')!;
-  const $shade2 = $('.shade2')!;
+  const $shadeLeft = $('.shade-left')!;
+  const $shadeRight = $('.shade-right')!;
   return (e: Event) => {
     clearTimeout(timerZoom);
     const isBreak = [...$main.classList].some((className) => ['zoom-pane', 'drag-start-leaf', 'drag-start-folder'].includes(className));
     if (isBreak) {
       return;
     }
-    timerZoom = setTimeout(() => {
-      const $target = e.target as HTMLElement;
-      const isCenter = [...$target.classList].some((className) => ['leafs', 'pane-tabs'].includes(className));
-      const width = $main.offsetWidth * (2 / 3);
-      $target.addEventListener('transitionend', () => $main.classList.add('zoom-pane'), { once: true });
-      $target.style.setProperty('width', `${width}px`);
-      $shade1.style.setProperty('left', `${$target.offsetLeft + width + 4}px`);
-      $shade2.style.setProperty('left', `calc(-100% + ${$target.offsetLeft - 4}px)`);
-      if (isCenter) {
-        const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
-        $main.style.setProperty('transform', `translateX(${offset}px)`);
-        $('.pane-title > i')!.style.setProperty('transform', `translateX(${-offset}px)`);
-      }
-      function mouseenter() {
-        clearTimeout(timerZoom);
-        timerZoom = setTimeout(zoomOut($main, mouseenter), 500);
-      }
-      $shade1.addEventListener('mouseenter', mouseenter);
-      $shade2.addEventListener('mouseenter', mouseenter);
-    }, 500);
+    const $target = e.target as HTMLElement;
+    $target.addEventListener('mouseleave', () => clearTimeout(timerZoom), { once: true });
+    timerZoom = setTimeout(() => enterZoom($target, $main, $shadeLeft, $shadeRight), 500);
   };
 }

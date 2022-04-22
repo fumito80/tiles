@@ -168,9 +168,7 @@ function init({
 bootstrap(...getKeys(initialState)).then(init);
 
 export const mapMessagesBtoP = {
-  [BkgMessageTypes.updateHistory]: () => {
-    resetHistory();
-  },
+  [BkgMessageTypes.updateHistory]: resetHistory,
 };
 
 setMessageListener(mapMessagesBtoP);
