@@ -23,11 +23,14 @@ i {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-calendar-minus-solid:before {
+  content: "\e907";
+}
+.icon-calendar-plus-solid:before {
+  content: "\e908";
+}
 .icon-check-solid:before {
   content: "\e906";
-}
-.icon-calendar-solid:before {
-  content: "\e907";
 }
 .icon-arrows-left-right-solid:before {
   content: "\e908";

@@ -12,8 +12,12 @@ import {
 const $inputQuery = $('.query')! as HTMLInputElement;
 let lastQueryValue = '';
 
+export function getReFilter(value: string) {
+  return new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
+}
+
 export default function search(options: Options) {
-  return (e: Event) => {
+  return (e?: Event) => {
     const value = $inputQuery.value.trim();
     if (lastQueryValue === '' && value.length <= 1) {
       return false;
@@ -37,12 +41,12 @@ export default function search(options: Options) {
       $inputQuery.value = value;
       return false;
     }
-    if (e.type === 'submit' && options.enableExternalUrl && options.externalUrl) {
+    if (e?.type === 'submit' && options.enableExternalUrl && options.externalUrl) {
       const url = options.externalUrl + encodeURIComponent(value);
       createNewTab(options, url);
       return false;
     }
-    const reFilter = new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
+    const reFilter = getReFilter(value);
     const selectorTabs = when(lastQueryValue !== '' && value.startsWith(lastQueryValue))
       .then('.match' as const)
       .when(lastQueryValue.startsWith(value))

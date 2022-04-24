@@ -11,13 +11,17 @@ let vScrollData: Collection;
 export function rowSetterHistory() {
   const today = getLocaleDate();
   const $currentDate = $('.pane-history .current-date')!;
+  const isShowFixedHeader = !document.body.classList.contains('date-collapsed');
+  $currentDate.style.setProperty('transform', 'translateY(-10000px)');
   return (
     data: MyHistoryItem[],
     rowTop: number,
     dataTop: number,
   ) => (row: HTMLElement, index: number) => {
     if (index === 0) {
-      $currentDate.style.setProperty('transform', 'translateY(-2px)');
+      if (isShowFixedHeader) {
+        $currentDate.style.setProperty('transform', 'translateY(-2px)');
+      }
       return;
     }
     const item = data[dataTop + index - 1];
@@ -32,14 +36,14 @@ export function rowSetterHistory() {
       const lastVisitDate = getLocaleDate(lastVisitTime);
       // eslint-disable-next-line no-param-reassign
       $currentDate.textContent = today === lastVisitDate ? '' : lastVisitDate!;
-      if (headerDate && rowTop !== 0) {
+      if (headerDate && rowTop !== 0 && isShowFixedHeader) {
         row.style.setProperty('transform', 'translateY(-10000px)');
         return;
       }
     }
     row.style.setProperty('transform', `translateY(${rowTop}px)`);
     if (headerDate) {
-      if (index === 2) {
+      if (index === 2 && isShowFixedHeader) {
         $currentDate.style.setProperty('transform', `translateY(${rowTop}px)`);
       }
       // eslint-disable-next-line no-param-reassign
@@ -124,6 +128,10 @@ export function resetVScrollData(
   refreshVScroll();
 }
 
+export function getVScrollData() {
+  return vScrollData;
+}
+
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
   const [results] = source.reduce(([result, prevHeaderDate], el) => {
     if (el.headerDate) {
@@ -150,6 +158,7 @@ export async function resetHistory({
   includeUrl,
 }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
+  document.body.classList.remove('date-collapsed');
   const rows = $('.rows', $paneHistory)!;
   if (initialize) {
     const { rowHeight, elementHeight } = getRowHeight(rows);

@@ -40,6 +40,8 @@ import {
   addFolder,
   findInTabsBookmark,
   setZoomSetting,
+  showCalendar,
+  junpHistoryDate,
 } from './client';
 
 import { updateAnker } from './html';
@@ -56,6 +58,7 @@ export default function setEventListners(options: Options) {
     e.preventDefault();
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
+  $('.show-calendar')?.addEventListener('click', showCalendar(options));
 
   setEvents([document.body], {
     click(e) {
@@ -337,6 +340,10 @@ export default function setEventListners(options: Options) {
   const $paneHistory = $('.pane-history')!;
   $paneHistory.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
+    if ($target.classList.contains('header-date') && document.body.classList.contains('date-collapsed')) {
+      junpHistoryDate($target.textContent!, options);
+      return;
+    }
     const $parent = $target.parentElement!;
     const $url = $target.title ? $target : $parent;
     const { url } = await getHistoryById($url.id);
@@ -358,4 +365,7 @@ export default function setEventListners(options: Options) {
     ...(options.zoomTabs ? [$paneTabs] : []),
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
+  if (!options.zoomHistory) {
+    document.body.classList.add('disable-zoom-history');
+  }
 }

@@ -5,7 +5,7 @@ $drop-folder-bgcolor0: #d1ecf1;
 $drop-folder-bgcolor: #cce5ff;
 $hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
-$drop-border: #1A73E8;
+$common-marker: #1A73E8;
 $pane-radius: 5px;
 
 @import 'glyphs';
@@ -59,6 +59,7 @@ button {
   outline: none;
   background-color: transparent;
   border-radius: 3px;
+  transition: all .4s;
 
   > i {
     color: rgba(0, 0, 0, .4);
@@ -68,10 +69,22 @@ button {
   &:focus > i {
     color: rgba(0, 0, 0, .5);
   }
-  
-  &:hover,
-  &:focus {
-    background-color: rgba(0, 0, 0, .1);
+
+  &::after {
+    background-color: transparent;
+    transition: all .4s;
+    pointer-events: none;
+  }
+
+  &:hover::after,
+  &:focus::after {
+    content: '';
+    background-color: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    width: 1.3em;
+    height: 1.3em;
+    border-radius: 50%;
+    transition: all .4s;
   }
 
   &:active {
@@ -119,7 +132,6 @@ button {
   justify-content: center;
   align-items: center;
   border: 0;
-  transition: .4s;
   font-size: 1.2em;
 
   > .icon-fa-ellipsis-v {
@@ -160,6 +172,9 @@ button[type='submit'] {
   outline: 0;
   display: flex;
   margin-left: 2px;
+  &::after {
+    content: none;
+  }
 }
 
 input.query {
@@ -191,14 +206,14 @@ input.query {
 }
 
 .main-menu-button,
-.pin-bookmark {
+.pin-bookmark,
+.show-calendar {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 18px;
   height: 20px;
   border: 0;
-  transition: background-color .4s;
   font-size: 1.2em;
 
   &:focus {
@@ -216,6 +231,7 @@ input.query {
   &:active {
     pointer-events: all;
   }
+
 }
 
 .query {
@@ -387,7 +403,6 @@ input.query {
   }
 
   .anchor:not(:hover) {
-    // color: #222;
     text-decoration: none;
   }
 
@@ -604,7 +619,7 @@ main::-webkit-scrollbar {
     content: '';
     position: absolute;
     width: 10px;
-    border-left: 7px solid $drop-border;
+    border-left: 7px solid $common-marker;
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
   }
@@ -626,7 +641,7 @@ main::-webkit-scrollbar {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px solid $drop-border;
+        border-top: 2px solid $common-marker;
       }
     }
     > .drop-bottom {
@@ -636,7 +651,7 @@ main::-webkit-scrollbar {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px solid $drop-border;
+        border-top: 2px solid $common-marker;
       }
     }
     > .drop-top.drag-enter::after,
@@ -726,7 +741,7 @@ main::-webkit-scrollbar {
     &.drag-enter::before {
       top: 50%;
       width: 100%;
-      border-top: 2px solid $drop-border;
+      border-top: 2px solid $common-marker;
     }
     &.drag-enter::after {
       top: calc(50% - 4px);
@@ -737,7 +752,7 @@ main::-webkit-scrollbar {
     top: 80%;
     height: 20%;
     &.drag-enter {
-      border-bottom: 2px solid $drop-border;
+      border-bottom: 2px solid $common-marker;
     }
     &.drag-enter::after {
       top: 0.5px;
@@ -953,10 +968,12 @@ main::-webkit-scrollbar {
     font-size: 1.3em;
     color: #222;
     background-color: transparent;
-    transition: background-color .3s;
+    transition: background-color .4s;
     display: none;
     &:hover::before {
+      transition: background-color .4s;
       background-color: red;
+      border-radius: 1px;
       color: white;
     }
   }
@@ -1029,9 +1046,37 @@ main::-webkit-scrollbar {
   > i {
     transition: all 0.15s;
   }
+  .show-calendar {
+    margin-left: 10px;
+    &:hover::after,
+    &:focus::after {
+      width: 1.5em;
+      height: 1.5em;
+    }
+  }
 }
 
 // Zoom
+
+.auto-zoom .pane-title {
+  .form-query {
+    margin-left: auto;
+    margin-right: 10px;
+    transition: width 0.1s;
+    .pin-bookmark,
+    .menu-button {
+      display: none;
+    }
+  }
+  .show-calendar {
+    + .form-query {
+      margin-left: 10px;
+    }
+    input[type="date"] {
+      display: none;
+    }
+  }
+}
 
 .auto-zoom {
   .split-h,
@@ -1046,7 +1091,7 @@ main::-webkit-scrollbar {
   transition: all 0.15s;
 }
 
-.zoom-pane {
+.auto-zoom .zoom-pane {
   .shade-left,
   .shade-right {
     position: absolute;
@@ -1092,16 +1137,6 @@ main::-webkit-scrollbar {
   }
 }
 
-.pane-title .form-query {
-  margin-left: auto;
-  margin-right: 10px;
-  transition: width 0.1s;
-  .pin-bookmark,
-  .menu-button {
-    display: none;
-  }
-}
-
 .main-menu .icon-arrows-left-right-solid {
   position: relative;
 }
@@ -1131,9 +1166,9 @@ main::-webkit-scrollbar {
 
 .auto-zoom .main-menu {
   > [data-value="auto-zoom"] {
-    color: #1A73E8;
+    color: $common-marker;
     > .icon-arrows-left-right-solid::after {
-      border-color: #1A73E8;
+      border-color: $common-marker;
     }
     > .icon-check-solid {
       display: inline-block;
@@ -1145,6 +1180,53 @@ main::-webkit-scrollbar {
     padding-left: 1.6em;
   }
   .zoom-icon {
-    stroke: #1A73E8;
+    stroke: $common-marker;
+  }
+}
+
+// History date collapse mode
+
+.auto-zoom:not(.disable-zoom-history) {
+  .show-calendar {
+    display: none;
+  }
+}
+
+.auto-zoom:not(.disable-zoom-history) .zoom-pane {
+  .show-calendar {
+    display: flex;
+    margin-left: auto;
+  }
+}
+
+.auto-zoom {
+  .icon-calendar-plus-solid,
+  .icon-calendar-minus-solid {
+    display: none;
+  }
+}
+
+.date-collapsed {
+  .icon-calendar-plus-solid {
+    display: inline-block;
+  }
+  .icon-calendar-minus-solid {
+    display: none;
+  }
+}
+
+body:not(.date-collapsed) {
+  .icon-calendar-plus-solid {
+    display: none;
+  }
+  .icon-calendar-minus-solid {
+    display: inline-block;
+  }
+}
+
+.zoom-center .zoom-pane {
+  .icon-calendar-plus-solid,
+  .icon-calendar-minus-solid {
+    display: none;
   }
 }
