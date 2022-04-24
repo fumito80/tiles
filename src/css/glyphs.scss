@@ -23,6 +23,15 @@ i {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-check-solid:before {
+  content: "\e906";
+}
+.icon-calendar-solid:before {
+  content: "\e907";
+}
+.icon-arrows-left-right-solid:before {
+  content: "\e908";
+}
 .icon-x:before {
   content: "\e901";
 }

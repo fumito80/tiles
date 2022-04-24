@@ -655,7 +655,7 @@ export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   // const $target = $('main')!;
   // const { result } = getGridTemplateColumns(newPaneWidth);
   // $target.style.setProperty('grid-template-columns', result);
-  const { pane1, pane2, pane3 } = newPaneWidth;
+  const { pane1 = 200, pane2 = 200, pane3 = 200 } = newPaneWidth;
   $('.leafs')!.style.width = `${pane1}px`;
   $('.pane-history')!.style.width = `${pane2}px`;
   $('.pane-tabs')!.style.width = `${pane3}px`;

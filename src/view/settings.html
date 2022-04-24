@@ -13,9 +13,13 @@
     <header>
       <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
       <div class="chrome-sync ms-auto">
-        <button class="btn btn-sm btn-outline-success upload-sync" title="Save settings to the cloud in your chrome sign-in account." data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="icon-cloud-arrow-up"></i> Upload
+        <button class="btn btn-sm btn-outline-success upload-sync"
+          title="Save settings to the cloud in your chrome sign-in account." data-bs-toggle="tooltip"
+          data-bs-placement="bottom"><i class="icon-cloud-arrow-up"></i> Upload
           sync</button>
-        <button class="btn btn-sm btn-outline-danger download-sync" data-bs-toggle="tooltip" title="Load settings from the cloud in your chrome sign-in account." data-bs-placement="bottom"><i class="icon-cloud-arrow-down"></i> Download
+        <button class="btn btn-sm btn-outline-danger download-sync" data-bs-toggle="tooltip"
+          title="Load settings from the cloud in your chrome sign-in account." data-bs-placement="bottom"><i
+            class="icon-cloud-arrow-down"></i> Download
           sync</button>
       </div>
     </header>
@@ -43,6 +47,22 @@
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
+        <div class="heading">Zen mode</div>
+        <label class="item"><input type="checkbox" class="bullet" tabindex="-1">Auto zen mode pane</label>
+        <div class="d-flex gap-4 mt-1 ms-3">
+          <label><input type="checkbox" name="zoom-tabs" checked="true">Tabs</label>
+          <label><input type="checkbox" name="zoom-history" checked="true">History</label>
+        </div>
+        <label class="item">
+          <input type="checkbox" class="bullet" tabindex="-1">Zen mode ratio:&nbsp;
+          <select name="zoom-ratio">
+            <option value="0.5">50%</option>
+            <option value="0.6">60%</option>
+            <option value="0.7">70%</option>
+            <option value="0.8">80%</option>
+            <option value="0.9">90%</option>
+          </select>
+      </label>
         <div class="heading">Style</div>
         <div class="item-collaplse">
           <input type="checkbox" class="bullet" tabindex="-1">

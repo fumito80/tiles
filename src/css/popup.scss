@@ -5,7 +5,7 @@ $drop-folder-bgcolor0: #d1ecf1;
 $drop-folder-bgcolor: #cce5ff;
 $hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
-$drop-border: rgb(0, 123, 255);
+$drop-border: #1A73E8;
 $pane-radius: 5px;
 
 @import 'glyphs';
@@ -1031,8 +1031,12 @@ main::-webkit-scrollbar {
   }
 }
 
-.zoom-pane {
-  .split-h {
+// Zoom
+
+.auto-zoom {
+  .split-h,
+  .resize-x,
+  .resize-y {
     cursor: default;
   }
 }
@@ -1068,6 +1072,24 @@ main::-webkit-scrollbar {
     right: -20px;
     z-index: 3;
   }
+  .zoom-out {
+    display: block;
+  }
+}
+
+.zoom-out {
+  display: none;
+  position: fixed;
+  z-index: 2;
+  top: calc(50% - 1em);
+  color: #efefef;
+  &.icon-clock-rotate-left-solid {
+    font-size: 1.2em;
+  }
+  &.zoom-out.icon-fa-angle-right {
+    right: 5px;
+    font-size: 2em;
+  }
 }
 
 .pane-title .form-query {
@@ -1077,5 +1099,52 @@ main::-webkit-scrollbar {
   .pin-bookmark,
   .menu-button {
     display: none;
+  }
+}
+
+.main-menu .icon-arrows-left-right-solid {
+  position: relative;
+}
+
+.main-menu .icon-arrows-left-right-solid::after {
+  content: '';
+  border: 1px solid #333;
+  position: absolute;
+  top: -0.1em;
+  left: 0.57em;
+  width: 1.2em;
+  height: 100%;
+  border-radius: 2px;
+}
+
+.main-menu [data-value="auto-zoom"] > .icon-check-solid {
+  display: none;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.zoom-icon {
+  stroke: #222222;
+  width: 2.5em;
+  height: 1.2em;
+}
+
+.auto-zoom .main-menu {
+  > [data-value="auto-zoom"] {
+    color: #1A73E8;
+    > .icon-arrows-left-right-solid::after {
+      border-color: #1A73E8;
+    }
+    > .icon-check-solid {
+      display: inline-block;
+      left: -0.3em;
+      position: absolute;
+    }
+  }
+  > div {
+    padding-left: 1.6em;
+  }
+  .zoom-icon {
+    stroke: #1A73E8;
   }
 }

@@ -22,6 +22,7 @@ export const initialSettings = {
     rows: 30,
     days: null,
   },
+  autoZoom: true,
 };
 
 export type Settings = typeof initialSettings;
@@ -77,6 +78,9 @@ export const initialOptions = {
   css,
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette,
+  zoomTabs: true,
+  zoomHistory: true,
+  zoomRatio: '0.7',
 };
 
 export const initialState = {

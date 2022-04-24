@@ -29,6 +29,7 @@ import {
 import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
+import drawSvg from './draw-svg';
 
 type Options = State['options'];
 
@@ -49,14 +50,16 @@ function setTabs(currentWindowId: number) {
   });
 }
 
+const lightColor = '#efefef';
+const darkColor = '#222222';
+const shadeBgColorDark = 'rgba(0, 0, 0, 0.6)';
+
 function setOptions(settings: Settings, options: Options) {
   addRules('body', [
     ['width', `${settings.width}px`],
     ['height', `${settings.height}px`],
     ['color', settings.bodyColor],
   ]);
-  const lightColor = '#efefef';
-  const darkColor = '#222222';
   const [
     [paneBg, paneColor, isLightPaneBg],
     [frameBg],
@@ -86,6 +89,7 @@ function setOptions(settings: Settings, options: Options) {
     addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
     addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
     addRules('.leafs .title::before', [['color', lightColor]]);
+    addRules('.zoom-pane .shade-left, .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
   }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
@@ -114,6 +118,7 @@ function setOptions(settings: Settings, options: Options) {
     .filter(Boolean)
     .map((rule) => rule.trim().concat('}'))
     .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
+  document.body.classList.toggle('auto-zoom', settings.autoZoom);
 }
 
 function setExternalUrl(options: Options) {
@@ -163,6 +168,7 @@ function init({
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
   setEventListners(options);
   setExternalUrl(options);
+  drawSvg();
 }
 
 bootstrap(...getKeys(initialState)).then(init);

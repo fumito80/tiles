@@ -18,6 +18,8 @@ import {
   showMenu,
   getHistoryById,
   removeUrlHistory,
+  getLocal,
+  setLocal,
 } from './common';
 
 import {
@@ -54,6 +56,7 @@ export default function setEventListners(options: Options) {
     e.preventDefault();
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
+
   setEvents([document.body], {
     click(e) {
       const $target = e.target as HTMLElement;
@@ -62,9 +65,6 @@ export default function setEventListners(options: Options) {
       }
       if ($target.classList.contains('leaf-menu-button')) {
         showMenu($target, '.leaf-menu');
-        return;
-      }
-      if ($main!.classList.contains('zoom-pane')) {
         return;
       }
       $('.query')!.focus();
@@ -212,7 +212,7 @@ export default function setEventListners(options: Options) {
   });
 
   $$('.split-h').forEach((el) => el.addEventListener('mousedown', (e) => {
-    if ($main.classList.contains('zoom-pane')) {
+    if (document.body.classList.contains('.auto-zoom')) {
       return;
     }
     const $splitter = e.target as HTMLElement;
@@ -236,7 +236,8 @@ export default function setEventListners(options: Options) {
 
   setEvents($$('.main-menu'), {
     async click(e) {
-      switch ((e.target as HTMLElement).dataset.value) {
+      const $menu = e.target as HTMLElement;
+      switch ($menu.dataset.value) {
         case 'add-bookmark': {
           const id = $('.open')?.id;
           addBookmark(id || '1');
@@ -248,6 +249,13 @@ export default function setEventListners(options: Options) {
         case 'settings':
           chrome.runtime.openOptionsPage();
           break;
+        case 'auto-zoom': {
+          const isChecked = document.body.classList.contains('auto-zoom');
+          document.body.classList.toggle('auto-zoom', !isChecked);
+          getLocal('settings')
+            .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
+          break;
+        }
         default:
       }
     },
@@ -345,7 +353,9 @@ export default function setEventListners(options: Options) {
     }
     createNewTab(options, url);
   });
-  setTimeout(() => {
-    setEvents([$paneTabs, $paneHistory], { mouseenter: setZoomSetting($main) });
-  }, 200);
+  const panes = [
+    ...(options.zoomHistory ? [$paneHistory] : []),
+    ...(options.zoomTabs ? [$paneTabs] : []),
+  ];
+  setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
 }

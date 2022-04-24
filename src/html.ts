@@ -12,7 +12,7 @@ export function makeLeaf({ title, url, id }: chrome.bookmarks.BookmarkTreeNode) 
   const style = makeStyleIcon(url);
   return `
     <div class="leaf" id="${id}">
-      <span class="anchor" draggable="true" title="${title}" style="${style}">${htmlEscape(title)}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
+      <span class="anchor" draggable="true" title="${htmlEscape(title)}" style="${style}">${htmlEscape(title)}</span><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
@@ -49,7 +49,7 @@ export function makeTab(
   content: string,
 ) {
   return `
-    <div id="tab-${id}" class="tab-wrap ${addClass}" title="${title}">
+    <div id="tab-${id}" class="tab-wrap ${addClass}" title="${htmlEscape(title)}">
       <span class="tab" draggable="true" style="${style}">${htmlEscape(content)}</span><i class="icon-x"></i>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
@@ -69,8 +69,9 @@ export function makeHistory({
   if (!text) {
     return '';
   }
+  const tooltip = htmlEscape(`${title}${dt}`);
   return `
-    <div class="history" draggable="true" id="hst-${id}" title="${title}${dt}" style="${style}">
+    <div class="history" draggable="true" id="hst-${id}" title="${tooltip}" style="${style}">
       <span>${htmlEscape(text)}</span><i class="icon-x"></i>
     </div>
   `;
