@@ -79,7 +79,7 @@ function makeHistory() {
   return new Promise<Histories>((resolve) => {
     chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
       const histories = results
-        // .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
+        .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
         .reduce<MyHistoryItem[]>((acc, item) => {
           const prevLastVisitTime = acc.at(-1)?.lastVisitTime;
           if (!prevLastVisitTime || isDateEq(prevLastVisitTime, item.lastVisitTime)) {
@@ -118,7 +118,8 @@ async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
     text: '',
     maxResults: 99999,
   };
-  const todays = await cbToResolve(curry(chrome.history.search)(query));
+  const todays = await cbToResolve(curry(chrome.history.search)(query))
+    .then((histories) => histories.sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!)));
   const { id } = todays.at(-1)!;
   const findIndex = currents.findIndex((el) => el.id === id);
   return [...todays, ...currents.slice(findIndex + 1)];

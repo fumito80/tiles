@@ -30,6 +30,7 @@ import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
 import drawSvg from './draw-svg';
+import { resetQuery } from './client-search';
 
 type Options = State['options'];
 
@@ -119,6 +120,7 @@ function setOptions(settings: Settings, options: Options) {
     .map((rule) => rule.trim().concat('}'))
     .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
   document.body.classList.toggle('auto-zoom', settings.autoZoom);
+  $('.main-menu')!.classList.toggle('checked-include-url', settings.includeUrl);
 }
 
 function setExternalUrl(options: Options) {
@@ -169,6 +171,7 @@ function init({
   setEventListners(options);
   setExternalUrl(options);
   drawSvg();
+  resetQuery(settings.includeUrl);
 }
 
 bootstrap(...getKeys(initialState)).then(init);

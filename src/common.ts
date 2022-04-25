@@ -586,8 +586,8 @@ export function regsterChromeEvents(listener: Function) {
   return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
 }
 
-export async function setLocal(state: Partial<State>) {
-  return new Promise((resolve) => {
+export async function setLocal<T extends Partial<State>>(state: T) {
+  return new Promise<T>((resolve) => {
     chrome.storage.local.set(state, () => {
       if (chrome.runtime.lastError) {
         // eslint-disable-next-line no-console
@@ -620,31 +620,13 @@ export function getSync<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.sync, ...keyNames);
 }
 
-// export function getGridTemplateColumns(newPaneWidth: Partial<SplitterClasses>) {
 export function getGridTemplateColumns() {
-  // const $target = $('main')!;
-  // const { gridTemplateColumns } = $target.style;
-  // const [, ...widths] = /^.+?(\d+?)px.+?(\d+?)px.+?(\d+?)px/.exec(gridTemplateColumns) || [];
   const [pane3, pane2, pane1] = [
     $('.leafs')!.style.width,
     $('.pane-history')!.style.width,
     $('.pane-tabs')!.style.width,
   ].map(Number.parseInt);
-  // const [pane3, pane2, pane1] = widths.map(Number);
-  // const paneWidths = { pane3, pane2, pane1 };
-  // const newPaneWidths = { ...paneWidths, ...newPaneWidth };
-  // const gridCols = [
-  //   'min-content',
-  //   `${newPaneWidths.pane3}px`,
-  //   'min-content',
-  //   `${newPaneWidths.pane2}px`,
-  //   'min-content',
-  //   `${newPaneWidths.pane1}px`,
-  //   'min-content',
-  //   '1fr',
-  // ];
   return {
-    // result: gridCols.join(' '),
     pane3,
     pane2,
     pane1,
@@ -652,9 +634,6 @@ export function getGridTemplateColumns() {
 }
 
 export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  // const $target = $('main')!;
-  // const { result } = getGridTemplateColumns(newPaneWidth);
-  // $target.style.setProperty('grid-template-columns', result);
   const { pane1 = 200, pane2 = 200, pane3 = 200 } = newPaneWidth;
   $('.leafs')!.style.width = `${pane1}px`;
   $('.pane-history')!.style.width = `${pane2}px`;
@@ -829,7 +808,7 @@ export function isDateEq(dateOrSerial1?: Date | number, dateOrSerial2?: Date | n
   return date1 === date2;
 }
 
-export function setMessageListener<T extends Model>(messageMap: T) {
+export function setMessageListener<T extends Model>(messageMap: T, once = false) {
   async function onMessage(
     message: { type: keyof T } & PayloadAction<any>,
     _: chrome.runtime.MessageSender,
@@ -839,6 +818,9 @@ export function setMessageListener<T extends Model>(messageMap: T) {
     // console.log(message);
     const responseState = await messageMap[message.type](message);
     sendResponse(responseState);
+    if (once) {
+      chrome.runtime.onMessage.removeListener(onMessage);
+    }
   }
   chrome.runtime.onMessage.addListener(onMessage);
 }

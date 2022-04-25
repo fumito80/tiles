@@ -23,6 +23,7 @@ export const initialSettings = {
     days: null,
   },
   autoZoom: true,
+  includeUrl: true,
 };
 
 export type Settings = typeof initialSettings;
@@ -68,7 +69,6 @@ const colorPalette: ColorPalette = ['FFFFFF', 'f6f6f6', 'cce5ff', 'e8e8e9', '1da
 
 export const initialOptions = {
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
-  includeUrl: true,
   showCloseTab: true,
   showDeleteHistory: true,
   findTabsFirst: true,

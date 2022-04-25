@@ -30,7 +30,6 @@ import {
   addBookmark,
   setHasChildren,
   onClickAngle,
-  clearQuery,
   saveStateOpenedPath,
   setMouseEventListener,
   resizeSplitHandler,
@@ -40,25 +39,32 @@ import {
   addFolder,
   findInTabsBookmark,
   setZoomSetting,
-  showCalendar,
-  junpHistoryDate,
+  collapseHistoryDate,
+  jumpHistoryDate,
 } from './client';
 
 import { updateAnker } from './html';
 import { resetVScrollData } from './vscroll';
 import dragAndDropEvents from './drag-drop';
-import search from './client-search';
+import { clearQuery, resetQuery } from './client-search';
 
 export default function setEventListners(options: Options) {
   const $main = $('main')!;
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
-  $('.query')!.addEventListener('input', search(options));
   $('.form-query')!.addEventListener('submit', (e: Event) => {
-    search(options)(e);
     e.preventDefault();
+    if (options.enableExternalUrl && options.externalUrl) {
+      const $inputQuery = (e.target as HTMLFormElement).query;
+      const value = $inputQuery.value.trim();
+      if (value.length <= 1) {
+        return;
+      }
+      const url = options.externalUrl + encodeURIComponent(value);
+      createNewTab(options, url);
+    }
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $('.show-calendar')?.addEventListener('click', showCalendar(options));
+  $('.show-calendar')?.addEventListener('click', collapseHistoryDate);
 
   setEvents([document.body], {
     click(e) {
@@ -259,6 +265,17 @@ export default function setEventListners(options: Options) {
             .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
           break;
         }
+        case 'include-url':
+          getLocal('settings')
+            .then(({ settings }) => {
+              $menu.parentElement!.classList.toggle('checked-include-url', !settings.includeUrl);
+              return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
+            })
+            .then(({ settings }) => {
+              resetQuery(settings.includeUrl);
+              resetVScrollData((data) => data);
+            });
+          break;
         default:
       }
     },
@@ -341,7 +358,7 @@ export default function setEventListners(options: Options) {
   $paneHistory.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     if ($target.classList.contains('header-date') && document.body.classList.contains('date-collapsed')) {
-      junpHistoryDate($target.textContent!, options);
+      jumpHistoryDate($target.textContent!);
       return;
     }
     const $parent = $target.parentElement!;

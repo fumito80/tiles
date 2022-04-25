@@ -25,7 +25,6 @@ import {
   rowSetterHistory,
   setVScroll,
   resetHistory,
-  // resetVScrollData,
   getVScrollData,
 } from './vscroll';
 
@@ -123,17 +122,6 @@ export function onClickAngle(e: MouseEvent) {
     (target.nextElementSibling as HTMLDivElement)?.click();
   }
   folder.classList.toggle('path');
-}
-
-export function clearQuery() {
-  const $query = $<HTMLInputElement>('.query')!;
-  if ($query.value === '') {
-    return;
-  }
-  $query.value = '';
-  $query.setAttribute('value', '');
-  $query.focus();
-  $('.form-query [type="submit"]')!.click();
 }
 
 export function saveStateOpenedPath(foldersFolder: HTMLElement) {
@@ -403,33 +391,31 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
   };
 }
 
-function restoreHistory(options: Options) {
+async function restoreHistory(includeUrl: boolean) {
   const value = ($('.query') as HTMLInputElement).value.trim();
   const reFilter = getReFilter(value);
-  resetHistory({ reFilter, includeUrl: options.includeUrl });
+  return resetHistory({ reFilter, includeUrl });
 }
 
-export function showCalendar(options: Options) {
-  return async () => {
-    if (document.body.classList.contains('date-collapsed')) {
-      restoreHistory(options);
-      return;
-    }
-    document.body.classList.add('date-collapsed');
-    const { vscrollProps } = await getLocal('vscrollProps');
-    const histories = getVScrollData();
-    const data = histories.filter((item) => item.headerDate);
-    const $paneHistory = $('.pane-history') as HTMLDivElement;
-    setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
-    const vscroll = $('.v-scroll-bar', $paneHistory)!;
-    vscroll.scrollTop = 0;
-    vscroll.dispatchEvent(new Event('scroll'));
-  };
+export async function collapseHistoryDate() {
+  const { vscrollProps, settings: { includeUrl } } = await getLocal('vscrollProps', 'settings');
+  if (document.body.classList.contains('date-collapsed')) {
+    restoreHistory(includeUrl);
+    return;
+  }
+  document.body.classList.add('date-collapsed');
+  const histories = getVScrollData();
+  const data = histories.filter((item) => item.headerDate);
+  const $paneHistory = $('.pane-history') as HTMLDivElement;
+  setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
+  const vscroll = $('.v-scroll-bar', $paneHistory)!;
+  vscroll.scrollTop = 0;
+  vscroll.dispatchEvent(new Event('scroll'));
 }
 
-export async function junpHistoryDate(localeDate: string, options: Options) {
-  restoreHistory(options);
-  const { vscrollProps } = await getLocal('vscrollProps');
+export async function jumpHistoryDate(localeDate: string) {
+  const { vscrollProps, settings: { includeUrl } } = await getLocal('vscrollProps', 'settings');
+  await restoreHistory(includeUrl);
   const histories = getVScrollData();
   const index = histories.findIndex(
     (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === localeDate,

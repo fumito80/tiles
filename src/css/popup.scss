@@ -1152,10 +1152,21 @@ main::-webkit-scrollbar {
   border-radius: 2px;
 }
 
-.main-menu [data-value="auto-zoom"] > .icon-check-solid {
+.main-menu .icon-check-solid {
   display: none;
   font-weight: bold;
   pointer-events: none;
+}
+
+.main-menu.checked-include-url > [data-value="include-url"],
+.auto-zoom .main-menu > [data-value="auto-zoom"] {
+  color: $common-marker;
+  > i::after {
+    border-color: $common-marker;
+  }
+  > .icon-check-solid {
+    display: inline-block;
+  }
 }
 
 .zoom-icon {
@@ -1164,24 +1175,8 @@ main::-webkit-scrollbar {
   height: 1.2em;
 }
 
-.auto-zoom .main-menu {
-  > [data-value="auto-zoom"] {
-    color: $common-marker;
-    > .icon-arrows-left-right-solid::after {
-      border-color: $common-marker;
-    }
-    > .icon-check-solid {
-      display: inline-block;
-      left: -0.3em;
-      position: absolute;
-    }
-  }
-  > div {
-    padding-left: 1.6em;
-  }
-  .zoom-icon {
-    stroke: $common-marker;
-  }
+.auto-zoom .main-menu .zoom-icon {
+  stroke: $common-marker;
 }
 
 // History date collapse mode
