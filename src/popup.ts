@@ -65,7 +65,7 @@ function setOptions(settings: Settings, options: Options) {
     [paneBg, paneColor, isLightPaneBg],
     [frameBg],
     [itemHoverBg, itemHoverColor, isLightHoverBg],
-    [searchingBg, searchingColor],
+    [searchingBg, searchingColor, isLightSearchingBg],
     [keyBg, keyColor, isLightKeyBg],
   ] = options.colorPalette
     .map((code) => [`#${code}`, getColorWhiteness(code)])
@@ -90,7 +90,7 @@ function setOptions(settings: Settings, options: Options) {
     addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
     addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
     addRules('.leafs .title::before', [['color', lightColor]]);
-    addRules('.zoom-pane .shade-left, .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
+    addRules('.auto-zoom .zoom-pane .shade-left, .auto-zoom .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
   }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
@@ -104,6 +104,9 @@ function setOptions(settings: Settings, options: Options) {
       [['color', 'darkgray']],
     );
     addRules('.leaf:hover button:hover, .leaf:hover button:focus, .marker:hover button:hover, .marker:hover button:focus', [['background-color', 'rgba(255, 255, 255, 0.2)']]);
+  }
+  if (!isLightSearchingBg) {
+    addRules('.query[data-searching] + button > .icon-fa-search', [['color', 'rgba(255,255,255,0.7)']]);
   }
   if (options.showCloseTab) {
     addRules('.pane-tabs > div > div:hover > i', [['display', 'inline-block']]);
