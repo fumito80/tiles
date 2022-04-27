@@ -1,6 +1,6 @@
 import { Options } from './types';
 import {
-  $, base64Encode, getColorWhiteness, getColorChroma,
+  base64Encode, getColorWhiteness, getColorChroma,
 } from './common';
 
 async function getImageData(svg: string) {
@@ -44,23 +44,33 @@ async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
   `;
 }
 
-function getSvgZoomIcon(stroke: string) {
-  // const svg = $('.zoom-icon')!;
-  // svg.innerHTML =
+export function getSvgZoomIcon() {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" stroke="${stroke}" class="zoom-icon" width="128" height="128" viewBox="0 0 128 128" stroke-linejoin="round" stroke-linecap="round" fill="none">
+    <svg xmlns="http://www.w3.org/2000/svg" stroke="#000000" class="icon-zoom" width="128" height="128" viewBox="0 0 128 128" stroke-linejoin="round" stroke-linecap="round" fill="none">
       <path stroke-width="10" d="M20 64 L108 64" />
       <path stroke-width="10" d="M40 44 L20 64 L40 84" />
       <path stroke-width="10" d="M88 44 L108 64 L88 84" />
-      <rect stroke-width="7" x="5" y="15" width="118" height="98" rx="20" ry="20"></rect>
+      <path stroke-width="10" d="M5 20 L5 108" />
+      <path stroke-width="10" d="M123 20 L123 108" />
     </svg>
   `;
 }
 
-export default function drawSvg(stroke: string) {
-  const svg = getSvgZoomIcon(stroke);
+export function getSvgUrl() {
+  return `
+    <svg width="128" height="128" viewBox="0 0 128 128" stroke-linejoin="round" stroke-linecap="round" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect stroke="#000000" stroke-width="5" x="3" y="13" width="123" height="102" rx="10" ry="10"></rect>
+      <path fill="#000000" d="M15 98 L25 98 L55 30 L45 30 z" />
+      <path fill="#000000" d="M15 98 L25 98 L55 30 L45 30 z" transform="translate(30,0)"/>
+      <rect fill="#000000" x="95" y="40" width="15" height="15" rx="5" ry="5" />
+      <rect fill="#000000" x="95" y="73" width="15" height="15" rx="5" ry="5" />
+    </svg>
+  `;
+}
+
+export function setSvg(el: HTMLImageElement, svg: string) {
   base64Encode(svg).then((base64) => {
-    $<HTMLImageElement>('.zoom-icon')!.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;
+    el.setAttribute('src', `data:image/svg+xml;charset=utf-8;base64,${base64}`);
   });
 }
 

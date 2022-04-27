@@ -29,8 +29,8 @@ import {
 import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
-// import drawSvg from './draw-svg';
 import { resetQuery } from './search';
+// import { setSvg, getSvgUrl } from './draw-svg';
 
 type Options = State['options'];
 
@@ -173,8 +173,8 @@ function init({
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
   setEventListners(options);
   setExternalUrl(options);
-  // drawSvg();
   resetQuery(settings.includeUrl);
+  // setSvg($('.icon-url')!, getSvgUrl());
 }
 
 bootstrap(...getKeys(initialState)).then(init);

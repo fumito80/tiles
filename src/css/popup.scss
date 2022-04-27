@@ -1154,27 +1154,42 @@ main::-webkit-scrollbar {
   display: none;
   font-weight: bold;
   pointer-events: none;
+  width: auto;
+  margin-left: 10px;
 }
 
 .main-menu.checked-include-url > [data-value="include-url"],
 .auto-zoom .main-menu > [data-value="auto-zoom"] {
   color: $common-marker;
-  > i::after {
-    border-color: $common-marker;
-  }
+  // > i::after {
+  //   border-color: $common-marker;
+  // }
   > .icon-check-solid {
     display: inline-block;
   }
 }
 
-.zoom-icon {
-  stroke: #222222;
-  width: 2.5em;
-  height: 1.2em;
+.icon-url {
+  background-image: url(data:image/svg+xml;charset=utf-8;base64,CiAgICA8c3ZnIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogICAgICA8cmVjdCBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iNSIgeD0iMyIgeT0iMTMiIHdpZHRoPSIxMjMiIGhlaWdodD0iMTAyIiByeD0iMTAiIHJ5PSIxMCI+PC9yZWN0PgogICAgICA8cGF0aCBmaWxsPSIjMDAwMDAwIiBkPSJNMTUgOTggTDI1IDk4IEw1NSAzMCBMNDUgMzAgeiIgLz4KICAgICAgPHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTE1IDk4IEwyNSA5OCBMNTUgMzAgTDQ1IDMwIHoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMwLDApIi8+CiAgICAgIDxyZWN0IGZpbGw9IiMwMDAwMDAiIHg9Ijk1IiB5PSI0MCIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE1IiByeD0iNSIgcnk9IjUiIC8+CiAgICAgIDxyZWN0IGZpbGw9IiMwMDAwMDAiIHg9Ijk1IiB5PSI3MyIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE1IiByeD0iNSIgcnk9IjUiIC8+CiAgICA8L3N2Zz4KICA=);
 }
 
-.auto-zoom .main-menu .zoom-icon {
-  stroke: $common-marker;
+.icon-zoom {
+  background-image: url(data:image/svg+xml;charset=utf-8;base64,CiAgICA8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwMDAwIiBjbGFzcz0iem9vbS1pY29uIiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMTAiIGQ9Ik0yMCA2NCBMMTA4IDY0IiAvPgogICAgICA8cGF0aCBzdHJva2Utd2lkdGg9IjEwIiBkPSJNNDAgNDQgTDIwIDY0IEw0MCA4NCIgLz4KICAgICAgPHBhdGggc3Ryb2tlLXdpZHRoPSIxMCIgZD0iTTg4IDQ0IEwxMDggNjQgTDg4IDg0IiAvPgogICAgICA8cGF0aCBzdHJva2Utd2lkdGg9IjEwIiBkPSJNNSAyMCBMNSAxMDgiIC8+CiAgICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMTAiIGQ9Ik0xMjMgMjAgTDEyMyAxMDgiIC8+CiAgICA8L3N2Zz4KICA=);
+}
+
+.icon-zoom,
+.icon-url {
+  width: 2.5em;
+  height: 1.2em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
+}
+
+.main-menu.checked-include-url .icon-url,
+.auto-zoom .main-menu .icon-zoom {
+  filter: invert(34%) sepia(85%) saturate(1697%) hue-rotate(199deg) brightness(94%) contrast(93%);
 }
 
 // History date collapse mode
