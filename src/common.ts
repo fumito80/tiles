@@ -668,7 +668,7 @@ export async function getHistoryById(historyId: string): Promise<MyHistoryItem> 
   return histories.find(propEq('id', id))!;
 }
 
-function base64Encode(...parts: string[]) {
+export function base64Encode(...parts: string[]) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -703,41 +703,6 @@ export function getColorWhiteness(colorCode: string) {
     (r * g) / (0xFF * 0xFF),
   );
   // return Math.max(r, g, b) / 0xFF;
-}
-
-export async function setBrowserIcon(colorPalette: State['options']['colorPalette']) {
-  const [first, ...rest] = colorPalette;
-  const outer = rest.reduce((acc, color) => {
-    const whiteness = getColorWhiteness(color);
-    if (whiteness > 0.8) {
-      return acc;
-    }
-    const whitenessAcc = getColorWhiteness(acc);
-    if (whitenessAcc > 0.8) {
-      return color;
-    }
-    if (getColorChroma(acc) >= getColorChroma(color)) {
-      return acc;
-    }
-    return color;
-  }, first);
-  const d = 'M5 3 L15 3 C15 9 14 11 8 11 M8 10 C7 15 7 15 3 16';
-  const svg = `
-    <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path stroke-width="5" stroke="#${outer}" stroke-linecap="round" stroke-linejoin="round" d="${d}"/>
-      <path stroke-width="2" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" d="${d}"/>
-    </svg>
-  `;
-  const base64 = await base64Encode(svg);
-  const img = new Image();
-  img.onload = () => {
-    const canvas = new OffscreenCanvas(28, 28);
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(img, 0, 0, 28, 28);
-    const imageData = ctx.getImageData(0, 0, 28, 28);
-    chrome.browserAction.setIcon({ imageData });
-  };
-  img.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;
 }
 
 const escapes = new Map();

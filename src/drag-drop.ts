@@ -10,8 +10,9 @@ import {
   getHistoryById,
 } from './common';
 import {
-  addBookmark, getBookmark, setHasChildren, setAnimationClass, zoomOut,
+  addBookmark, getBookmark, setHasChildren, setAnimationClass,
 } from './client';
+import { zoomOut } from './zoom';
 
 const sourceClasses = ['anchor', 'marker', 'tab', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -155,7 +156,7 @@ const dragAndDropEvents = {
     const $main = $('main')!;
     if ($main.classList.contains('zoom-pane')) {
       const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
-      zoomOut($zoomPane, $main)();
+      zoomOut($zoomPane, { $main })();
     }
     $dragTarget.classList.remove('hilite');
     $dragTarget.classList.add('drag-source');

@@ -14,12 +14,12 @@ import {
   objectEqaul,
   getColorWhiteness,
   getColorChroma,
-  setBrowserIcon,
   prop,
   getRGB,
   lightColorWhiteness,
 } from './common';
 import { State, ColorPalette } from './types';
+import { setBrowserIcon } from './draw-svg';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 
 class ColorPaletteClass extends HTMLDivElement {

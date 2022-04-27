@@ -38,7 +38,6 @@ import {
   setAnimationFolder,
   addFolder,
   findInTabsBookmark,
-  setZoomSetting,
   collapseHistoryDate,
   jumpHistoryDate,
 } from './client';
@@ -46,7 +45,8 @@ import {
 import { updateAnker } from './html';
 import { resetVScrollData } from './vscroll';
 import dragAndDropEvents from './drag-drop';
-import { clearQuery, resetQuery } from './client-search';
+import { clearQuery, resetQuery } from './search';
+import { setZoomSetting } from './zoom';
 
 export default function setEventListners(options: Options) {
   const $main = $('main')!;
@@ -184,6 +184,7 @@ export default function setEventListners(options: Options) {
           folders.forEach((el) => el?.classList.add('path'));
           return false;
         }
+        $('.leafs')!.scrollTop = 0;
         $$('.open').forEach((el) => el.classList.remove('open'));
         folders.forEach((el) => el?.classList.add('open'));
         saveStateOpenedPath(foldersFolder);

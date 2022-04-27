@@ -156,7 +156,6 @@ button {
   align-items: center;
   padding-top: 1px;
   padding-bottom: 2px;
-  transition: width 0.1s;
   .icon-x {
     margin-left: -1.1em;
     font-size: 1.4em;
@@ -909,7 +908,6 @@ main::-webkit-scrollbar {
 
 .pane-tabs {
   grid-column: 4 / 5;
-  position: relative;
   overflow-y: auto;
   transition: width 0.1s;
   > div {
@@ -1185,12 +1183,12 @@ main::-webkit-scrollbar {
   .show-calendar {
     display: none;
   }
-}
-
-.auto-zoom:not(.disable-zoom-history) .zoom-pane {
-  .show-calendar {
+  .zoom-pane .show-calendar {
     display: flex;
     margin-left: auto;
+  }
+  .zoom-fade-out .show-calendar {
+    display: none;
   }
 }
 

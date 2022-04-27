@@ -19,7 +19,6 @@ import {
   regsterChromeEvents,
   setLocal,
   getLocal,
-  setBrowserIcon,
   cbToResolve,
   curry,
   removeUrlHistory,
@@ -29,6 +28,7 @@ import {
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
+import { setBrowserIcon } from './draw-svg';
 
 type Histories = State['histories'];
 

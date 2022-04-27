@@ -29,8 +29,8 @@ import {
 import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
-import drawSvg from './draw-svg';
-import { resetQuery } from './client-search';
+// import drawSvg from './draw-svg';
+import { resetQuery } from './search';
 
 type Options = State['options'];
 
@@ -173,7 +173,7 @@ function init({
   toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
   setEventListners(options);
   setExternalUrl(options);
-  drawSvg();
+  // drawSvg();
   resetQuery(settings.includeUrl);
 }
 
@@ -183,4 +183,4 @@ export const mapMessagesBtoP = {
   [BkgMessageTypes.updateHistory]: resetHistory,
 };
 
-setMessageListener(mapMessagesBtoP);
+setMessageListener(mapMessagesBtoP, true);
