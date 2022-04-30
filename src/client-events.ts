@@ -1,6 +1,5 @@
 import {
   OpenBookmarkType,
-  EditBookmarkType,
   Options,
 } from './types';
 
@@ -28,18 +27,19 @@ import {
   getBookmark,
   openBookmark,
   addBookmark,
-  setHasChildren,
   onClickAngle,
   saveStateOpenedPath,
   setMouseEventListener,
   resizeSplitHandler,
   resizeWidthHandler,
   resizeHeightHandler,
-  setAnimationFolder,
   addFolder,
   findInTabsBookmark,
   collapseHistoryDate,
   jumpHistoryDate,
+  editTitle,
+  removeFolder,
+  editBookmarkTitle,
 } from './client';
 
 import { updateAnker } from './html';
@@ -66,7 +66,7 @@ export default function setEventListners(options: Options) {
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
   $('.show-calendar')?.addEventListener('click', collapseHistoryDate);
 
-  setEvents([document.body], {
+  setEvents([$main], {
     click(e) {
       const $target = e.target as HTMLElement;
       if ($target.classList.contains('main-menu-button')) {
@@ -74,6 +74,9 @@ export default function setEventListners(options: Options) {
       }
       if ($target.classList.contains('leaf-menu-button')) {
         showMenu($target, '.leaf-menu');
+        return;
+      }
+      if ($target.getAttribute('contenteditable')) {
         return;
       }
       $('.query')!.focus();
@@ -100,23 +103,13 @@ export default function setEventListners(options: Options) {
           openBookmark(options, $anchor, OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
-          const title = $anchor.textContent;
-          // eslint-disable-next-line no-alert
-          const value = prompt('Edit title', title!);
-          if (value == null) {
-            break;
-          }
-          const { url = '' } = await getBookmark($leaf.id);
-          const changes = { [EditBookmarkType.title]: value };
-          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)(changes));
-          updateAnker($leaf.id, { url, title: value });
-          setAnimationClass($leaf, 'hilite');
+          editBookmarkTitle($leaf);
           break;
         }
         case 'edit-url': {
           const { url = '', title } = await getBookmark($leaf.id);
           // eslint-disable-next-line no-alert
-          const value = prompt('Edit url', url);
+          const value = prompt(`[Edit URL]\n${title}`, url);
           if (value == null) {
             break;
           }
@@ -167,6 +160,9 @@ export default function setEventListners(options: Options) {
     const targetClass = whichClass(targetClasses, $target);
     switch (targetClass) {
       case 'anchor':
+        if ($target.getAttribute('contenteditable')) {
+          return;
+        }
         findTabsFirstOrNot(options, $target!);
         break;
       case 'marker':
@@ -182,7 +178,7 @@ export default function setEventListners(options: Options) {
         const isOpen = foldersFolder.classList.contains('open');
         if (isOpen) {
           folders.forEach((el) => el?.classList.add('path'));
-          return false;
+          return;
         }
         $('.leafs')!.scrollTop = 0;
         $$('.open').forEach((el) => el.classList.remove('open'));
@@ -198,12 +194,14 @@ export default function setEventListners(options: Options) {
       }
       default:
     }
-    return false;
   });
 
   const $leafs = $('.leafs')!;
   $leafs.addEventListener('click', (e) => {
     const $target = e.target as HTMLDivElement;
+    if ($target.getAttribute('contenteditable')) {
+      return;
+    }
     if ($target.classList.contains('anchor')) {
       findTabsFirstOrNot(options, $target!);
     } else if ([...$target.classList].find((className) => ['title', 'icon-fa-angle-right'].includes(className))) {
@@ -294,15 +292,8 @@ export default function setEventListners(options: Options) {
           break;
         }
         case 'edit': {
-          const $title = $('.title > span', $folder)!;
-          // eslint-disable-next-line no-alert
-          const title = prompt('Edit folder name', $title.textContent as string);
-          if (title == null) {
-            break;
-          }
-          await cbToResolve(curry3(chrome.bookmarks.update)($folder.id)({ title }));
-          $title.textContent = title;
-          setAnimationFolder($title.parentElement?.parentElement, 'hilite');
+          const $title = $('.title > div', $folder)!;
+          editTitle($title, $folder.id);
           break;
         }
         case 'add-folder': {
@@ -310,17 +301,7 @@ export default function setEventListners(options: Options) {
           break;
         }
         case 'remove': {
-          await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-          document.body.appendChild($('.folder-menu')!);
-          const $marker = $('.marker', $folder)!;
-          $marker.addEventListener('animationend', () => {
-            const $parent = $folder.parentElement!;
-            $folder.remove();
-            setHasChildren($parent);
-            $('.title', $parent)!.click();
-          }, { once: true });
-          $marker.classList.remove('hilite');
-          setAnimationFolder($marker, 'remove-hilite');
+          removeFolder($folder);
           break;
         }
         default:

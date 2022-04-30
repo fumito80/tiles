@@ -30,7 +30,6 @@ import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
 import { resetQuery } from './search';
-// import { setSvg, getSvgUrl } from './draw-svg';
 
 type Options = State['options'];
 
@@ -174,7 +173,6 @@ function init({
   setEventListners(options);
   setExternalUrl(options);
   resetQuery(settings.includeUrl);
-  // setSvg($('.icon-url')!, getSvgUrl());
 }
 
 bootstrap(...getKeys(initialState)).then(init);

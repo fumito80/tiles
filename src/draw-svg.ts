@@ -56,18 +56,6 @@ export function getSvgZoomIcon() {
   `;
 }
 
-export function getSvgUrl() {
-  return `
-    <svg width="128" height="128" viewBox="0 0 128 128" stroke-linejoin="round" stroke-linecap="round" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect stroke="#000000" stroke-width="5" x="3" y="13" width="123" height="102" rx="10" ry="10"></rect>
-      <path fill="#000000" d="M15 98 L25 98 L55 30 L45 30 z" />
-      <path fill="#000000" d="M15 98 L25 98 L55 30 L45 30 z" transform="translate(30,0)"/>
-      <rect fill="#000000" x="95" y="40" width="15" height="15" rx="5" ry="5" />
-      <rect fill="#000000" x="95" y="73" width="15" height="15" rx="5" ry="5" />
-    </svg>
-  `;
-}
-
 export function setSvg(el: HTMLImageElement, svg: string) {
   base64Encode(svg).then((base64) => {
     el.setAttribute('src', `data:image/svg+xml;charset=utf-8;base64,${base64}`);

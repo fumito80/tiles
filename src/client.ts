@@ -1,6 +1,7 @@
 import {
   splitterClasses,
   OpenBookmarkType,
+  EditBookmarkType,
   Options,
   Nil,
 } from './types';
@@ -19,6 +20,8 @@ import {
   getGridTemplateColumns,
   extractDomain,
   getLocaleDate,
+  htmlEscape,
+  curry3,
 } from './common';
 
 import {
@@ -30,7 +33,7 @@ import {
 
 import { getReFilter } from './search';
 
-import { makeLeaf, makeNode } from './html';
+import { makeLeaf, makeNode, updateAnker } from './html';
 
 export function setAnimationClass(el: HTMLElement, className: 'hilite' | 'remove-hilite') {
   el.classList.remove(className);
@@ -79,35 +82,6 @@ export async function openBookmark(
       break;
     }
     default:
-  }
-}
-
-export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null) {
-  const { title, url } = paramsIn ?? await getCurrentTab();
-  const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
-  const params = {
-    title: title!, url: url!, parentId, index,
-  };
-  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlAnchor = makeLeaf({ id, ...params });
-  if (parentId === '1') {
-    $('.folders')!.children[index!].insertAdjacentHTML('beforebegin', htmlAnchor);
-  } else {
-    if (parentId !== $('.open')?.id) {
-      $$('.open').map((el) => el.classList.remove('open'));
-      $$(cssid(parentId)).map((el) => el.classList.add('open'));
-    }
-    const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
-    if (index == null) {
-      $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
-    } else {
-      $targetFolder.children[index].insertAdjacentHTML('afterend', htmlAnchor);
-    }
-  }
-  const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
-  if ($target) {
-    ($target as any).scrollIntoViewIfNeeded();
-    setAnimationClass($target, 'hilite');
   }
 }
 
@@ -202,38 +176,6 @@ export function setAnimationFolder(el: HTMLElement | Nil, className: string) {
   el.classList.add(className);
 }
 
-export async function addFolder(parentId = '1') {
-  // eslint-disable-next-line no-alert
-  const title = prompt('Folder name');
-  if (title == null) {
-    return;
-  }
-  const index = (parentId === '1') ? 0 : undefined;
-  const params = {
-    title: title!, parentId, index,
-  };
-  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlNode = makeNode({
-    id, children: '', length: 0, ...params,
-  });
-  if (parentId === '1') {
-    $('.folders')!.insertAdjacentHTML('afterbegin', htmlNode);
-    $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
-  } else {
-    $$(cssid(parentId)).forEach(($targetFolder) => {
-      $targetFolder.insertAdjacentHTML('beforeend', htmlNode);
-      $targetFolder.setAttribute('data-children', String($targetFolder.children.length - 1));
-      const $title = $(':scope > .marker > .title', $targetFolder);
-      if ($title) {
-        $title.click();
-        ($targetFolder as any).scrollIntoViewIfNeeded();
-      }
-    });
-  }
-  const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
-  setAnimationFolder($target.parentElement, 'hilite');
-}
-
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
   const { url = '' } = await getBookmark(id);
@@ -295,4 +237,147 @@ export async function jumpHistoryDate(localeDate: string) {
   const vscroll = $('.v-scroll-bar', $paneHistory)!;
   vscroll.scrollTop = vscrollProps.rowHeight * index;
   vscroll.dispatchEvent(new Event('scroll'));
+}
+
+export async function removeFolder($folder: HTMLElement) {
+  await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
+  document.body.appendChild($('.folder-menu')!);
+  const $marker = $('.marker', $folder)!;
+  $marker.addEventListener('animationend', () => {
+    const $parent = $folder.parentElement!;
+    $folder.remove();
+    setHasChildren($parent);
+    $('.title', $parent)!.click();
+  }, { once: true });
+  $marker.classList.remove('hilite');
+  setAnimationFolder($marker, 'remove-hilite');
+}
+
+export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
+  const currentTitle = $title.textContent;
+  $title.setAttribute('contenteditable', 'true');
+  $title.setAttribute('data-current-title', htmlEscape(currentTitle!));
+  return new Promise<string | null>((resolve) => {
+    setTimeout(() => {
+      $title.focus();
+      if (newFolder) {
+        // eslint-disable-next-line no-param-reassign
+        $title.textContent = '';
+      } else {
+        document.execCommand('selectAll', false);
+      }
+      $title.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          $title.blur();
+          ev.preventDefault();
+        } else if (ev.key === 'Escape') {
+          // eslint-disable-next-line no-param-reassign
+          $title.textContent = currentTitle;
+        }
+      });
+      $title.addEventListener('blur', async () => {
+        $title.removeAttribute('contenteditable');
+        $('.query')!.focus();
+        const title = $title.textContent?.trim();
+        if (!title || title.trim() === '') {
+          // eslint-disable-next-line no-param-reassign
+          $title.textContent = currentTitle;
+          resolve(null);
+          return;
+        }
+        if (title === currentTitle) {
+          resolve(null);
+          // eslint-disable-next-line no-param-reassign
+          $title.scrollLeft = 0;
+          return;
+        }
+        await cbToResolve(curry3(chrome.bookmarks.update)(folderId)({ title }));
+        // eslint-disable-next-line no-param-reassign
+        $title.scrollLeft = 0;
+        setAnimationFolder($title.parentElement?.parentElement, 'hilite');
+        resolve(title);
+      }, { once: true });
+    }, 0);
+  });
+}
+
+export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null) {
+  const { title, url } = paramsIn ?? await getCurrentTab();
+  const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
+  const params = {
+    title: title!, url: url!, parentId, index,
+  };
+  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
+  const htmlAnchor = makeLeaf({ id, ...params });
+  if (parentId === '1') {
+    $('.folders')!.children[index!].insertAdjacentHTML('beforebegin', htmlAnchor);
+  } else {
+    if (parentId !== $('.open')?.id) {
+      $$('.open').map((el) => el.classList.remove('open'));
+      $$(cssid(parentId)).map((el) => el.classList.add('open'));
+    }
+    const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
+    if (index == null) {
+      $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
+    } else {
+      $targetFolder.children[index].insertAdjacentHTML('afterend', htmlAnchor);
+    }
+  }
+  const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
+  if ($target) {
+    ($target as any).scrollIntoViewIfNeeded();
+    setAnimationClass($target, 'hilite');
+    editTitle($target.firstElementChild as HTMLElement, id);
+  }
+}
+
+export function showModalInput(desc: string) {
+  const $modal = $('.modal')!;
+  document.body.classList.add('show-modal');
+  $('.popup-desc', $modal)!.textContent = desc;
+  return $<HTMLInputElement>('input', $modal)!.value;
+}
+
+export async function addFolder(parentId = '1') {
+  const index = (parentId === '1') ? 0 : undefined;
+  const params = {
+    title: 'Enter title', parentId, index,
+  };
+  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
+  const htmlNode = makeNode({
+    id, children: '', length: 0, ...params,
+  });
+  if (parentId === '1') {
+    $('.folders')!.insertAdjacentHTML('afterbegin', htmlNode);
+    $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
+  } else {
+    $$(cssid(parentId)).forEach(($targetFolder) => {
+      $targetFolder.insertAdjacentHTML('beforeend', htmlNode);
+      $targetFolder.setAttribute('data-children', String($targetFolder.children.length - 1));
+      const $title = $(':scope > .marker > .title', $targetFolder);
+      if ($title) {
+        $title.click();
+        ($targetFolder as any).scrollIntoViewIfNeeded();
+      }
+    });
+  }
+  const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
+  setAnimationFolder($target.parentElement, 'hilite');
+  const title = editTitle($target.firstElementChild as HTMLElement, id, true);
+  if (!title) {
+    removeFolder($target.parentElement!.parentElement!);
+  }
+}
+
+export async function editBookmarkTitle($leaf: HTMLElement) {
+  const $title = $leaf.firstElementChild as HTMLElement;
+  const title = await editTitle($title, $leaf.id).catch(() => null);
+  if (!title) {
+    return;
+  }
+  const { url = '' } = await getBookmark($leaf.id);
+  const changes = { [EditBookmarkType.title]: title };
+  await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)(changes));
+  updateAnker($leaf.id, { url, title });
+  setAnimationClass($leaf, 'hilite');
 }

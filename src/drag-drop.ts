@@ -14,7 +14,7 @@ import {
 } from './client';
 import { zoomOut } from './zoom';
 
-const sourceClasses = ['anchor', 'marker', 'tab', 'history'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -38,7 +38,7 @@ function dropWithTabs(
       addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
       return;
     }
-    if (sourceClass === 'anchor') {
+    if (sourceClass === 'leaf') {
       const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
       const { url } = await getBookmark(sourceId);
       chrome.tabs.create({ index, url, windowId }, () => {
@@ -75,6 +75,7 @@ function dropWithTabs(
         }
       });
     });
+    $('.pane-tabs')!.dispatchEvent(new Event('mouseenter'));
   });
 }
 
@@ -138,11 +139,11 @@ const dragAndDropEvents = {
       switch (className) {
         case 'marker':
           return ['drag-start-folder', $target, $target.parentElement!.id] as const;
-        case 'anchor':
         case 'tab': {
           const $leaf = $target.parentElement as HTMLElement;
           return ['drag-start-leaf', $leaf, $leaf.id] as const;
         }
+        case 'leaf':
         case 'history': {
           return ['drag-start-leaf', $target, $target.id] as const;
         }
@@ -179,11 +180,27 @@ const dragAndDropEvents = {
       $target.classList.add('drag-enter');
     }
   },
-  dragend() {
+  dragend(e: DragEvent) {
+    // console.log(e, e.dataTransfer?.getData('application/source-class'));
     $('.drag-source')?.classList.remove('drag-source');
     $('main')!.classList.remove('drag-start-leaf');
     $('main')!.classList.remove('drag-start-folder');
     $('.draggable-clone')!.innerHTML = '';
+    if (e.dataTransfer?.dropEffect === 'none') {
+      const className = whichClass(sourceClasses, (e.target as HTMLElement));
+      let paneClass = '';
+      switch (className) {
+        case 'tab':
+          paneClass = '.pane-tabs';
+          break;
+        case 'history':
+          paneClass = '.pane-history';
+          break;
+        default:
+          return;
+      }
+      $(paneClass)!.dispatchEvent(new Event('mouseenter'));
+    }
   },
   async drop(e: DragEvent) {
     const $dropArea = e.target as HTMLElement;

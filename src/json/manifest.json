@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Popup'n My Resources",
-  "version": "0.11.2",
+  "version": "0.11.4",
   "default_locale": "en",
   "permissions": [
     "storage",
