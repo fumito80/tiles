@@ -756,7 +756,6 @@ main::-webkit-scrollbar {
   > .drop-bottom,
   > .drop-folder {
     position: absolute;
-    // left: -2px;
     width: calc(100% - 3px);
   }
   > .drop-top {
@@ -868,13 +867,14 @@ main::-webkit-scrollbar {
 }
 
 // History
+
 .pane-history {
   grid-column: 2 / 3;
   position: relative;
   border-radius: $pane-radius;
   transition: width 0.1s;
   .rows {
-    padding-top: 2px;
+    display: grid;
     padding-bottom: 2px;
     > .history:not(.header-date):hover {
       background-color: $hover-color;
@@ -893,20 +893,15 @@ main::-webkit-scrollbar {
       padding: 2px 0;
       justify-content: center;
       align-items: center;
-      background-color: white;
       background-color: darkgray;
       color: white;
       border-radius: 2px;
       -webkit-user-drag: none;
     }
-    > .header-date:nth-child(2) {
-      margin-top: 0;
-    }
   }
 }
 
 .history {
-  position: sticky;
   display: flex;
   cursor: default;
   overflow: hidden;

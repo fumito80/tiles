@@ -37,6 +37,7 @@ import {
   setVScroll,
   resetHistory,
   getVScrollData,
+  setScrollTop,
 } from './vscroll';
 
 import { getReFilter } from './search';
@@ -170,11 +171,22 @@ export function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
   };
 }
 
+let timerResizeY: ReturnType<typeof setTimeout>;
+
 export function resizeHeightHandler(e: MouseEvent) {
   const height = Math.min(e.clientY - 6, 570);
   if (height < 200) {
     return;
   }
+  clearTimeout(timerResizeY);
+  timerResizeY = setTimeout(() => {
+    getLocal('vscrollProps')
+      .then(({ vscrollProps }) => {
+        const $paneHistory = $('.pane-history') as HTMLDivElement;
+        const vScrollData = getVScrollData();
+        setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps);
+      });
+  }, 500);
   addStyle('height', `${height}px`)(document.body);
 }
 
@@ -235,8 +247,7 @@ export async function collapseHistoryDate() {
   const data = histories.filter((item) => item.headerDate);
   const $paneHistory = $('.pane-history') as HTMLDivElement;
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
-  $paneHistory.scrollTop = 0;
-  $paneHistory.dispatchEvent(new Event('scroll'));
+  setScrollTop(0);
 }
 
 export async function jumpHistoryDate(localeDate: string) {
@@ -246,9 +257,7 @@ export async function jumpHistoryDate(localeDate: string) {
   const index = histories.findIndex(
     (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === localeDate,
   );
-  const vscroll = $('.v-scroll-bar')!;
-  vscroll.scrollTop = vscrollProps.rowHeight * index;
-  vscroll.dispatchEvent(new Event('scroll'));
+  setScrollTop(vscrollProps.rowHeight * index);
 }
 
 export async function removeFolder($folder: HTMLElement) {

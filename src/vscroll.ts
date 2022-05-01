@@ -24,7 +24,7 @@ export function rowSetterHistory() {
   ) => ($row: HTMLElement, index: number) => {
     if (index === 0) {
       if (isShowFixedHeader) {
-        addStyle('transform', 'translateY(-2px)')($currentDate);
+        rmStyle('transform')($currentDate);
       }
       return;
     }
@@ -87,7 +87,7 @@ function getRowHeight($rows: HTMLElement) {
 
 export type VScrollRowSetter = typeof rowSetterHistory;
 
-export function setVScroll(
+export async function setVScroll(
   $container: HTMLDivElement,
   rowSetter: VScrollRowSetter,
   data: Collection,
@@ -98,14 +98,22 @@ export function setVScroll(
   if (!firstRow || !$rows) {
     return;
   }
+  $container.removeEventListener('scroll', vScrollHandler);
   const $fakeBottom = $('.v-scroll-fake-bottom', $container)!;
   $fakeBottom.style.removeProperty('height');
-  $container.removeEventListener('scroll', vScrollHandler);
   const { paddingTop, paddingBottom } = getComputedStyle($rows);
   const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
+  const bottomIndex = Math.ceil(($rows.parentElement!.offsetHeight - padding) / rowHeight) + 1;
+  [...$rows.children].forEach((el, i) => {
+    if (i > bottomIndex) {
+      addStyle('display', 'none')(el);
+    } else {
+      rmStyle('display')(el);
+    }
+  });
   const vScrollHeight = rowHeight * data.length + padding;
   const margin = $container.scrollHeight + ($container.scrollHeight - $container.offsetHeight);
-  $fakeBottom.style.height = `${vScrollHeight - margin}px`;
+  $fakeBottom.style.height = `${vScrollHeight - margin + 2}px`;
   const setter = rowSetter();
   const children = [...$rows.children] as HTMLElement[];
   vScrollData = data;
@@ -131,6 +139,12 @@ export function resetVScrollData(
 
 export function getVScrollData() {
   return vScrollData;
+}
+
+export function setScrollTop(scrollTop: number) {
+  const $paneHistory = $('.pane-history') as HTMLDivElement;
+  $paneHistory.scrollTop = scrollTop;
+  $paneHistory.dispatchEvent(new Event('scroll'));
 }
 
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
