@@ -19,6 +19,11 @@ import {
   removeUrlHistory,
   getLocal,
   setLocal,
+  addChild,
+  pipe,
+  addListener,
+  rmClass,
+  addClass,
 } from './common';
 
 import {
@@ -57,14 +62,15 @@ export default function setEventListners(options: Options) {
       const $inputQuery = (e.target as HTMLFormElement).query;
       const value = $inputQuery.value.trim();
       if (value.length <= 1) {
-        return;
+        return false;
       }
       const url = options.externalUrl + encodeURIComponent(value);
       createNewTab(options, url);
     }
+    return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $('.show-calendar')?.addEventListener('click', collapseHistoryDate);
+  $('.collapse-history-date')?.addEventListener('click', collapseHistoryDate);
 
   setEvents([$main], {
     click(e) {
@@ -76,7 +82,7 @@ export default function setEventListners(options: Options) {
         showMenu($target, '.leaf-menu');
         return;
       }
-      if ($target.getAttribute('contenteditable')) {
+      if ($target.hasAttribute('contenteditable')) {
         return;
       }
       $('.query')!.focus();
@@ -115,15 +121,17 @@ export default function setEventListners(options: Options) {
           }
           await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
           updateAnker($leaf.id, { title, url: value });
-          setAnimationClass($leaf, 'hilite');
+          setAnimationClass('hilite')($leaf);
           break;
         }
         case 'remove': {
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          document.body.appendChild($('.leaf-menu')!);
-          $leaf.addEventListener('animationend', () => $leaf.remove(), { once: true });
-          $leaf.classList.remove('hilite');
-          setAnimationClass($leaf, 'remove-hilite');
+          addChild($('.leaf-menu'))(document.body);
+          pipe(
+            addListener('animationend', () => $leaf.remove(), { once: true }),
+            rmClass('hilite'),
+            setAnimationClass('remove-hilite'),
+          )($leaf);
           break;
         }
         case 'show-in-folder': {
@@ -136,7 +144,7 @@ export default function setEventListners(options: Options) {
           $target.focus();
           ($leaf.firstElementChild as HTMLAnchorElement).focus();
           ($leaf as any).scrollIntoViewIfNeeded();
-          setAnimationClass($leaf, 'hilite');
+          setAnimationClass('hilite')($leaf);
           break;
         }
         default:
@@ -147,6 +155,19 @@ export default function setEventListners(options: Options) {
       e.preventDefault();
     },
   });
+
+  const $leafs = addListener('click', (e) => {
+    const $target = e.target as HTMLDivElement;
+    if ($target.hasAttribute('contenteditable')) {
+      return;
+    }
+    if ($target.classList.contains('anchor')) {
+      findTabsFirstOrNot(options, $target!);
+    } else if ([...$target.classList].find((className) => ['title', 'icon-fa-angle-right'].includes(className))) {
+      const folder = $target.parentElement!.parentElement!;
+      folder.classList.toggle('path');
+    }
+  })($('.leafs')!);
 
   $('.folders')!.addEventListener('click', (e) => {
     const $target = e.target as HTMLDivElement;
@@ -160,7 +181,7 @@ export default function setEventListners(options: Options) {
     const targetClass = whichClass(targetClasses, $target);
     switch (targetClass) {
       case 'anchor':
-        if ($target.getAttribute('contenteditable')) {
+        if ($target.hasAttribute('contenteditable')) {
           return;
         }
         findTabsFirstOrNot(options, $target!);
@@ -177,14 +198,14 @@ export default function setEventListners(options: Options) {
         const folders = [foldersFolder, $(`.leafs ${cssid(foldersFolder.id)}`)];
         const isOpen = foldersFolder.classList.contains('open');
         if (isOpen) {
-          folders.forEach((el) => el?.classList.add('path'));
+          folders.forEach(addClass('path'));
           return;
         }
-        $('.leafs')!.scrollTop = 0;
-        $$('.open').forEach((el) => el.classList.remove('open'));
-        folders.forEach((el) => el?.classList.add('open'));
+        $leafs.scrollTop = 0;
+        $$('.open').forEach(rmClass('open'));
+        folders.forEach(addClass('open'));
         saveStateOpenedPath(foldersFolder);
-        $$('.hilite').map((el) => el.classList.remove('hilite'));
+        $$('.hilite').forEach(rmClass('hilite'));
         break;
       }
       case 'folder-menu-button': {
@@ -196,42 +217,28 @@ export default function setEventListners(options: Options) {
     }
   });
 
-  const $leafs = $('.leafs')!;
-  $leafs.addEventListener('click', (e) => {
-    const $target = e.target as HTMLDivElement;
-    if ($target.getAttribute('contenteditable')) {
-      return;
-    }
-    if ($target.classList.contains('anchor')) {
-      findTabsFirstOrNot(options, $target!);
-    } else if ([...$target.classList].find((className) => ['title', 'icon-fa-angle-right'].includes(className))) {
-      const folder = $target.parentElement?.parentElement!;
-      folder.classList.toggle('path');
-    }
-  });
-
-  $('.pin-bookmark')?.addEventListener('click', () => {
-    addBookmark();
-  });
+  addListener('click', () => addBookmark())($('.pin-bookmark'));
 
   $('.main-menu-button')?.addEventListener('click', (e) => {
     e.preventDefault();
     return false;
   });
 
-  $$('.split-h').forEach((el) => el.addEventListener('mousedown', (e) => {
+  $$('.split-h').forEach(addListener('mousedown', (e) => {
     if (document.body.classList.contains('.auto-zoom')) {
       return;
     }
     const $splitter = e.target as HTMLElement;
     let subWidth = 0;
-    let nextElement = $splitter.nextElementSibling as HTMLElement;
-    while (nextElement) {
+    for (
+      let nextElement = $splitter.nextElementSibling as HTMLElement | null;
+      nextElement;
+      nextElement = nextElement.nextElementSibling as HTMLElement
+    ) {
       if (nextElement?.classList.contains('form-query')) {
         break;
       }
       subWidth += nextElement.offsetWidth;
-      nextElement = nextElement.nextElementSibling as HTMLElement;
     }
     setMouseEventListener(resizeSplitHandler($splitter, subWidth));
   }));
@@ -318,15 +325,17 @@ export default function setEventListners(options: Options) {
     const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
     if ($target.classList.contains('icon-x')) {
-      $parent.addEventListener('animationend', () => {
-        chrome.tabs.remove(Number(tabId), () => {
-          $parent.remove();
-          if ($window.childElementCount === 0) {
-            $window.remove();
-          }
-        });
-      }, { once: true });
-      setAnimationClass($parent, 'remove-hilite');
+      pipe(
+        addListener('animationend', () => {
+          chrome.tabs.remove(Number(tabId), () => {
+            $parent.remove();
+            if ($window.childElementCount === 0) {
+              $window.remove();
+            }
+          });
+        }, { once: true }),
+        setAnimationClass('remove-hilite'),
+      )($parent);
       return;
     }
     const [, windowId] = $window.id.split('-') || [];
@@ -336,8 +345,7 @@ export default function setEventListners(options: Options) {
     chrome.windows.update(Number(windowId), { focused: true });
     chrome.tabs.update(Number(tabId), { active: true });
   });
-  const $paneHistory = $('.pane-history')!;
-  $paneHistory.addEventListener('click', async (e) => {
+  const $paneHistory = addListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     if ($target.classList.contains('header-date') && document.body.classList.contains('date-collapsed')) {
       jumpHistoryDate($target.textContent!);
@@ -350,7 +358,7 @@ export default function setEventListners(options: Options) {
       return;
     }
     if ($target.classList.contains('icon-x')) {
-      setAnimationClass($parent, 'hilite');
+      setAnimationClass('hilite')($parent);
       const result = await postMessage({ type: 'cl-remove-history', payload: url });
       if (result) {
         resetVScrollData(removeUrlHistory(url));
@@ -358,13 +366,13 @@ export default function setEventListners(options: Options) {
       return;
     }
     createNewTab(options, url);
-  });
+  })($('.pane-history')!);
   const panes = [
     ...(options.zoomHistory ? [$paneHistory] : []),
     ...(options.zoomTabs ? [$paneTabs] : []),
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
   if (!options.zoomHistory) {
-    document.body.classList.add('disable-zoom-history');
+    addClass('disable-zoom-history')(document.body);
   }
 }

@@ -1,6 +1,10 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, getLocal, setLocal, pick, htmlEscape, getLocaleDate, isDateEq,
+  $,
+  pipe, pick,
+  getLocal, setLocal, getLocaleDate,
+  isDateEq, htmlEscape,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild,
 } from './common';
 import { makeHistory } from './html';
 
@@ -12,21 +16,21 @@ export function rowSetterHistory() {
   const today = getLocaleDate();
   const $currentDate = $('.pane-history .current-date')!;
   const isShowFixedHeader = !document.body.classList.contains('date-collapsed');
-  $currentDate.style.setProperty('transform', 'translateY(-10000px)');
+  addStyle('transform', 'translateY(-10000px)')($currentDate);
   return (
     data: MyHistoryItem[],
     rowTop: number,
     dataTop: number,
-  ) => (row: HTMLElement, index: number) => {
+  ) => ($row: HTMLElement, index: number) => {
     if (index === 0) {
       if (isShowFixedHeader) {
-        $currentDate.style.setProperty('transform', 'translateY(-2px)');
+        addStyle('transform', 'translateY(-2px)')($currentDate);
       }
       return;
     }
     const item = data[dataTop + index - 1];
     if (!item) {
-      row.style.setProperty('transform', 'translateY(-10000px)');
+      addStyle('transform', 'translateY(-10000px)')($row);
       return;
     }
     const {
@@ -34,90 +38,87 @@ export function rowSetterHistory() {
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
-      // eslint-disable-next-line no-param-reassign
-      $currentDate.textContent = today === lastVisitDate ? '' : lastVisitDate!;
+      setText(today === lastVisitDate ? '' : lastVisitDate!)($currentDate);
       if (headerDate && rowTop !== 0 && isShowFixedHeader) {
-        row.style.setProperty('transform', 'translateY(-10000px)');
+        addStyle('transform', 'translateY(-10000px)')($row);
         return;
       }
     }
-    row.style.setProperty('transform', `translateY(${rowTop}px)`);
+    addStyle('transform', `translateY(${rowTop}px)`)($row);
     if (headerDate) {
       if (index === 2 && isShowFixedHeader) {
-        $currentDate.style.setProperty('transform', `translateY(${rowTop}px)`);
+        addStyle('transform', `translateY(${rowTop}px)`)($currentDate);
       }
-      // eslint-disable-next-line no-param-reassign
-      row.innerHTML = getLocaleDate(lastVisitTime)!;
-      row.style.removeProperty('background-image');
-      row.classList.add('header-date');
-      row.removeAttribute('title');
+      pipe(
+        setHTML(getLocaleDate(lastVisitTime)!),
+        rmStyle('background-image'),
+        addClass('header-date'),
+        rmAttr('title'),
+      )($row);
       return;
     }
-    row.classList.remove('hilite');
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
-    row.setAttribute('id', `hst-${id}`);
-    // eslint-disable-next-line no-param-reassign
-    row.innerHTML = `<span>${htmlEscape(text!)}</span><i class="icon-x"></i>`;
-    row.style.setProperty('background-image', `url('chrome://favicon/${url}')`);
-    row.setAttribute('title', tooltip);
-    row.classList.remove('header-date');
+    pipe(
+      rmClass('hilite', 'header-date'),
+      setHTML(`<span>${htmlEscape(text!)}</span><i class="icon-x"></i>`),
+      addStyle('background-image', `url('chrome://favicon/${url}')`),
+      addAttr('title', tooltip),
+      addAttr('id', `hst-${id}`),
+    )($row);
   };
 }
 
-function getRowHeight(rows: HTMLElement) {
-  const tester = rows.appendChild(document.createElement('div'));
-  tester.className = 'history';
-  tester.textContent = 'A';
-  const styles = getComputedStyle(tester);
+function getRowHeight($rows: HTMLElement) {
+  const $tester = pipe(
+    addChild(document.createElement('div')),
+    addClass('history'),
+    setText('A'),
+  )($rows);
+  const styles = getComputedStyle($tester);
   const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
   const elementHeight = Math.ceil(Number.parseFloat(styles.height));
   const rowHeight = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight);
-  tester.remove();
-  [...rows.children].forEach((el) => (el as HTMLElement).style.setProperty('height', `${elementHeight}px`));
+  $tester.remove();
+  [...$rows.children].forEach(addStyle('height', `${elementHeight}px`));
   return { rowHeight, elementHeight };
 }
 
 export type VScrollRowSetter = typeof rowSetterHistory;
 
 export function setVScroll(
-  container: HTMLDivElement,
+  $container: HTMLDivElement,
   rowSetter: VScrollRowSetter,
   data: Collection,
   { rowHeight }: State['vscrollProps'],
 ) {
-  const rows = $('.rows', container);
-  const vscroll = $('.v-scroll-bar', container);
-  const vscrollFiller = $('.scroll-filler', container);
-  const firstRow = rows?.firstElementChild as HTMLElement;
-  if (!firstRow || !rows || !vscroll || !vscrollFiller) {
+  const $rows = $('.rows', $container);
+  const firstRow = $rows?.firstElementChild as HTMLElement;
+  if (!firstRow || !$rows) {
     return;
   }
-  const { paddingTop, paddingBottom } = getComputedStyle(rows);
+  const $fakeBottom = $('.v-scroll-fake-bottom', $container)!;
+  $fakeBottom.style.removeProperty('height');
+  $container.removeEventListener('scroll', vScrollHandler);
+  const { paddingTop, paddingBottom } = getComputedStyle($rows);
   const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
-  vscrollFiller.style.height = `${rowHeight * data.length + padding}px`;
-  if (vScrollHandler) {
-    vscroll.removeEventListener('scroll', vScrollHandler);
-  } else {
-    rows.addEventListener('wheel', (e: WheelEvent) => {
-      vscroll.scrollTop += e.deltaY;
-    });
-  }
+  const vScrollHeight = rowHeight * data.length + padding;
+  const margin = $container.scrollHeight + ($container.scrollHeight - $container.offsetHeight);
+  $fakeBottom.style.height = `${vScrollHeight - margin}px`;
   const setter = rowSetter();
-  const children = [...rows.children] as HTMLElement[];
+  const children = [...$rows.children] as HTMLElement[];
   vScrollData = data;
   vScrollHandler = () => {
-    const rowTop = -(vscroll.scrollTop % rowHeight);
-    const dataTop = Math.floor(vscroll.scrollTop / rowHeight);
+    const rowTop = -($container.scrollTop % rowHeight);
+    const dataTop = Math.floor($container.scrollTop / rowHeight);
     children.forEach(setter(vScrollData, rowTop, dataTop));
   };
-  vscroll.addEventListener('scroll', vScrollHandler);
+  $container.addEventListener('scroll', vScrollHandler);
 }
 
 export function refreshVScroll() {
-  const vscroll = $('.pane-history .v-scroll-bar')!;
-  vscroll.dispatchEvent(new Event('scroll'));
+  $('.v-scroll')!.dispatchEvent(new Event('scroll'));
 }
 
 export function resetVScrollData(
@@ -159,9 +160,9 @@ export async function resetHistory({
 }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.pane-history')!;
   document.body.classList.remove('date-collapsed');
-  const rows = $('.rows', $paneHistory)!;
+  const $rows = $('.rows', $paneHistory)!;
   if (initialize) {
-    const { rowHeight, elementHeight } = getRowHeight(rows);
+    const { rowHeight, elementHeight } = getRowHeight($rows);
     await setLocal({ vscrollProps: { rowHeight, elementHeight } });
   }
   const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
@@ -171,8 +172,8 @@ export async function resetHistory({
     histories = [headerDate, init, ...tail];
     const headerStyle = `height: ${vscrollProps.elementHeight}px`;
     const headerDateHtml = makeHistory({ ...headerDate, headerStyle });
-    rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-    await setLocal({ histories, htmlHistory: rows.innerHTML });
+    $rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
+    await setLocal({ histories, htmlHistory: $rows.innerHTML });
   }
   const queryValue = reFilter?.source;
   let data: MyHistoryItem[] | undefined = histories;
@@ -185,14 +186,14 @@ export async function resetHistory({
   }
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
   if (reFilter || !initialize) {
-    [...rows?.children || []].forEach((el) => {
-      (el as HTMLElement).style.removeProperty('background-image');
-      el.removeAttribute('title');
-      // eslint-disable-next-line no-param-reassign
-      el.innerHTML = '';
-    });
-    const vscroll = $('.v-scroll-bar', $paneHistory)!;
-    vscroll.scrollTop = 0;
-    vscroll.dispatchEvent(new Event('scroll'));
+    [...$rows?.children || []].forEach(
+      pipe(
+        rmStyle('background-image'),
+        rmAttr('title'),
+        setHTML(''),
+      ),
+    );
+    $paneHistory.scrollTop = 0;
+    $paneHistory.dispatchEvent(new Event('scroll'));
   }
 }

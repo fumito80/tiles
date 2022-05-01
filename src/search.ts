@@ -5,9 +5,18 @@ import {
   when,
   switches,
   extractUrl,
+  rmClass,
+  pipe,
+  addAttr,
+  rmAttr,
+  tap,
+  addClass,
 } from './common';
 
 const $inputQuery = $('.query') as HTMLInputElement;
+const $leafs = $('.leafs') as HTMLElement;
+
+let lastQueryValue = '';
 
 export function getReFilter(value: string) {
   if (!value) {
@@ -17,43 +26,42 @@ export function getReFilter(value: string) {
 }
 
 export function clearSearch() {
-  $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
-  $$('.leafs .path').forEach((el) => el.classList.remove('path'));
-  $$('.pane-tabs > div > div').forEach((el) => el.classList.remove('match', 'unmatch'));
-  $$('.empty').forEach((el) => el.classList.remove('empty'));
+  $$('.leafs .search-path').forEach(rmClass('search-path'));
+  $$('.leafs .path').forEach(rmClass('path'));
+  $$('.pane-tabs > div > div').forEach(rmClass('match', 'unmatch'));
+  $$('.empty').forEach(rmClass('empty'));
   resetHistory();
   const openFolder = $('.folders .open');
   if (openFolder) {
-    openFolder.classList.remove('open');
+    rmClass('open')(openFolder);
     $(':scope > .marker > .title', openFolder)?.click();
   }
 }
 
 export function clearQuery() {
+  lastQueryValue = '';
   if ($inputQuery.value === '') {
     return;
   }
   $inputQuery.value = '';
-  $inputQuery.setAttribute('value', '');
-  $inputQuery.focus();
-  $inputQuery.removeAttribute('data-searching');
-  clearSearch();
+  pipe(
+    addAttr('value', ''),
+    rmAttr('data-searching'),
+    tap(clearSearch),
+  )($inputQuery).focus();
 }
-
-let lastQueryValue = '';
 
 function search(includeUrl: boolean) {
   const { value } = $inputQuery;
   if (lastQueryValue === '' && value.length <= 1) {
     return;
   }
-  $inputQuery.setAttribute('data-searching', '1');
-  $('.leafs .open')?.classList.remove('open');
-  $('.leafs')!.scrollTop = 0;
+  addAttr('data-searching', '1')($inputQuery);
+  rmClass('open')($('.leafs .open'));
+  $leafs.scrollTop = 0;
   if (value.length <= 1) {
     clearSearch();
     $inputQuery.removeAttribute('data-searching');
-    // eslint-disable-next-line no-param-reassign
     $inputQuery.value = value;
     lastQueryValue = '';
     return;
@@ -68,26 +76,24 @@ function search(includeUrl: boolean) {
     .case('.match')
     .then(() => {
       const target = $$('.leafs .search-path');
-      target.forEach((el) => el.classList.remove('search-path'));
-      $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+      target.forEach(rmClass('search-path'));
+      $$('.leafs .path').forEach(rmClass('path'));
       return target;
     })
     .case('.unmatch')
     .then(() => $$('.leafs .leaf:not(.search-path)'))
     .else(() => {
-      $$('.leafs .search-path').forEach((el) => el.classList.remove('search-path'));
-      $$('.leafs .path').forEach((el) => el.classList.remove('path'));
+      $$('.leafs .search-path').forEach(rmClass('search-path'));
+      $$('.leafs .path').forEach(rmClass('path'));
       return $$('.leafs .leaf');
     });
   targetBookmarks.forEach((leaf) => {
     const $anchor = leaf.firstElementChild as HTMLAnchorElement;
     if (reFilter.test($anchor.textContent!)
       || (includeUrl && reFilter.test(extractUrl($anchor.style.backgroundImage)))) {
-      leaf.classList.add('search-path');
-      let folder = leaf.parentElement;
-      while (folder?.classList.contains('folder')) {
-        folder.classList.add('search-path', 'path');
-        folder = folder.parentElement;
+      addClass('search-path')(leaf);
+      for (let folder = leaf.parentElement as HTMLElement | null; folder && folder?.classList.contains('folder'); folder = folder.parentElement) {
+        addClass('search-path', 'path')(folder);
       }
     }
   });
@@ -117,8 +123,8 @@ export function resetQuery(includeUrl: boolean) {
   $inputQuery.removeEventListener('input', searchIncludeUrl);
   $inputQuery.removeEventListener('input', searchExcludeUrl);
   $inputQuery.addEventListener('input', includeUrl ? searchIncludeUrl : searchExcludeUrl);
+  const lqv = lastQueryValue;
   clearQuery();
-  $inputQuery.value = lastQueryValue;
-  lastQueryValue = '';
+  $inputQuery.value = lqv;
   search(includeUrl);
 }

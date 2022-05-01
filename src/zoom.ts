@@ -1,5 +1,7 @@
 import { Options } from './types';
-import { $, getLocal, setSplitWidth } from './common';
+import {
+  $, getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle,
+} from './common';
 
 type ZoomingElements = {
   $main: HTMLElement,
@@ -31,7 +33,7 @@ function relocateGrid(
 ) {
   const gridColStart = getComputedStyle($target).gridColumnStart;
   const $title = $main.children[Number(gridColStart) - 1] as HTMLElement;
-  $query.style.setProperty('width', queryWidth);
+  addStyle('width', queryWidth)($query);
   $title.insertAdjacentElement('beforeend', $('.form-query')!);
   $query.focus();
 }
@@ -56,9 +58,9 @@ export function zoomOut(
     $iconHistory,
   } = getZoomingElements(elements);
   return () => {
-    $query.parentElement!.style.setProperty('overflow', 'hidden');
-    $query.parentElement!.style.setProperty('width', '0');
-    $iconHistory.style.setProperty('left', '-100px');
+    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($query.parentElement!);
+    addStyle('width', '0');
+    addStyle('left', '-100px')($iconHistory);
     $main.style.removeProperty('transform');
     const promise1 = new Promise<void>((resolve) => {
       $shadeLeft.addEventListener('transitionend', () => {
@@ -109,23 +111,26 @@ async function enterZoom(
   const queryWidth = getComputedStyle($query).width;
   const promise1 = new Promise<void>((resolve) => {
     $target.addEventListener('transitionend', () => {
-      $main.classList.add('zoom-pane');
+      addClass('zoom-pane')($main);
       relocateGrid($target, $main, $query, queryWidth);
       resolve();
     }, { once: true });
   });
-  $target.style.setProperty('width', `${width}px`);
-  $shadeRight.style.setProperty('left', `${$target.offsetLeft + width + 4}px`);
-  $shadeLeft.style.setProperty('left', `calc(-100% + ${$target.offsetLeft - 4}px)`);
+  addStyle('width', `${width}px`)($target);
+  addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
+  addStyle('left', `calc(-100% + ${$target.offsetLeft - 4}px)`)($shadeLeft);
+  const $safetyZoneRight = $('.safety-zone-right');
   if (isCenter) {
     const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
-    $main.style.setProperty('transform', `translateX(${offset}px)`);
-    $iconHistory.style.setProperty('left', `${-offset + 5}px`);
-    $iconAngleRight.style.setProperty('right', `${offset + 5}px`);
-    document.body.classList.add('zoom-center');
+    addStyle('transform', `translateX(${offset}px)`)($main);
+    addStyle('left', `${-offset + 5}px`)($iconHistory);
+    addStyle('right', `${offset + 5}px`)($iconAngleRight);
+    addClass('zoom-center')(document.body);
+    rmStyle('left')($safetyZoneRight);
   } else {
-    $iconHistory.style.setProperty('left', '-100px');
-    $iconAngleRight.style.setProperty('right', '5px');
+    addStyle('left', '-100px')($iconHistory);
+    addStyle('right', '5px')($iconAngleRight);
+    addStyle('left', `calc(${zoomRatio * 100}% + 8px)`)($safetyZoneRight);
   }
   async function mouseenter(ev: MouseEvent) {
     clearTimeout(timerZoom);

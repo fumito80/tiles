@@ -17,6 +17,11 @@ import {
   prop,
   getRGB,
   lightColorWhiteness,
+  addListener,
+  rmClass,
+  addClass,
+  setText,
+  setHTML,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
@@ -28,11 +33,11 @@ class ColorPaletteClass extends HTMLDivElement {
   constructor() {
     super();
     this.#inputs = [...this.children] as HTMLInputElement[];
-    this.#inputs.forEach((el) => {
-      el.addEventListener('change', () => {
+    this.#inputs.forEach(
+      addListener('change', () => {
         this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
-      });
-    });
+      }),
+    );
   }
   get value() {
     return this.#value!;
@@ -139,9 +144,11 @@ function setSyncListener(inputs: Inputs) {
         }
         pipe(tap(initInputs), setLocal)(options);
         const $article = $('article')!;
-        $article.addEventListener('animationend', () => $article.classList.remove('blink'), { once: true });
-        $article.classList.remove('blink');
-        $article.classList.add('blink');
+        pipe(
+          addListener('animationend', () => rmClass('blink')($article), { once: true }),
+          rmClass('blink'),
+          addClass('blink'),
+        )($article);
         break;
       }
       default:
@@ -158,8 +165,8 @@ function setSyncListener(inputs: Inputs) {
 
 function setAppInfo() {
   const { version, name } = chrome.runtime.getManifest() as chrome.runtime.Manifest;
-  $('.version')!.textContent = `Version ${version}`;
-  $('title')!.textContent = name;
+  setText(`Version ${version}`)($('.version'));
+  setText(name)($('title'));
 }
 
 type ColorInfo = {
@@ -212,18 +219,20 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     })
     .join('');
   const $colorPalettes = $('.color-palettes')!;
-  $colorPalettes.innerHTML = htmlList;
-  $colorPalettes.addEventListener('click', (e) => {
-    const $target = e.target as HTMLElement;
-    if ($target.parentElement !== $colorPalettes) {
-      return;
-    }
-    const palette = ([...$target.children] as HTMLElement[])
-      .map((el) => el.dataset.color as string) as ColorPalette;
-    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
-    $('.selected')?.classList.remove('selected');
-    $target.classList.add('selected');
-  });
+  pipe(
+    setHTML(htmlList),
+    addListener('click', (e) => {
+      const $target = e.target as HTMLElement;
+      if ($target.parentElement !== $colorPalettes) {
+        return;
+      }
+      const palette = ([...$target.children] as HTMLElement[])
+        .map((el) => el.dataset.color as string) as ColorPalette;
+      $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
+      rmClass('selected')($('.selected'));
+      addClass('selected')($target);
+    }),
+  )($colorPalettes);
 }
 
 type InitParams = {
@@ -245,7 +254,7 @@ async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: In
 
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
-  $('#customize-css')!.addEventListener('shown.bs.collapse', async () => {
+  $('#customize-css')?.addEventListener('shown.bs.collapse', async () => {
     const $editorCollapse = $('#customize-css')!;
     if ($editorCollapse.classList.contains('loaded')) {
       return;

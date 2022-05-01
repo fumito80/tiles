@@ -1,9 +1,7 @@
 import {
   splitterClasses,
   OpenBookmarkType,
-  EditBookmarkType,
   Options,
-  Nil,
 } from './types';
 
 import {
@@ -22,6 +20,16 @@ import {
   getLocaleDate,
   htmlEscape,
   curry3,
+  pipe,
+  rmClass,
+  addClass,
+  addStyle,
+  addListener,
+  addChild,
+  addAttr,
+  insertHTML,
+  setText,
+  rmAttr,
 } from './common';
 
 import {
@@ -32,14 +40,18 @@ import {
 } from './vscroll';
 
 import { getReFilter } from './search';
-
 import { makeLeaf, makeNode, updateAnker } from './html';
 
-export function setAnimationClass(el: HTMLElement, className: 'hilite' | 'remove-hilite') {
-  el.classList.remove(className);
-  // eslint-disable-next-line no-void
-  void el.offsetWidth;
-  el.classList.add(className);
+export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
+  return pipe(
+    rmClass(className),
+    (el) => {
+      // eslint-disable-next-line no-void
+      void (el as HTMLElement).offsetWidth;
+      return el;
+    },
+    addClass(className),
+  );
 }
 
 export async function createNewTab(options: Options, url: string) {
@@ -101,11 +113,9 @@ export function onClickAngle(e: MouseEvent) {
 export function saveStateOpenedPath(foldersFolder: HTMLElement) {
   $$('.path').forEach((el) => el.classList.remove('path'));
   let paths: Array<string> = [];
-  let folder = foldersFolder;
-  while (folder.classList.contains('folder')) {
+  for (let folder = foldersFolder as HTMLElement | null; folder && folder.classList.contains('folder'); folder = folder.parentElement) {
     folder.classList.add('path');
     paths = [...paths, folder.id];
-    folder = folder.parentElement!;
   }
   const clientState = {
     paths,
@@ -156,7 +166,7 @@ export function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
     if (width - $ref.offsetLeft < 100) {
       return;
     }
-    document.body.style.width = `${width}px`;
+    addStyle('width', `${width}px`)(document.body);
   };
 }
 
@@ -165,15 +175,19 @@ export function resizeHeightHandler(e: MouseEvent) {
   if (height < 200) {
     return;
   }
-  document.body.style.height = `${height}px`;
+  addStyle('height', `${height}px`)(document.body);
 }
 
-export function setAnimationFolder(el: HTMLElement | Nil, className: string) {
-  if (!el) {
-    return;
-  }
-  el.addEventListener('animationend', () => el.classList.remove(className), { once: true });
-  el.classList.add(className);
+export function setAnimationFolder(className: string) {
+  return (el: Element | null = null) => {
+    if (!el) {
+      return el;
+    }
+    return pipe(
+      addListener('animationend', () => rmClass(className)(el), { once: true }),
+      addClass(className),
+    )(el);
+  };
 }
 
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
@@ -216,14 +230,13 @@ export async function collapseHistoryDate() {
     restoreHistory(includeUrl);
     return;
   }
-  document.body.classList.add('date-collapsed');
+  addClass('date-collapsed')(document.body);
   const histories = getVScrollData();
   const data = histories.filter((item) => item.headerDate);
   const $paneHistory = $('.pane-history') as HTMLDivElement;
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
-  const vscroll = $('.v-scroll-bar', $paneHistory)!;
-  vscroll.scrollTop = 0;
-  vscroll.dispatchEvent(new Event('scroll'));
+  $paneHistory.scrollTop = 0;
+  $paneHistory.dispatchEvent(new Event('scroll'));
 }
 
 export async function jumpHistoryDate(localeDate: string) {
@@ -233,36 +246,37 @@ export async function jumpHistoryDate(localeDate: string) {
   const index = histories.findIndex(
     (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === localeDate,
   );
-  const $paneHistory = $('.pane-history') as HTMLDivElement;
-  const vscroll = $('.v-scroll-bar', $paneHistory)!;
+  const vscroll = $('.v-scroll-bar')!;
   vscroll.scrollTop = vscrollProps.rowHeight * index;
   vscroll.dispatchEvent(new Event('scroll'));
 }
 
 export async function removeFolder($folder: HTMLElement) {
   await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-  document.body.appendChild($('.folder-menu')!);
-  const $marker = $('.marker', $folder)!;
-  $marker.addEventListener('animationend', () => {
-    const $parent = $folder.parentElement!;
-    $folder.remove();
-    setHasChildren($parent);
-    $('.title', $parent)!.click();
-  }, { once: true });
-  $marker.classList.remove('hilite');
-  setAnimationFolder($marker, 'remove-hilite');
+  addChild($('.folder-menu'))(document.body);
+  pipe(
+    addListener('animationend', () => {
+      const $parent = $folder.parentElement!;
+      $folder.remove();
+      setHasChildren($parent);
+      $('.title', $parent)!.click();
+    }, { once: true }),
+    rmClass('hilite'),
+    setAnimationFolder('remove-hilite'),
+  )($('.marker', $folder));
 }
 
 export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
-  const currentTitle = $title.textContent;
-  $title.setAttribute('contenteditable', 'true');
-  $title.setAttribute('data-current-title', htmlEscape(currentTitle!));
+  const currentTitle = $title.textContent!;
+  pipe(
+    addAttr('contenteditable', 'true'),
+    addAttr('data-current-title', htmlEscape(currentTitle!)),
+  )($title);
   return new Promise<string | null>((resolve) => {
     setTimeout(() => {
       $title.focus();
       if (newFolder) {
-        // eslint-disable-next-line no-param-reassign
-        $title.textContent = '';
+        setText('')($title);
       } else {
         document.execCommand('selectAll', false);
       }
@@ -271,17 +285,15 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
           $title.blur();
           ev.preventDefault();
         } else if (ev.key === 'Escape') {
-          // eslint-disable-next-line no-param-reassign
-          $title.textContent = currentTitle;
+          setText(currentTitle)($title);
         }
       });
       $title.addEventListener('blur', async () => {
-        $title.removeAttribute('contenteditable');
+        rmAttr('contenteditable')($title);
         $('.query')!.focus();
         const title = $title.textContent?.trim();
         if (!title || title.trim() === '') {
-          // eslint-disable-next-line no-param-reassign
-          $title.textContent = currentTitle;
+          setText(currentTitle)($title);
           resolve(null);
           return;
         }
@@ -294,11 +306,22 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
         await cbToResolve(curry3(chrome.bookmarks.update)(folderId)({ title }));
         // eslint-disable-next-line no-param-reassign
         $title.scrollLeft = 0;
-        setAnimationFolder($title.parentElement?.parentElement, 'hilite');
+        setAnimationFolder('hilite')($title.parentElement?.parentElement);
         resolve(title);
       }, { once: true });
     }, 0);
   });
+}
+
+export async function editBookmarkTitle($leaf: HTMLElement) {
+  const $title = $leaf.firstElementChild as HTMLElement;
+  const title = await editTitle($title, $leaf.id).catch(() => null);
+  if (!title) {
+    return;
+  }
+  const { url = '' } = await getBookmark($leaf.id);
+  updateAnker($leaf.id, { url, title });
+  setAnimationClass('hilite')($leaf);
 }
 
 export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null) {
@@ -310,31 +333,31 @@ export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.Boo
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlAnchor = makeLeaf({ id, ...params });
   if (parentId === '1') {
-    $('.folders')!.children[index!].insertAdjacentHTML('beforebegin', htmlAnchor);
+    insertHTML('beforebegin', htmlAnchor)($('.folders')!.children[index!]);
   } else {
     if (parentId !== $('.open')?.id) {
-      $$('.open').map((el) => el.classList.remove('open'));
-      $$(cssid(parentId)).map((el) => el.classList.add('open'));
+      $$('.open').forEach(rmClass('open'));
+      $$(cssid(parentId)).forEach(addClass('open'));
     }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
     if (index == null) {
-      $targetFolder.insertAdjacentHTML('beforeend', htmlAnchor);
+      insertHTML('beforeend', htmlAnchor)($targetFolder);
     } else {
-      $targetFolder.children[index].insertAdjacentHTML('afterend', htmlAnchor);
+      insertHTML('afterend', htmlAnchor)($targetFolder.children[index]);
     }
   }
   const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
   if ($target) {
     ($target as any).scrollIntoViewIfNeeded();
-    setAnimationClass($target, 'hilite');
-    editTitle($target.firstElementChild as HTMLElement, id);
+    setAnimationClass('hilite')($target);
+    editBookmarkTitle($target);
   }
 }
 
 export function showModalInput(desc: string) {
   const $modal = $('.modal')!;
-  document.body.classList.add('show-modal');
-  $('.popup-desc', $modal)!.textContent = desc;
+  addClass('show-modal')(document.body);
+  setText(desc)($('.popup-desc', $modal));
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
@@ -352,9 +375,11 @@ export async function addFolder(parentId = '1') {
     $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
-      $targetFolder.insertAdjacentHTML('beforeend', htmlNode);
-      $targetFolder.setAttribute('data-children', String($targetFolder.children.length - 1));
-      const $title = $(':scope > .marker > .title', $targetFolder);
+      const $title = pipe(
+        insertHTML('beforeend', htmlNode),
+        addAttr('data-children', String($targetFolder.children.length)),
+        curry($)(':scope > .marker > .title'),
+      )($targetFolder);
       if ($title) {
         $title.click();
         ($targetFolder as any).scrollIntoViewIfNeeded();
@@ -362,22 +387,9 @@ export async function addFolder(parentId = '1') {
     });
   }
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
-  setAnimationFolder($target.parentElement, 'hilite');
-  const title = editTitle($target.firstElementChild as HTMLElement, id, true);
+  setAnimationFolder('hilite')($target.parentElement);
+  const title = await editTitle($target.firstElementChild as HTMLElement, id, true);
   if (!title) {
     removeFolder($target.parentElement!.parentElement!);
   }
-}
-
-export async function editBookmarkTitle($leaf: HTMLElement) {
-  const $title = $leaf.firstElementChild as HTMLElement;
-  const title = await editTitle($title, $leaf.id).catch(() => null);
-  if (!title) {
-    return;
-  }
-  const { url = '' } = await getBookmark($leaf.id);
-  const changes = { [EditBookmarkType.title]: title };
-  await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)(changes));
-  updateAnker($leaf.id, { url, title });
-  setAnimationClass($leaf, 'hilite');
 }

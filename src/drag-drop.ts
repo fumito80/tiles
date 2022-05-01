@@ -8,6 +8,11 @@ import {
   whichClass,
   propEq,
   getHistoryById,
+  rmClass,
+  pipe,
+  setHTML,
+  addClass,
+  addChild,
 } from './common';
 import {
   addBookmark, getBookmark, setHasChildren, setAnimationClass,
@@ -159,14 +164,16 @@ const dragAndDropEvents = {
       const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
     }
-    $dragTarget.classList.remove('hilite');
-    $dragTarget.classList.add('drag-source');
+    pipe(
+      rmClass('hilite'),
+      addClass('drag-source'),
+    )($dragTarget);
     const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-    const $draggable = $('.draggable-clone')!.appendChild(clone);
+    const $draggable = addChild(clone)($('.draggable-clone'));
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    $('main')!.classList.add(targetClass);
+    addClass(targetClass)($('main'));
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -174,18 +181,15 @@ const dragAndDropEvents = {
     }
   },
   dragenter(e: DragEvent) {
-    $('.drag-enter')?.classList.remove('drag-enter');
+    rmClass('drag-enter')($('.drag-enter'));
     if (checkDroppable(e)) {
-      const $target = e.target as HTMLElement;
-      $target.classList.add('drag-enter');
+      addClass('drag-enter')(e.target as HTMLElement);
     }
   },
   dragend(e: DragEvent) {
-    // console.log(e, e.dataTransfer?.getData('application/source-class'));
-    $('.drag-source')?.classList.remove('drag-source');
-    $('main')!.classList.remove('drag-start-leaf');
-    $('main')!.classList.remove('drag-start-folder');
-    $('.draggable-clone')!.innerHTML = '';
+    rmClass('drag-source')($('.drag-source'));
+    rmClass('drag-start-leaf', 'drag-start-folder')($('main'));
+    setHTML('')($('.draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       let paneClass = '';
@@ -245,17 +249,19 @@ const dragAndDropEvents = {
     } else if (isLeafFrom && isRootTo) {
       const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true);
       $destFolders.insertAdjacentElement(position, $source);
-      $source.classList.remove('search-path');
-      setAnimationClass($source, 'hilite');
+      pipe(
+        rmClass('search-path'),
+        setAnimationClass('hilite'),
+      )($source);
     } else if (!isLeafFrom) {
       const $lastParantElement = $sourceFolders.parentElement;
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
       setHasChildren($sourceFolders.parentElement);
-      setAnimationClass($(':scope > .marker', $sourceFolders)!, 'hilite');
+      setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
-    setAnimationClass($sourceLeafs, 'hilite');
+    setAnimationClass('hilite')($sourceLeafs);
   },
 };
 

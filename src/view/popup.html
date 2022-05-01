@@ -11,7 +11,7 @@
         <div class="resize-x"></div>
         <div class="pane-title">
             <i class="icon-clock-rotate-left-solid" title="HISTORY"></i>
-            <button class="show-calendar" type="button">
+            <button class="collapse-history-date" type="button">
                 <i class="icon-calendar-plus-solid" title="Expand date"></i>
                 <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
             </button>
@@ -29,7 +29,7 @@
             <i class="icon-bookmarks" title="BOOKMARKS"></i>
         </div>
         <div class="split-h pane1"></div>
-        <form class="form-query">
+        <form class="form-query" autocomplete="off">
             <input type="text" class="query" name="query" autofocus="true">
             <button type="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
             <i class="icon-x"></i>
@@ -52,11 +52,10 @@
                 </div>
             </div>
         </form>
-        <div class="pane-history v-scroll">
+        <div class="pane-history v-scroll v-scroll-bar">
             <div class="rows"></div>
-            <div class="v-scroll-bar">
-                <div class="scroll-filler"></div>
-            </div>
+            <div class="v-scroll-fake-bottom"></div>
+            <div class="safety-zone-right"></div>
         </div>
         <div class="pane-tabs"></div>
         <div class="leafs"></div>

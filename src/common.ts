@@ -13,9 +13,13 @@ import {
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
+type AnyFunction = (...p: any[]) => any;
+
+// DOM operation
+
 export function $<T extends HTMLElement>(
   selector: string,
-  parent: HTMLElement | DocumentFragment | Document = document,
+  parent: HTMLElement | DocumentFragment | Document | Element = document,
 ) {
   return parent.querySelector<T>(selector);
 }
@@ -27,7 +31,134 @@ export function $$<T extends HTMLElement>(
   return [...parent.querySelectorAll(selector)] as Array<T>;
 }
 
-type AnyFunction = (...p: any[]) => any;
+export function addChild<T extends Element | null>($child: T) {
+  return <U extends Element | null>($parent: U) => {
+    if ($parent && $child) {
+      $parent.appendChild($child);
+    }
+    return $child;
+  };
+}
+
+export function addStyle(styleName: string, value: string) {
+  return <T extends Element | null>($el: T) => {
+    ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value);
+    return $el;
+  };
+}
+
+export function rmStyle(styleName: string) {
+  return <T extends Element | null>($el: T) => {
+    ($el as unknown as HTMLElement)?.style?.removeProperty(styleName);
+    return $el;
+  };
+}
+
+export function addAttr(attrName: string, value: string) {
+  return <T extends Element | null>($el: T) => {
+    $el?.setAttribute(attrName, value);
+    return $el;
+  };
+}
+
+export function rmAttr(attrName: string) {
+  return <T extends Element | null>($el: T) => {
+    $el?.removeAttribute(attrName);
+    return $el;
+  };
+}
+
+export function addClass(...classNames: string[]) {
+  return <T extends Element | null>($el: T) => {
+    $el?.classList.add(...classNames);
+    return $el;
+  };
+}
+
+export function rmClass(...classNames: string[]) {
+  return <T extends Element | null>($el: T) => {
+    $el?.classList.remove(...classNames);
+    return $el;
+  };
+}
+
+export function setHTML(html: string) {
+  return <T extends Element | null>($el: T) => {
+    if ($el) {
+      // eslint-disable-next-line no-param-reassign
+      $el.innerHTML = html;
+    }
+    return $el;
+  };
+}
+
+export function setText(text: string | null) {
+  return <T extends Element | null>($el: T) => {
+    if ($el) {
+      // eslint-disable-next-line no-param-reassign
+      $el.textContent = text;
+    }
+    return $el;
+  };
+}
+
+// eslint-disable-next-line no-undef
+export function insertHTML(position: InsertPosition, html: string) {
+  return <T extends Element>($el: T) => {
+    // eslint-disable-next-line no-param-reassign
+    $el.insertAdjacentHTML(position, html);
+    return $el;
+  };
+}
+
+// eslint-disable-next-line no-undef
+type EventListener<K extends keyof HTMLElementEventMap, T extends HTMLElement> = (
+  this: T,
+  // eslint-disable-next-line no-undef
+  ev: HTMLElementEventMap[K]
+) => any;
+
+type EventListenerMap<T extends HTMLElement = HTMLElement> = {
+  // eslint-disable-next-line no-undef
+  [K in keyof Partial<HTMLElementEventMap>]: EventListener<K, T>
+}
+
+type EventListeners<
+  // eslint-disable-next-line no-undef
+  K extends keyof HTMLElementEventMap,
+  T extends HTMLElement
+> = [K, EventListener<K, T>];
+
+export function setEvents<T extends HTMLElement>(
+  htmlElements: Array<T>,
+  eventListeners: EventListenerMap<T>,
+  // eslint-disable-next-line no-undef
+  options?: boolean | AddEventListenerOptions,
+) {
+  const itrEventListeners = Object.entries(eventListeners) as
+    EventListeners<keyof typeof eventListeners, T>[];
+  itrEventListeners.forEach(([eventType, listener]) => {
+    htmlElements.forEach((htmlElement) => {
+      htmlElement.addEventListener(eventType, listener, options);
+    });
+  });
+}
+
+// eslint-disable-next-line no-undef
+export function addListener<T extends keyof HTMLElementEventMap>(
+  type: T,
+  // eslint-disable-next-line no-undef
+  ev: (e: HTMLElementEventMap[T]) => any,
+  // eslint-disable-next-line no-undef
+  options?: boolean | AddEventListenerOptions,
+) {
+  return <U extends Element | null>(element: U) => {
+    (element as unknown as HTMLElement)?.addEventListener(type, ev, options);
+    return element;
+  };
+}
+
+// Others
 
 function whenGetter<T extends any | AnyFunction>(
   valueOrFunction: T,
@@ -456,39 +587,6 @@ export function pick(...props: any) {
     .reduce((acc: any, key: any) => ({ ...acc, [key]: target[key] }), {});
 }
 
-// eslint-disable-next-line no-undef
-type EventListener<K extends keyof HTMLElementEventMap, T extends HTMLElement> = (
-  this: T,
-  // eslint-disable-next-line no-undef
-  ev: HTMLElementEventMap[K]
-) => any;
-
-type EventListenerMap<T extends HTMLElement = HTMLElement> = {
-  // eslint-disable-next-line no-undef
-  [K in keyof Partial<HTMLElementEventMap>]: EventListener<K, T>
-}
-
-type EventListeners<
-  // eslint-disable-next-line no-undef
-  K extends keyof HTMLElementEventMap,
-  T extends HTMLElement
-> = [K, EventListener<K, T>];
-
-export function setEvents<T extends HTMLElement>(
-  htmlElements: Array<T>,
-  eventListeners: EventListenerMap<T>,
-  // eslint-disable-next-line no-undef
-  options?: boolean | AddEventListenerOptions,
-) {
-  const itrEventListeners = Object.entries(eventListeners) as
-    EventListeners<keyof typeof eventListeners, T>[];
-  itrEventListeners.forEach(([eventType, listener]) => {
-    htmlElements.forEach((htmlElement) => {
-      htmlElement.addEventListener(eventType, listener, options);
-    });
-  });
-}
-
 export async function getCurrentTab() {
   return new Promise<chrome.tabs.Tab>((resolve) => {
     chrome.tabs.query({
@@ -541,6 +639,7 @@ export function addRules(selector: string, ruleProps: [string, string][]) {
 }
 
 export function prop<T, U extends keyof T>(name: U): (target: T) => T[U];
+export function prop<T extends Element, U extends keyof T>(name: U): (target: T | null) => T[U];
 export function prop(name: any) {
   return (target: any) => target[name];
 }

@@ -15,6 +15,7 @@ import {
   $,
   $$,
   addRules,
+  addClass,
   makeStyleIcon,
   cssid,
   setSplitWidth,
@@ -24,6 +25,9 @@ import {
   getColorWhiteness,
   lightColorWhiteness,
   setMessageListener,
+  setHTML,
+  addStyle,
+  insertHTML,
 } from './common';
 
 import { makeTab } from './html';
@@ -37,11 +41,11 @@ function setTabs(currentWindowId: number) {
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
-      const addClass = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
+      const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
       const domain = extractDomain(tab.url);
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const htmlTabs = makeTab(tab.id!, addClass, title, style, tab.title!);
+      const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
       return { ...rest, [tab.windowId]: prev + htmlTabs };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
@@ -138,25 +142,24 @@ function setExternalUrl(options: Options) {
 }
 
 function setBookmarks(html: HtmlBookmarks) {
-  $('.leafs')!.innerHTML = html.leafs;
-  const $folders = $('.folders')!;
-  $folders.innerHTML = html.folders;
+  setHTML(html.leafs)($('.leafs'));
+  setHTML(html.folders)($('.folders'));
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
 function setBookmarksState(clState: ClientState) {
   clState.paths?.forEach((id) => $(`.folders ${cssid(id)}`)?.classList.add('path'));
   if (clState.open) {
-    $$(cssid(clState.open))?.forEach((el) => el.classList.add('open'));
+    $$(cssid(clState.open))?.forEach(addClass('open'));
   }
 }
 
 function toggleElement(selector: string, isShow = true, shownDisplayType = 'block') {
-  $(selector)?.style.setProperty('display', isShow ? shownDisplayType : 'none');
+  addStyle('display', isShow ? shownDisplayType : 'none')($(selector));
 }
 
 function setHistory($target: HTMLElement, htmlHistory: string) {
-  $target.insertAdjacentHTML('afterbegin', htmlHistory);
+  insertHTML('afterbegin', htmlHistory)($target);
 }
 
 function init({
