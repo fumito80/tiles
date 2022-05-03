@@ -23,6 +23,12 @@ i {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-history:before {
+  content: "\e90d";
+}
+.icon-tabs:before {
+  content: "\e90c";
+}
 .icon-url:before {
   content: "\e909";
 }
@@ -94,9 +100,6 @@ i {
 }
 .icon-fa-window-restore:before {
   content: "\f2d2";
-}
-.icon-clock-rotate-left-solid:before {
-  content: "\e900";
 }
 .icon-bookmark:before {
   content: "\e9d2";

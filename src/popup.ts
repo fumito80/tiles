@@ -66,7 +66,7 @@ function setOptions(settings: Settings, options: Options) {
   ]);
   const [
     [paneBg, paneColor, isLightPaneBg],
-    [frameBg],
+    [frameBg, frameColor, isLightFrameBg],
     [itemHoverBg, itemHoverColor, isLightHoverBg],
     [searchingBg, searchingColor, isLightSearchingBg],
     [keyBg, keyColor, isLightKeyBg],
@@ -75,14 +75,15 @@ function setOptions(settings: Settings, options: Options) {
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
   addRules('.leafs, .pane-history, .pane-tabs > div', [['background-color', paneBg], ['color', paneColor]]);
-  addRules('body, .bgcolor1', [['background-color', frameBg]]);
+  addRules('body', [['background-color', frameBg]]);
+  addRules('.folders', [['color', frameColor]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
     ['background-color', keyBg],
     ['color', `${keyColor} !important`],
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : '#EFEFEF !important']]);
   addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
-  addRules('.query[data-searching]', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules('.form-query .query-wrap[data-searching]', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
     '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover, .date-collapsed .header-date:hover',
@@ -95,6 +96,23 @@ function setOptions(settings: Settings, options: Options) {
     addRules('.leafs .title::before', [['color', lightColor]]);
     addRules('.auto-zoom .zoom-pane .shade-left, .auto-zoom .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
   }
+  if (!isLightFrameBg) {
+    addRules('.pane-title, .form-query button > i, .form-query .query', [['color', 'lightgray']]);
+    addRules('.title::before, .form-query .submit > i', [['color', 'rgba(255,255,255,0.5)']]);
+    addRules('.form-query .query-wrap, button:not(.submit):hover::after, button:not(.submit):focus::after', [['background-color', 'rgba(255, 255, 255, 0.3)']]);
+    addRules('.form-query button:hover .icon-fa-ellipsis-v, .form-query button:focus .icon-fa-ellipsis-v, .pane-title button:not(.submit) > i', [['color', 'darkgray']]);
+    addRules(
+      '.form-query button:hover::after, .form-query button:focus::after, .pane-title button:hover::after, .pane-title button:focus::after',
+      [['background-color', 'rgba(255, 255, 255, 0.3)']],
+    );
+    addRules(
+      '.form-query button:active::after, .form-query button:active::after, .pane-title button:active::after',
+      [['background-color', 'rgba(255, 255, 255, 0.5)']],
+    );
+  }
+  if (!isLightPaneBg && !isLightFrameBg) {
+    addRules('.pane-tabs > div', [['border-color', 'lightgray']]);
+  }
   if (!isLightHoverBg) {
     addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
     addRules(
@@ -106,10 +124,17 @@ function setOptions(settings: Settings, options: Options) {
       ].join(','),
       [['color', 'darkgray']],
     );
-    addRules('.leaf:hover button:hover, .leaf:hover button:focus, .marker:hover button:hover, .marker:hover button:focus', [['background-color', 'rgba(255, 255, 255, 0.2)']]);
+    addRules(
+      '.leaf:hover button:hover::after, .leaf:hover button:focus::after, .marker:hover button:hover::after, .marker:hover button:focus::after',
+      [['background-color', 'rgba(255, 255, 255, 0.3)']],
+    );
+    addRules(
+      '.leaf:hover button:active::after, .marker:hover button:active::after',
+      [['background-color', 'rgba(255, 255, 255, 0.5)']],
+    );
   }
   if (!isLightSearchingBg) {
-    addRules('.query[data-searching] + button > .icon-fa-search', [['color', 'rgba(255,255,255,0.7)']]);
+    addRules('.query-wrap[data-searching] + button > .icon-fa-search', [['color', 'rgba(255,255,255,0.7)']]);
   }
   if (options.showCloseTab) {
     addRules('.pane-tabs > div > div:hover > i', [['display', 'inline-block']]);
@@ -133,8 +158,8 @@ function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
-  addRules('.query[data-searching] + button > i', [['visibility', 'hidden']]);
-  addRules('.query[data-searching]', [
+  addRules('.query-wrap[data-searching] .icon-fa-search', [['visibility', 'hidden']]);
+  addRules('.query-wrap[data-searching]', [
     ['background-image', `url("chrome://favicon/${options.externalUrl}")`],
     ['background-repeat', 'no-repeat'],
     ['background-position', '6px center'],
@@ -165,10 +190,9 @@ function setHistory($target: HTMLElement, htmlHistory: string) {
 function init({
   settings, htmlBookmarks, clientState, options, currentWindowId, htmlHistory,
 }: State) {
+  setOptions(settings, options);
   setTabs(currentWindowId);
   setHistory($('.pane-history')!.firstElementChild as HTMLElement, htmlHistory);
-  resetHistory({ initialize: true }).then(refreshVScroll);
-  setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
@@ -176,6 +200,7 @@ function init({
   setEventListners(options);
   setExternalUrl(options);
   resetQuery(settings.includeUrl);
+  resetHistory({ initialize: true }).then(refreshVScroll);
 }
 
 bootstrap(...getKeys(initialState)).then(init);

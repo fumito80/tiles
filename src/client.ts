@@ -30,6 +30,7 @@ import {
   insertHTML,
   setText,
   rmAttr,
+  rmStyle,
 } from './common';
 
 import {
@@ -276,6 +277,7 @@ export async function removeFolder($folder: HTMLElement) {
 }
 
 export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
+  addStyle('text-overflow', 'unset')($title);
   const currentTitle = $title.textContent!;
   pipe(
     addAttr('contenteditable', 'true'),
@@ -300,23 +302,20 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
       $title.addEventListener('blur', async () => {
         rmAttr('contenteditable')($title);
         $('.query')!.focus();
-        const title = $title.textContent?.trim();
-        if (!title || title.trim() === '') {
-          setText(currentTitle)($title);
-          resolve(null);
-          return;
-        }
-        if (title === currentTitle) {
-          resolve(null);
-          // eslint-disable-next-line no-param-reassign
-          $title.scrollLeft = 0;
-          return;
-        }
-        await cbToResolve(curry3(chrome.bookmarks.update)(folderId)({ title }));
         // eslint-disable-next-line no-param-reassign
         $title.scrollLeft = 0;
+        const title = $title.textContent?.trim();
+        rmStyle('text-overflow')($title);
+        if (!title || title.trim() === '') {
+          setText(currentTitle)($title);
+          return resolve(null);
+        }
+        if (title === currentTitle) {
+          return resolve(null);
+        }
+        await cbToResolve(curry3(chrome.bookmarks.update)(folderId)({ title }));
         setAnimationFolder('hilite')($title.parentElement?.parentElement);
-        resolve(title);
+        return resolve(title);
       }, { once: true });
     }, 0);
   });

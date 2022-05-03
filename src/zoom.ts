@@ -20,7 +20,7 @@ function getZoomingElements({ $main, ...rest }: ZoomingElementsArgs): ZoomingEle
     $shadeLeft: rest.$shadeLeft || $('.shade-left')!,
     $shadeRight: rest.$shadeRight || $('.shade-right')!,
     $query: rest.$query || $('.query')!,
-    $iconHistory: rest.$iconHistory || $('.zoom-out.icon-clock-rotate-left-solid')!,
+    $iconHistory: rest.$iconHistory || $('.zoom-out.icon-history')!,
     $iconAngleRight: rest.$iconAngleRight || $('.zoom-out.icon-fa-angle-right')!,
   };
 }
@@ -33,15 +33,17 @@ function relocateGrid(
 ) {
   const gridColStart = getComputedStyle($target).gridColumnStart;
   const $title = $main.children[Number(gridColStart) - 1] as HTMLElement;
+  const $form = $query.parentElement!.parentElement!;
   addStyle('width', queryWidth)($query);
-  $title.insertAdjacentElement('beforeend', $('.form-query')!);
+  $title.insertAdjacentElement('beforeend', $form);
   $query.focus();
 }
 
 function restoreGrid($main: HTMLElement, $query: HTMLElement) {
-  $main.insertBefore($query.parentElement!, $('.pane-history'));
-  $query.parentElement!.style.removeProperty('width');
-  $query.parentElement!.style.removeProperty('overflow');
+  const $form = $query.parentElement!.parentElement!;
+  $main.insertBefore($form, $('.pane-history'));
+  $form.style.removeProperty('width');
+  $form.style.removeProperty('overflow');
   $query.focus();
 }
 
@@ -58,7 +60,7 @@ export function zoomOut(
     $iconHistory,
   } = getZoomingElements(elements);
   return () => {
-    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($query.parentElement!);
+    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($query.parentElement!.parentElement!);
     addStyle('width', '0');
     addStyle('left', '-100px')($iconHistory);
     $main.style.removeProperty('transform');
@@ -133,6 +135,9 @@ async function enterZoom(
     addStyle('left', `calc(${zoomRatio * 100}% + 8px)`)($safetyZoneRight);
   }
   async function mouseenter(ev: MouseEvent) {
+    if ($main.classList.contains('drag-start-leaf')) {
+      return;
+    }
     clearTimeout(timerZoom);
     const $shade = ev.target as HTMLElement;
     if ($shade.classList.contains('shade-left')) {

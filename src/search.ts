@@ -6,10 +6,8 @@ import {
   switches,
   extractUrl,
   rmClass,
-  pipe,
   addAttr,
   rmAttr,
-  tap,
   addClass,
 } from './common';
 
@@ -44,11 +42,10 @@ export function clearQuery() {
     return;
   }
   $inputQuery.value = '';
-  pipe(
-    addAttr('value', ''),
-    rmAttr('data-searching'),
-    tap(clearSearch),
-  )($inputQuery).focus();
+  addAttr('value', '')($inputQuery);
+  rmAttr('data-searching')($inputQuery.parentElement);
+  clearSearch();
+  $inputQuery.focus();
 }
 
 function search(includeUrl: boolean) {
@@ -56,12 +53,12 @@ function search(includeUrl: boolean) {
   if (lastQueryValue === '' && value.length <= 1) {
     return;
   }
-  addAttr('data-searching', '1')($inputQuery);
+  addAttr('data-searching', '1')($inputQuery.parentElement!);
   rmClass('open')($('.leafs .open'));
   $leafs.scrollTop = 0;
   if (value.length <= 1) {
     clearSearch();
-    $inputQuery.removeAttribute('data-searching');
+    $inputQuery.parentElement!.removeAttribute('data-searching');
     $inputQuery.value = value;
     lastQueryValue = '';
     return;

@@ -49,8 +49,8 @@ export function makeTab(
   content: string,
 ) {
   return `
-    <div id="tab-${id}" class="tab-wrap ${addClass}" title="${htmlEscape(title)}">
-      <span class="tab" draggable="true" style="${style}">${htmlEscape(content)}</span><i class="icon-x"></i>
+    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" title="${htmlEscape(title)}" style="${style}">
+      <div class="tab">${htmlEscape(content)}</div><i class="icon-x"></i>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;
@@ -72,7 +72,7 @@ export function makeHistory({
   const tooltip = htmlEscape(`${title}${dt}`);
   return `
     <div class="history" draggable="true" id="hst-${id}" title="${tooltip}" style="${style}">
-      <span>${htmlEscape(text)}</span><i class="icon-x"></i>
+      <div>${htmlEscape(text)}</div><i class="icon-x"></i>
     </div>
   `;
 }

@@ -10,7 +10,7 @@
     <main>
         <div class="resize-x"></div>
         <div class="pane-title">
-            <i class="icon-clock-rotate-left-solid" title="HISTORY"></i>
+            <i class="icon-history" title="HISTORY"></i>
             <button class="collapse-history-date" type="button">
                 <i class="icon-calendar-plus-solid" title="Expand date"></i>
                 <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
@@ -18,11 +18,7 @@
         </div>
         <div class="split-h pane3"></div>
         <div class="pane-title">
-            <div class="tabs" title="OPEN TABS">
-                <div></div>
-                <div></div>
-                <div class="bgcolor1"></div>
-            </div>
+            <i class="icon-tabs" title="OPEN TABS"></i>
         </div>
         <div class="split-h pane2"></div>
         <div class="pane-title">
@@ -30,9 +26,11 @@
         </div>
         <div class="split-h pane1"></div>
         <form class="form-query" autocomplete="off">
-            <input type="text" class="query" name="query" autofocus="true">
-            <button type="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
-            <i class="icon-x"></i>
+            <div class="query-wrap">
+                <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
+                <input type="text" class="query" name="query" autofocus="true">
+                <i class="icon-x"></i>
+            </div>
             <button class="pin-bookmark" title="Pin a bookmark" type="button">
                 <i class="icon-fa-star-o"></i>
             </button>
@@ -44,9 +42,12 @@
                     <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
                     <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i class="icon-check-solid"></i></div>
+                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                            class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom"></i><div class="icon-zoom"></div>Auto zen mode<i class="icon-check-solid"></i></div>
+                    <div role="menuitem" data-value="auto-zoom"></i>
+                        <div class="icon-zoom"></div>Auto zen mode<i class="icon-check-solid"></i>
+                    </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
@@ -62,7 +63,7 @@
         <div class="folders"></div>
         <div class="shade-left"></div>
         <div class="shade-right"></div>
-        <i class="zoom-out icon-clock-rotate-left-solid"></i>
+        <i class="zoom-out icon-history"></i>
         <i class="zoom-out icon-fa-angle-right"></i>
     </main>
     <div class="resize-y"></div>
@@ -73,7 +74,8 @@
         <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window-restore"></i>Open in new window</div>
         <div role="menuitem" data-value="open-incognito"><i class="icon-fa-mask"></i>Open in incognito window</div>
         <hr aria-hidden="true" class="searched-menu">
-        <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i class="icon-fa-sign-in-alt"></i>Show in
+        <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i class="icon-fa-sign-in-alt"></i>Show
+            in
             folder</div>
         <hr aria-hidden="true">
         <div role="menuitem" data-value="edit-title"><i class="icon-fa-edit"></i>Edit title</div>
@@ -83,8 +85,8 @@
     </div>
     <div class="folder-menu" role="menu">
         <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
-        <hr aria-hidden="true">
         <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
+        <hr aria-hidden="true">
         <div role="menuitem" data-value="edit"><i class="icon-fa-edit"></i>Edit title</div>
         <hr aria-hidden="true">
         <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>

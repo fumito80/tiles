@@ -15,10 +15,12 @@ $pane-radius: 5px;
     display: none;
     opacity: 0;
   }
+
   1% {
     display: block;
     opacity: 0;
   }
+
   100% {
     display: block;
     opacity: 1;
@@ -30,12 +32,20 @@ $pane-radius: 5px;
     background-color: $hilite-bgcolor;
     color: initial;
   }
-  to { background-color: transparent; }
+
+  to {
+    background-color: transparent;
+  }
 }
 
 @keyframes hilite-fade-in {
-  from { background-color: transparent; }
-  to { background-color: $hilite-bgcolor; }
+  from {
+    background-color: transparent;
+  }
+
+  to {
+    background-color: $hilite-bgcolor;
+  }
 }
 
 // body/other
@@ -55,22 +65,23 @@ main {
   transition: all 0.15s;
 }
 
-body:not(.show-modal) button {
+button:not(.submit) {
   outline: none;
   background-color: transparent;
   border-radius: 3px;
   transition: all .4s;
 
-  > i {
+  >i {
     color: rgba(0, 0, 0, .4);
   }
 
-  &:hover > i,
-  &:focus > i {
+  &:hover>i,
+  &:focus>i {
     color: rgba(0, 0, 0, .5);
   }
 
   &::after {
+    border-radius: 50%;
     background-color: transparent;
     transition: all .4s;
     pointer-events: none;
@@ -83,11 +94,10 @@ body:not(.show-modal) button {
     position: absolute;
     width: 1.3em;
     height: 1.3em;
-    border-radius: 50%;
     transition: all .4s;
   }
 
-  &:active {
+  &:active::after {
     background-color: rgba(0, 0, 0, .2);
   }
 
@@ -119,6 +129,35 @@ body:not(.show-modal) button {
   animation-timing-function: ease-out;
 }
 
+// Item Common
+
+.leaf,
+.tab-wrap,
+.history {
+  position: relative;
+  display: flex;
+  height: 1.8em;
+  align-items: center;
+  // padding: 4px 0;
+  padding-left: 22px;
+  overflow: hidden;
+  white-space: nowrap;
+  background-repeat: no-repeat;
+  background-position: 2px center;
+
+  >div:first-child {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+  }
+
+  &.hilite {
+    animation-name: hilite-fade-out !important;
+    animation-duration: 1.5s !important;
+  }
+}
+
 // Leaf menu
 
 .leaf-menu-button,
@@ -127,14 +166,13 @@ body:not(.show-modal) button {
   z-index: 1;
   margin-left: auto;
   margin-right: 1px;
-  width: 18px;
-  height: 20px;
+  padding: 0;
   justify-content: center;
   align-items: center;
   border: 0;
   font-size: 1.2em;
 
-  > .icon-fa-ellipsis-v {
+  >.icon-fa-ellipsis-v {
     pointer-events: none;
   }
 
@@ -151,44 +189,45 @@ body:not(.show-modal) button {
 // Search
 
 .form-query {
-  position: relative;
   display: flex;
   align-items: center;
-  padding-top: 1px;
-  padding-bottom: 2px;
+  padding: 2px 0;
+
+  .query-wrap {
+    display: flex;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    padding: 4px 2px;
+  }
+
+  .submit {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    border: 0;
+    outline: 0;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, .4);
+
+    &::after {
+      content: none;
+    }
+  }
+
+  .query {
+    width: 100%;
+    background: rgba(0, 0, 0, .1);
+    border: 0;
+    outline: none;
+    font-size: inherit;
+    background-color: transparent;
+  }
+
   .icon-x {
-    margin-left: -1.1em;
     font-size: 1.4em;
     visibility: hidden;
     cursor: pointer;
   }
-}
-
-button[type='submit'] {
-  position: absolute;
-  background-color: transparent;
-  border: 0;
-  outline: 0;
-  display: flex;
-  margin-left: 2px;
-  &::after {
-    content: none;
-  }
-}
-
-input.query {
-  display: inline-block;
-  width: 100%;
-  padding: 4px;
-  padding-left: 28px;
-  padding-right: 24px;
-  background: rgba(0, 0, 0, .1);
-  border: 0;
-  outline: none;
-  font-size: 1.0em;
-  border-radius: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .split-h {
@@ -208,22 +247,22 @@ input.query {
 .pin-bookmark,
 .collapse-history-date {
   display: flex;
+  padding: 0;
   justify-content: center;
   align-items: center;
-  width: 18px;
-  height: 20px;
   border: 0;
   font-size: 1.2em;
 
   &:focus {
     pointer-events: none;
-    + .main-menu {
+
+    +.main-menu {
       display: block;
       animation: fade-in 0.15s ease-in-out;
     }
   }
 
-  > .icon-fa-ellipsis-v {
+  >.icon-fa-ellipsis-v {
     pointer-events: none;
   }
 
@@ -233,13 +272,15 @@ input.query {
 
 }
 
-.query {
-  &[data-searching] ~ .icon-x {
+.query-wrap {
+  &[data-searching]>.icon-x {
     visibility: inherit;
   }
+
   &[data-searching] {
     background-color: #cce5ff;
-    + button {
+
+    +button {
       cursor: pointer;
     }
   }
@@ -256,20 +297,20 @@ input.query {
   right: 0;
   background-color: #fff;
   border-width: 0;
-  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 2px 6px 2px rgba(60,64,67,0.149);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.302), 0 2px 6px 2px rgba(60, 64, 67, 0.149);
   border-radius: 4px;
   transition: opacity .218s;
-  border: 1px solid rgba(0,0,0,.2);
+  border: 1px solid rgba(0, 0, 0, .2);
   outline: none;
   cursor: default;
 
-  > div {
+  >div {
     position: relative;
     display: flex;
     align-items: center;
     border: 1px solid transparent;
     letter-spacing: .01428571em;
-    font-family: Roboto,Arial,sans-serif;
+    font-family: Roboto, Arial, sans-serif;
     font-size: .875em;
     font-weight: 400;
     line-height: 1.25rem;
@@ -280,26 +321,27 @@ input.query {
     white-space: nowrap;
   }
 
-  > hr {
+  >hr {
     background-color: rgba(0, 0, 0, 0.11);
     border-width: 0;
     height: 1px;
     margin: 7px 0;
   }
 
-  > div:hover {
+  >div:hover {
     background-color: $hover-color;
   }
 
   .searched-menu {
     display: none;
   }
-  
+
 }
 
 [role="menuitem"] {
+
   i,
-  > .icon-zoom {
+  >.icon-zoom {
     width: 2.5em;
     text-align: center;
     font-size: 1.2em;
@@ -314,24 +356,24 @@ input.query {
   border-radius: $pane-radius;
   transition: width 0.1s;
 
-  .leaf-menu-button:focus + .leaf-menu {
+  .leaf-menu-button:focus+.leaf-menu {
     position: fixed;
     display: block;
     top: calc(100% - 2px);
     animation: fade-in 0.15s ease-in-out;
   }
 
-  .leaf-menu-button.menu-pos-top + .leaf-menu {
+  .leaf-menu-button.menu-pos-top+.leaf-menu {
     bottom: calc(100% - 2px);
     top: auto;
   }
 
-  > .marker,
-  > .folder > .marker,
-  .folder > .leaf,
-  .folder > .marker,
-  .folder.search-path > .folder,
-  .folder.search-path > .leaf,
+  >.marker,
+  >.folder>.marker,
+  .folder>.leaf,
+  .folder>.marker,
+  .folder.search-path>.folder,
+  .folder.search-path>.leaf,
   .button-wrapper {
     display: none;
   }
@@ -340,37 +382,38 @@ input.query {
     padding-bottom: 4px;
   }
 
-  > .folder {
+  >.folder {
     padding: 0;
   }
-  
-  > .folder.search-path[id='1'] > .marker {
+
+  >.folder.search-path[id='1']>.marker {
     display: none !important;
   }
-  
-  > .folder.search-path[id='1'] > .folder {
+
+  >.folder.search-path[id='1']>.folder {
     padding-inline-start: 0;
     margin-left: 0;
   }
-  
-  .folder.search-path.path > .marker > .title::before {
+
+  .folder.search-path.path>.marker>.title::before {
     content: '\f07c';
   }
-    
-  .folder.search-path.path > .leaf.search-path,
-  .folder.open > .leaf {
+
+  .folder.search-path.path>.leaf.search-path,
+  .folder.open>.leaf {
     display: flex;
     animation: fade-in 0.15s ease-in-out;
   }
-  
-  .search-path > .leaf-menu > .searched-menu {
+
+  .search-path>.leaf-menu>.searched-menu {
     display: block;
   }
 
   .search-path .marker {
     -webkit-user-drag: none;
   }
-  .folder[id="1"] > .search-path {
+
+  .folder[id="1"]>.search-path {
     margin-left: 0;
   }
 
@@ -379,40 +422,15 @@ input.query {
 // Bookmarks
 
 .leaf {
-  position: relative;
-  display: flex;
-  margin: 0;
-  align-items: center;
-  background-repeat: no-repeat;
-  background-position: 1px center;
-
-  &.hilite {
-    animation-name: hilite-fade-out !important;
-    animation-duration: 1.5s !important;
-  }
-
-  .anchor {
-    width: 100%;
-    padding: 4px 0;
-    margin-left: 1.2em;
-    padding-left: 0.3em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .anchor:not(:hover) {
-    text-decoration: none;
-  }
 
   &:hover {
     background-color: $hover-color;
   }
-  
-  &:hover > button {
+
+  &:hover>button {
     display: flex;
   }
-  
+
   &.search-path {
     margin-left: 30px;
   }
@@ -426,19 +444,19 @@ input.query {
   overflow-y: auto;
   overflow-x: hidden;
 
-  .leaf-menu-button:focus + .leaf-menu {
+  .leaf-menu-button:focus+.leaf-menu {
     display: block;
     position: fixed;
     animation: fade-in 0.15s ease-in-out;
   }
-    
+
   .folder .folder {
     display: none;
   }
 
-  .open > .marker {
+  .open>.marker {
 
-    > .title {
+    >.title {
       border-radius: 3px;
 
       &::before {
@@ -447,7 +465,7 @@ input.query {
       }
     }
   }
-  
+
   .marker {
     position: relative;
 
@@ -458,28 +476,32 @@ input.query {
       height: 100%;
       right: 0;
     }
-    
+
     &:hover {
       &::before {
         background-color: $hover-color;
       }
-      > .button-wrapper {
+
+      >.button-wrapper {
         display: flex;
         margin-left: auto;
         margin-right: 0;
         pointer-events: all;
         z-index: 2;
-        > button {
+
+        >button {
           display: flex;
         }
       }
-      > .icon-fa-angle-right {
+
+      >.icon-fa-angle-right {
         z-index: 2;
-      }  
+      }
     }
 
-    > .title {
+    >.title {
       z-index: 1;
+
       &::after {
         content: '';
         position: absolute;
@@ -489,11 +511,11 @@ input.query {
       }
     }
 
-    > .button-wrapper {
+    >.button-wrapper {
       display: none;
     }
 
-    .folder-menu-button:focus + .folder-menu {
+    .folder-menu-button:focus+.folder-menu {
       display: block;
       position: fixed;
       animation: fade-in 0.15s ease-in-out;
@@ -503,7 +525,7 @@ input.query {
       animation-name: hilite-fade-out !important;
       animation-duration: 1.5s !important;
     }
-  
+
     &.remove-hilite::before {
       animation-name: hilite-fade-in !important;
       animation-duration: .3s !important;
@@ -520,20 +542,20 @@ input.query {
   padding-inline-start: 12px;
 }
 
-.leafs .folder.search-path > .marker,
+.leafs .folder.search-path>.marker,
 .folders .marker {
   display: flex;
   align-items: center;
   padding: 2px 0 2px 2px;
 }
 
-.leafs .folder.search-path.path > .folder,
-.folders .folder.path > .folder {
+.leafs .folder.search-path.path>.folder,
+.folders .folder.path>.folder {
   display: block;
 }
 
-.leafs .folder.path > .marker > .icon-fa-angle-right,
-.folders .path > .marker > .icon-fa-angle-right {
+.leafs .folder.path>.marker>.icon-fa-angle-right,
+.folders .path>.marker>.icon-fa-angle-right {
   transform: rotate(90deg);
 }
 
@@ -556,11 +578,12 @@ input.query {
   overflow: hidden;
   align-items: center;
 
-  > div {
+  >div {
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
     padding-left: 0.3em;
+
     &:focus {
       width: 100%;
       text-overflow: unset;
@@ -569,8 +592,9 @@ input.query {
       padding-right: 0.3em;
       background-color: white;
       color: #222222;
-      min-width: 50px;
+      min-width: 80px;
     }
+
     &:empty::before {
       content: attr(data-current-title);
       color: darkgray;
@@ -597,6 +621,7 @@ input.query {
     background-color: white;
     color: #222222;
   }
+
   &:empty::before {
     content: attr(data-current-title);
     color: darkgray;
@@ -636,11 +661,12 @@ main::-webkit-scrollbar {
 
 .drag-start-leaf .leaf,
 .drag-start-leaf .tab-wrap,
-.drag-start-leaf .folders > .folder > .marker,
+.drag-start-leaf .folders>.folder>.marker,
 .drag-start-folder .leaf,
 .drag-start-folder .marker {
-  > .drop-top.drag-enter::after,
-  > .drop-bottom.drag-enter::after {
+
+  >.drop-top.drag-enter::after,
+  >.drop-bottom.drag-enter::after {
     content: '';
     position: absolute;
     width: 10px;
@@ -652,44 +678,49 @@ main::-webkit-scrollbar {
 
 .drag-start-leaf,
 .drag-start-folder .folders {
+
   .leaf:not(.search-path),
   .tab-wrap:not(.match):not(.unmatch) {
-    > .drop-top,
-    > .drop-bottom {
+    overflow: visible;
+
+    >.drop-top,
+    >.drop-bottom {
       position: absolute;
       width: calc(100% - 5px);
+      left: 1px;
     }
-    > .drop-top {
+
+    >.drop-top {
       z-index: 2;
       top: calc(-50% - 2px);
       height: calc(100% + 2px);
+
       &.drag-enter::before {
         top: 50%;
         width: 100%;
         border-top: 2px solid $common-marker;
       }
     }
-    > .drop-bottom {
+
+    >.drop-bottom {
       z-index: 1;
       top: 50%;
       height: calc(100% - 3px);
+
       &.drag-enter::before {
         top: 50%;
         width: 100%;
         border-top: 2px solid $common-marker;
       }
     }
-    > .drop-top.drag-enter::after,
-    > .drop-bottom.drag-enter::after {
+
+    >.drop-top.drag-enter::after,
+    >.drop-bottom.drag-enter::after {
       top: calc(50% - 4px);
       left: -1px;
     }
   }
-  .tab-wrap {
-    > .drop-top {
-      left: 1px;
-    }
-  }
+
 }
 
 .drag-start-leaf,
@@ -697,87 +728,107 @@ main::-webkit-scrollbar {
   .title {
     pointer-events: none;
   }
+
   .folders {
-    .leaf > .drop-top.drag-enter::after,
-    .leaf > .drop-bottom.drag-enter::after {
+
+    .leaf>.drop-top.drag-enter::after,
+    .leaf>.drop-bottom.drag-enter::after {
       left: 0;
     }
-    > .leaf + .folder > .marker > .drop-top {
+
+    >.leaf+.folder>.marker>.drop-top {
       top: calc(-50% - 2px);
       height: 70%;
+
       &.drag-enter::before {
         top: calc(50% + 4px);
       }
+
       &.drag-enter::after {
         top: 50%;
       }
     }
-    > .folder + .leaf > .drop-top {
+
+    >.folder+.leaf>.drop-top {
       top: calc(-20% - 2px);
       height: 70%;
+
       &.drag-enter::before {
         top: 20%;
       }
+
       &.drag-enter::after {
         top: calc(50% - 9px);
       }
     }
-    .marker > .drop-folder {
+
+    .marker>.drop-folder {
       position: absolute;
       z-index: 1;
       height: 100%;
+
       &.drag-enter {
         background-color: $drop-folder-bgcolor;
       }
     }
   }
-  .folders > #\32 .folder > .marker,
-  .folders > #\33 .folder > .marker {
-    > .drop-top,
-    > .drop-bottom {
+
+  .folders>#\32 .folder>.marker,
+  .folders>#\33 .folder>.marker {
+
+    >.drop-top,
+    >.drop-bottom {
       width: 0;
       height: 0;
     }
-    > .drop-folder {
+
+    >.drop-folder {
       height: 100%;
     }
   }
 }
 
-.drag-start-leaf .folders > .folder .folder > .marker > .drop-folder {
+.drag-start-leaf .folders>.folder .folder>.marker>.drop-folder {
   position: absolute;
   left: -2px;
   width: calc(100% - 3px);
 }
 
-.drag-start-leaf .folders > .folder > .marker,
+.drag-start-leaf .folders>.folder>.marker,
 .drag-start-folder .marker {
-  > .drop-top,
-  > .drop-bottom,
-  > .drop-folder {
+
+  >.drop-top,
+  >.drop-bottom,
+  >.drop-folder {
     position: absolute;
     width: calc(100% - 3px);
   }
-  > .drop-top {
+
+  >.drop-top {
     z-index: 2;
     top: calc(-20% - 2px);
     height: 40%;
+
     &.drag-enter::before {
       top: 50%;
       width: 100%;
       border-top: 2px solid $common-marker;
     }
+
     &.drag-enter::after {
       top: calc(50% - 4px);
     }
   }
-  > .drop-bottom {
+
+  >.drop-bottom {
     z-index: 1;
     top: 80%;
     height: 20%;
+
     &.drag-enter {
       border-bottom: 2px solid $common-marker;
     }
+
     &.drag-enter::after {
       top: 0.5px;
     }
@@ -787,24 +838,36 @@ main::-webkit-scrollbar {
 .drag-start-leaf {
   .drag-source {
     background-color: $drag-source-bgcolor !important;
+
     &.leaf,
-    > .tab,
+    &.tab-wrap,
     &.history {
       color: #222;
-      text-decoration: none;
       z-index: 3;
     }
-    + .folder > .marker > .drop-top,
-    &.tab-wrap > .drop-top,
-    &.tab-wrap > .drop-bottom {
+
+    +.folder>.marker>.drop-top {
       z-index: 0;
       width: 0;
       height: 0;
     }
+
+    &.tab-wrap {
+      >.tab {
+        color: #222;
+      }
+
+      >i::before {
+        background-color: inherit;
+      }
+    }
+
   }
+
   :not(.drag-source) {
-    > .anchor,
-    > .tab {
+
+    >.anchor,
+    >.tab {
       pointer-events: none;
     }
   }
@@ -813,25 +876,32 @@ main::-webkit-scrollbar {
 .drag-start-folder {
   .marker.drag-source {
     z-index: 3;
+
     &::before {
       background-color: $drag-source-bgcolor;
     }
-    > .title {
+
+    >.title {
       outline: none;
     }
-    ~ * {
+
+    ~* {
       pointer-events: none;
     }
   }
+
   .marker:not(.drag-source)::before {
     background-color: transparent;
   }
-  .folder.path:not([data-children="0"]) + .folder > .marker > .drop-top {
+
+  .folder.path:not([data-children="0"])+.folder>.marker>.drop-top {
     top: -2px;
     height: 20%;
+
     &::before {
       top: 0;
     }
+
     &::after {
       top: -4px;
     }
@@ -849,18 +919,18 @@ main::-webkit-scrollbar {
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 3px;
-  color: white !important; 
+  color: white !important;
   background-color: $draggable-bgcolor;
-  > div {
+
+  >div {
     padding-right: 8px !important;
     background-color: $draggable-bgcolor;
-    > .icon-fa-angle-right {
+
+    >.icon-fa-angle-right {
       display: none;
     }
-    > .anchor {
-      background-position: 3px center;
-    }
-    > .icon-x {
+
+    >.icon-x {
       display: none;
     }
   }
@@ -873,24 +943,35 @@ main::-webkit-scrollbar {
   position: relative;
   border-radius: $pane-radius;
   transition: width 0.1s;
+
   .rows {
     display: grid;
     padding-bottom: 2px;
-    > .history:not(.header-date):hover {
-      background-color: $hover-color;
+
+    >.history {
+      margin: 0 2px;
+
+      &:not(.header-date):hover {
+        background-color: $hover-color;
+      }
     }
-    > div:empty {
+
+    >div:empty {
       display: none;
     }
+
     .current-date {
       position: absolute;
       width: -webkit-fill-available;
       z-index: 1;
     }
+
     .header-date {
       display: flex;
-      margin: 2px;
-      padding: 2px 0;
+      height: 1.6em;
+      margin: 0.1em 2px;
+      // margin: 2px;
+      // padding: 2px 0;
       justify-content: center;
       align-items: center;
       background-color: darkgray;
@@ -901,77 +982,38 @@ main::-webkit-scrollbar {
   }
 }
 
-.history {
-  display: flex;
-  cursor: default;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;  
-  margin: 0 2px;
-  padding: 4px 0;
-  padding-left: 20px;
-  background-repeat: no-repeat;
-  background-position: 1px center;
-  > span {
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  &.hilite {
-    animation-name: hilite-fade-out !important;
-    animation-duration: 1.0s !important;
-  }
-}
-
 .pane-tabs {
   grid-column: 4 / 5;
   overflow-y: auto;
   transition: width 0.1s;
-  > div {
+
+  >div {
     overflow: hidden;
     border-radius: $pane-radius;
     border: 2px solid #222;
     margin-right: 2px;
     margin-bottom: 5px;
     padding: 1px;
+
     &:last-child {
       margin-bottom: 0;
     }
-    > .tab-wrap:not(.current-tab):hover {
+
+    >.tab-wrap:not(.current-tab):hover {
       background-color: $hover-color;
     }
-    > .match {
+
+    >.match {
       display: flex !important;
     }
-    > .unmatch {
+
+    >.unmatch {
       display: none;
     }
   }
-  > .empty {
-    padding: 0;
-  }
-}
 
-.tab-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin: 0;
-    > .tab {
-    width: 100%;
-    margin: 0;
-    padding: 4px 0 4px 21px;
-    background-repeat: no-repeat;
-    background-position: 2px center;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;  
-    cursor: default;
-  }
-  &.remove-hilite::before {
-    animation-name: hilite-fade-in !important;
-    animation-duration: .3s !important;
-    animation-timing-function: ease-out;
+  >.empty {
+    padding: 0;
   }
 }
 
@@ -985,6 +1027,7 @@ main::-webkit-scrollbar {
     background-color: transparent;
     transition: background-color .4s;
     display: none;
+
     &:hover::before {
       transition: background-color .4s;
       background-color: red;
@@ -1001,15 +1044,14 @@ main::-webkit-scrollbar {
 .v-scroll {
   position: relative;
   overflow-y: auto;
-  overflow-x: hidden;
 }
 
-.v-scroll > .rows {
+.v-scroll>.rows {
   position: sticky;
   top: 0;
   width: 100%;
-  overflow-x: hidden;
 }
+
 .v-scroll-fake-bottom {
   width: 1px;
 }
@@ -1019,47 +1061,23 @@ main::-webkit-scrollbar {
   align-items: center;
   padding-left: 3px;
   transition: width 0.1s;
-  > .tabs {
-    display: flex;
-    margin-left: 0.25rem;
-    :nth-child(1) {
-      border: 1.5px solid #999999;
-      border-radius: 3px;
-      border-left: 0;
-      border-bottom: 0;
-      background-color: #999999;
-      width: 18px;
-      height: 8px;
-      transform: translate(11px, 2px);
-    }
-    :nth-child(2) {
-      border: 1.5px solid #222222;
-      border-bottom: 0;
-      border-radius: 3px;
-      background-color: #EFEFEF;
-      width: 15px;
-      height: 10px;
-      transform: translate(-23px, 1px);
-    }
-    :nth-child(3) {
-      border-top: 1.5px solid #222222;
-      width: 38px;
-      height: 8px;
-      transform: translate(-43px, 10px);
-    }
+
+  .icon-tabs {
+    transform: scale(1.5, 1.2);
+    margin-left: 0.25em;
   }
+
   .icon-bookmarks {
-    color: #222222;
-    transform: scale(1.2,1);
+    transform: scale(1.2, 1);
   }
-  > [title="History"] {
-    color: #222222;
-  }
-  > i {
+
+  >i {
     transition: all 0.15s;
   }
+
   .collapse-history-date {
     margin-left: 10px;
+
     &:hover::after,
     &:focus::after {
       width: 1.5em;
@@ -1075,15 +1093,18 @@ main::-webkit-scrollbar {
     margin-left: auto;
     margin-right: 10px;
     transition: width 0.1s;
+
     .pin-bookmark,
     .menu-button {
       display: none;
     }
   }
+
   .collapse-history-date {
-    + .form-query {
+    +.form-query {
       margin-left: 10px;
     }
+
     input[type="date"] {
       display: none;
     }
@@ -1091,6 +1112,7 @@ main::-webkit-scrollbar {
 }
 
 .auto-zoom {
+
   .split-h,
   .resize-x {
     cursor: default;
@@ -1103,6 +1125,7 @@ main::-webkit-scrollbar {
 }
 
 .auto-zoom .zoom-pane {
+
   .shade-left,
   .shade-right {
     position: absolute;
@@ -1113,16 +1136,20 @@ main::-webkit-scrollbar {
     border-radius: 3px;
     z-index: 2;
   }
+
   &.zoom-fade-out {
+
     .shade-left,
     .shade-right {
       background-color: rgba(0, 0, 0, 0);
     }
   }
+
   .zoom-out {
     display: block;
   }
-  > .pane-history > .safety-zone-right {
+
+  >.pane-history>.safety-zone-right {
     position: fixed;
     width: 20px;
     height: 100%;
@@ -1137,9 +1164,11 @@ main::-webkit-scrollbar {
   z-index: 2;
   top: calc(50% - 1em);
   color: #efefef;
-  &.icon-clock-rotate-left-solid {
+
+  &.icon-history {
     font-size: 1.2em;
   }
+
   &.zoom-out.icon-fa-angle-right {
     right: 5px;
     font-size: 2em;
@@ -1169,10 +1198,11 @@ main::-webkit-scrollbar {
   margin-left: 10px;
 }
 
-.main-menu.checked-include-url > [data-value="include-url"],
-.auto-zoom .main-menu > [data-value="auto-zoom"] {
+.main-menu.checked-include-url>[data-value="include-url"],
+.auto-zoom .main-menu>[data-value="auto-zoom"] {
   color: $common-marker;
-  > .icon-check-solid {
+
+  >.icon-check-solid {
     display: inline-block;
   }
 }
@@ -1204,16 +1234,19 @@ main::-webkit-scrollbar {
   .collapse-history-date {
     display: none;
   }
+
   .zoom-pane .collapse-history-date {
     display: flex;
     margin-left: auto;
   }
+
   .zoom-fade-out .collapse-history-date {
     display: none;
   }
 }
 
 .auto-zoom {
+
   .icon-calendar-plus-solid,
   .icon-calendar-minus-solid {
     display: none;
@@ -1224,6 +1257,7 @@ main::-webkit-scrollbar {
   .icon-calendar-plus-solid {
     display: inline-block;
   }
+
   .icon-calendar-minus-solid {
     display: none;
   }
@@ -1233,12 +1267,14 @@ body:not(.date-collapsed) {
   .icon-calendar-plus-solid {
     display: none;
   }
+
   .icon-calendar-minus-solid {
     display: inline-block;
   }
 }
 
 .zoom-center .zoom-pane {
+
   .icon-calendar-plus-solid,
   .icon-calendar-minus-solid {
     display: none;
@@ -1255,12 +1291,13 @@ body:not(.date-collapsed) {
   align-items: center;
   justify-content: center;
   top: 0;
-  background-color: rgba(0,0,0,0.3);
+  background-color: rgba(0, 0, 0, 0.3);
   z-index: 3;
 }
 
 .show-modal {
   pointer-events: none;
+
   .modal {
     display: flex;
   }
@@ -1271,15 +1308,18 @@ body:not(.date-collapsed) {
   padding: 20px;
   background-color: whitesmoke;
   border-radius: 5px;
+
   .popup-desc {
     padding: 0.5em 0;
   }
+
   .footer {
     display: flex;
     gap: 5px;
     margin: 0.5em 0;
     justify-content: end;
   }
+
   input {
     width: 200px;
     outline: none;

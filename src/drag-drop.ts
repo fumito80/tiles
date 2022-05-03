@@ -19,7 +19,7 @@ import {
 } from './client';
 import { zoomOut } from './zoom';
 
-const sourceClasses = ['leaf', 'marker', 'tab', 'history'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -144,10 +144,7 @@ const dragAndDropEvents = {
       switch (className) {
         case 'marker':
           return ['drag-start-folder', $target, $target.parentElement!.id] as const;
-        case 'tab': {
-          const $leaf = $target.parentElement as HTMLElement;
-          return ['drag-start-leaf', $leaf, $leaf.id] as const;
-        }
+        case 'tab-wrap':
         case 'leaf':
         case 'history': {
           return ['drag-start-leaf', $target, $target.id] as const;
@@ -194,7 +191,7 @@ const dragAndDropEvents = {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       let paneClass = '';
       switch (className) {
-        case 'tab':
+        case 'tab-wrap':
           paneClass = '.pane-tabs';
           break;
         case 'history':
@@ -233,7 +230,7 @@ const dragAndDropEvents = {
       dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
       return;
     }
-    if (sourceClass === 'tab' || isDroppedTab) {
+    if (sourceClass === 'tab-wrap' || isDroppedTab) {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
       return;
     }

@@ -21,7 +21,8 @@ import {
   rmClass,
   addClass,
   setText,
-  setHTML,
+  // setHTML,
+  insertHTML,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
@@ -176,26 +177,15 @@ type ColorInfo = {
   vivid: number;
 }
 
-async function setColorPalette({ options }: Pick<State, 'options'>) {
-  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
-  const htmlList = palettes
-    .map((palette) => palette.map((color) => ({
-      color,
-      whiteness: getColorWhiteness(color),
-      chroma: getColorChroma(color),
-    } as ColorInfo)))
-    .map((palette) => palette.map((color) => ({
-      ...color, vivid: color.chroma * (color.whiteness * 0.1),
-    })))
-    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
-    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
-    .map(([p, cl, cm, cr, m]) => {
-      if (cl.whiteness <= lightColorWhiteness) {
-        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
-      }
-      return [p, cl, cm, cr, m];
-    })
-    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness)
+type Palettes = {
+  vivid: number;
+  color: string;
+  whiteness: number;
+  chroma: number;
+}[][];
+
+function getColorPaletteHTML(palettes: Palettes, options: Options) {
+  return palettes
     .map(([p, f, h1, h2, m]) => {
       const [r, g, b] = getRGB(p.color);
       const [r1, g1, b1] = getRGB(h1.color);
@@ -218,11 +208,60 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
       return `<div>${colors}</div>`;
     })
     .join('');
+}
+
+async function setColorPalette({ options }: Pick<State, 'options'>) {
+  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
+  const base = palettes
+    .map((palette) => palette.map((color) => ({
+      color,
+      whiteness: getColorWhiteness(color),
+      chroma: getColorChroma(color),
+    } as ColorInfo)))
+    .map((palette) => palette.map((color) => ({
+      ...color, vivid: color.chroma * (color.whiteness * 0.1),
+    })))
+    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
+    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
+    .map(([p, cl, cm, cr, m]) => {
+      if (cl.whiteness <= lightColorWhiteness) {
+        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
+      }
+      return [p, cl, cm, cr, m];
+    });
+
+  const lightTheme = base
+    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
+    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
+  const htmlLightTheme = getColorPaletteHTML(lightTheme, options);
+  const darkOrVivid = base.filter(
+    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
+      && frameBg.whiteness <= lightColorWhiteness,
+  );
+  const htmlDarkTheme = getColorPaletteHTML(darkOrVivid, options);
+  const other = base.filter(
+    ([paneBg, frameBg]) => (
+      paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
+    )
+    || (
+      paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
+    ),
+  );
+  const htmlOther = getColorPaletteHTML(other, options);
   const $colorPalettes = $('.color-palettes')!;
+
   pipe(
-    setHTML(htmlList),
+    insertHTML('beforeend', '<div class="desc">Light theme</div>'),
+    insertHTML('beforeend', htmlLightTheme),
+    insertHTML('beforeend', '<div class="desc">Dark/Vivid</div>'),
+    insertHTML('beforeend', htmlDarkTheme),
+    insertHTML('beforeend', '<div class="desc">Others</div>'),
+    insertHTML('beforeend', htmlOther),
     addListener('click', (e) => {
       const $target = e.target as HTMLElement;
+      if ($target.classList.contains('desc')) {
+        return;
+      }
       if ($target.parentElement !== $colorPalettes) {
         return;
       }
