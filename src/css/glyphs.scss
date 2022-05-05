@@ -7,7 +7,6 @@
 
 i {
   display: inline-block;
-  // font: normal normal normal 14px/1 glyphs;
   font-size: inherit;
   text-rendering: auto;
 
@@ -40,9 +39,6 @@ i {
 }
 .icon-check-solid:before {
   content: "\e906";
-}
-.icon-arrows-left-right-solid:before {
-  content: "\e908";
 }
 .icon-x:before {
   content: "\e901";
@@ -100,10 +96,4 @@ i {
 }
 .icon-fa-window-restore:before {
   content: "\f2d2";
-}
-.icon-bookmark:before {
-  content: "\e9d2";
-}
-.icon-bookmarks0:before {
-  content: "\e9d3";
 }

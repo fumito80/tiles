@@ -89,7 +89,7 @@ function setOptions(settings: Settings, options: Options) {
     '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover, .date-collapsed .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('.marker:hover > .icon-fa-angle-right', [['color', itemHoverColor]]);
+  addRules('.folders .marker:hover > .icon-fa-angle-right', [['color', itemHoverColor]]);
   if (!isLightPaneBg) {
     addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
     addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
