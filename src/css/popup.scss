@@ -427,9 +427,9 @@ button:not(.submit) {
 
 .leaf {
 
-  &:hover {
-    background-color: $hover-color;
-  }
+  // &:hover {
+  //   background-color: $hover-color;
+  // }
 
   &:hover>button {
     display: flex;
@@ -482,9 +482,9 @@ button:not(.submit) {
     }
 
     &:hover {
-      &::before {
-        background-color: $hover-color;
-      }
+      // &::before {
+      //   background-color: $hover-color;
+      // }
 
       >.button-wrapper {
         display: flex;
@@ -845,8 +845,8 @@ main::-webkit-scrollbar {
 
     &.leaf,
     &.tab-wrap,
-    &.history {
-      color: #222;
+    &.history:not(.header-date) {
+      color: #222 !important;
       z-index: 3;
     }
 
@@ -887,6 +887,10 @@ main::-webkit-scrollbar {
 
     >.title {
       outline: none;
+      color: #222 !important;
+      &::before {
+        color: #222 !important;
+      }
     }
 
     ~* {
@@ -955,9 +959,9 @@ main::-webkit-scrollbar {
     >.history {
       margin: 0 2px;
 
-      &:not(.header-date):hover {
-        background-color: $hover-color;
-      }
+      // &:not(.header-date):hover {
+      //   background-color: $hover-color;
+      // }
     }
 
     >div:empty {
@@ -1001,9 +1005,9 @@ main::-webkit-scrollbar {
       margin-bottom: 0;
     }
 
-    >.tab-wrap:not(.current-tab):hover {
-      background-color: $hover-color;
-    }
+    // >.tab-wrap:not(.current-tab):hover {
+    //   background-color: $hover-color;
+    // }
 
     >.match {
       display: flex !important;

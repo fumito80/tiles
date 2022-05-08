@@ -17,7 +17,7 @@ import {
 import {
   addBookmark, getBookmark, setHasChildren, setAnimationClass,
 } from './client';
-import { zoomOut } from './zoom';
+import { clearTimeoutZoom, zoomOut } from './zoom';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -108,30 +108,20 @@ async function dropFromHistory(
 function checkDroppable(e: DragEvent) {
   const $target = e.target as HTMLElement;
   const dropAreaClass = whichClass(dropAreaClasses, $target);
-  // return false when not drop target
   if (dropAreaClass == null) {
     return false;
   }
   const $dragSource = $('.drag-source')!;
-  const $targetParent = $target.parentElement!;
-  // return falses when drop self
-  if ($targetParent === $dragSource) {
+  const sourceId = $dragSource.id || $dragSource.parentElement!.id;
+  const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
+  if ($dropTarget.id === sourceId) {
     return false;
   }
-  switch (dropAreaClass) {
-    case 'drop-bottom':
-      if ($targetParent === $dragSource.previousElementSibling
-        || $targetParent.parentElement === $dragSource.parentElement!.previousElementSibling) {
-        return false;
-      }
-      break;
-    case 'drop-top':
-      if ($targetParent === $dragSource.nextElementSibling
-        || $targetParent.parentElement === $dragSource.parentElement!.nextElementSibling) {
-        return false;
-      }
-      break;
-    default:
+  if (dropAreaClass === 'drop-bottom' && $dropTarget.nextElementSibling?.id === sourceId) {
+    return false;
+  }
+  if (dropAreaClass === 'drop-top' && $dropTarget.previousElementSibling?.id === sourceId) {
+    return false;
   }
   return true;
 }
@@ -160,6 +150,8 @@ const dragAndDropEvents = {
     if ($main.classList.contains('zoom-pane')) {
       const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
+    } else {
+      clearTimeoutZoom();
     }
     pipe(
       rmClass('hilite'),

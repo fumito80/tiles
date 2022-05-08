@@ -86,7 +86,7 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query .query-wrap[data-searching]', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    '.leaf:hover, .folders .marker:hover::before, .pane-tabs > div > .tab-wrap:not(.current-tab):hover, .pane-history .rows > .history:not(.header-date):hover, .date-collapsed .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .pane-tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .pane-history .rows > .history:not(.header-date):hover, main:not(.drag-start-leaf) .date-collapsed .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   addRules('.folders .marker:hover > .icon-fa-angle-right', [['color', itemHoverColor]]);

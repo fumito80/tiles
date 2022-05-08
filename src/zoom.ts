@@ -91,6 +91,10 @@ export function zoomOut(
 
 let timerZoom: ReturnType<typeof setTimeout>;
 
+export function clearTimeoutZoom() {
+  clearTimeout(timerZoom);
+}
+
 async function enterZoom(
   $target: HTMLElement,
   elements: ZoomingElements,
@@ -138,7 +142,7 @@ async function enterZoom(
     if ($main.classList.contains('drag-start-leaf')) {
       return;
     }
-    clearTimeout(timerZoom);
+    clearTimeoutZoom();
     const $shade = ev.target as HTMLElement;
     if ($shade.classList.contains('shade-left')) {
       await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
@@ -160,13 +164,13 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
     if (!document.body.classList.contains('auto-zoom')) {
       return;
     }
-    clearTimeout(timerZoom);
+    clearTimeoutZoom();
     const isBreak = [...$main.classList].some((className) => ['zoom-pane', 'drag-start-leaf', 'drag-start-folder'].includes(className));
     if (isBreak) {
       return;
     }
     const $target = e.target as HTMLElement;
-    $target.addEventListener('mouseleave', () => clearTimeout(timerZoom), { once: true });
+    $target.addEventListener('mouseleave', clearTimeoutZoom, { once: true });
     timerZoom = setTimeout(() => {
       enterZoom($target, elements, zoomRatio, options.zoomHistory);
     }, 500);
