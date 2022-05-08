@@ -141,6 +141,7 @@ button:not(.submit) {
   padding-left: 20px;
   overflow: hidden;
   white-space: nowrap;
+  background-size: 16px;
   background-repeat: no-repeat;
   background-position: 2px center;
 
@@ -194,6 +195,7 @@ button:not(.submit) {
 
 .form-query {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   padding: 2px 0;
 
@@ -959,9 +961,6 @@ main::-webkit-scrollbar {
     >.history {
       margin: 0 2px;
 
-      // &:not(.header-date):hover {
-      //   background-color: $hover-color;
-      // }
     }
 
     >div:empty {
@@ -978,6 +977,7 @@ main::-webkit-scrollbar {
       display: flex;
       height: 1.6em;
       margin: 0.1em 2px;
+      padding: 0;
       justify-content: center;
       align-items: center;
       background-color: darkgray;

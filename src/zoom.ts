@@ -42,8 +42,9 @@ function relocateGrid(
 function restoreGrid($main: HTMLElement, $query: HTMLElement) {
   const $form = $query.parentElement!.parentElement!;
   $main.insertBefore($form, $('.pane-history'));
-  $form.style.removeProperty('width');
-  $form.style.removeProperty('overflow');
+  rmStyle('width')($query);
+  rmStyle('width')($form);
+  rmStyle('overflow')($form);
   $query.focus();
 }
 

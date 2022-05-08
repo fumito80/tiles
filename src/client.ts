@@ -2,6 +2,8 @@ import {
   splitterClasses,
   OpenBookmarkType,
   Options,
+  State,
+  Settings,
 } from './types';
 
 import {
@@ -126,7 +128,10 @@ export function saveStateOpenedPath(foldersFolder: HTMLElement) {
   setLocal({ clientState });
 }
 
-export function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void) {
+function setMouseEventListener(
+  mouseMoveHandler: (e: MouseEvent) => void,
+  getSettings: (state: Pick<State, 'settings'>) => Settings,
+) {
   const mouseMoveHandlerWrapper = (e: MouseEvent) => {
     e.preventDefault();
     mouseMoveHandler(e);
@@ -134,20 +139,38 @@ export function setMouseEventListener(mouseMoveHandler: (e: MouseEvent) => void)
   document.addEventListener('mousemove', mouseMoveHandlerWrapper, false);
   document.addEventListener('mouseup', async () => {
     document.removeEventListener('mousemove', mouseMoveHandlerWrapper);
-    const { pane3, pane2, pane1 } = getGridTemplateColumns();
     const saved = await getLocal('settings');
-    const settings = {
-      ...saved.settings,
-      paneWidth: {
-        pane3,
-        pane2,
-        pane1,
-      },
-      width: document.body.offsetWidth,
-      height: document.body.offsetHeight,
-    };
+    const settings = getSettings(saved);
     setLocal({ settings });
   }, { once: true });
+}
+
+function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
+  const { pane3, pane2, pane1 } = getGridTemplateColumns();
+  return {
+    ...settings,
+    paneWidth: {
+      pane3,
+      pane2,
+      pane1,
+    },
+  };
+}
+
+function getNewSize({ settings }: Pick<State, 'settings'>) {
+  return {
+    ...settings,
+    width: document.body.offsetWidth,
+    height: document.body.offsetHeight,
+  };
+}
+
+export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
+  setMouseEventListener(mouseMoveHandler, getNewSize);
+}
+
+export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
+  setMouseEventListener(mouseMoveHandler, getNewPaneWidth);
 }
 
 export function resizeSplitHandler($splitter: HTMLElement, subWidth: number) {

@@ -77,12 +77,10 @@ function getRowHeight() {
   )(document.body);
   const styles = getComputedStyle($tester);
   const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
-  // const elementHeight = Math.ceil(Number.parseFloat(styles.height));
   const elementHeight = Number.parseFloat(styles.height);
   const rowHeight = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight);
   $tester.remove();
-  // [...$rows.children].forEach(addStyle('height', `${elementHeight}px`));
   return { rowHeight, elementHeight };
 }
 
@@ -99,18 +97,18 @@ export async function setVScroll(
   if (!firstRow || !$rows) {
     return;
   }
+  const { paddingTop, paddingBottom } = getComputedStyle($rows);
+  const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
+  addStyle('height', `${$container.offsetHeight - padding}px`)($rows);
   $container.removeEventListener('scroll', vScrollHandler);
   const $fakeBottom = $('.v-scroll-fake-bottom', $container)!;
   $fakeBottom.style.removeProperty('height');
-  const { paddingTop, paddingBottom } = getComputedStyle($rows);
-  const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
   const bottomIndex = Math.ceil(($rows.parentElement!.offsetHeight - padding) / rowHeight) + 1;
   [...$rows.children].forEach((el, i) => {
     addStyle('display', i > bottomIndex ? 'none' : '')(el);
   });
-  const vScrollHeight = rowHeight * data.length + padding;
-  const margin = $container.scrollHeight + ($container.scrollHeight - $container.offsetHeight);
-  $fakeBottom.style.height = `${vScrollHeight - margin + 2}px`;
+  const vScrollHeight = rowHeight * data.length;
+  $fakeBottom.style.height = `${vScrollHeight - $container.offsetHeight + padding}px`;
   const setter = rowSetter();
   const children = [...$rows.children] as HTMLElement[];
   vScrollData = data;
@@ -181,7 +179,6 @@ export async function resetHistory({
   if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
     const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
     histories = [headerDate, init, ...tail];
-    // const headerStyle = `height: ${vscrollProps.elementHeight}px`;
     const headerDateHtml = makeHistory({ ...headerDate });
     $rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
     await setLocal({ histories, htmlHistory: $rows.innerHTML });

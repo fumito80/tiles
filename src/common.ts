@@ -720,23 +720,23 @@ export function getSync<T extends Array<keyof State>>(...keyNames: T) {
 }
 
 export function getGridTemplateColumns() {
-  const [pane3, pane2, pane1] = [
+  const [pane1, pane2, pane3] = [
     $('.leafs')!.style.width,
-    $('.pane-history')!.style.width,
     $('.pane-tabs')!.style.width,
-  ].map(Number.parseInt);
+    $('.pane-history')!.style.width,
+  ].map((n) => Number.parseInt(n, 10));
   return {
-    pane3,
-    pane2,
     pane1,
+    pane2,
+    pane3,
   };
 }
 
 export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  const { pane1 = 200, pane2 = 200, pane3 = 200 } = newPaneWidth;
-  $('.leafs')!.style.width = `${pane1}px`;
-  $('.pane-history')!.style.width = `${pane2}px`;
-  $('.pane-tabs')!.style.width = `${pane3}px`;
+  const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
+  addStyle('width', `${pane1}px`)($('.leafs'));
+  addStyle('width', `${pane2}px`)($('.pane-tabs'));
+  addStyle('width', `${pane3}px`)($('.pane-history'));
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {

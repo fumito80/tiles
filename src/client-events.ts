@@ -34,7 +34,8 @@ import {
   addBookmark,
   onClickAngle,
   saveStateOpenedPath,
-  setMouseEventListener,
+  setResizeHandler,
+  setSplitterHandler,
   resizeSplitHandler,
   resizeWidthHandler,
   resizeHeightHandler,
@@ -240,14 +241,14 @@ export default function setEventListners(options: Options) {
       }
       subWidth += nextElement.offsetWidth;
     }
-    setMouseEventListener(resizeSplitHandler($splitter, subWidth));
+    setSplitterHandler(resizeSplitHandler($splitter, subWidth));
   }));
 
   $('.resize-x')?.addEventListener('mousedown', (e) => {
-    setMouseEventListener(resizeWidthHandler($('.form-query')!, document.body.offsetWidth + e.screenX));
+    setResizeHandler(resizeWidthHandler($('.form-query')!, document.body.offsetWidth + e.screenX));
   });
 
-  $('.resize-y')?.addEventListener('mousedown', () => setMouseEventListener(resizeHeightHandler));
+  $('.resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
 
   setEvents($$('.main-menu'), {
     async click(e) {
