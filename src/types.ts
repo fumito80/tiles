@@ -23,7 +23,7 @@ export const initialSettings = {
     days: null,
   },
   autoZoom: true,
-  includeUrl: true,
+  includeUrl: false,
 };
 
 export type Settings = typeof initialSettings;
@@ -92,7 +92,6 @@ export const initialState = {
   settings: initialSettings,
   vscrollProps: {
     rowHeight: 0,
-    elementHeight: 0,
   },
   options: initialOptions,
   currentWindowId: chrome.windows.WINDOW_ID_NONE as number,

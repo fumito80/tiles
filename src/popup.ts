@@ -81,18 +81,19 @@ function setOptions(settings: Settings, options: Options) {
     ['background-color', keyBg],
     ['color', `${keyColor} !important`],
   ]);
-  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : '#EFEFEF !important']]);
+  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
   addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
-  addRules('.form-query .query-wrap[data-searching]', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules('.form-query .query-wrap[data-searching], .form-query .query-wrap[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .pane-tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .pane-history .rows > .history:not(.header-date):hover, main:not(.drag-start-leaf) .date-collapsed .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .pane-tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .pane-history .rows > .history:not(.header-date):hover, .date-collapsed main:not(.drag-start-leaf) .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('.folders .marker:hover > .icon-fa-angle-right', [['color', itemHoverColor]]);
+  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
+  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (!isLightPaneBg) {
-    addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'dimgray']]);
-    addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'darkgray']]);
+    addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'rgba(255, 255, 255, .3)']]);
+    addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'rgba(255, 255, 255, .5)']]);
     addRules('.leafs .title::before', [['color', lightColor]]);
     addRules('.auto-zoom .zoom-pane .shade-left, .auto-zoom .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
   }
@@ -109,12 +110,13 @@ function setOptions(settings: Settings, options: Options) {
       '.form-query button:active::after, .form-query button:active::after, .pane-title button:active::after',
       [['background-color', 'rgba(255, 255, 255, 0.5)']],
     );
+    addRules('.folders::-webkit-scrollbar-thumb, .pane-tabs::-webkit-scrollbar-thumb', [['background-color', 'rgba(255, 255, 255, .3)']]);
+    addRules('.folders::-webkit-scrollbar-thumb:hover, .pane-tabs::-webkit-scrollbar-thumb:hover', [['background-color', 'rgba(255, 255, 255, .5)']]);
   }
   if (!isLightPaneBg && !isLightFrameBg) {
     addRules('.pane-tabs > div', [['border-color', 'lightgray']]);
   }
   if (!isLightHoverBg) {
-    addRules('.folders .marker:hover > .title, .folders .marker:hover > .title::before', [['color', itemHoverColor]]);
     addRules(
       [
         '.leaf:hover .icon-fa-ellipsis-v',

@@ -230,15 +230,6 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
       return [p, cl, cm, cr, m];
     });
 
-  const lightTheme = base
-    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
-    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
-  const htmlLightTheme = getColorPaletteHTML(lightTheme, options);
-  const darkOrVivid = base.filter(
-    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
-      && frameBg.whiteness <= lightColorWhiteness,
-  );
-  const htmlDarkTheme = getColorPaletteHTML(darkOrVivid, options);
   const other = base.filter(
     ([paneBg, frameBg]) => (
       paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
@@ -248,6 +239,29 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     ),
   );
   const htmlOther = getColorPaletteHTML(other, options);
+
+  const dark1 = base.filter(
+    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
+      && frameBg.whiteness <= lightColorWhiteness,
+  );
+
+  const lightTheme = base
+    .concat([...dark1, ...other].map(
+      (palette) => palette.concat().sort((a, b) => b.whiteness - a.whiteness),
+    ))
+    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
+    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
+  const htmlLightTheme = getColorPaletteHTML(lightTheme, options);
+
+  const darkOrVivid = [...other, ...lightTheme]
+    .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))
+    .filter(
+      ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
+      && frameBg.whiteness <= lightColorWhiteness,
+    )
+    .concat(dark1);
+  const htmlDarkTheme = getColorPaletteHTML(darkOrVivid, options);
+
   const $colorPalettes = $('.color-palettes')!;
 
   pipe(

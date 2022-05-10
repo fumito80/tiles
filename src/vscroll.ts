@@ -76,12 +76,11 @@ function getRowHeight() {
     setText('A'),
   )(document.body);
   const styles = getComputedStyle($tester);
-  const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom')(styles);
-  const elementHeight = Number.parseFloat(styles.height);
+  const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'height')(styles);
   const rowHeight = Object.values(props)
-    .reduce((acc, value) => acc + Number.parseFloat(String(value)), elementHeight);
+    .reduce((acc, value) => acc + Number.parseFloat(String(value)), 0);
   $tester.remove();
-  return { rowHeight, elementHeight };
+  return { rowHeight };
 }
 
 export type VScrollRowSetter = typeof rowSetterHistory;
@@ -171,8 +170,8 @@ export async function resetHistory({
   document.body.classList.remove('date-collapsed');
   const $rows = $('.rows', $paneHistory)!;
   if (initialize) {
-    const { rowHeight, elementHeight } = getRowHeight();
-    await setLocal({ vscrollProps: { rowHeight, elementHeight } });
+    const { rowHeight } = getRowHeight();
+    await setLocal({ vscrollProps: { rowHeight } });
   }
   const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
   let histories = [init, ...tail];
