@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Popup'n My Resources",
-  "version": "0.13.4",
+  "version": "0.13.5",
   "default_locale": "en",
   "permissions": [
     "storage",
@@ -15,7 +15,8 @@
     "default_title": "Popup'n My Resources",
     "default_popup": "popup.html",
     "default_icon": {
-      "32": "p28.png",
+      "16": "p16.png",
+      "48": "p48.png",
       "128": "p128.png"
     }
   },

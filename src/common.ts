@@ -18,10 +18,10 @@ type AnyFunction = (...p: any[]) => any;
 // DOM operation
 
 export function $<T extends HTMLElement>(
-  selector: string,
+  selector: string | null = null,
   parent: HTMLElement | DocumentFragment | Document | Element = document,
 ) {
-  return parent.querySelector<T>(selector);
+  return parent.querySelector<T>(selector!);
 }
 
 export function $$<T extends HTMLElement>(
@@ -245,6 +245,15 @@ export function switches<T>(value: T) {
     }),
   };
 }
+
+// export function decode<T, U>(
+//   switchValue: T,
+//   ...matchPairs: Array<[caseValue: T, returnValue: U]>
+// ) {
+//   const [, returnValue = null] =
+// matchPairs.find(([caseValue]) => caseValue === switchValue) || [];
+//   return returnValue;
+// }
 
 export function eq<T>(a: T) {
   return (b: T) => a === b;

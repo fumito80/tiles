@@ -1,7 +1,6 @@
 import { dropAreaClasses, positions } from './types';
 import {
-  $,
-  $$,
+  $, $$,
   cbToResolve,
   curry3,
   cssid,
@@ -13,9 +12,13 @@ import {
   setHTML,
   addClass,
   addChild,
+  switches,
 } from './common';
 import {
-  addBookmark, getBookmark, setHasChildren, setAnimationClass,
+  addBookmark,
+  getBookmark,
+  setHasChildren,
+  setAnimationClass,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
@@ -130,22 +133,13 @@ const dragAndDropEvents = {
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
-    const [targetClass, $dragTarget, id] = (() => {
-      switch (className) {
-        case 'marker':
-          return ['drag-start-folder', $target, $target.parentElement!.id] as const;
-        case 'tab-wrap':
-        case 'leaf':
-        case 'history': {
-          return ['drag-start-leaf', $target, $target.id] as const;
-        }
-        default:
-          return ['', null, ''] as const;
-      }
-    })();
-    if (!$dragTarget) {
+    if (!className) {
       return;
     }
+    const [targetClass, $dragTarget, id] = switches(className)
+      .case('marker')
+      .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
+      .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $('main')!;
     if ($main.classList.contains('zoom-pane')) {
       const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
@@ -181,18 +175,13 @@ const dragAndDropEvents = {
     setHTML('')($('.draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
-      let paneClass = '';
-      switch (className) {
-        case 'tab-wrap':
-          paneClass = '.pane-tabs';
-          break;
-        case 'history':
-          paneClass = '.pane-history';
-          break;
-        default:
-          return;
-      }
-      $(paneClass)!.dispatchEvent(new Event('mouseenter'));
+      const paneClass = switches(className)
+        .case('tab-wrap')
+        .then('.pane-tabs')
+        .case('history')
+        .then('.pane-history')
+        .else(null);
+      $(paneClass)?.dispatchEvent(new Event('mouseenter'));
     }
   },
   async drop(e: DragEvent) {

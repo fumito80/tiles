@@ -956,6 +956,7 @@ main::-webkit-scrollbar {
 
   .rows {
     display: grid;
+    grid-auto-rows: min-content;
     padding-bottom: 2px;
 
     >.history {
@@ -1004,10 +1005,6 @@ main::-webkit-scrollbar {
     &:last-child {
       margin-bottom: 0;
     }
-
-    // >.tab-wrap:not(.current-tab):hover {
-    //   background-color: $hover-color;
-    // }
 
     >.match {
       display: flex !important;
