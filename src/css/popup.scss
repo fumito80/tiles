@@ -357,7 +357,6 @@ button:not(.submit) {
 // Leafs pane
 
 .leafs {
-  padding: 2px;
   overflow-y: auto;
   border-radius: $pane-radius;
   transition: width 0.1s;
@@ -389,7 +388,7 @@ button:not(.submit) {
   }
 
   >.folder {
-    padding: 0;
+    padding: 2px;
   }
 
   >.folder.search-path[id='1']>.marker {

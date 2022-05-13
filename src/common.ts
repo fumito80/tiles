@@ -741,8 +741,30 @@ export function getGridTemplateColumns() {
   };
 }
 
-export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
+async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
+  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 132)) {
+    return true;
+  }
+  const width = 800;
+  const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
+  addRules('body', [['width', `${width}px`]]);
+  // eslint-disable-next-line no-use-before-define
+  setSplitWidth(paneWidth);
+  const saved = await getLocal('settings');
+  const settings = {
+    ...saved.settings,
+    width,
+    paneWidth,
+  };
+  setLocal({ settings });
+  return false;
+}
+
+export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
+  if (!await checkSplitWidth(pane1, pane2, pane3)) {
+    return;
+  }
   addStyle('width', `${pane1}px`)($('.leafs'));
   addStyle('width', `${pane2}px`)($('.pane-tabs'));
   addStyle('width', `${pane3}px`)($('.pane-history'));

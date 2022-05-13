@@ -226,7 +226,7 @@ export default function setEventListners(options: Options) {
   });
 
   $$('.split-h').forEach(addListener('mousedown', (e) => {
-    if (document.body.classList.contains('.auto-zoom')) {
+    if (document.body.classList.contains('auto-zoom')) {
       return;
     }
     const $splitter = e.target as HTMLElement;

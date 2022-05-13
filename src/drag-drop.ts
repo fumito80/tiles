@@ -142,6 +142,7 @@ const dragAndDropEvents = {
       .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $('main')!;
     if ($main.classList.contains('zoom-pane')) {
+    // if ([...$main.classList].some((name) => ['zoom-pane', 'init-zoom'].includes(name))) {
       const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
     } else {
