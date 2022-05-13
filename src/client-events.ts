@@ -233,10 +233,10 @@ export default function setEventListners(options: Options) {
     let subWidth = 0;
     for (
       let nextElement = $splitter.nextElementSibling as HTMLElement | null;
-      nextElement;
+      nextElement != null;
       nextElement = nextElement.nextElementSibling as HTMLElement
     ) {
-      if (nextElement?.classList.contains('form-query')) {
+      if (nextElement?.previousElementSibling!.classList.contains('pane1')) {
         break;
       }
       subWidth += nextElement.offsetWidth;
@@ -319,7 +319,7 @@ export default function setEventListners(options: Options) {
       e.preventDefault();
     },
   });
-  const $paneTabs = $('.pane-tabs')!;
+  const $paneTabs = $('.tabs')!;
   $paneTabs.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
@@ -367,7 +367,7 @@ export default function setEventListners(options: Options) {
       return;
     }
     createNewTab(options, url);
-  })($('.pane-history')!);
+  })($('.histories')!);
   const panes = [
     ...(options.zoomHistory ? [$paneHistory] : []),
     ...(options.zoomTabs ? [$paneTabs] : []),

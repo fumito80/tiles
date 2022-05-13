@@ -197,14 +197,10 @@ button:not(.submit) {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  margin: 4px 0;
   padding: 2px 0;
-
-  .query-wrap {
-    display: flex;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-    padding: 4px 2px;
-  }
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
 
   .submit {
     display: flex;
@@ -222,6 +218,7 @@ button:not(.submit) {
 
   .query {
     width: 100%;
+    max-width: 100px;
     background: rgba(0, 0, 0, .1);
     border: 0;
     outline: none;
@@ -246,7 +243,12 @@ button:not(.submit) {
 }
 
 .pin-bookmark {
-  margin-left: 5px;
+  // margin-left: 5px;
+  margin-left: auto;
+}
+
+.query-wrap:empty + .pin-bookmark {
+  margin-left: auto;
 }
 
 .main-menu-button,
@@ -278,7 +280,7 @@ button:not(.submit) {
 
 }
 
-.query-wrap {
+.form-query {
   &[data-searching]>.icon-x {
     visibility: inherit;
   }
@@ -445,7 +447,7 @@ button:not(.submit) {
 // Folders pane
 
 .folders {
-  padding: 4px 2px 0 0;
+  padding: 2px 2px 0 0;
   overflow-y: auto;
   overflow-x: hidden;
 
@@ -637,7 +639,7 @@ button:not(.submit) {
 
 .folders::-webkit-scrollbar,
 .leafs::-webkit-scrollbar,
-.pane-tabs::-webkit-scrollbar,
+.tabs::-webkit-scrollbar,
 .v-scroll-bar::-webkit-scrollbar {
   width: 8px;
 }
@@ -842,7 +844,7 @@ main::-webkit-scrollbar {
 
 .drag-start-leaf {
   .drag-source {
-    background-color: $drag-source-bgcolor !important;
+    background-color: $drag-source-bgcolor  !important;
 
     &.leaf,
     &.tab-wrap,
@@ -889,6 +891,7 @@ main::-webkit-scrollbar {
     >.title {
       outline: none;
       color: #222 !important;
+
       &::before {
         color: #222 !important;
       }
@@ -947,8 +950,7 @@ main::-webkit-scrollbar {
 
 // History
 
-.pane-history {
-  grid-column: 2 / 3;
+.histories {
   position: relative;
   border-radius: $pane-radius;
   transition: width 0.1s;
@@ -988,8 +990,7 @@ main::-webkit-scrollbar {
   }
 }
 
-.pane-tabs {
-  grid-column: 4 / 5;
+.tabs {
   overflow-y: auto;
   transition: width 0.1s;
 
@@ -1019,8 +1020,8 @@ main::-webkit-scrollbar {
   }
 }
 
-.pane-tabs,
-.pane-history {
+.tabs,
+.histories {
   .icon-x {
     margin-left: auto;
     margin-right: 2px;
@@ -1058,15 +1059,37 @@ main::-webkit-scrollbar {
   width: 1px;
 }
 
-.pane-title {
+.pane-header {
   display: flex;
   align-items: center;
   padding-left: 3px;
   transition: width 0.1s;
 
+  .icon-history {
+    +.collapse-history-date {
+      margin: 0 10px;
+
+      &:hover::after,
+      &:focus::after {
+        width: 1.5em;
+        height: 1.5em;
+      }
+    }
+
+    ~.query-wrap {
+      margin-right: 10px;
+    }
+  }
+
   .icon-tabs {
     transform: scale(1.5, 1.2);
     margin-left: 0.25em;
+    margin-right: 1.5em;
+
+    ~.query-wrap {
+      margin-left: auto;
+      margin-right: 10px;
+    }
   }
 
   .icon-bookmarks {
@@ -1077,39 +1100,14 @@ main::-webkit-scrollbar {
     transition: all 0.15s;
   }
 
-  .collapse-history-date {
-    margin-left: 10px;
-
-    &:hover::after,
-    &:focus::after {
-      width: 1.5em;
-      height: 1.5em;
-    }
-  }
 }
 
 // Zoom
 
-.auto-zoom .pane-title {
+.auto-zoom .pane-header {
   .form-query {
     margin-left: auto;
-    margin-right: 10px;
     transition: width 0.1s;
-
-    .pin-bookmark,
-    .menu-button {
-      display: none;
-    }
-  }
-
-  .collapse-history-date {
-    +.form-query {
-      margin-left: 10px;
-    }
-
-    input[type="date"] {
-      display: none;
-    }
   }
 }
 
@@ -1151,7 +1149,7 @@ main::-webkit-scrollbar {
     display: block;
   }
 
-  >.pane-history>.safety-zone-right {
+  >.histories>.safety-zone-right {
     position: fixed;
     width: 20px;
     height: 100%;
@@ -1326,4 +1324,14 @@ body:not(.date-collapsed) {
     width: 200px;
     outline: none;
   }
+}
+
+// resource-components
+
+.components {
+  display: none;
+}
+
+.bold-separator {
+  margin: 0 1px;
 }

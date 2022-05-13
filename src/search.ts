@@ -12,7 +12,6 @@ import {
 } from './common';
 
 const $inputQuery = $('.query') as HTMLInputElement;
-const $leafs = $('.leafs') as HTMLElement;
 
 let lastQueryValue = '';
 
@@ -26,7 +25,7 @@ export function getReFilter(value: string) {
 export function clearSearch() {
   $$('.leafs .search-path').forEach(rmClass('search-path'));
   $$('.leafs .path').forEach(rmClass('path'));
-  $$('.pane-tabs > div > div').forEach(rmClass('match', 'unmatch'));
+  $$('.tabs > div > div').forEach(rmClass('match', 'unmatch'));
   $$('.empty').forEach(rmClass('empty'));
   resetHistory();
   const openFolder = $('.folders .open');
@@ -48,13 +47,14 @@ export function clearQuery() {
   $inputQuery.focus();
 }
 
-function search(includeUrl: boolean) {
+function search(includeUrl: boolean, $leafs: HTMLElement) {
   const { value } = $inputQuery;
   if (lastQueryValue === '' && value.length <= 1) {
     return;
   }
   addAttr('data-searching', '1')($inputQuery.parentElement!);
   rmClass('open')($('.leafs .open'));
+  // eslint-disable-next-line no-param-reassign
   $leafs.scrollTop = 0;
   if (value.length <= 1) {
     clearSearch();
@@ -87,14 +87,14 @@ function search(includeUrl: boolean) {
   targetBookmarks.forEach((leaf) => {
     const $anchor = leaf.firstElementChild as HTMLAnchorElement;
     if (reFilter.test($anchor.textContent!)
-      || (includeUrl && reFilter.test(extractUrl($anchor.style.backgroundImage)))) {
+      || (includeUrl && reFilter.test(extractUrl(leaf.style.backgroundImage)))) {
       addClass('search-path')(leaf);
       for (let folder = leaf.parentElement as HTMLElement | null; folder && folder?.classList.contains('folder'); folder = folder.parentElement) {
         addClass('search-path', 'path')(folder);
       }
     }
   });
-  const $paneTabs = $('.pane-tabs')!;
+  const $paneTabs = $('.tabs')!;
   $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
     const tab = el.firstElementChild as HTMLElement;
     const isMatch = reFilter.test(tab.textContent!)
@@ -108,20 +108,15 @@ function search(includeUrl: boolean) {
   lastQueryValue = value;
 }
 
-function searchIncludeUrl() {
-  search(true);
-}
-
-function searchExcludeUrl() {
-  search(false);
-}
+let fnSearch: () => void;
 
 export function resetQuery(includeUrl: boolean) {
-  $inputQuery.removeEventListener('input', searchIncludeUrl);
-  $inputQuery.removeEventListener('input', searchExcludeUrl);
-  $inputQuery.addEventListener('input', includeUrl ? searchIncludeUrl : searchExcludeUrl);
+  $inputQuery.removeEventListener('input', fnSearch);
+  const $leafs = $('.leafs') as HTMLElement;
+  fnSearch = () => search(includeUrl, $leafs);
+  $inputQuery.addEventListener('input', fnSearch);
   const lqv = lastQueryValue;
   clearQuery();
   $inputQuery.value = lqv;
-  search(includeUrl);
+  fnSearch();
 }

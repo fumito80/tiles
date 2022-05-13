@@ -9,58 +9,17 @@
 <body>
     <main>
         <div class="resize-x"></div>
-        <div class="pane-title">
-            <i class="icon-history" title="HISTORY"></i>
-            <button class="collapse-history-date" type="button">
-                <i class="icon-calendar-plus-solid" title="Expand date"></i>
-                <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
-            </button>
-        </div>
+        <div class="pane-header"></div>
         <div class="split-h pane3"></div>
-        <div class="pane-title">
-            <i class="icon-tabs" title="OPEN TABS"></i>
-        </div>
+        <div class="pane-header"></div>
         <div class="split-h pane2"></div>
-        <div class="pane-title">
-            <i class="icon-bookmarks" title="BOOKMARKS"></i>
-        </div>
+        <div class="pane-header"></div>
         <div class="split-h pane1"></div>
-        <form class="form-query" autocomplete="off">
-            <div class="query-wrap">
-                <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
-                <input type="text" class="query" name="query" autofocus="true">
-                <i class="icon-x"></i>
-            </div>
-            <button class="pin-bookmark" title="Pin a bookmark" type="button">
-                <i class="icon-fa-star-o"></i>
-            </button>
-            <div class="menu-button">
-                <button class="main-menu-button" type="button">
-                    <i class="icon-fa-ellipsis-v"></i>
-                </button>
-                <div class="main-menu" role="menu">
-                    <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
-                    <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
-                            class="icon-check-solid"></i></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom"></i>
-                        <div class="icon-zoom"></div>Auto zen mode<i class="icon-check-solid"></i>
-                    </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
-                </div>
-            </div>
-        </form>
-        <div class="pane-history v-scroll v-scroll-bar">
-            <div class="rows"></div>
-            <div class="v-scroll-fake-bottom"></div>
-            <div class="safety-zone-right"></div>
-        </div>
-        <div class="pane-tabs"></div>
-        <div class="leafs"></div>
-        <div class="folders"></div>
+        <div class="pane-header"></div>
+        <div class="pane-body"></div>
+        <div class="pane-body"></div>
+        <div class="pane-body"></div>
+        <div class="pane-body"></div>
         <div class="shade-left"></div>
         <div class="shade-right"></div>
         <i class="zoom-out icon-history"></i>
@@ -99,6 +58,58 @@
             <div class="popup-desc"></div>
             <div calss="input"><input type="text"></div>
             <div class="footer"><button>OK</button><button>Cancel</button></div>
+        </div>
+    </div>
+    <div class="components">
+        <div class="header-histories">
+            <i class="icon-history" title="HISTORY"></i>
+            <button class="collapse-history-date" type="button">
+                <i class="icon-calendar-plus-solid" title="Expand date"></i>
+                <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
+            </button>
+            <div class="query-wrap"></div>
+        </div>
+        <div class="header-tabs">
+            <i class="icon-tabs" title="OPEN TABS"></i>
+            <div class="query-wrap"></div>
+        </div>
+        <div class="header-leafs">
+            <i class="icon-bookmarks" title="BOOKMARKS"></i>
+            <div class="query-wrap"></div>
+        </div>
+        <div class="header-folders">
+            <div class="query-wrap"></div>
+            <button class="pin-bookmark" title="Pin a bookmark" type="button">
+                <i class="icon-fa-star-o"></i>
+            </button>
+            <div class="menu-button">
+                <button class="main-menu-button" type="button">
+                    <i class="icon-fa-ellipsis-v"></i>
+                </button>
+                <div class="main-menu" role="menu">
+                    <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
+                    <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                            class="icon-check-solid"></i></div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="auto-zoom"></i>
+                        <div class="icon-zoom"></div>Auto zen mode<i class="icon-check-solid"></i>
+                    </div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
+                </div>
+            </div>
+        </div>
+        <form class="form-query" autocomplete="off">
+            <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
+            <input type="text" class="query" name="query" autofocus="true">
+            <i class="icon-x"></i>
+        </form>
+        <div class="pane-histories">
+            <div class="rows"></div>
+            <div class="v-scroll-fake-bottom"></div>
+            <div class="safety-zone-right"></div>
         </div>
     </div>
     <script src="popup.js"></script>

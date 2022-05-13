@@ -1,3 +1,5 @@
+/* eslint-disable max-classes-per-file */
+
 import './css/settings.scss';
 import * as bootstrap from 'bootstrap';
 import {
@@ -21,12 +23,27 @@ import {
   rmClass,
   addClass,
   setText,
-  // setHTML,
   insertHTML,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
+
+class LayoutPanes extends HTMLDivElement {
+  #value?: string[];
+  get value() {
+    return this.#value!;
+  }
+  set value(value: string[]) {
+    this.#value = value;
+  }
+  // eslint-disable-next-line class-methods-use-this
+  get validity() {
+    return { valid: true };
+  }
+}
+
+customElements.define('layout-panes', LayoutPanes, { extends: 'div' });
 
 class ColorPaletteClass extends HTMLDivElement {
   #value?: ColorPalette;

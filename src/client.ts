@@ -206,7 +206,7 @@ export function resizeHeightHandler(e: MouseEvent) {
   timerResizeY = setTimeout(() => {
     getLocal('vscrollProps')
       .then(({ vscrollProps }) => {
-        const $paneHistory = $('.pane-history') as HTMLDivElement;
+        const $paneHistory = $('.histories') as HTMLDivElement;
         const vScrollData = getVScrollData();
         setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps);
       });
@@ -269,7 +269,7 @@ export async function collapseHistoryDate() {
   addClass('date-collapsed')(document.body);
   const histories = getVScrollData();
   const data = histories.filter((item) => item.headerDate);
-  const $paneHistory = $('.pane-history') as HTMLDivElement;
+  const $paneHistory = $('.histories') as HTMLDivElement;
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
   setScrollTop(0);
 }

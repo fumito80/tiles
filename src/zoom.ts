@@ -1,6 +1,6 @@
 import { Options } from './types';
 import {
-  $, getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle,
+  $, $$, getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle,
 } from './common';
 
 type ZoomingElements = {
@@ -31,17 +31,24 @@ function relocateGrid(
   $query: HTMLElement,
   queryWidth: string,
 ) {
-  const gridColStart = getComputedStyle($target).gridColumnStart;
-  const $title = $main.children[Number(gridColStart) - 1] as HTMLElement;
-  const $form = $query.parentElement!.parentElement!;
+  let gridColStart = 0;
+  for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
+    if (!$prev.classList.contains('pane-body')) {
+      break;
+    }
+    gridColStart += 1;
+  }
+  const $header = $$('.pane-header')[gridColStart];
+  const $form = $query.parentElement!;
   addStyle('width', queryWidth)($query);
-  $title.insertAdjacentElement('beforeend', $form);
+  $('.query-wrap', $header)!.append($form);
   $query.focus();
 }
 
-function restoreGrid($main: HTMLElement, $query: HTMLElement) {
-  const $form = $query.parentElement!.parentElement!;
-  $main.insertBefore($form, $('.pane-history'));
+function restoreGrid($query: HTMLElement) {
+  const $form = $query.parentElement!;
+  const $endTitle = $$('.pane-header').at(-1)!;
+  $('.query-wrap', $endTitle)!.append($form);
   rmStyle('width')($query);
   rmStyle('width')($form);
   rmStyle('overflow')($form);
@@ -61,7 +68,8 @@ export function zoomOut(
     $iconHistory,
   } = getZoomingElements(elements);
   return () => {
-    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($query.parentElement!.parentElement!);
+    const $form = $query.parentElement!;
+    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($form);
     addStyle('width', '0');
     addStyle('left', '-100px')($iconHistory);
     $main.style.removeProperty('transform');
@@ -69,7 +77,7 @@ export function zoomOut(
       $shadeLeft.addEventListener('transitionend', () => {
         document.body.classList.remove('zoom-center');
         $main.classList.remove('zoom-pane', 'zoom-fade-out');
-        restoreGrid($main, $query);
+        restoreGrid($query);
         resolve();
       }, { once: true });
     });
@@ -113,7 +121,7 @@ async function enterZoom(
   if ($main.classList.contains('zoom-pane')) {
     return;
   }
-  const isCenter = [...$target.classList].some((className) => ['leafs', 'pane-tabs'].includes(className));
+  const isCenter = [...$target.classList].some((className) => ['leafs', 'tabs'].includes(className));
   const width = $main.offsetWidth * zoomRatio;
   const queryWidth = getComputedStyle($query).width;
   const promise1 = new Promise<void>((resolve) => {
@@ -148,7 +156,7 @@ async function enterZoom(
     if ($shade.classList.contains('shade-left')) {
       await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
       if (zoomHistory) {
-        enterZoom($('.pane-history')!, elements, zoomRatio, zoomHistory);
+        enterZoom($('.histories')!, elements, zoomRatio, zoomHistory);
       }
       return;
     }
