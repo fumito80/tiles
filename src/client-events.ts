@@ -226,17 +226,17 @@ export default function setEventListners(options: Options) {
   });
 
   $$('.split-h').forEach(addListener('mousedown', (e) => {
-    if (document.body.classList.contains('auto-zoom')) {
+    if ($main.classList.contains('auto-zoom')) {
       return;
     }
     const $splitter = e.target as HTMLElement;
     let subWidth = 0;
     for (
       let nextElement = $splitter.nextElementSibling as HTMLElement | null;
-      nextElement;
+      nextElement != null;
       nextElement = nextElement.nextElementSibling as HTMLElement
     ) {
-      if (nextElement?.classList.contains('form-query')) {
+      if (nextElement?.previousElementSibling!.classList.contains('pane1')) {
         break;
       }
       subWidth += nextElement.offsetWidth;
@@ -266,8 +266,8 @@ export default function setEventListners(options: Options) {
           chrome.runtime.openOptionsPage();
           break;
         case 'auto-zoom': {
-          const isChecked = document.body.classList.contains('auto-zoom');
-          document.body.classList.toggle('auto-zoom', !isChecked);
+          const isChecked = $main.classList.contains('auto-zoom');
+          $main.classList.toggle('auto-zoom', !isChecked);
           getLocal('settings')
             .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
           break;
@@ -275,7 +275,7 @@ export default function setEventListners(options: Options) {
         case 'include-url':
           getLocal('settings')
             .then(({ settings }) => {
-              $menu.parentElement!.classList.toggle('checked-include-url', !settings.includeUrl);
+              $main.classList.toggle('checked-include-url', !settings.includeUrl);
               return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
             })
             .then(({ settings }) => {
@@ -319,7 +319,7 @@ export default function setEventListners(options: Options) {
       e.preventDefault();
     },
   });
-  const $paneTabs = $('.pane-tabs')!;
+  const $paneTabs = $('.tabs')!;
   $paneTabs.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
@@ -367,13 +367,13 @@ export default function setEventListners(options: Options) {
       return;
     }
     createNewTab(options, url);
-  })($('.pane-history')!);
+  })($('.histories')!);
   const panes = [
     ...(options.zoomHistory ? [$paneHistory] : []),
     ...(options.zoomTabs ? [$paneTabs] : []),
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
   if (!options.zoomHistory) {
-    addClass('disable-zoom-history')(document.body);
+    addClass('disable-zoom-history')($main);
   }
 }

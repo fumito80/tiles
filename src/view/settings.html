@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <link rel="icon" href="p28.png" />
+  <link rel="icon" href="p48.png" />
   <link rel="stylesheet" href="settings.css">
   <title>Settings</title>
 </head>
@@ -46,14 +46,29 @@
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
-        <div class="heading">Zen mode</div>
-        <label class="item"><input type="checkbox" class="bullet" tabindex="-1">Auto zen mode pane</label>
-        <div class="d-flex gap-4 mt-1 ms-3">
-          <label><input type="checkbox" name="zoom-tabs" checked="true">Tabs</label>
-          <label><input type="checkbox" name="zoom-history" checked="true">History</label>
+        <div class="heading">Layout</div>
+        <div is="layout-panes" name="panes">
+          <div draggable="true" data-value="histories">
+            HISTORY
+            <label><input type="checkbox" name="zoom-history">ZEN mode</label>
+            <div class="droppable pane-before"></div>
+            <div class="droppable pane-after"></div>
+          </div>
+          <div draggable="true" data-value="tabs">
+            OPEN TABS
+            <label><input type="checkbox" name="zoom-tabs">ZEN mode</label>
+            <div class="droppable pane-before"></div>
+            <div class="droppable pane-after"></div>
+          </div>
+          <div draggable="true" data-value="bookmarks">
+            BOOKMARKS
+            <div class="droppable pane-before"></div>
+            <div class="droppable pane-after"></div>
+          </div>
         </div>
+        <div class="heading">ZEN mode</div>
         <label class="item">
-          <input type="checkbox" class="bullet" tabindex="-1">Zen mode ratio:&nbsp;
+          <input type="checkbox" class="bullet" tabindex="-1">ZEN mode ratio:&nbsp;
           <select name="zoom-ratio">
             <option value="0.5">50%</option>
             <option value="0.6">60%</option>
@@ -61,7 +76,7 @@
             <option value="0.8">80%</option>
             <option value="0.9">90%</option>
           </select>
-      </label>
+        </label>
         <div class="heading">Style</div>
         <div class="item-collaplse">
           <input type="checkbox" class="bullet" tabindex="-1">

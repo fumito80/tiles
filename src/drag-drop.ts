@@ -83,7 +83,7 @@ function dropWithTabs(
         }
       });
     });
-    $('.pane-tabs')!.dispatchEvent(new Event('mouseenter'));
+    $('.tabs')!.dispatchEvent(new Event('mouseenter'));
   });
 }
 
@@ -143,7 +143,7 @@ const dragAndDropEvents = {
     const $main = $('main')!;
     if ($main.classList.contains('zoom-pane')) {
     // if ([...$main.classList].some((name) => ['zoom-pane', 'init-zoom'].includes(name))) {
-      const $zoomPane = $target.closest('.pane-history, .pane-tabs') as HTMLElement;
+      const $zoomPane = $target.closest('.histories, .tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
     } else {
       clearTimeoutZoom();
@@ -152,6 +152,10 @@ const dragAndDropEvents = {
       rmClass('hilite'),
       addClass('drag-source'),
     )($dragTarget);
+    const $menu = $('[role="menu"]', $target);
+    if ($menu) {
+      document.body.append($menu);
+    }
     const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
     const $draggable = addChild(clone)($('.draggable-clone'));
     e.dataTransfer!.setDragImage($draggable, -12, 10);
@@ -178,9 +182,9 @@ const dragAndDropEvents = {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = switches(className)
         .case('tab-wrap')
-        .then('.pane-tabs')
+        .then('.tabs')
         .case('history')
-        .then('.pane-history')
+        .then('.histories')
         .else(null);
       $(paneClass)?.dispatchEvent(new Event('mouseenter'));
     }

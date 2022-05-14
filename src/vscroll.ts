@@ -14,7 +14,7 @@ let vScrollData: Collection;
 
 export function rowSetterHistory() {
   const today = getLocaleDate();
-  const $currentDate = $('.pane-history .current-date')!;
+  const $currentDate = $('.histories .current-date')!;
   const isShowFixedHeader = !document.body.classList.contains('date-collapsed');
   addStyle('transform', 'translateY(-10000px)')($currentDate);
   return (
@@ -136,7 +136,7 @@ export function getVScrollData() {
 }
 
 export function setScrollTop(scrollTop: number) {
-  const $paneHistory = $('.pane-history') as HTMLDivElement;
+  const $paneHistory = $('.histories') as HTMLDivElement;
   $paneHistory.scrollTop = scrollTop;
   $paneHistory.dispatchEvent(new Event('scroll'));
 }
@@ -166,7 +166,7 @@ export async function resetHistory({
   reFilter,
   includeUrl,
 }: ResetParams = {}) {
-  const $paneHistory = $<HTMLDivElement>('.pane-history')!;
+  const $paneHistory = $<HTMLDivElement>('.histories')!;
   document.body.classList.remove('date-collapsed');
   const $rows = $('.rows', $paneHistory)!;
   if (initialize) {

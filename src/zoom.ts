@@ -1,6 +1,7 @@
 import { Options } from './types';
 import {
-  $, getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle,
+  $, $$,
+  getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, last,
 } from './common';
 
 type ZoomingElements = {
@@ -8,7 +9,7 @@ type ZoomingElements = {
   $shadeLeft: HTMLElement,
   $shadeRight: HTMLElement,
   $query: HTMLElement,
-  $iconHistory: HTMLElement,
+  $iconAngleLeft: HTMLElement,
   $iconAngleRight: HTMLElement,
 }
 
@@ -20,28 +21,28 @@ function getZoomingElements({ $main, ...rest }: ZoomingElementsArgs): ZoomingEle
     $shadeLeft: rest.$shadeLeft || $('.shade-left')!,
     $shadeRight: rest.$shadeRight || $('.shade-right')!,
     $query: rest.$query || $('.query')!,
-    $iconHistory: rest.$iconHistory || $('.zoom-out.icon-history')!,
-    $iconAngleRight: rest.$iconAngleRight || $('.zoom-out.icon-fa-angle-right')!,
+    $iconAngleLeft: rest.$iconAngleLeft || $('.zoom-out.icon-fa-angle-right.left')!,
+    $iconAngleRight: rest.$iconAngleRight || $('.zoom-out.icon-fa-angle-right.right')!,
   };
 }
 
 function relocateGrid(
   $target: HTMLElement,
-  $main: HTMLElement,
   $query: HTMLElement,
   queryWidth: string,
 ) {
-  const gridColStart = getComputedStyle($target).gridColumnStart;
-  const $title = $main.children[Number(gridColStart) - 1] as HTMLElement;
-  const $form = $query.parentElement!.parentElement!;
+  const gridColStart = getGridColStart($target);
+  const $header = $$('.pane-header')[gridColStart];
+  const $form = $query.parentElement!;
   addStyle('width', queryWidth)($query);
-  $title.insertAdjacentElement('beforeend', $form);
+  $('.query-wrap', $header)!.append($form);
   $query.focus();
 }
 
-function restoreGrid($main: HTMLElement, $query: HTMLElement) {
-  const $form = $query.parentElement!.parentElement!;
-  $main.insertBefore($form, $('.pane-history'));
+function restoreGrid($query: HTMLElement) {
+  const $form = $query.parentElement!;
+  const $endTitle = last($$('.pane-header'));
+  $('.query-wrap', $endTitle)!.append($form);
   rmStyle('width')($query);
   rmStyle('width')($form);
   rmStyle('overflow')($form);
@@ -58,18 +59,18 @@ export function zoomOut(
     $shadeLeft,
     $shadeRight,
     $query,
-    $iconHistory,
+    $iconAngleLeft,
   } = getZoomingElements(elements);
   return () => {
-    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($query.parentElement!.parentElement!);
-    addStyle('width', '0');
-    addStyle('left', '-100px')($iconHistory);
+    const $form = $query.parentElement!;
+    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($form);
+    addStyle('left', '-100px')($iconAngleLeft);
     $main.style.removeProperty('transform');
     const promise1 = new Promise<void>((resolve) => {
       $shadeLeft.addEventListener('transitionend', () => {
         document.body.classList.remove('zoom-center');
         $main.classList.remove('zoom-pane', 'zoom-fade-out');
-        restoreGrid($main, $query);
+        restoreGrid($query);
         resolve();
       }, { once: true });
     });
@@ -100,26 +101,27 @@ async function enterZoom(
   $target: HTMLElement,
   elements: ZoomingElements,
   zoomRatio: number,
-  zoomHistory: Options['zoomHistory'],
+  options: Options,
 ) {
   const {
     $main,
     $shadeLeft,
     $shadeRight,
     $query,
+    $iconAngleLeft,
     $iconAngleRight,
-    $iconHistory,
   } = elements;
   if ($main.classList.contains('zoom-pane')) {
     return;
   }
-  const isCenter = [...$target.classList].some((className) => ['leafs', 'pane-tabs'].includes(className));
+  const gridColStart = getGridColStart($target);
+  const isCenter = gridColStart !== 0;
   const width = $main.offsetWidth * zoomRatio;
   const queryWidth = getComputedStyle($query).width;
   const promise1 = new Promise<void>((resolve) => {
     $target.addEventListener('transitionend', () => {
       addClass('zoom-pane')($main);
-      relocateGrid($target, $main, $query, queryWidth);
+      relocateGrid($target, $query, queryWidth);
       resolve();
     }, { once: true });
   });
@@ -130,12 +132,12 @@ async function enterZoom(
   if (isCenter) {
     const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
     addStyle('transform', `translateX(${offset}px)`)($main);
-    addStyle('left', `${-offset + 5}px`)($iconHistory);
+    addStyle('left', `${-offset + 5}px`)($iconAngleLeft);
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
     addClass('zoom-center')(document.body);
     rmStyle('left')($safetyZoneRight);
   } else {
-    addStyle('left', '-100px')($iconHistory);
+    addStyle('left', '-100px')($iconAngleLeft);
     addStyle('right', '5px')($iconAngleRight);
     addStyle('left', `calc(${zoomRatio * 100}% + 8px)`)($safetyZoneRight);
   }
@@ -146,11 +148,13 @@ async function enterZoom(
     clearTimeoutZoom();
     const $shade = ev.target as HTMLElement;
     if ($shade.classList.contains('shade-left')) {
-      await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
-      if (zoomHistory) {
-        enterZoom($('.pane-history')!, elements, zoomRatio, zoomHistory);
+      const $leftPane = $target.previousElementSibling as HTMLElement;
+      if ((options.zoomHistory && $leftPane.classList.contains('histories'))
+        || (options.zoomTabs && $leftPane.classList.contains('tabs'))) {
+        await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
+        enterZoom($leftPane, elements, zoomRatio, options);
+        return;
       }
-      return;
     }
     timerZoom = setTimeout(zoomOut($target, elements, mouseenter), 500);
   }
@@ -162,7 +166,7 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
   const elements = getZoomingElements({ $main });
   const zoomRatio = Number.parseFloat(options.zoomRatio);
   return (e: Event) => {
-    if (!document.body.classList.contains('auto-zoom')) {
+    if (!$main.classList.contains('auto-zoom')) {
       return;
     }
     clearTimeoutZoom();
@@ -173,7 +177,7 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
     const $target = e.target as HTMLElement;
     $target.addEventListener('mouseleave', clearTimeoutZoom, { once: true });
     timerZoom = setTimeout(() => {
-      enterZoom($target, elements, zoomRatio, options.zoomHistory);
+      enterZoom($target, elements, zoomRatio, options);
     }, 500);
   };
 }

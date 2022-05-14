@@ -42,7 +42,7 @@ article {
 }
 
 form label {
-  > input[type="radio"] {
+  >input[type="radio"] {
     margin-right: 3px;
   }
 }
@@ -61,6 +61,7 @@ form label {
 input.bullet {
   height: 0;
   pointer-events: none;
+
   &::after {
     content: '-';
     text-align: center;
@@ -73,7 +74,8 @@ input.bullet {
 }
 
 [name='enable-external-url']:checked {
-  ~ [name='external-url'] {
+  ~[name='external-url'] {
+
     &:placeholder-shown,
     &:invalid {
       outline: 1px solid red !important;
@@ -101,8 +103,13 @@ input.bullet {
 }
 
 @keyframes hilite-fade-out {
-  from { background-color: $blink-bgcolor; }
-  to { background-color: $article-bgcolor; }
+  from {
+    background-color: $blink-bgcolor;
+  }
+
+  to {
+    background-color: $article-bgcolor;
+  }
 }
 
 .blink {
@@ -119,24 +126,30 @@ label.theme {
     width: 100%;
     height: 300px;
     display: none;
-    > div { 
+
+    >div {
       border-radius: 5px;
-      > div {
+
+      >div {
         border-radius: 5px;
       }
     }
   }
+
   .loading {
     width: 100%;
     text-align: center;
+
     .spinner-grow {
       background-color: transparent;
     }
   }
+
   &.loaded {
     .loading {
       display: none;
     }
+
     .css-editor {
       display: block;
     }
@@ -161,36 +174,43 @@ label.theme {
   padding: 10px;
   border: 1px solid #CCC;
   border-radius: 5px;
-  > div:not(.desc) {
+
+  >div:not(.desc) {
     display: flex;
     width: 100%;
     height: 30px;
     justify-content: space-between;
     border-radius: 5px;
-    > div {
+
+    >div {
       width: 100%;
       text-align: center;
       pointer-events: none;
+
       &:first-child {
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
       }
+
       &:last-child {
         border-top-right-radius: 5px;
         border-bottom-right-radius: 5px;
       }
     }
+
     &:hover {
       box-shadow: 1px 4px 6px 2px rgb(0 0 0 / 20%);
       transform: scale(1.03);
     }
   }
+
   .selected {
     box-shadow: 1px 4px 6px 2px rgb(0 0 0 / 40%);
-    
-      transform: scale(1.03);
-      pointer-events: none;
+
+    transform: scale(1.03);
+    pointer-events: none;
   }
+
   .desc {
     grid-column-start: span 3;
     font-weight: bold;
@@ -202,25 +222,31 @@ label.theme {
   border-radius: 5px;
   border: 1px solid #efefef;
   align-self: center;
-  > input {
+
+  >input {
     height: 30px;
     width: 50px;
     border: none;
+
     &::-webkit-color-swatch {
       border: none;
       margin: -2px;
     }
+
     &:first-child::-webkit-color-swatch {
       border-top-left-radius: 5px;
       border-bottom-left-radius: 5px;
     }
+
     &:last-child::-webkit-color-swatch {
       border-top-right-radius: 5px;
       border-bottom-right-radius: 5px;
     }
+
     &:hover {
       box-shadow: 3px 3px 5px 2px rgb(0 0 0 / 20%);
       transform: scale(1.05);
+
       &::-webkit-color-swatch {
         border-radius: 5px;
       }
@@ -233,7 +259,8 @@ label.theme {
   align-items: baseline;
   margin-top: 0.8rem;
   width: fit-content;
-  > a {
+
+  >a {
     display: flex;
     gap: 5px;
     text-decoration: none;
@@ -247,4 +274,79 @@ label.theme {
   top: -30px;
   z-index: 1;
   right: 0;
+}
+
+// Layout
+
+[name="panes"] {
+  margin: 1em;
+  display: flex;
+  gap: 0.5em;
+
+  >div {
+    position: relative;
+    border: 2px solid #222;
+    border-radius: 5px;
+    width: 120px;
+    height: 120px;
+    display: grid;
+    align-items: center;
+    cursor: grab;
+    text-align: center;
+    grid-template-rows: 50% auto auto;
+    background-color: aliceblue;
+    
+    >div {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+    }
+
+    label {
+      z-index: 1;
+    }
+  }
+
+  &.dragging {
+
+    >.drag-source {
+      background-color: transparent;
+      color: transparent;
+      border-width: 0;
+      transition: background-color 0.01s, color 0.01s, border-width 0.01s;
+
+      >div {
+        width: 50%;
+      }
+
+      >label {
+        visibility: hidden;
+        transition: visibility 0.01s;
+      }
+
+      >.pane-before {
+        left: 0;
+      }
+
+    }
+
+    >div {
+      >label {
+        z-index: 0;
+      }
+
+      >div {
+        width: calc(50% + 1.5em);
+
+      }
+
+      >.pane-before {
+        left: -1.5em;
+      }
+
+      >.pane-after {
+        left: 50%;
+      }
+    }
+  }
 }
