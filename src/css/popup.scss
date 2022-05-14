@@ -8,6 +8,10 @@ $draggable-bgcolor: rgba(0, 123, 255, .7);
 $common-marker: #1A73E8;
 $pane-radius: 5px;
 
+// for dark theme
+$light-font-color: #efefef;
+$dark-shade-bg-color: rgba(0, 0, 0, 0.6);
+
 @import 'glyphs';
 
 @keyframes fade-in {
@@ -30,7 +34,6 @@ $pane-radius: 5px;
 @keyframes hilite-fade-out {
   from {
     background-color: $hilite-bgcolor;
-    color: initial;
   }
 
   to {
@@ -159,7 +162,7 @@ button:not(.submit) {
 
   &.hilite {
     animation-name: hilite-fade-out !important;
-    animation-duration: 1.5s !important;
+    animation-duration: 0.5s !important;
   }
 }
 
@@ -243,11 +246,6 @@ button:not(.submit) {
 }
 
 .pin-bookmark {
-  // margin-left: 5px;
-  margin-left: auto;
-}
-
-.query-wrap:empty + .pin-bookmark {
   margin-left: auto;
 }
 
@@ -430,10 +428,6 @@ button:not(.submit) {
 
 .leaf {
 
-  // &:hover {
-  //   background-color: $hover-color;
-  // }
-
   &:hover>button {
     display: flex;
   }
@@ -485,9 +479,6 @@ button:not(.submit) {
     }
 
     &:hover {
-      // &::before {
-      //   background-color: $hover-color;
-      // }
 
       >.button-wrapper {
         display: flex;
@@ -530,7 +521,7 @@ button:not(.submit) {
 
     &.hilite::before {
       animation-name: hilite-fade-out !important;
-      animation-duration: 1.5s !important;
+      animation-duration: 0.5s !important;
     }
 
     &.remove-hilite::before {
@@ -776,6 +767,14 @@ main::-webkit-scrollbar {
 
       &.drag-enter {
         background-color: $drop-folder-bgcolor;
+
+        &~.title {
+          color: #222222;
+
+          &::before {
+            color: rgba(0, 0, 0, 0.5);
+          }
+        }
       }
     }
   }
@@ -990,6 +989,12 @@ main::-webkit-scrollbar {
   }
 }
 
+.pane-body.end.histories {
+  margin-right: 4px;
+}
+
+// Tabs
+
 .tabs {
   overflow-y: auto;
   transition: width 0.1s;
@@ -1018,6 +1023,10 @@ main::-webkit-scrollbar {
   >.empty {
     padding: 0;
   }
+}
+
+.pane-body.end.tabs {
+  margin-right: 1px;
 }
 
 .tabs,
@@ -1065,14 +1074,40 @@ main::-webkit-scrollbar {
   padding-left: 3px;
   transition: width 0.1s;
 
+  .query-wrap:not(:empty):first-child {
+    margin-left: auto;
+
+    ~.pin-bookmark {
+      margin-left: 5px;
+    }
+
+  }
+
+  .query-wrap:empty:first-child {
+    ~.menu-button {
+      .main-menu {
+
+        hr,
+        hr~* {
+          display: none;
+        }
+      }
+    }
+  }
+
   .icon-history {
     +.collapse-history-date {
       margin: 0 10px;
+      margin-left: auto;
 
       &:hover::after,
       &:focus::after {
         width: 1.5em;
         height: 1.5em;
+      }
+
+      +.query-wrap {
+        margin-left: 0;
       }
     }
 
@@ -1096,6 +1131,21 @@ main::-webkit-scrollbar {
     transform: scale(1.2, 1);
   }
 
+  .menu-button {
+    display: none;
+  }
+
+  &.end,
+  .pin-bookmark+ {
+    .menu-button {
+      display: block;
+    }
+
+    .query-wrap {
+      margin-right: 0;
+    }
+  }
+
   >i {
     transition: all 0.15s;
   }
@@ -1104,19 +1154,19 @@ main::-webkit-scrollbar {
 
 // Zoom
 
-.auto-zoom .pane-header {
-  .form-query {
-    margin-left: auto;
-    transition: width 0.1s;
-  }
-}
-
 .auto-zoom {
 
-  .split-h,
-  .resize-x {
+  .pane-header {
+    .form-query {
+      transition: width 0.1s;
+    }
+  }
+
+  .resize-x,
+  .split-h {
     cursor: default;
   }
+
 }
 
 .shade-left,
@@ -1124,7 +1174,7 @@ main::-webkit-scrollbar {
   transition: all 0.15s;
 }
 
-.auto-zoom .zoom-pane {
+.auto-zoom.zoom-pane {
 
   .shade-left,
   .shade-right {
@@ -1165,11 +1215,12 @@ main::-webkit-scrollbar {
   top: calc(50% - 1em);
   color: #efefef;
 
-  &.icon-history {
-    font-size: 1.2em;
+  &.icon-fa-angle-right.left {
+    font-size: 2em;
+    transform: rotate(180deg);
   }
 
-  &.zoom-out.icon-fa-angle-right {
+  &.icon-fa-angle-right.right {
     right: 5px;
     font-size: 2em;
   }
@@ -1198,7 +1249,7 @@ main::-webkit-scrollbar {
   margin-left: 10px;
 }
 
-.main-menu.checked-include-url>[data-value="include-url"],
+.checked-include-url .main-menu>[data-value="include-url"],
 .auto-zoom .main-menu>[data-value="auto-zoom"] {
   color: $common-marker;
 
@@ -1224,7 +1275,7 @@ main::-webkit-scrollbar {
   filter: invert(34%) sepia(85%) saturate(1697%) hue-rotate(199deg) brightness(94%) contrast(93%);
 }
 
-.main-menu.checked-include-url .icon-url {
+.checked-include-url .main-menu .icon-url {
   color: $common-marker;
 }
 
@@ -1235,12 +1286,12 @@ main::-webkit-scrollbar {
     display: none;
   }
 
-  .zoom-pane .collapse-history-date {
+  &.zoom-pane .collapse-history-date {
     display: flex;
     margin-left: auto;
   }
 
-  .zoom-fade-out .collapse-history-date {
+  &.zoom-fade-out .collapse-history-date {
     display: none;
   }
 }
@@ -1334,4 +1385,80 @@ body:not(.date-collapsed) {
 
 .bold-separator {
   margin: 0 1px;
+}
+
+// Dark theme handling
+
+.theme-dark-pane {
+
+  .leafs::-webkit-scrollbar-thumb,
+  .v-scroll-bar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, .3);
+  }
+
+  .leafs::-webkit-scrollbar-thumb:hover,
+  .v-scroll-bar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, .5);
+  }
+
+  .leafs .title::before {
+    color: $light-font-color;
+  }
+
+  &.zoom-pane .shade-left,
+  &.zoom-pane .shade-right {
+    background-color: $dark-shade-bg-color;
+  }
+
+  &.drag-start-leaf,
+  &.drag-start-folder .folders {
+
+    .leaf:not(.search-path),
+    .tab-wrap:not(.match):not(.unmatch) {
+      >.drop-top {
+
+        &.drag-enter::before {
+          border-color: lightgray;
+        }
+      }
+
+      >.drop-bottom {
+
+        &.drag-enter::before {
+          border-color: lightgray;
+        }
+      }
+    }
+  }
+
+  &.drag-start-leaf .folders>.folder>.marker,
+  &.drag-start-folder .marker {
+
+    >.drop-top {
+
+      &.drag-enter::before {
+        border-top-color: lightgray;
+      }
+    }
+
+    >.drop-bottom {
+
+      &.drag-enter {
+        border-bottom-color: lightgray;
+      }
+    }
+  }
+
+  &.drag-start-leaf .leaf,
+  &.drag-start-leaf .tab-wrap,
+  &.drag-start-leaf .folders>.folder>.marker,
+  &.drag-start-folder .leaf,
+  &.drag-start-folder .marker {
+
+    >.drop-top.drag-enter::after,
+    >.drop-bottom.drag-enter::after {
+      border-left-color: lightgray;
+    }
+  }
+
 }

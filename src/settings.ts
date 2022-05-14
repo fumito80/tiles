@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file */
-
 import './css/settings.scss';
 import * as bootstrap from 'bootstrap';
 import {
@@ -24,26 +22,12 @@ import {
   addClass,
   setText,
   insertHTML,
+  camelToSnake,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
+import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
-
-class LayoutPanes extends HTMLDivElement {
-  #value?: string[];
-  get value() {
-    return this.#value!;
-  }
-  set value(value: string[]) {
-    this.#value = value;
-  }
-  // eslint-disable-next-line class-methods-use-this
-  get validity() {
-    return { valid: true };
-  }
-}
-
-customElements.define('layout-panes', LayoutPanes, { extends: 'div' });
 
 class ColorPaletteClass extends HTMLDivElement {
   #value?: ColorPalette;
@@ -92,15 +76,11 @@ self.MonacoEnvironment = {
   },
 };
 
-function camelToSnake(value: string) {
-  return value.split('').map((s) => [s, s.toLowerCase()]).map(([s, smallS]) => (s === smallS ? s : `-${smallS}`)).join('');
-}
-
 function getInputValue(inputs: Inputs[OptionNames]) {
   const [input, ...rest] = inputs;
   switch (input.type) {
     case 'checkbox':
-      return (input as HTMLInputElement).checked;
+      return input.disabled ? false : input.checked;
     case 'radio':
       return [input, ...rest].find((el) => el.checked)!.value;
     default:
@@ -156,6 +136,9 @@ function setSyncListener(inputs: Inputs) {
         break;
       case 'download-sync': {
         const options = await getSync('options');
+        if (Object.keys(options).length === 0) {
+          break;
+        }
         const currentOptions = getOptions(inputs);
         if (objectEqaul(options, currentOptions, true)) {
           break;

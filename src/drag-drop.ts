@@ -152,6 +152,10 @@ const dragAndDropEvents = {
       rmClass('hilite'),
       addClass('drag-source'),
     )($dragTarget);
+    const $menu = $('[role="menu"]', $target);
+    if ($menu) {
+      document.body.append($menu);
+    }
     const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
     const $draggable = addChild(clone)($('.draggable-clone'));
     e.dataTransfer!.setDragImage($draggable, -12, 10);

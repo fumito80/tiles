@@ -15,15 +15,15 @@
         <div class="split-h pane2"></div>
         <div class="pane-header"></div>
         <div class="split-h pane1"></div>
-        <div class="pane-header"></div>
+        <div class="pane-header end"></div>
         <div class="pane-body"></div>
         <div class="pane-body"></div>
         <div class="pane-body"></div>
-        <div class="pane-body"></div>
+        <div class="pane-body end"></div>
         <div class="shade-left"></div>
         <div class="shade-right"></div>
-        <i class="zoom-out icon-history"></i>
-        <i class="zoom-out icon-fa-angle-right"></i>
+        <i class="zoom-out icon-fa-angle-right left"></i>
+        <i class="zoom-out icon-fa-angle-right right"></i>
     </main>
     <div class="resize-y"></div>
     <div class="leaf-menu" role="menu">
@@ -68,10 +68,40 @@
                 <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
             </button>
             <div class="query-wrap"></div>
+            <div class="menu-button">
+                <button class="main-menu-button" type="button">
+                    <i class="icon-fa-ellipsis-v"></i>
+                </button>
+                <div class="main-menu" role="menu">
+                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                            class="icon-check-solid"></i></div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="auto-zoom" title="Resizable if ZEN mode is disabled">
+                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
+                    </div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
+                </div>
+            </div>
         </div>
         <div class="header-tabs">
             <i class="icon-tabs" title="OPEN TABS"></i>
             <div class="query-wrap"></div>
+            <div class="menu-button">
+                <button class="main-menu-button" type="button">
+                    <i class="icon-fa-ellipsis-v"></i>
+                </button>
+                <div class="main-menu" role="menu">
+                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                            class="icon-check-solid"></i></div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="auto-zoom" title="Resizable if ZEN mode is disabled">
+                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
+                    </div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
+                </div>
+            </div>
         </div>
         <div class="header-leafs">
             <i class="icon-bookmarks" title="BOOKMARKS"></i>
@@ -93,8 +123,8 @@
                     <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom"></i>
-                        <div class="icon-zoom"></div>Auto zen mode<i class="icon-check-solid"></i>
+                    <div role="menuitem" data-value="auto-zoom" title="Resizable if ZEN mode is disabled"></i>
+                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>

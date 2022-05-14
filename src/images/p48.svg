@@ -1,0 +1,26 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="scale(0.375,0.375)">
+    <!-- <circle fill="#B0C4DE" cx="64" cy="64" r="64" /> -->
+    <g transform="translate(5,5) scale(0.9,0.9)" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#FF8C00" stroke-width="40">
+        <path d="
+          M 60  60 C 50 95 50 105 15 113
+        " transform="translate(2,0)" />
+        <path d="
+          M 30 15
+          L 113 15 C 105 62 105 67 70 67
+          M 60  60 C 50 95 50 105 15 113
+        " transform="translate(0,0)" />
+      </g>
+      <g stroke="#FFFFFF" stroke-width="18">
+        <path d="
+          M 30 15
+          L 113 15 C 105 62 105 67 70 67
+        " transform="translate(0,0)" />
+        <path d="
+          M 60  60 C 50 95 50 105 15 113
+        " transform="translate(1,0)" />
+      </g>
+    </g>
+  </g>
+</svg>

@@ -636,9 +636,9 @@ export function cssid(id: string | number) {
 
 export function whichClass<T extends ReadonlyArray<string>>(
   classNames: T,
-  element: HTMLElement,
+  element?: HTMLElement | null,
 ): T[number] | undefined {
-  return classNames.find((name) => element.classList.contains(name));
+  return classNames.find((name) => element?.classList.contains(name));
 }
 
 export function addRules(selector: string, ruleProps: [string, string][]) {
@@ -675,8 +675,7 @@ export function makeStyleIcon(url?: string) {
 
 export function showMenu($target: HTMLElement, menuSelector: string) {
   const $menu = $(menuSelector)!;
-  $menu.style.top = '';
-  $menu.style.left = '';
+  pipe(addStyle('top', ''), addStyle('left', ''))($menu);
   if ($target.parentElement !== $menu.parentElement) {
     $target.insertAdjacentElement('afterend', $menu);
   }
@@ -914,4 +913,19 @@ export function setMessageListener<T extends Model>(messageMap: T, once = false)
     }
   }
   chrome.runtime.onMessage.addListener(onMessage);
+}
+
+export function camelToSnake(value: string) {
+  return value.split('').map((s) => [s, s.toLowerCase()]).map(([s, smallS]) => (s === smallS ? s : `-${smallS}`)).join('');
+}
+
+export function getGridColStart($target: HTMLElement) {
+  let gridColStart = 0;
+  for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
+    if (!$prev.classList.contains('pane-body')) {
+      break;
+    }
+    gridColStart += 1;
+  }
+  return gridColStart;
 }

@@ -52,6 +52,7 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
     (el) => {
       // eslint-disable-next-line no-void
       void (el as HTMLElement).offsetWidth;
+      el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
       return el;
     },
     addClass(className),

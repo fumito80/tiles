@@ -226,7 +226,7 @@ export default function setEventListners(options: Options) {
   });
 
   $$('.split-h').forEach(addListener('mousedown', (e) => {
-    if (document.body.classList.contains('auto-zoom')) {
+    if ($main.classList.contains('auto-zoom')) {
       return;
     }
     const $splitter = e.target as HTMLElement;
@@ -266,8 +266,8 @@ export default function setEventListners(options: Options) {
           chrome.runtime.openOptionsPage();
           break;
         case 'auto-zoom': {
-          const isChecked = document.body.classList.contains('auto-zoom');
-          document.body.classList.toggle('auto-zoom', !isChecked);
+          const isChecked = $main.classList.contains('auto-zoom');
+          $main.classList.toggle('auto-zoom', !isChecked);
           getLocal('settings')
             .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
           break;
@@ -275,7 +275,7 @@ export default function setEventListners(options: Options) {
         case 'include-url':
           getLocal('settings')
             .then(({ settings }) => {
-              $menu.parentElement!.classList.toggle('checked-include-url', !settings.includeUrl);
+              $main.classList.toggle('checked-include-url', !settings.includeUrl);
               return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
             })
             .then(({ settings }) => {
@@ -374,6 +374,6 @@ export default function setEventListners(options: Options) {
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
   if (!options.zoomHistory) {
-    addClass('disable-zoom-history')(document.body);
+    addClass('disable-zoom-history')($main);
   }
 }

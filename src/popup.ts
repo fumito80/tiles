@@ -28,6 +28,7 @@ import {
   setHTML,
   addStyle,
   insertHTML,
+  getGridColStart,
 } from './common';
 
 import { makeTab } from './html';
@@ -56,7 +57,6 @@ function setTabs(currentWindowId: number) {
 
 const lightColor = '#efefef';
 const darkColor = '#222222';
-const shadeBgColorDark = 'rgba(0, 0, 0, 0.6)';
 
 function setOptions(settings: Settings, options: Options) {
   addRules('body', [
@@ -64,6 +64,7 @@ function setOptions(settings: Settings, options: Options) {
     ['height', `${settings.height}px`],
     ['color', settings.bodyColor],
   ]);
+  const $main = $('main')!;
   const [
     [paneBg, paneColor, isLightPaneBg],
     [frameBg, frameColor, isLightFrameBg],
@@ -86,17 +87,12 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, .date-collapsed main:not(.drag-start-leaf) .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:not(.hilite):hover, main:not(.drag-start-folder) .folders .marker:not(.hilite):hover::before, main:not(.drag-start-leaf) .tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, .date-collapsed main:not(.drag-start-leaf) .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
-  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
-  if (!isLightPaneBg) {
-    addRules('.leafs::-webkit-scrollbar-thumb, .v-scroll-bar::-webkit-scrollbar-thumb', [['background-color', 'rgba(255, 255, 255, .3)']]);
-    addRules('.leafs::-webkit-scrollbar-thumb:hover, .v-scroll-bar::-webkit-scrollbar-thumb:hover', [['background-color', 'rgba(255, 255, 255, .5)']]);
-    addRules('.leafs .title::before', [['color', lightColor]]);
-    addRules('.auto-zoom .zoom-pane .shade-left, .auto-zoom .zoom-pane .shade-right', [['background-color', shadeBgColorDark]]);
-  }
+  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
+  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
+  $main.classList.toggle('theme-dark-pane', !isLightPaneBg);
   if (!isLightFrameBg) {
     addRules('.pane-header, .form-query button > i, .form-query .query', [['color', 'lightgray']]);
     addRules('.title::before, .form-query .submit > i', [['color', 'rgba(255,255,255,0.5)']]);
@@ -152,8 +148,8 @@ function setOptions(settings: Settings, options: Options) {
     .filter(Boolean)
     .map((rule) => rule.trim().concat('}'))
     .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
-  document.body.classList.toggle('auto-zoom', settings.autoZoom);
-  $('.main-menu')!.classList.toggle('checked-include-url', settings.includeUrl);
+  $main.classList.toggle('auto-zoom', settings.autoZoom);
+  $main.classList.toggle('checked-include-url', settings.includeUrl);
 }
 
 function setExternalUrl(options: Options) {
@@ -211,13 +207,7 @@ function layoutPanes(options: Options) {
   // Bold Splitter
   const $leafs = $('.histories + .leafs');
   if ($leafs) {
-    let gridColStart = 0;
-    for (let $prev = $leafs.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
-      if (!$prev.classList.contains('pane-body')) {
-        break;
-      }
-      gridColStart += 1;
-    }
+    const gridColStart = getGridColStart($leafs);
     const $splitter = $$('.split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
