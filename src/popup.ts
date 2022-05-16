@@ -29,6 +29,10 @@ import {
   addStyle,
   insertHTML,
   getGridColStart,
+  last,
+  $$byClass,
+  $byClass,
+  $byTag,
 } from './common';
 
 import { makeTab } from './html';
@@ -51,7 +55,7 @@ function setTabs(currentWindowId: number) {
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
     const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
-    $('.tabs')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
+    $byClass('tabs')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
   });
 }
 
@@ -64,7 +68,7 @@ function setOptions(settings: Settings, options: Options) {
     ['height', `${settings.height}px`],
     ['color', settings.bodyColor],
   ]);
-  const $main = $('main')!;
+  const $main = $byTag('main')!;
   const [
     [paneBg, paneColor, isLightPaneBg],
     [frameBg, frameColor, isLightFrameBg],
@@ -75,7 +79,7 @@ function setOptions(settings: Settings, options: Options) {
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs > div', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('.leafs, .histories, .tabs > div, .pane-header::before', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body', [['background-color', frameBg]]);
   addRules('.folders', [['color', frameColor]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
@@ -165,8 +169,8 @@ function setExternalUrl(options: Options) {
 }
 
 function setBookmarks(html: HtmlBookmarks) {
-  setHTML(html.leafs)($('.leafs'));
-  setHTML(html.folders)($('.folders'));
+  setHTML(html.leafs)($byClass('leafs'));
+  setHTML(html.folders)($byClass('folders'));
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
@@ -186,6 +190,8 @@ function setHistory($target: HTMLElement, htmlHistory: string) {
 }
 
 function layoutPanes(options: Options) {
+  const $headers = $$byClass('pane-header');
+  const $bodies = $$byClass('pane-body');
   options.panes
     .reduce<string[]>((acc, name) => {
       if (name === 'bookmarks') {
@@ -193,22 +199,24 @@ function layoutPanes(options: Options) {
       }
       return [...acc, name];
     }, [])
-    .forEach((name, i) => {
-      $$('.pane-header')[i].append(...$(`.header-${name}`)!.children);
-      const $paneBody = $$('.pane-body')[i];
+    .map((name, i) => [name, $headers[i], $bodies[i]] as const)
+    .forEach(([name, $paneHeader, $paneBody]) => {
+      const className = `header-${name}`;
+      $paneHeader.append(...$byClass(className)!.children);
+      addClass(className)($paneHeader);
       addClass(name)($paneBody);
     });
-  const $endTitle = $$('.pane-header').at(-1)!;
-  $('.query-wrap', $endTitle)!.append($('.form-query')!);
+  const $endTitle = last($headers);
+  $byClass('query-wrap', $endTitle)!.append($byClass('form-query')!);
   // History pane
-  const $histories = $('.histories');
-  $histories?.append(...$('.pane-histories')!.children);
+  const $histories = $byClass('histories');
+  $histories?.append(...$byClass('pane-histories')!.children);
   addClass('v-scroll', 'v-scroll-bar')($histories);
   // Bold Splitter
   const $leafs = $('.histories + .leafs');
   if ($leafs) {
     const gridColStart = getGridColStart($leafs);
-    const $splitter = $$('.split-h')[gridColStart - 1];
+    const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
 }
@@ -219,7 +227,7 @@ function init({
   layoutPanes(options);
   setOptions(settings, options);
   setTabs(currentWindowId);
-  setHistory($('.histories')!.firstElementChild as HTMLElement, htmlHistory);
+  setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
   toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);

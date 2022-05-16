@@ -1,6 +1,6 @@
 import { Options } from './types';
 import {
-  $, $$,
+  $, $$byClass, $byClass,
   getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, last,
 } from './common';
 
@@ -18,9 +18,9 @@ type ZoomingElementsArgs = Partial<ZoomingElements> & Pick<ZoomingElements, '$ma
 function getZoomingElements({ $main, ...rest }: ZoomingElementsArgs): ZoomingElements {
   return {
     $main,
-    $shadeLeft: rest.$shadeLeft || $('.shade-left')!,
-    $shadeRight: rest.$shadeRight || $('.shade-right')!,
-    $query: rest.$query || $('.query')!,
+    $shadeLeft: rest.$shadeLeft || $byClass('shade-left')!,
+    $shadeRight: rest.$shadeRight || $byClass('shade-right')!,
+    $query: rest.$query || $byClass('query')!,
     $iconAngleLeft: rest.$iconAngleLeft || $('.zoom-out.icon-fa-angle-right.left')!,
     $iconAngleRight: rest.$iconAngleRight || $('.zoom-out.icon-fa-angle-right.right')!,
   };
@@ -32,17 +32,17 @@ function relocateGrid(
   queryWidth: string,
 ) {
   const gridColStart = getGridColStart($target);
-  const $header = $$('.pane-header')[gridColStart];
+  const $header = $$byClass('pane-header')[gridColStart];
   const $form = $query.parentElement!;
   addStyle('width', queryWidth)($query);
-  $('.query-wrap', $header)!.append($form);
+  $byClass('query-wrap', $header)!.append($form);
   $query.focus();
 }
 
 function restoreGrid($query: HTMLElement) {
   const $form = $query.parentElement!;
-  const $endTitle = last($$('.pane-header'));
-  $('.query-wrap', $endTitle)!.append($form);
+  const $endTitle = last($$byClass('pane-header'));
+  $byClass('query-wrap', $endTitle)!.append($form);
   rmStyle('width')($query);
   rmStyle('width')($form);
   rmStyle('overflow')($form);
@@ -128,7 +128,7 @@ async function enterZoom(
   addStyle('width', `${width}px`)($target);
   addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
   addStyle('left', `calc(-100% + ${$target.offsetLeft - 4}px)`)($shadeLeft);
-  const $safetyZoneRight = $('.safety-zone-right');
+  const $safetyZoneRight = $byClass('safety-zone-right');
   if (isCenter) {
     const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
     addStyle('transform', `translateX(${offset}px)`)($main);

@@ -1,5 +1,5 @@
 import {
-  $, addClass, rmClass,
+  $, $byClass, addClass, rmClass,
 } from './common';
 import { State, InsertPosition } from './types';
 
@@ -21,7 +21,7 @@ function dragover(e: DragEvent) {
 }
 
 function dragenter(e: DragEvent) {
-  const $dragSource = $('.drag-source')!;
+  const $dragSource = $byClass('drag-source')!;
   const $enterTarget = e.target as HTMLElement;
   if ($dragSource === $enterTarget || !$enterTarget.classList.contains('droppable')) {
     return;

@@ -23,6 +23,9 @@ import {
   setText,
   insertHTML,
   camelToSnake,
+  $byTag,
+  $byClass,
+  $byId,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
@@ -128,7 +131,7 @@ function saveOptions(inputs: Inputs) {
 }
 
 function setSyncListener(inputs: Inputs) {
-  $('.chrome-sync')?.addEventListener('click', async (e) => {
+  $byClass('chrome-sync')?.addEventListener('click', async (e) => {
     const className = whichClass(['upload-sync', 'download-sync'] as const, e.target as HTMLButtonElement);
     switch (className) {
       case 'upload-sync':
@@ -144,7 +147,7 @@ function setSyncListener(inputs: Inputs) {
           break;
         }
         pipe(tap(initInputs), setLocal)(options);
-        const $article = $('article')!;
+        const $article = $byTag('article')!;
         pipe(
           addListener('animationend', () => rmClass('blink')($article), { once: true }),
           rmClass('blink'),
@@ -166,8 +169,8 @@ function setSyncListener(inputs: Inputs) {
 
 function setAppInfo() {
   const { version, name } = chrome.runtime.getManifest() as chrome.runtime.Manifest;
-  setText(`Version ${version}`)($('.version'));
-  setText(name)($('title'));
+  setText(`Version ${version}`)($byClass('version'));
+  setText(name)($byTag('title'));
 }
 
 type ColorInfo = {
@@ -262,7 +265,7 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     .concat(dark1);
   const htmlDarkTheme = getColorPaletteHTML(darkOrVivid, options);
 
-  const $colorPalettes = $('.color-palettes')!;
+  const $colorPalettes = $byClass('color-palettes')!;
 
   pipe(
     insertHTML('beforeend', '<div class="desc">Light theme</div>'),
@@ -282,7 +285,7 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
       const palette = ([...$target.children] as HTMLElement[])
         .map((el) => el.dataset.color as string) as ColorPalette;
       $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
-      rmClass('selected')($('.selected'));
+      rmClass('selected')($byClass('selected'));
       addClass('selected')($target);
     }),
   )($colorPalettes);
@@ -307,13 +310,13 @@ async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: In
 
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
-  $('#customize-css')?.addEventListener('shown.bs.collapse', async () => {
-    const $editorCollapse = $('#customize-css')!;
+  $byId('customize-css')?.addEventListener('shown.bs.collapse', async () => {
+    const $editorCollapse = $byId('customize-css')!;
     if ($editorCollapse.classList.contains('loaded')) {
       return;
     }
     await initMonacoEditor({
-      el: $('.css-editor')!,
+      el: $byClass('css-editor')!,
       inputMonacoEditor: $('[name="css"]')!,
       selectEditorTheme: $('[name="editor-theme"]')!,
     });

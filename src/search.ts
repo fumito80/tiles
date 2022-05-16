@@ -9,9 +9,11 @@ import {
   addAttr,
   rmAttr,
   addClass,
+  $byClass,
+  $$byClass,
 } from './common';
 
-const $inputQuery = $('.query') as HTMLInputElement;
+const $inputQuery = $byClass('query') as HTMLInputElement;
 
 let lastQueryValue = '';
 
@@ -26,7 +28,7 @@ export function clearSearch() {
   $$('.leafs .search-path').forEach(rmClass('search-path'));
   $$('.leafs .path').forEach(rmClass('path'));
   $$('.tabs > div > div').forEach(rmClass('match', 'unmatch'));
-  $$('.empty').forEach(rmClass('empty'));
+  $$byClass('empty').forEach(rmClass('empty'));
   resetHistory();
   const openFolder = $('.folders .open');
   if (openFolder) {
@@ -94,7 +96,7 @@ function search(includeUrl: boolean, $leafs: HTMLElement) {
       }
     }
   });
-  const $paneTabs = $('.tabs')!;
+  const $paneTabs = $byClass('tabs')!;
   $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
     const tab = el.firstElementChild as HTMLElement;
     const isMatch = reFilter.test(tab.textContent!)
@@ -112,7 +114,7 @@ let fnSearch: () => void;
 
 export function resetQuery(includeUrl: boolean) {
   $inputQuery.removeEventListener('input', fnSearch);
-  const $leafs = $('.leafs') as HTMLElement;
+  const $leafs = $byClass('leafs') as HTMLElement;
   fnSearch = () => search(includeUrl, $leafs);
   $inputQuery.addEventListener('input', fnSearch);
   const lqv = lastQueryValue;

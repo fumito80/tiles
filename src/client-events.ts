@@ -5,7 +5,6 @@ import {
 
 import {
   $,
-  $$,
   setEvents,
   whichClass,
   cssid,
@@ -24,6 +23,9 @@ import {
   addListener,
   rmClass,
   addClass,
+  $byTag,
+  $byClass,
+  $$byClass,
 } from './common';
 
 import {
@@ -55,9 +57,9 @@ import { clearQuery, resetQuery } from './search';
 import { setZoomSetting } from './zoom';
 
 export default function setEventListners(options: Options) {
-  const $main = $('main')!;
+  const $main = $byTag('main')!;
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
-  $('.form-query')!.addEventListener('submit', (e: Event) => {
+  $byClass('form-query')!.addEventListener('submit', (e: Event) => {
     e.preventDefault();
     if (options.enableExternalUrl && options.externalUrl) {
       const $inputQuery = (e.target as HTMLFormElement).query;
@@ -71,7 +73,7 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $('.collapse-history-date')?.addEventListener('click', collapseHistoryDate);
+  $byClass('collapse-history-date')?.addEventListener('click', collapseHistoryDate);
 
   setEvents([$main], {
     click(e) {
@@ -86,12 +88,12 @@ export default function setEventListners(options: Options) {
       if ($target.hasAttribute('contenteditable')) {
         return;
       }
-      $('.query')!.focus();
+      $byClass('query')!.focus();
     },
     ...dragAndDropEvents,
   });
 
-  setEvents($$('.leaf-menu'), {
+  setEvents($$byClass('leaf-menu'), {
     async click(e) {
       const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
@@ -127,7 +129,7 @@ export default function setEventListners(options: Options) {
         }
         case 'remove': {
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($('.leaf-menu'))(document.body);
+          addChild($byClass('leaf-menu'))(document.body);
           pipe(
             addListener('animationend', () => $leaf.remove(), { once: true }),
             rmClass('hilite'),
@@ -168,9 +170,9 @@ export default function setEventListners(options: Options) {
       const folder = $target.parentElement!.parentElement!;
       folder.classList.toggle('path');
     }
-  })($('.leafs')!);
+  })($byClass('leafs')!);
 
-  $('.folders')!.addEventListener('click', (e) => {
+  $byClass('folders')!.addEventListener('click', (e) => {
     const $target = e.target as HTMLDivElement;
     const targetClasses = [
       'anchor',
@@ -188,7 +190,7 @@ export default function setEventListners(options: Options) {
         findTabsFirstOrNot(options, $target!);
         break;
       case 'marker':
-        $('.title', $target)!.click();
+        $byClass('title', $target)!.click();
         break;
       case 'icon-fa-angle-right':
         onClickAngle(e);
@@ -203,10 +205,10 @@ export default function setEventListners(options: Options) {
           return;
         }
         $leafs.scrollTop = 0;
-        $$('.open').forEach(rmClass('open'));
+        $$byClass('open').forEach(rmClass('open'));
         folders.forEach(addClass('open'));
         saveStateOpenedPath(foldersFolder);
-        $$('.hilite').forEach(rmClass('hilite'));
+        $$byClass('hilite').forEach(rmClass('hilite'));
         break;
       }
       case 'folder-menu-button': {
@@ -218,14 +220,14 @@ export default function setEventListners(options: Options) {
     }
   });
 
-  addListener('click', () => addBookmark())($('.pin-bookmark'));
+  addListener('click', () => addBookmark())($byClass('pin-bookmark'));
 
-  $('.main-menu-button')?.addEventListener('click', (e) => {
+  $byClass('main-menu-button')?.addEventListener('click', (e) => {
     e.preventDefault();
     return false;
   });
 
-  $$('.split-h').forEach(addListener('mousedown', (e) => {
+  $$byClass('split-h').forEach(addListener('mousedown', (e) => {
     if ($main.classList.contains('auto-zoom')) {
       return;
     }
@@ -244,18 +246,18 @@ export default function setEventListners(options: Options) {
     setSplitterHandler(resizeSplitHandler($splitter, subWidth));
   }));
 
-  $('.resize-x')?.addEventListener('mousedown', (e) => {
-    setResizeHandler(resizeWidthHandler($('.form-query')!, document.body.offsetWidth + e.screenX));
+  $byClass('resize-x')?.addEventListener('mousedown', (e) => {
+    setResizeHandler(resizeWidthHandler($byClass('form-query')!, document.body.offsetWidth + e.screenX));
   });
 
-  $('.resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
+  $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
 
-  setEvents($$('.main-menu'), {
+  setEvents($$byClass('main-menu'), {
     async click(e) {
       const $menu = e.target as HTMLElement;
       switch ($menu.dataset.value) {
         case 'add-bookmark': {
-          const id = $('.open')?.id;
+          const id = $byClass('open')?.id;
           addBookmark(id || '1');
           break;
         }
@@ -291,7 +293,7 @@ export default function setEventListners(options: Options) {
     },
   });
 
-  setEvents($$('.folder-menu'), {
+  setEvents($$byClass('folder-menu'), {
     async click(e) {
       const $folder = getParentElement(e.target as HTMLElement, 4)!;
       switch ((e.target as HTMLElement).dataset.value) {
@@ -319,7 +321,7 @@ export default function setEventListners(options: Options) {
       e.preventDefault();
     },
   });
-  const $paneTabs = $('.tabs')!;
+  const $paneTabs = $byClass('tabs')!;
   $paneTabs.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
@@ -367,7 +369,7 @@ export default function setEventListners(options: Options) {
       return;
     }
     createNewTab(options, url);
-  })($('.histories')!);
+  })($byClass('histories')!);
   const panes = [
     ...(options.zoomHistory ? [$paneHistory] : []),
     ...(options.zoomTabs ? [$paneTabs] : []),

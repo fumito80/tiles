@@ -13,6 +13,9 @@ import {
   addClass,
   addChild,
   switches,
+  $byId,
+  $byClass,
+  $byTag,
 } from './common';
 import {
   addBookmark,
@@ -74,7 +77,7 @@ function dropWithTabs(
         if (sourceTab.windowId === windowId && rest.index > sourceTab.index) {
           domIndex += 1;
         }
-        const $source = $(`#${sourceId}`)!;
+        const $source = $byId(sourceId)!;
         const $sourceParent = $source.parentElement!;
         const $destParent = $dropTarget.parentElement!;
         $destParent?.insertBefore($source, $destParent.children[domIndex]);
@@ -83,7 +86,7 @@ function dropWithTabs(
         }
       });
     });
-    $('.tabs')!.dispatchEvent(new Event('mouseenter'));
+    $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
   });
 }
 
@@ -114,7 +117,7 @@ function checkDroppable(e: DragEvent) {
   if (dropAreaClass == null) {
     return false;
   }
-  const $dragSource = $('.drag-source')!;
+  const $dragSource = $byClass('drag-source')!;
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
   if ($dropTarget.id === sourceId) {
@@ -140,7 +143,7 @@ const dragAndDropEvents = {
       .case('marker')
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
-    const $main = $('main')!;
+    const $main = $byTag('main')!;
     if ($main.classList.contains('zoom-pane')) {
     // if ([...$main.classList].some((name) => ['zoom-pane', 'init-zoom'].includes(name))) {
       const $zoomPane = $target.closest('.histories, .tabs') as HTMLElement;
@@ -157,11 +160,11 @@ const dragAndDropEvents = {
       document.body.append($menu);
     }
     const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-    const $draggable = addChild(clone)($('.draggable-clone'));
+    const $draggable = addChild(clone)($byClass('draggable-clone'));
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    addClass(targetClass)($('main'));
+    addClass(targetClass)($byTag('main'));
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -169,15 +172,15 @@ const dragAndDropEvents = {
     }
   },
   dragenter(e: DragEvent) {
-    rmClass('drag-enter')($('.drag-enter'));
+    rmClass('drag-enter')($byClass('drag-enter'));
     if (checkDroppable(e)) {
       addClass('drag-enter')(e.target as HTMLElement);
     }
   },
   dragend(e: DragEvent) {
-    rmClass('drag-source')($('.drag-source'));
-    rmClass('drag-start-leaf', 'drag-start-folder')($('main'));
-    setHTML('')($('.draggable-clone'));
+    rmClass('drag-source')($byClass('drag-source'));
+    rmClass('drag-start-leaf', 'drag-start-folder')($byTag('main'));
+    setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = switches(className)
@@ -186,7 +189,7 @@ const dragAndDropEvents = {
         .case('history')
         .then('.histories')
         .else(null);
-      $(paneClass)?.dispatchEvent(new Event('mouseenter'));
+      $byClass(paneClass)?.dispatchEvent(new Event('mouseenter'));
     }
   },
   async drop(e: DragEvent) {

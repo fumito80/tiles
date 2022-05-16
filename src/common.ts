@@ -31,6 +31,40 @@ export function $$<T extends HTMLElement>(
   return [...parent.querySelectorAll(selector)] as Array<T>;
 }
 
+export function $byClass<T extends HTMLElement>(
+  className: string | null,
+  parent: HTMLElement | Document = document,
+) {
+  return parent.getElementsByClassName(className!)[0] as T;
+}
+
+export function $byId<T extends HTMLElement>(
+  id: string,
+) {
+  return document.getElementById(id) as T;
+}
+
+export function $$byClass<T extends HTMLElement>(
+  className: string,
+  parent: HTMLElement | Document = document,
+) {
+  return [...parent.getElementsByClassName(className)] as Array<T>;
+}
+
+export function $byTag<T extends HTMLElement>(
+  tagName: string,
+  parent: HTMLElement | Document = document,
+) {
+  return parent.getElementsByTagName(tagName)[0] as T;
+}
+
+export function $$byTag<T extends HTMLElement>(
+  tagName: string,
+  parent: HTMLElement | Document = document,
+) {
+  return [...parent.getElementsByTagName(tagName)] as Array<T>;
+}
+
 export function addChild<T extends Element | null>($child: T) {
   return <U extends Element | null>($parent: U) => {
     if ($parent && $child) {
@@ -728,7 +762,7 @@ export function getSync<T extends Array<keyof State>>(...keyNames: T) {
 }
 
 export function getGridTemplateColumns() {
-  const [pane3, pane2, pane1] = $$('.pane-body')
+  const [pane3, pane2, pane1] = $$byClass('pane-body')
     .map((el) => el.style.getPropertyValue('width'))
     .map((n) => Number.parseInt(n, 10));
   return {
@@ -762,7 +796,8 @@ export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   if (!await checkSplitWidth(pane1, pane2, pane3)) {
     return;
   }
-  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($$('.pane-body')[i]));
+  const $bodies = $$byClass('pane-body');
+  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {

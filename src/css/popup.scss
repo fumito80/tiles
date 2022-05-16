@@ -1265,7 +1265,7 @@ main::-webkit-scrollbar {
 .icon-zoom {
   width: 2.5em;
   height: 1.2em;
-  background-size: contain;
+  background-size: 1.2em;
   background-repeat: no-repeat;
   background-position: center;
   filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
@@ -1461,4 +1461,24 @@ body:not(.date-collapsed) {
     }
   }
 
+}
+
+// Pane separator
+
+.pane-header {
+  position: relative;
+  padding-left: 6px;
+}
+
+.pane-header::before {
+  content: '';
+  position: absolute;
+  width: 1.5px;
+  height: 51%;
+  left: -3px;
+}
+
+.resize-x+.pane-header::before,
+.pane-header.header-folders::before {
+  width: 0;
 }

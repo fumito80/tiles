@@ -33,6 +33,8 @@ import {
   setText,
   rmAttr,
   rmStyle,
+  $byClass,
+  $$byClass,
 } from './common';
 
 import {
@@ -107,16 +109,16 @@ export function setHasChildren($target: HTMLElement) {
 }
 
 export function onClickAngle(e: MouseEvent) {
-  const target = e.target as HTMLAnchorElement;
-  const folder = target.parentElement?.parentElement!;
-  if ($('.open', folder)) {
-    (target.nextElementSibling as HTMLDivElement)?.click();
+  const $target = e.target as HTMLAnchorElement;
+  const $folder = $target.parentElement?.parentElement!;
+  if ($byClass('open', $folder)) {
+    ($target.nextElementSibling as HTMLDivElement)?.click();
   }
-  folder.classList.toggle('path');
+  $folder.classList.toggle('path');
 }
 
 export function saveStateOpenedPath(foldersFolder: HTMLElement) {
-  $$('.path').forEach((el) => el.classList.remove('path'));
+  $$byClass('path').forEach((el) => el.classList.remove('path'));
   let paths: Array<string> = [];
   for (let folder = foldersFolder as HTMLElement | null; folder && folder.classList.contains('folder'); folder = folder.parentElement) {
     folder.classList.add('path');
@@ -207,7 +209,7 @@ export function resizeHeightHandler(e: MouseEvent) {
   timerResizeY = setTimeout(() => {
     getLocal('vscrollProps')
       .then(({ vscrollProps }) => {
-        const $paneHistory = $('.histories') as HTMLDivElement;
+        const $paneHistory = $byClass('histories') as HTMLDivElement;
         const vScrollData = getVScrollData();
         setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps);
       });
@@ -256,7 +258,7 @@ export async function findInTabsBookmark(options: Options, $anchor: HTMLElement)
 }
 
 async function restoreHistory(includeUrl: boolean) {
-  const value = ($('.query') as HTMLInputElement).value.trim();
+  const value = ($byClass('query') as HTMLInputElement).value.trim();
   const reFilter = getReFilter(value);
   return resetHistory({ reFilter, includeUrl });
 }
@@ -270,7 +272,7 @@ export async function collapseHistoryDate() {
   addClass('date-collapsed')(document.body);
   const histories = getVScrollData();
   const data = histories.filter((item) => item.headerDate);
-  const $paneHistory = $('.histories') as HTMLDivElement;
+  const $paneHistory = $byClass('histories') as HTMLDivElement;
   setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
   setScrollTop(0);
 }
@@ -287,17 +289,17 @@ export async function jumpHistoryDate(localeDate: string) {
 
 export async function removeFolder($folder: HTMLElement) {
   await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-  addChild($('.folder-menu'))(document.body);
+  addChild($byClass('folder-menu'))(document.body);
   pipe(
     addListener('animationend', () => {
       const $parent = $folder.parentElement!;
       $folder.remove();
       setHasChildren($parent);
-      $('.title', $parent)!.click();
+      $byClass('title', $parent)!.click();
     }, { once: true }),
     rmClass('hilite'),
     setAnimationFolder('remove-hilite'),
-  )($('.marker', $folder));
+  )($byClass('marker', $folder));
 }
 
 export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
@@ -325,7 +327,7 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
       });
       $title.addEventListener('blur', async () => {
         rmAttr('contenteditable')($title);
-        $('.query')!.focus();
+        $byClass('query')!.focus();
         // eslint-disable-next-line no-param-reassign
         $title.scrollLeft = 0;
         const title = $title.textContent?.trim();
@@ -365,10 +367,10 @@ export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.Boo
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlAnchor = makeLeaf({ id, ...params });
   if (parentId === '1') {
-    insertHTML('beforebegin', htmlAnchor)($('.folders')!.children[index!]);
+    insertHTML('beforebegin', htmlAnchor)($byClass('folders')!.children[index!]);
   } else {
-    if (parentId !== $('.open')?.id) {
-      $$('.open').forEach(rmClass('open'));
+    if (parentId !== $byClass('open')?.id) {
+      $$byClass('open').forEach(rmClass('open'));
       $$(cssid(parentId)).forEach(addClass('open'));
     }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
@@ -387,9 +389,9 @@ export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.Boo
 }
 
 export function showModalInput(desc: string) {
-  const $modal = $('.modal')!;
+  const $modal = $byClass('modal')!;
   addClass('show-modal')(document.body);
-  setText(desc)($('.popup-desc', $modal));
+  setText(desc)($byClass('popup-desc', $modal));
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
@@ -403,7 +405,7 @@ export async function addFolder(parentId = '1') {
     id, children: '', length: 0, ...params,
   });
   if (parentId === '1') {
-    $('.folders')!.insertAdjacentHTML('afterbegin', htmlNode);
+    $byClass('folders')!.insertAdjacentHTML('afterbegin', htmlNode);
     $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {

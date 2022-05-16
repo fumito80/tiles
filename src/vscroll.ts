@@ -4,7 +4,7 @@ import {
   pipe, pick,
   getLocal, setLocal, getLocaleDate,
   isDateEq, htmlEscape,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, $byClass,
 } from './common';
 import { makeHistory } from './html';
 
@@ -91,7 +91,7 @@ export async function setVScroll(
   data: Collection,
   { rowHeight }: State['vscrollProps'],
 ) {
-  const $rows = $('.rows', $container);
+  const $rows = $byClass('rows', $container);
   const firstRow = $rows?.firstElementChild as HTMLElement;
   if (!firstRow || !$rows) {
     return;
@@ -100,7 +100,7 @@ export async function setVScroll(
   const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
   addStyle('height', `${$container.offsetHeight - padding}px`)($rows);
   $container.removeEventListener('scroll', vScrollHandler);
-  const $fakeBottom = $('.v-scroll-fake-bottom', $container)!;
+  const $fakeBottom = $byClass('v-scroll-fake-bottom', $container)!;
   $fakeBottom.style.removeProperty('height');
   const bottomIndex = Math.ceil(($rows.parentElement!.offsetHeight - padding) / rowHeight) + 1;
   [...$rows.children].forEach((el, i) => {
@@ -120,7 +120,7 @@ export async function setVScroll(
 }
 
 export function refreshVScroll() {
-  $('.v-scroll')!.dispatchEvent(new Event('scroll'));
+  $byClass('v-scroll')!.dispatchEvent(new Event('scroll'));
 }
 
 export function resetVScrollData(
@@ -136,7 +136,7 @@ export function getVScrollData() {
 }
 
 export function setScrollTop(scrollTop: number) {
-  const $paneHistory = $('.histories') as HTMLDivElement;
+  const $paneHistory = $byClass('histories') as HTMLDivElement;
   $paneHistory.scrollTop = scrollTop;
   $paneHistory.dispatchEvent(new Event('scroll'));
 }
@@ -168,7 +168,7 @@ export async function resetHistory({
 }: ResetParams = {}) {
   const $paneHistory = $<HTMLDivElement>('.histories')!;
   document.body.classList.remove('date-collapsed');
-  const $rows = $('.rows', $paneHistory)!;
+  const $rows = $byClass('rows', $paneHistory)!;
   if (initialize) {
     const { rowHeight } = getRowHeight();
     await setLocal({ vscrollProps: { rowHeight } });
