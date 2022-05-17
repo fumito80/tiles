@@ -79,7 +79,7 @@ function setOptions(settings: Settings, options: Options) {
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs > div, .pane-header::before', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('.leafs, .histories, .tabs > div', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body', [['background-color', frameBg]]);
   addRules('.folders', [['color', frameColor]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
@@ -87,7 +87,7 @@ function setOptions(settings: Settings, options: Options) {
     ['color', `${keyColor} !important`],
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
-  addRules('.pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
+  addRules('.pane-header .pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
   addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
@@ -96,55 +96,19 @@ function setOptions(settings: Settings, options: Options) {
   );
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
-  $main.classList.toggle('theme-dark-pane', !isLightPaneBg);
-  if (!isLightFrameBg) {
-    addRules('.pane-header, .form-query button > i, .form-query .query', [['color', 'lightgray']]);
-    addRules('.title::before, .form-query .submit > i', [['color', 'rgba(255,255,255,0.5)']]);
-    addRules('.form-query, button:not(.submit):hover::after, button:not(.submit):focus::after', [['background-color', 'rgba(255, 255, 255, 0.3)']]);
-    addRules('.form-query button:hover .icon-fa-ellipsis-v, .form-query button:focus .icon-fa-ellipsis-v, .pane-header button:not(.submit) > i', [['color', 'darkgray']]);
-    addRules(
-      '.form-query button:hover::after, .form-query button:focus::after, .pane-header button:hover::after, .pane-header button:focus::after',
-      [['background-color', 'rgba(255, 255, 255, 0.3)']],
-    );
-    addRules(
-      '.form-query button:active::after, .form-query button:active::after, .pane-header button:active::after',
-      [['background-color', 'rgba(255, 255, 255, 0.5)']],
-    );
-    addRules('.folders::-webkit-scrollbar-thumb, .tabs::-webkit-scrollbar-thumb', [['background-color', 'rgba(255, 255, 255, .3)']]);
-    addRules('.folders::-webkit-scrollbar-thumb:hover, .tabs::-webkit-scrollbar-thumb:hover', [['background-color', 'rgba(255, 255, 255, .5)']]);
-  }
-  if (!isLightPaneBg && !isLightFrameBg) {
-    addRules('.tabs > div', [['border-color', 'lightgray']]);
-  }
-  if (!isLightHoverBg) {
-    addRules(
-      [
-        '.leaf:hover .icon-fa-ellipsis-v',
-        '.marker:hover .icon-fa-ellipsis-v',
-        '.tab-wrap:not(.current-tab):hover .icon-x',
-        '.history:hover .icon-x',
-      ].join(','),
-      [['color', 'darkgray']],
-    );
-    addRules(
-      '.leaf:hover button:hover::after, .leaf:hover button:focus::after, .marker:hover button:hover::after, .marker:hover button:focus::after',
-      [['background-color', 'rgba(255, 255, 255, 0.3)']],
-    );
-    addRules(
-      '.leaf:hover button:active::after, .marker:hover button:active::after',
-      [['background-color', 'rgba(255, 255, 255, 0.5)']],
-    );
-  }
-  if (!isLightSearchingBg) {
-    addRules('.form-query[data-searching] + button > .icon-fa-search', [['color', 'rgba(255,255,255,0.7)']]);
-  }
   if (options.showCloseTab) {
     addRules('.tabs > div > div:hover > i', [['display', 'inline-block']]);
   }
   if (options.showDeleteHistory) {
     addRules('.histories > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }
+  $main.classList.toggle('theme-dark-pane', !isLightPaneBg);
+  $main.classList.toggle('theme-dark-frame', !isLightFrameBg);
+  $main.classList.toggle('theme-dark-hover', !isLightHoverBg);
+  $main.classList.toggle('theme-dark-search', !isLightSearchingBg);
+
   setSplitWidth(settings.paneWidth);
+
   const [sheet] = document.styleSheets;
   options.css
     .replaceAll('\n', '').trim()

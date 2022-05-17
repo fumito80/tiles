@@ -1,7 +1,7 @@
 import { Options } from './types';
 import {
   $, $$byClass, $byClass,
-  getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, last,
+  getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, last, rmClass,
 } from './common';
 
 type ZoomingElements = {
@@ -65,11 +65,11 @@ export function zoomOut(
     const $form = $query.parentElement!;
     pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($form);
     addStyle('left', '-100px')($iconAngleLeft);
-    $main.style.removeProperty('transform');
+    rmStyle('transform')($main);
+    rmStyle('transform')($byClass('pane-header'));
     const promise1 = new Promise<void>((resolve) => {
       $shadeLeft.addEventListener('transitionend', () => {
-        document.body.classList.remove('zoom-center');
-        $main.classList.remove('zoom-pane', 'zoom-fade-out');
+        rmClass('zoom-pane', 'zoom-fade-out', 'zoom-center')($main);
         restoreGrid($query);
         resolve();
       }, { once: true });
@@ -134,7 +134,8 @@ async function enterZoom(
     addStyle('transform', `translateX(${offset}px)`)($main);
     addStyle('left', `${-offset + 5}px`)($iconAngleLeft);
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
-    addClass('zoom-center')(document.body);
+    addStyle('transform', `translateX(${-offset}px)`)($byClass('pane-header'));
+    addClass('zoom-center')($main);
     rmStyle('left')($safetyZoneRight);
   } else {
     addStyle('left', '-100px')($iconAngleLeft);

@@ -185,9 +185,9 @@ const dragAndDropEvents = {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = switches(className)
         .case('tab-wrap')
-        .then('.tabs')
+        .then('tabs')
         .case('history')
-        .then('.histories')
+        .then('histories')
         .else(null);
       $byClass(paneClass)?.dispatchEvent(new Event('mouseenter'));
     }

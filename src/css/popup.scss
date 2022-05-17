@@ -65,7 +65,7 @@ main {
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content auto;
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
-  transition: all 0.15s;
+  transition: all 0.1s;
 }
 
 button:not(.submit) {
@@ -76,6 +76,7 @@ button:not(.submit) {
 
   >i {
     color: rgba(0, 0, 0, .4);
+    width: 1.2em;
   }
 
   &:hover>i,
@@ -102,6 +103,10 @@ button:not(.submit) {
 
   &:active::after {
     background-color: rgba(0, 0, 0, .2);
+  }
+
+  .icon-fa-search {
+    font-size: 1.05em;
   }
 
 }
@@ -172,8 +177,6 @@ button:not(.submit) {
 .folder-menu-button {
   display: none;
   z-index: 1;
-  margin-left: auto;
-  margin-right: 1px;
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -221,7 +224,7 @@ button:not(.submit) {
 
   .query {
     width: 100%;
-    max-width: 100px;
+    max-width: 90px;
     background: rgba(0, 0, 0, .1);
     border: 0;
     outline: none;
@@ -243,10 +246,12 @@ button:not(.submit) {
 .menu-button {
   position: relative;
   margin: 0 3px;
+  transition: visibility 0.1s;
 }
 
 .pin-bookmark {
   margin-left: auto;
+  transition: visibility 0.1s;
 }
 
 .main-menu-button,
@@ -321,7 +326,7 @@ button:not(.submit) {
     font-weight: 400;
     line-height: 1.25rem;
     padding: 0.15em 0.8em 0.15em 0;
-    color: #333;
+    color: #222;
     list-style: none;
     margin: 0;
     white-space: nowrap;
@@ -1072,7 +1077,7 @@ main::-webkit-scrollbar {
   display: flex;
   align-items: center;
   padding-left: 3px;
-  transition: width 0.1s;
+  transition: all 0.1s;
 
   .query-wrap:not(:empty):first-child {
     margin-left: auto;
@@ -1086,6 +1091,9 @@ main::-webkit-scrollbar {
   .query-wrap:empty:first-child {
     ~.menu-button {
       .main-menu {
+        >div {
+          padding-left: 0;
+        }
 
         hr,
         hr~* {
@@ -1117,8 +1125,7 @@ main::-webkit-scrollbar {
   }
 
   .icon-tabs {
-    transform: scale(1.5, 1.2);
-    margin-left: 0.25em;
+    font-size: 1.3em;
     margin-right: 1.5em;
 
     ~.query-wrap {
@@ -1146,10 +1153,6 @@ main::-webkit-scrollbar {
     }
   }
 
-  >i {
-    transition: all 0.15s;
-  }
-
 }
 
 // Zoom
@@ -1171,7 +1174,7 @@ main::-webkit-scrollbar {
 
 .shade-left,
 .shade-right {
-  transition: all 0.15s;
+  transition: all 0.1s;
 }
 
 .auto-zoom.zoom-pane {
@@ -1206,6 +1209,11 @@ main::-webkit-scrollbar {
     top: -20px;
     z-index: 3;
   }
+
+  .pane-body.end {
+    width: max-content;
+  }
+
 }
 
 .zoom-out {
@@ -1243,15 +1251,23 @@ main::-webkit-scrollbar {
 
 .main-menu .icon-check-solid {
   display: none;
-  font-weight: bold;
+  position: absolute;
   pointer-events: none;
-  width: auto;
-  margin-left: 10px;
+  left: 8px;
+  width: 1em;
+  font-size: 1em;
+  font-weight: bold;
+}
+
+.checked-include-url,
+.auto-zoom {
+  .main-menu>div {
+    padding-left: 1.6em;
+  }
 }
 
 .checked-include-url .main-menu>[data-value="include-url"],
 .auto-zoom .main-menu>[data-value="auto-zoom"] {
-  color: $common-marker;
 
   >.icon-check-solid {
     display: inline-block;
@@ -1269,14 +1285,6 @@ main::-webkit-scrollbar {
   background-repeat: no-repeat;
   background-position: center;
   filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
-}
-
-.auto-zoom .main-menu .icon-zoom {
-  filter: invert(34%) sepia(85%) saturate(1697%) hue-rotate(199deg) brightness(94%) contrast(93%);
-}
-
-.checked-include-url .main-menu .icon-url {
-  color: $common-marker;
 }
 
 // History date collapse mode
@@ -1324,11 +1332,38 @@ body:not(.date-collapsed) {
   }
 }
 
-.zoom-center .zoom-pane {
+.zoom-center {
 
-  .icon-calendar-plus-solid,
-  .icon-calendar-minus-solid {
-    display: none;
+  .resize-x+.pane-header {
+
+    .icon-calendar-plus-solid,
+    .icon-calendar-minus-solid {
+      display: none;
+    }
+  }
+
+}
+
+main.zoom-pane {
+
+  .pane-header {
+
+    .pin-bookmark,
+    .pin-bookmark+.menu-button {
+      display: none;
+      visibility: hidden;
+    }
+  }
+
+  &:not(.zoom-center) {
+
+    .pane3+.pane-header {
+
+      .icon-calendar-plus-solid,
+      .icon-calendar-minus-solid {
+        display: none;
+      }
+    }
   }
 }
 
@@ -1463,6 +1498,93 @@ body:not(.date-collapsed) {
 
 }
 
+.theme-dark-frame {
+  .pane-header::before {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .pane-header,
+  .form-query button>i,
+  .form-query .query {
+    color: lightgray;
+  }
+
+  .title::before,
+  .form-query .submit>i {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .form-query,
+  button:not(.submit):hover::after,
+  button:not(.submit):focus::after {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .form-query button:hover .icon-fa-ellipsis-v,
+  .form-query button:focus .icon-fa-ellipsis-v,
+  .pane-header button:not(.submit)>i {
+    color: darkgray;
+  }
+
+  .form-query button:hover::after,
+  .form-query button:focus::after,
+  .pane-header button:hover::after,
+  .pane-header button:focus::after {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .form-query button:active::after,
+  .form-query button:active::after,
+  .pane-header button:active::after {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .folders::-webkit-scrollbar-thumb,
+  .tabs::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, .3);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, .5);
+    }
+  }
+
+}
+
+.theme-dark-hover {
+
+  .leaf:hover .icon-fa-ellipsis-v,
+  .marker:hover .icon-fa-ellipsis-v,
+  .tab-wrap:not(.current-tab):hover .icon-x,
+  .history:hover .icon-x {
+    color: lightgray;
+  }
+
+  .leaf:hover button:hover::after,
+  .leaf:hover button:focus::after,
+  .marker:hover button:hover::after,
+  .marker:hover button:focus::after {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .leaf:hover button:active::after,
+  .marker:hover button:active::after {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+}
+
+.theme-dark-pane.theme-dark-frame {
+  .tabs>div {
+    border-color: darkgray;
+  }
+}
+
+.theme-dark-search {
+  .form-query[data-searching] button>.icon-fa-search {
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
 // Pane separator
 
 .pane-header {
@@ -1474,8 +1596,9 @@ body:not(.date-collapsed) {
   content: '';
   position: absolute;
   width: 1.5px;
-  height: 51%;
+  height: 55%;
   left: -3px;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 .resize-x+.pane-header::before,

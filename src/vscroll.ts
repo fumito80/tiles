@@ -166,7 +166,7 @@ export async function resetHistory({
   reFilter,
   includeUrl,
 }: ResetParams = {}) {
-  const $paneHistory = $<HTMLDivElement>('.histories')!;
+  const $paneHistory = $byClass<HTMLDivElement>('histories')!;
   document.body.classList.remove('date-collapsed');
   const $rows = $byClass('rows', $paneHistory)!;
   if (initialize) {
