@@ -49,22 +49,32 @@
         <div class="heading">Layout</div>
         <div is="layout-panes" name="panes">
           <div draggable="true" data-value="histories">
-            HISTORY
-            <label><input type="checkbox" name="zoom-history">ZEN mode</label>
+            <i class="icon-history"></i>
+            <div class="title">HISTORY</div>
+            <div>
+              <input type="checkbox" name="zoom-history" id="zoom-history"><label for="zoom-history">ZEN mode</label>
+            </div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
           <div draggable="true" data-value="tabs">
-            OPEN TABS
-            <label><input type="checkbox" name="zoom-tabs">ZEN mode</label>
+            <i class="icon-tabs"></i>
+            <div class="title">OPEN TABS</div>
+            <div>
+              <input type="checkbox" name="zoom-tabs" id="zoom-tabs"><label for="zoom-tabs">ZEN mode</label>
+            </div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
           <div draggable="true" data-value="bookmarks">
-            BOOKMARKS
+            <i class="icon-bookmarks"></i>
+            <div class="title">BOOKMARKS</div>
+            <div></div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
+        </div>
+        <div class="notice-layout">NOTICE: When resizing a pane width, disable "Auto ZEN mode" from this app's menu and then drag a pane border.
         </div>
         <div class="heading">ZEN mode</div>
         <label class="item">

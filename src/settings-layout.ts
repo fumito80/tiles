@@ -7,47 +7,20 @@ type Panes = State['options']['panes'][number];
 
 function dragstart(e: DragEvent) {
   const $target = e.target as HTMLElement;
-  addClass('dragging')($target.parentElement);
   addClass('drag-source')($target);
+  addClass('dragging')($target.parentElement);
   e.dataTransfer!.effectAllowed = 'move';
-}
-
-function dragover(e: DragEvent) {
-  const $target = e.target as HTMLElement;
-  if (!$target.classList.contains('droppable')) {
-    return;
-  }
-  e.preventDefault();
-}
-
-function dragenter(e: DragEvent) {
-  const $dragSource = $byClass('drag-source')!;
-  const $enterTarget = e.target as HTMLElement;
-  if ($dragSource === $enterTarget || !$enterTarget.classList.contains('droppable')) {
-    return;
-  }
-  let position: InsertPosition = 'afterend';
-  let [$src, $dest] = [$dragSource, $enterTarget.parentElement!];
-  if ($enterTarget.classList.contains('pane-before')) {
-    if ($dest.previousElementSibling?.previousElementSibling === $dragSource) {
-      [$dest, $src] = [$src, $dest.previousElementSibling as HTMLElement];
-    }
-  } else if ($enterTarget.classList.contains('pane-after')) {
-    if ($dest.nextElementSibling?.nextElementSibling === $dragSource) {
-      [$dest, $src] = [$src, $dest.nextElementSibling as HTMLElement];
-    }
-    position = 'beforebegin';
-  }
-  $src.insertAdjacentElement(position, $dest);
 }
 
 export default class LayoutPanes extends HTMLDivElement {
   #value: Panes[] = [];
+  #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
   constructor() {
     super();
     this.addEventListener('dragstart', dragstart);
-    this.addEventListener('dragover', dragover);
-    this.addEventListener('dragenter', dragenter);
+    this.addEventListener('dragover', this.dragover);
+    this.addEventListener('dragenter', this.dragenter);
+    this.addEventListener('dragleave', this.dragleave);
     this.addEventListener('dragend', this.dragend);
     this.addEventListener('drop', this.drop);
   }
@@ -67,6 +40,34 @@ export default class LayoutPanes extends HTMLDivElement {
       this.insertBefore(el, this.children[index]);
     });
     this.#value = value;
+  }
+  dragover(e: DragEvent) {
+    const $target = e.target as HTMLElement;
+    if (!$target.classList.contains('droppable')) {
+      return;
+    }
+    clearTimeout(this.#leaveTimer);
+    e.preventDefault();
+  }
+  dragenter(e: DragEvent) {
+    const $dragSource = $byClass('drag-source')!;
+    const $enterTarget = e.target as HTMLElement;
+    if ($dragSource === $enterTarget || !$enterTarget.classList.contains('droppable')) {
+      return;
+    }
+    const [$src, $dest] = [$dragSource, $enterTarget.parentElement!];
+    if ($src === $dest) {
+      return;
+    }
+    clearTimeout(this.#leaveTimer);
+    const position: InsertPosition = $enterTarget.classList.contains('pane-before') ? 'beforebegin' : 'afterend';
+    $dest.insertAdjacentElement(position, $src);
+  }
+  dragleave() {
+    clearTimeout(this.#leaveTimer);
+    this.#leaveTimer = setTimeout(() => {
+      this.value = this.#value;
+    }, 200);
   }
   dragend(e: DragEvent) {
     const $target = e.target as HTMLElement;

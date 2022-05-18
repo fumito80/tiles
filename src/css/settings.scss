@@ -1,5 +1,6 @@
 $blink-bgcolor: rgb(204, 229, 255);
 $article-bgcolor: #F6F6F6;
+$common-marker: #1A73E8;
 
 @import 'glyphs';
 @import './bootstrap.min.css';
@@ -100,6 +101,10 @@ input.bullet {
       font-size: 1.4em;
     }
   }
+}
+
+.notice-layout {
+  margin-left: 1.6em;
 }
 
 @keyframes hilite-fade-out {
@@ -281,7 +286,7 @@ label.theme {
 [name="panes"] {
   margin: 1em;
   display: flex;
-  gap: 0.5em;
+  gap: 10px;
 
   >div {
     position: relative;
@@ -291,57 +296,58 @@ label.theme {
     height: 120px;
     display: grid;
     align-items: center;
-    cursor: grab;
+    justify-content: center;
     text-align: center;
-    grid-template-rows: 50% auto auto;
+    grid-template-rows: 40% 10% 50%;
     background-color: aliceblue;
-    
-    >div {
-      position: absolute;
-      width: 50%;
-      height: 100%;
+    cursor: grab;
+
+    >i {
+      color: $common-marker;
     }
 
-    label {
-      z-index: 1;
+    >.droppable {
+      position: absolute;
+      height: 100%;
+      left: 0;
+      width: 0;
+      transition: width 0.1s, left 0.1s;
     }
+
+  }
+
+  .icon-tabs {
+    font-size: 1.3em;
+  }
+
+  .icon-bookmarks {
+    transform: scale(1.2, 1);
+    width: 100%;
+  }
+
+  >.drag-source {
+    background-color: transparent;
+    color: transparent;
+    border-width: 0;
+    transition: background-color 0.01s, color 0.01s, border-width 0.01s;
+
+    .title+div,
+    >i {
+      visibility: hidden;
+      transition: visibility 0.01s;
+    }
+
   }
 
   &.dragging {
 
-    >.drag-source {
-      background-color: transparent;
-      color: transparent;
-      border-width: 0;
-      transition: background-color 0.01s, color 0.01s, border-width 0.01s;
-
-      >div {
-        width: 50%;
-      }
-
-      >label {
-        visibility: hidden;
-        transition: visibility 0.01s;
-      }
-
-      >.pane-before {
-        left: 0;
-      }
-
-    }
-
     >div {
-      >label {
-        z-index: 0;
-      }
-
-      >div {
-        width: calc(50% + 1.5em);
-
+      >.droppable {
+        width: calc(50% + 7px);
       }
 
       >.pane-before {
-        left: -1.5em;
+        left: -7px;
       }
 
       >.pane-after {

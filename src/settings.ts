@@ -241,9 +241,7 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
       paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
     ),
   );
-  const htmlOther1 = getColorPaletteHTML(other, options);
-  const htmlOther2 = ['005BBB', 'FFD500', 'A8DADC', 'F77F00', 'F1FAEE'].map((code) => `<div data-color="${code}" style="background-color: #${code};"></div>`).join('');
-  const htmlOther = `<div>${htmlOther2}</div>`.concat(htmlOther1);
+  const htmlOther = getColorPaletteHTML(other, options);
 
   const dark1 = base.filter(
     ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
