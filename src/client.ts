@@ -451,3 +451,46 @@ export function showMenu($target: HTMLElement, menuClass: MenuClass) {
     : `${rect.top + rect.height}px`;
   addStyle({ left, top })($menu);
 }
+
+export function switchTabWindow(e: Event) {
+  const $btn = e.currentTarget as HTMLElement;
+  const $tabs = $byClass('tabs')!;
+  const st = hasClass($btn, 'win-next') ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
+  const ot = $tabs.offsetTop;
+  const targets = ([...$tabs.children] as HTMLElement[]).reduce((acc, $win) => {
+    if (acc.current || acc.next) {
+      return acc;
+    }
+    const isTopOver = ($win.offsetTop - ot) <= st;
+    const isBottomUnder = ($win.offsetTop + $win.offsetHeight - ot) >= st;
+    if (isTopOver && isBottomUnder) {
+      return { ...acc, current: $win };
+    }
+    if (isBottomUnder) {
+      return { ...acc, next: $win };
+    }
+    return { ...acc, prev: $win };
+  }, {
+    prev: null as unknown as HTMLElement,
+    current: null as unknown as HTMLElement,
+    next: null as unknown as HTMLElement,
+  });
+  let $target;
+  if (hasClass($btn, 'win-next')) {
+    $target = targets.current?.nextElementSibling || targets.next?.nextElementSibling;
+  } else {
+    $target = targets.current || targets.prev;
+  }
+  if ($target) {
+    const scrollTop = ($target as HTMLElement).offsetTop - ot;
+    // const top = scrollTop - $tabs.scrollTop;
+    // const $$tabs = [...$tabs.children];
+    // addStyle('transition', 'initial')($tabs);
+    // $$tabs.forEach(($el) => addStyle('top', `${top}px`)($el));
+    $tabs.scrollTop = scrollTop;
+    // addStyle('transition', 'top .5s ease-in-out')($tabs);
+    // rmStyle('top')($tabs);
+    // $$tabs.forEach(($el) => rmStyle('top')($el));
+    // $$tabs.forEach(($el) => addStyle('top', '0')($el));
+  }
+}
