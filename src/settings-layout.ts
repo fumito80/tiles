@@ -1,5 +1,5 @@
 import {
-  $, $byClass, addClass, rmClass,
+  $, $byClass, addClass, hasClass, rmClass,
 } from './common';
 import { State, InsertPosition } from './types';
 
@@ -42,8 +42,7 @@ export default class LayoutPanes extends HTMLDivElement {
     this.#value = value;
   }
   dragover(e: DragEvent) {
-    const $target = e.target as HTMLElement;
-    if (!$target.classList.contains('droppable')) {
+    if (!hasClass(e.target as HTMLElement, 'droppable')) {
       return;
     }
     clearTimeout(this.#leaveTimer);
@@ -52,7 +51,7 @@ export default class LayoutPanes extends HTMLDivElement {
   dragenter(e: DragEvent) {
     const $dragSource = $byClass('drag-source')!;
     const $enterTarget = e.target as HTMLElement;
-    if ($dragSource === $enterTarget || !$enterTarget.classList.contains('droppable')) {
+    if ($dragSource === $enterTarget || !hasClass($enterTarget, 'droppable')) {
       return;
     }
     const [$src, $dest] = [$dragSource, $enterTarget.parentElement!];
@@ -60,7 +59,7 @@ export default class LayoutPanes extends HTMLDivElement {
       return;
     }
     clearTimeout(this.#leaveTimer);
-    const position: InsertPosition = $enterTarget.classList.contains('pane-before') ? 'beforebegin' : 'afterend';
+    const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
     $dest.insertAdjacentElement(position, $src);
   }
   dragleave() {

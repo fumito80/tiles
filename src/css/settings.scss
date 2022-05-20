@@ -302,6 +302,10 @@ label.theme {
     background-color: aliceblue;
     cursor: grab;
 
+    .title+div {
+      cursor: default;
+    }
+
     >i {
       color: $common-marker;
     }

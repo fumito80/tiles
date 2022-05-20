@@ -16,6 +16,8 @@ import {
   $byId,
   $byClass,
   $byTag,
+  hasClass,
+  decode,
 } from './common';
 import {
   addBookmark,
@@ -41,7 +43,7 @@ function dropWithTabs(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
+  const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
   const [, tabId] = (isDroppedTab ? $dropTarget.id : sourceId).split('-');
   chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
     if (!isDroppedTab) {
@@ -97,7 +99,7 @@ async function dropFromHistory(
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
   const { url, title } = await getHistoryById(sourceId);
-  const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
+  const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
   if (!isDroppedTab) {
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
@@ -144,8 +146,7 @@ const dragAndDropEvents = {
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $byTag('main')!;
-    if ($main.classList.contains('zoom-pane')) {
-    // if ([...$main.classList].some((name) => ['zoom-pane', 'init-zoom'].includes(name))) {
+    if (hasClass($main, 'zoom-pane')) {
       const $zoomPane = $target.closest('.histories, .tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
     } else {
@@ -183,13 +184,8 @@ const dragAndDropEvents = {
     setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
-      const paneClass = switches(className)
-        .case('tab-wrap')
-        .then('tabs')
-        .case('history')
-        .then('histories')
-        .else(null);
-      $byClass(paneClass)?.dispatchEvent(new Event('mouseenter'));
+      const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
+      $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
   },
   async drop(e: DragEvent) {
@@ -201,7 +197,7 @@ const dragAndDropEvents = {
       ? $dropArea.parentElement!
       : $dropArea.parentElement!.parentElement!;
     const destId = $dropTarget.id;
-    const isDroppedTab = $dropTarget.classList.contains('tab-wrap');
+    const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
     let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
     if (!isDroppedTab && dropAreaClass !== 'drop-folder') {
       const parentId = $dropTarget.parentElement?.id! || '1';
@@ -229,7 +225,7 @@ const dragAndDropEvents = {
     const [$destLeafs, $destFolders] = $$(cssid(destId));
     const isRootTo = $destLeafs.parentElement.id === '1' && dropAreaClass !== 'drop-folder';
     const isRootFrom = $sourceLeafs.parentElement.id === '1';
-    const isLeafFrom = $sourceLeafs.classList.contains('leaf');
+    const isLeafFrom = hasClass($sourceLeafs, 'leaf');
     if (isLeafFrom && isRootFrom && !isRootTo) {
       $sourceFolders.remove();
     } else if (isLeafFrom && isRootTo) {
@@ -244,7 +240,7 @@ const dragAndDropEvents = {
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
       setHasChildren($sourceFolders.parentElement);
-      setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+      // setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
     setAnimationClass('hilite')($sourceLeafs);

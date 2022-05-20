@@ -26,6 +26,7 @@ import {
   $byTag,
   $byClass,
   $byId,
+  hasClass,
 } from './common';
 import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
@@ -276,7 +277,7 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     insertHTML('beforeend', htmlOther),
     addListener('click', (e) => {
       const $target = e.target as HTMLElement;
-      if ($target.classList.contains('desc')) {
+      if (hasClass($target, 'desc')) {
         return;
       }
       if ($target.parentElement !== $colorPalettes) {
@@ -312,7 +313,7 @@ function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
   $byId('customize-css')?.addEventListener('shown.bs.collapse', async () => {
     const $editorCollapse = $byId('customize-css')!;
-    if ($editorCollapse.classList.contains('loaded')) {
+    if (hasClass($editorCollapse, 'loaded')) {
       return;
     }
     await initMonacoEditor({
@@ -320,7 +321,7 @@ function initOthers() {
       inputMonacoEditor: $('[name="css"]')!,
       selectEditorTheme: $('[name="editor-theme"]')!,
     });
-    $editorCollapse.classList.add('loaded');
+    addClass('loaded')($editorCollapse);
   });
 }
 

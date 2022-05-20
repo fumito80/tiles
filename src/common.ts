@@ -74,16 +74,26 @@ export function addChild<T extends Element | null>($child: T) {
   };
 }
 
-export function addStyle(styleName: string, value: string) {
+export function addStyle(styleName: string, value: string): <T extends Element | null>($el: T) => T;
+export function addStyle(styleNames: Model): <T extends Element | null>($el: T) => T;
+export function addStyle(styleName: string | Model, value?: string) {
   return <T extends Element | null>($el: T) => {
-    ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value);
+    if (typeof styleName === 'string') {
+      ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
+    } else {
+      Object.entries(styleName).forEach(([k, v]) => {
+        ($el as unknown as HTMLElement)?.style?.setProperty(k, v);
+      });
+    }
     return $el;
   };
 }
 
-export function rmStyle(styleName: string) {
+export function rmStyle(...styleNames: string[]) {
   return <T extends Element | null>($el: T) => {
-    ($el as unknown as HTMLElement)?.style?.removeProperty(styleName);
+    styleNames.forEach(
+      (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
+    );
     return $el;
   };
 }
@@ -112,6 +122,20 @@ export function addClass(...classNames: string[]) {
 export function rmClass(...classNames: string[]) {
   return <T extends Element | null>($el: T) => {
     $el?.classList.remove(...classNames);
+    return $el;
+  };
+}
+
+export function hasClass($el: Element | null, ...classNames: string[]) {
+  if (!$el) {
+    return false;
+  }
+  return classNames.some((className) => $el.classList.contains(className));
+}
+
+export function toggleClass(className: string, force?: boolean) {
+  return <T extends Element | null>($el?: T) => {
+    $el?.classList.toggle(className, force);
     return $el;
   };
 }
@@ -280,14 +304,24 @@ export function switches<T>(value: T) {
   };
 }
 
-// export function decode<T, U>(
-//   switchValue: T,
-//   ...matchPairs: Array<[caseValue: T, returnValue: U]>
-// ) {
-//   const [, returnValue = null] =
-// matchPairs.find(([caseValue]) => caseValue === switchValue) || [];
-//   return returnValue;
-// }
+export function decode<T, U, V extends T, W extends U | undefined>(
+  testValue: T,
+  ...testers: Array<[V, U] | W>
+) {
+  let result = undefined as U | W;
+  for (let i = 0; i < testers.length; i += 1) {
+    const tester = testers[i];
+    if (!Array.isArray(tester)) {
+      result = tester;
+      break;
+    }
+    if (testValue === tester[0]) {
+      [, result] = tester;
+      break;
+    }
+  }
+  return result;
+}
 
 export function eq<T>(a: T) {
   return (b: T) => a === b;
@@ -705,22 +739,6 @@ export function propNe(name: string, value: any) {
 export function makeStyleIcon(url?: string) {
   return url ? `background-image: url('chrome://favicon/${url}');` : '';
   // return `background-image: url('${faviconUrl}/?page_url=${url}')`;
-}
-
-export function showMenu($target: HTMLElement, menuSelector: string) {
-  const $menu = $(menuSelector)!;
-  pipe(addStyle('top', ''), addStyle('left', ''))($menu);
-  if ($target.parentElement !== $menu.parentElement) {
-    $target.insertAdjacentElement('afterend', $menu);
-  }
-  const rect = $target.getBoundingClientRect();
-  const { width, height } = $menu.getBoundingClientRect();
-  $menu.style.left = `${rect.left - width + rect.width}px`;
-  if ((rect.top + rect.height + height) >= (document.body.offsetHeight + 4)) {
-    $menu.style.top = `${rect.top - height}px`;
-  } else {
-    $menu.style.top = `${rect.top + rect.height}px`;
-  }
 }
 
 export function regsterChromeEvents(listener: Function) {

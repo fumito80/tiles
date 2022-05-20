@@ -1,7 +1,7 @@
 import { Options } from './types';
 import {
   $, $$byClass, $byClass,
-  getLocal, pipe, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, last, rmClass,
+  getLocal, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, rmClass, hasClass,
 } from './common';
 
 type ZoomingElements = {
@@ -29,24 +29,20 @@ function getZoomingElements({ $main, ...rest }: ZoomingElementsArgs): ZoomingEle
 function relocateGrid(
   $target: HTMLElement,
   $query: HTMLElement,
-  queryWidth: string,
 ) {
   const gridColStart = getGridColStart($target);
   const $header = $$byClass('pane-header')[gridColStart];
   const $form = $query.parentElement!;
-  addStyle('width', queryWidth)($query);
   $byClass('query-wrap', $header)!.append($form);
   $query.focus();
 }
 
 function restoreGrid($query: HTMLElement) {
   const $form = $query.parentElement!;
-  const $endTitle = last($$byClass('pane-header'));
-  $byClass('query-wrap', $endTitle)!.append($form);
-  rmStyle('width')($query);
-  rmStyle('width')($form);
-  rmStyle('overflow')($form);
-  $query.focus();
+  const $endTitle = $('.pane-header.end')!;
+    $byClass('query-wrap', $endTitle)!.append($form);
+    rmStyle('width', 'overflow')($form);
+    $query.focus();
 }
 
 export function zoomOut(
@@ -63,7 +59,7 @@ export function zoomOut(
   } = getZoomingElements(elements);
   return () => {
     const $form = $query.parentElement!;
-    pipe(addStyle('overflow', 'hidden'), addStyle('width', '0'))($form);
+    addStyle({ overflow: 'hidden', width: '0' })($form);
     addStyle('left', '-100px')($iconAngleLeft);
     rmStyle('transform')($main);
     rmStyle('transform')($byClass('pane-header'));
@@ -77,7 +73,7 @@ export function zoomOut(
     const promise2 = new Promise((resolve) => {
       $main.addEventListener('transitionend', resolve, { once: true });
     });
-    $main.classList.add('zoom-fade-out');
+    addClass('zoom-fade-out')($main);
     const promise3 = getLocal('settings')
       .then(({ settings: { paneWidth } }) => setSplitWidth(paneWidth))
       .then(() => new Promise((resolve) => {
@@ -111,17 +107,16 @@ async function enterZoom(
     $iconAngleLeft,
     $iconAngleRight,
   } = elements;
-  if ($main.classList.contains('zoom-pane')) {
+  if (hasClass($main, 'zoom-pane')) {
     return;
   }
   const gridColStart = getGridColStart($target);
   const isCenter = gridColStart !== 0;
   const width = $main.offsetWidth * zoomRatio;
-  const queryWidth = getComputedStyle($query).width;
   const promise1 = new Promise<void>((resolve) => {
     $target.addEventListener('transitionend', () => {
       addClass('zoom-pane')($main);
-      relocateGrid($target, $query, queryWidth);
+      relocateGrid($target, $query);
       resolve();
     }, { once: true });
   });
@@ -143,15 +138,15 @@ async function enterZoom(
     addStyle('left', `calc(${zoomRatio * 100}% + 8px)`)($safetyZoneRight);
   }
   async function mouseenter(ev: MouseEvent) {
-    if ($main.classList.contains('drag-start-leaf')) {
+    if (hasClass($main, 'drag-start-leaf')) {
       return;
     }
     clearTimeoutZoom();
     const $shade = ev.target as HTMLElement;
-    if ($shade.classList.contains('shade-left')) {
+    if (hasClass($shade, 'shade-left')) {
       const $leftPane = $target.previousElementSibling as HTMLElement;
-      if ((options.zoomHistory && $leftPane.classList.contains('histories'))
-        || (options.zoomTabs && $leftPane.classList.contains('tabs'))) {
+      if ((options.zoomHistory && hasClass($leftPane, 'histories'))
+        || (options.zoomTabs && hasClass($leftPane, 'tabs'))) {
         await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
         enterZoom($leftPane, elements, zoomRatio, options);
         return;
@@ -167,11 +162,11 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
   const elements = getZoomingElements({ $main });
   const zoomRatio = Number.parseFloat(options.zoomRatio);
   return (e: Event) => {
-    if (!$main.classList.contains('auto-zoom')) {
+    if (!hasClass($main, 'auto-zoom')) {
       return;
     }
     clearTimeoutZoom();
-    const isBreak = [...$main.classList].some((className) => ['zoom-pane', 'drag-start-leaf', 'drag-start-folder'].includes(className));
+    const isBreak = hasClass($main, 'zoom-pane', 'drag-start-leaf', 'drag-start-folder');
     if (isBreak) {
       return;
     }

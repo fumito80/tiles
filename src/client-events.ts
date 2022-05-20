@@ -13,7 +13,6 @@ import {
   curry,
   curry3,
   cbToResolve,
-  showMenu,
   getHistoryById,
   removeUrlHistory,
   getLocal,
@@ -26,6 +25,9 @@ import {
   $byTag,
   $byClass,
   $$byClass,
+  last,
+  hasClass,
+  toggleClass,
 } from './common';
 
 import {
@@ -48,6 +50,7 @@ import {
   editTitle,
   removeFolder,
   editBookmarkTitle,
+  showMenu,
 } from './client';
 
 import { updateAnker } from './html';
@@ -78,11 +81,11 @@ export default function setEventListners(options: Options) {
   setEvents([$main], {
     click(e) {
       const $target = e.target as HTMLElement;
-      if ($target.classList.contains('main-menu-button')) {
+      if (hasClass($target, 'main-menu-button')) {
         return;
       }
-      if ($target.classList.contains('leaf-menu-button')) {
-        showMenu($target, '.leaf-menu');
+      if (hasClass($target, 'leaf-menu-button')) {
+        showMenu($target, 'leaf-menu');
         return;
       }
       if ($target.hasAttribute('contenteditable')) {
@@ -164,11 +167,10 @@ export default function setEventListners(options: Options) {
     if ($target.hasAttribute('contenteditable')) {
       return;
     }
-    if ($target.classList.contains('anchor')) {
+    if (hasClass($target, 'anchor')) {
       findTabsFirstOrNot(options, $target!);
-    } else if ([...$target.classList].find((className) => ['title', 'icon-fa-angle-right'].includes(className))) {
-      const folder = $target.parentElement!.parentElement!;
-      folder.classList.toggle('path');
+    } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
+      toggleClass('path')($target.parentElement?.parentElement);
     }
   })($byClass('leafs')!);
 
@@ -197,9 +199,9 @@ export default function setEventListners(options: Options) {
         break;
       case 'title': {
         clearQuery();
-        const foldersFolder = $target.parentElement?.parentElement!;
-        const folders = [foldersFolder, $(`.leafs ${cssid(foldersFolder.id)}`)];
-        const isOpen = foldersFolder.classList.contains('open');
+        const $foldersFolder = $target.parentElement?.parentElement!;
+        const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
+        const isOpen = hasClass($foldersFolder, 'open');
         if (isOpen) {
           folders.forEach(addClass('path'));
           return;
@@ -207,12 +209,12 @@ export default function setEventListners(options: Options) {
         $leafs.scrollTop = 0;
         $$byClass('open').forEach(rmClass('open'));
         folders.forEach(addClass('open'));
-        saveStateOpenedPath(foldersFolder);
+        saveStateOpenedPath($foldersFolder);
         $$byClass('hilite').forEach(rmClass('hilite'));
         break;
       }
       case 'folder-menu-button': {
-        showMenu($target, '.folder-menu');
+        showMenu($target, 'folder-menu');
         e.stopImmediatePropagation();
         break;
       }
@@ -227,27 +229,22 @@ export default function setEventListners(options: Options) {
     return false;
   });
 
-  $$byClass('split-h').forEach(addListener('mousedown', (e) => {
-    if ($main.classList.contains('auto-zoom')) {
-      return;
-    }
-    const $splitter = e.target as HTMLElement;
-    let subWidth = 0;
-    for (
-      let nextElement = $splitter.nextElementSibling as HTMLElement | null;
-      nextElement != null;
-      nextElement = nextElement.nextElementSibling as HTMLElement
-    ) {
-      if (nextElement?.previousElementSibling!.classList.contains('pane1')) {
-        break;
+  const $paneBodies = $$byClass('pane-body');
+  const $paneEnd = last($paneBodies);
+
+  $$byClass('split-h').forEach(($splitter, i) => {
+    const $targetPane = $paneBodies[i];
+    addListener('mousedown', () => {
+      if (hasClass($main, 'auto-zoom')) {
+        return;
       }
-      subWidth += nextElement.offsetWidth;
-    }
-    setSplitterHandler(resizeSplitHandler($splitter, subWidth));
-  }));
+      const subWidth = document.body.offsetWidth - $paneEnd.offsetWidth - $targetPane.offsetWidth;
+      setSplitterHandler(resizeSplitHandler($targetPane, $splitter, subWidth));
+    })($splitter);
+  });
 
   $byClass('resize-x')?.addEventListener('mousedown', (e) => {
-    setResizeHandler(resizeWidthHandler($byClass('form-query')!, document.body.offsetWidth + e.screenX));
+    setResizeHandler(resizeWidthHandler($('.pane-body.end')!, document.body.offsetWidth + e.screenX));
   });
 
   $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
@@ -268,8 +265,8 @@ export default function setEventListners(options: Options) {
           chrome.runtime.openOptionsPage();
           break;
         case 'auto-zoom': {
-          const isChecked = $main.classList.contains('auto-zoom');
-          $main.classList.toggle('auto-zoom', !isChecked);
+          const isChecked = hasClass($main, 'auto-zoom');
+          toggleClass('auto-zoom', !isChecked)($main);
           getLocal('settings')
             .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
           break;
@@ -277,7 +274,7 @@ export default function setEventListners(options: Options) {
         case 'include-url':
           getLocal('settings')
             .then(({ settings }) => {
-              $main.classList.toggle('checked-include-url', !settings.includeUrl);
+              toggleClass('checked-include-url', !settings.includeUrl)($main);
               return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
             })
             .then(({ settings }) => {
@@ -327,7 +324,7 @@ export default function setEventListners(options: Options) {
     const $parent = $target.parentElement!;
     const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
-    if ($target.classList.contains('icon-x')) {
+    if (hasClass($target, 'icon-x')) {
       pipe(
         addListener('animationend', () => {
           chrome.tabs.remove(Number(tabId), () => {
@@ -350,7 +347,7 @@ export default function setEventListners(options: Options) {
   });
   const $paneHistory = addListener('click', async (e) => {
     const $target = e.target as HTMLElement;
-    if ($target.classList.contains('header-date') && document.body.classList.contains('date-collapsed')) {
+    if (hasClass($target, 'header-date') && hasClass($main, 'date-collapsed')) {
       jumpHistoryDate($target.textContent!);
       return;
     }
@@ -360,7 +357,7 @@ export default function setEventListners(options: Options) {
     if (!url) {
       return;
     }
-    if ($target.classList.contains('icon-x')) {
+    if (hasClass($target, 'icon-x')) {
       setAnimationClass('hilite')($parent);
       const result = await postMessage({ type: 'cl-remove-history', payload: url });
       if (result) {

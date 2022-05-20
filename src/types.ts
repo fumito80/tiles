@@ -68,7 +68,7 @@ export type ColorPalette = [
 const colorPalette: ColorPalette = ['FFFFFF', 'f6f6f6', 'cce5ff', 'e8e8e9', '1da1f2'];
 
 export const initialOptions = {
-  panes: ['histories', 'bookmarks', 'tabs'] as const,
+  panes: ['histories', 'tabs', 'bookmarks'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
   showDeleteHistory: true,

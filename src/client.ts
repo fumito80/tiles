@@ -35,6 +35,10 @@ import {
   rmStyle,
   $byClass,
   $$byClass,
+  $byTag,
+  hasClass,
+  toggleClass,
+  decode,
 } from './common';
 
 import {
@@ -54,7 +58,7 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
     (el) => {
       // eslint-disable-next-line no-void
       void (el as HTMLElement).offsetWidth;
-      el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
+      // el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
       return el;
     },
     addClass(className),
@@ -63,14 +67,12 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
 
 export async function createNewTab(options: Options, url: string) {
   const { windowId, ...rest } = await getCurrentTab();
-  const index = (() => {
-    switch (options.newTabPosition) {
-      case 'le': return 0;
-      case 'rs': return rest.index + 1;
-      case 'ls': return rest.index;
-      default: return undefined;
-    }
-  })();
+  const index = decode(
+    options.newTabPosition,
+    ['le', 0],
+    ['rs', rest.index + 1],
+    ['ls', rest.index],
+  );
   chrome.tabs.create({ index, url, windowId });
 }
 
@@ -114,15 +116,15 @@ export function onClickAngle(e: MouseEvent) {
   if ($byClass('open', $folder)) {
     ($target.nextElementSibling as HTMLDivElement)?.click();
   }
-  $folder.classList.toggle('path');
+  toggleClass('path')($folder);
 }
 
 export function saveStateOpenedPath(foldersFolder: HTMLElement) {
-  $$byClass('path').forEach((el) => el.classList.remove('path'));
+  $$byClass('path').forEach(rmClass('path'));
   let paths: Array<string> = [];
-  for (let folder = foldersFolder as HTMLElement | null; folder && folder.classList.contains('folder'); folder = folder.parentElement) {
-    folder.classList.add('path');
-    paths = [...paths, folder.id];
+  for (let $folder = foldersFolder as HTMLElement | null; $folder && hasClass($folder, 'folder'); $folder = $folder.parentElement) {
+    addClass('path')($folder);
+    paths = [...paths, $folder.id];
   }
   const clientState = {
     paths,
@@ -176,12 +178,15 @@ export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
   setMouseEventListener(mouseMoveHandler, getNewPaneWidth);
 }
 
-export function resizeSplitHandler($splitter: HTMLElement, subWidth: number) {
+export function resizeSplitHandler(
+  $targetPane: HTMLElement,
+  $splitter: HTMLElement,
+  subWidth: number,
+) {
   return (e: MouseEvent) => {
     const className = whichClass(splitterClasses, $splitter)!;
-    const $targetPane = $splitter.previousElementSibling as HTMLElement;
     const width = Math.max(e.clientX - $targetPane.offsetLeft, 100);
-    if (document.body.offsetWidth - ($targetPane.offsetLeft + width + subWidth) < 120) {
+    if (document.body.offsetWidth - (width + subWidth) < 135) {
       return;
     }
     setSplitWidth({ [className]: width });
@@ -191,7 +196,7 @@ export function resizeSplitHandler($splitter: HTMLElement, subWidth: number) {
 export function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
   return (e: MouseEvent) => {
     const width = Math.min(startWidth - e.screenX, 800);
-    if (width - $ref.offsetLeft < 100) {
+    if (width - $ref.offsetLeft < 135) {
       return;
     }
     addStyle('width', `${width}px`)(document.body);
@@ -265,11 +270,12 @@ async function restoreHistory(includeUrl: boolean) {
 
 export async function collapseHistoryDate() {
   const { vscrollProps, settings: { includeUrl } } = await getLocal('vscrollProps', 'settings');
-  if (document.body.classList.contains('date-collapsed')) {
+  const $main = $byTag('main');
+  if (hasClass($main, 'date-collapsed')) {
     restoreHistory(includeUrl);
     return;
   }
-  addClass('date-collapsed')(document.body);
+  addClass('date-collapsed')($main);
   const histories = getVScrollData();
   const data = histories.filter((item) => item.headerDate);
   const $paneHistory = $byClass('histories') as HTMLDivElement;
@@ -426,4 +432,22 @@ export async function addFolder(parentId = '1') {
   if (!title) {
     removeFolder($target.parentElement!.parentElement!);
   }
+}
+
+type MenuClass = 'leaf-menu' | 'folder-menu';
+
+export function showMenu($target: HTMLElement, menuClass: MenuClass) {
+  const $menu = $byClass(menuClass)!;
+  if ($target.parentElement !== $menu.parentElement) {
+    $target.insertAdjacentElement('afterend', $menu);
+  }
+  const rect = $target.getBoundingClientRect();
+  const { width, height } = $menu.getBoundingClientRect();
+  const left = (rect.left + rect.width - 5) <= width
+    ? `${rect.left}px`
+    : `${rect.left - width + rect.width}px`;
+  const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
+    ? `${rect.top - height}px`
+    : `${rect.top + rect.height}px`;
+  addStyle({ left, top })($menu);
 }

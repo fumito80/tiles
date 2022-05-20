@@ -29,10 +29,11 @@ import {
   addStyle,
   insertHTML,
   getGridColStart,
-  last,
   $$byClass,
   $byClass,
   $byTag,
+  pipe,
+  toggleClass,
 } from './common';
 
 import { makeTab } from './html';
@@ -91,21 +92,25 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:not(.hilite):hover, main:not(.drag-start-folder) .folders .marker:not(.hilite):hover::before, main:not(.drag-start-leaf) .tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, .date-collapsed main:not(.drag-start-leaf) .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
-  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
+  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
+  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
     addRules('.tabs > div > div:hover > i', [['display', 'inline-block']]);
   }
   if (options.showDeleteHistory) {
     addRules('.histories > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }
-  $main.classList.toggle('theme-dark-pane', !isLightPaneBg);
-  $main.classList.toggle('theme-dark-frame', !isLightFrameBg);
-  $main.classList.toggle('theme-dark-hover', !isLightHoverBg);
-  $main.classList.toggle('theme-dark-search', !isLightSearchingBg);
+  pipe(
+    toggleClass('theme-dark-pane', !isLightPaneBg),
+    toggleClass('theme-dark-frame', !isLightFrameBg),
+    toggleClass('theme-dark-hover', !isLightHoverBg),
+    toggleClass('theme-dark-search', !isLightSearchingBg),
+    toggleClass('auto-zoom', settings.autoZoom),
+    toggleClass('checked-include-url', settings.includeUrl),
+  )($main);
 
   setSplitWidth(settings.paneWidth);
 
@@ -116,8 +121,6 @@ function setOptions(settings: Settings, options: Options) {
     .filter(Boolean)
     .map((rule) => rule.trim().concat('}'))
     .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
-  $main.classList.toggle('auto-zoom', settings.autoZoom);
-  $main.classList.toggle('checked-include-url', settings.includeUrl);
 }
 
 function setExternalUrl(options: Options) {
@@ -139,14 +142,15 @@ function setBookmarks(html: HtmlBookmarks) {
 }
 
 function setBookmarksState(clState: ClientState) {
-  clState.paths?.forEach((id) => $(`.folders ${cssid(id)}`)?.classList.add('path'));
+  clState.paths?.map((id) => $(`.folders ${cssid(id)}`)).forEach(addClass('path'));
   if (clState.open) {
     $$(cssid(clState.open))?.forEach(addClass('open'));
   }
 }
 
 function toggleElement(selector: string, isShow = true, shownDisplayType = 'block') {
-  addStyle('display', isShow ? shownDisplayType : 'none')($(selector));
+  const display = isShow ? shownDisplayType : 'none';
+  addStyle({ display })($(selector));
 }
 
 function setHistory($target: HTMLElement, htmlHistory: string) {
@@ -156,7 +160,7 @@ function setHistory($target: HTMLElement, htmlHistory: string) {
 function layoutPanes(options: Options) {
   const $headers = $$byClass('pane-header');
   const $bodies = $$byClass('pane-body');
-  options.panes
+  const [,, [, $endHeader]] = options.panes
     .reduce<string[]>((acc, name) => {
       if (name === 'bookmarks') {
         return [...acc, 'leafs', 'folders'];
@@ -164,14 +168,16 @@ function layoutPanes(options: Options) {
       return [...acc, name];
     }, [])
     .map((name, i) => [name, $headers[i], $bodies[i]] as const)
-    .forEach(([name, $paneHeader, $paneBody]) => {
+    .map(([name, $paneHeader, $paneBody]) => {
       const className = `header-${name}`;
       $paneHeader.append(...$byClass(className)!.children);
       addClass(className)($paneHeader);
       addClass(name)($paneBody);
-    });
-  const $endTitle = last($headers);
-  $byClass('query-wrap', $endTitle)!.append($byClass('form-query')!);
+      return [name, $paneHeader] as const;
+    })
+    .filter(([name]) => name !== 'folders');
+  $byClass('query-wrap', $endHeader)!.append($byClass('form-query')!);
+  addClass('end')($endHeader);
   // History pane
   const $histories = $byClass('histories');
   $histories?.append(...$byClass('pane-histories')!.children);

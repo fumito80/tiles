@@ -1,12 +1,14 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $,
+  $, $byClass, $byTag,
   pipe, pick,
   getLocal, setLocal, getLocaleDate,
   isDateEq, htmlEscape,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, $byClass,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, hasClass,
 } from './common';
 import { makeHistory } from './html';
+
+const invisible = { transform: 'translateY(-10000px)' };
 
 const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
@@ -15,8 +17,8 @@ let vScrollData: Collection;
 export function rowSetterHistory() {
   const today = getLocaleDate();
   const $currentDate = $('.histories .current-date')!;
-  const isShowFixedHeader = !document.body.classList.contains('date-collapsed');
-  addStyle('transform', 'translateY(-10000px)')($currentDate);
+  const isShowFixedHeader = !hasClass($byTag('main'), 'date-collapsed');
+  addStyle(invisible)($currentDate);
   return (
     data: MyHistoryItem[],
     rowTop: number,
@@ -30,7 +32,7 @@ export function rowSetterHistory() {
     }
     const item = data[dataTop + index - 1];
     if (!item) {
-      addStyle('transform', 'translateY(-10000px)')($row);
+      addStyle(invisible)($row);
       return;
     }
     const {
@@ -40,14 +42,15 @@ export function rowSetterHistory() {
       const lastVisitDate = getLocaleDate(lastVisitTime);
       setText(today === lastVisitDate ? '' : lastVisitDate!)($currentDate);
       if (headerDate && rowTop !== 0 && isShowFixedHeader) {
-        addStyle('transform', 'translateY(-10000px)')($row);
+        addStyle(invisible)($row);
         return;
       }
     }
-    addStyle('transform', `translateY(${rowTop}px)`)($row);
+    const transform = `translateY(${rowTop}px)`;
+    addStyle({ transform })($row);
     if (headerDate) {
       if (index === 2 && isShowFixedHeader) {
-        addStyle('transform', `translateY(${rowTop}px)`)($currentDate);
+        addStyle({ transform })($currentDate);
       }
       pipe(
         setHTML(getLocaleDate(lastVisitTime)!),
@@ -101,13 +104,13 @@ export async function setVScroll(
   addStyle('height', `${$container.offsetHeight - padding}px`)($rows);
   $container.removeEventListener('scroll', vScrollHandler);
   const $fakeBottom = $byClass('v-scroll-fake-bottom', $container)!;
-  $fakeBottom.style.removeProperty('height');
+  rmStyle('height')($fakeBottom);
   const bottomIndex = Math.ceil(($rows.parentElement!.offsetHeight - padding) / rowHeight) + 1;
   [...$rows.children].forEach((el, i) => {
     addStyle('display', i > bottomIndex ? 'none' : '')(el);
   });
   const vScrollHeight = rowHeight * data.length;
-  $fakeBottom.style.height = `${vScrollHeight - $container.offsetHeight + padding}px`;
+  addStyle('height', `${vScrollHeight - $container.offsetHeight + padding}px`)($fakeBottom);
   const setter = rowSetter();
   const children = [...$rows.children] as HTMLElement[];
   vScrollData = data;
@@ -167,7 +170,7 @@ export async function resetHistory({
   includeUrl,
 }: ResetParams = {}) {
   const $paneHistory = $byClass<HTMLDivElement>('histories')!;
-  document.body.classList.remove('date-collapsed');
+  rmClass('date-collapsed')($byTag('main'));
   const $rows = $byClass('rows', $paneHistory)!;
   if (initialize) {
     const { rowHeight } = getRowHeight();
