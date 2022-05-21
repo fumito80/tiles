@@ -631,7 +631,7 @@ button:not(.submit) {
 .folders::-webkit-scrollbar,
 .leafs::-webkit-scrollbar,
 .tabs::-webkit-scrollbar,
-.v-scroll-bar::-webkit-scrollbar {
+.histories::-webkit-scrollbar {
   width: 8px;
 }
 
@@ -1186,7 +1186,7 @@ main::-webkit-scrollbar {
     display: block;
   }
 
-  >.histories>.safety-zone-right {
+  .safety-zone-right {
     position: fixed;
     width: 20px;
     height: 100%;
@@ -1410,12 +1410,12 @@ main.zoom-pane {
 .theme-dark-pane {
 
   .leafs::-webkit-scrollbar-thumb,
-  .v-scroll-bar::-webkit-scrollbar-thumb {
+  .histories::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, .3);
   }
 
   .leafs::-webkit-scrollbar-thumb:hover,
-  .v-scroll-bar::-webkit-scrollbar-thumb:hover {
+  .histories::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, .5);
   }
 

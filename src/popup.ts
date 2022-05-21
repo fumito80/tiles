@@ -169,9 +169,9 @@ function layoutPanes(options: Options) {
     }, [])
     .map((name, i) => [name, $headers[i], $bodies[i]] as const)
     .map(([name, $paneHeader, $paneBody]) => {
-      const className = `header-${name}`;
-      $paneHeader.append(...$byClass(className)!.children);
-      addClass(className)($paneHeader);
+      const header = `header-${name}`;
+      $paneHeader.append(...$byClass(header)!.children);
+      addClass(header)($paneHeader);
       addClass(name)($paneBody);
       return [name, $paneHeader] as const;
     })
@@ -180,8 +180,8 @@ function layoutPanes(options: Options) {
   addClass('end')($endHeader);
   // History pane
   const $histories = $byClass('histories');
-  $histories?.append(...$byClass('pane-histories')!.children);
-  addClass('v-scroll', 'v-scroll-bar')($histories);
+  $histories?.append(...$byClass('body-histories')!.children);
+  addClass('v-scroll')($histories);
   // Bold Splitter
   const $leafs = $('.histories + .leafs');
   if ($leafs) {

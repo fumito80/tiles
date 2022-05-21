@@ -124,6 +124,7 @@ async function enterZoom(
   addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
   addStyle('left', `calc(-100% + ${$target.offsetLeft - 4}px)`)($shadeLeft);
   const $safetyZoneRight = $byClass('safety-zone-right');
+  let shiftSafetyZone: number;
   if (isCenter) {
     const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
     addStyle('transform', `translateX(${offset}px)`)($main);
@@ -131,12 +132,13 @@ async function enterZoom(
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
     addStyle('transform', `translateX(${-offset}px)`)($byClass('pane-header'));
     addClass('zoom-center')($main);
-    rmStyle('left')($safetyZoneRight);
+    shiftSafetyZone = $target.offsetLeft + 12 - offset;
   } else {
     addStyle('left', '-100px')($iconAngleLeft);
     addStyle('right', '5px')($iconAngleRight);
-    addStyle('left', `calc(${zoomRatio * 100}% + 8px)`)($safetyZoneRight);
+    shiftSafetyZone = 8;
   }
+  addStyle('left', `calc(${zoomRatio * 100}% + ${shiftSafetyZone}px)`)($safetyZoneRight);
   async function mouseenter(ev: MouseEvent) {
     if (hasClass($main, 'drag-start-leaf')) {
       return;
