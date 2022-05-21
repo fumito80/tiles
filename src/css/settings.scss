@@ -36,10 +36,14 @@ article {
 }
 
 .heading {
-  margin-top: 20px;
+  margin-top: 30px;
   margin-bottom: 10px;
   border-bottom: 1px solid #CCC;
   font-weight: bold;
+}
+
+.heading:first-child {
+  margin-top: 10px;
 }
 
 form label {
@@ -274,11 +278,17 @@ label.theme {
   }
 }
 
-label.theme {
+.css-header {
   position: absolute;
+  display: flex;
   top: -30px;
   z-index: 1;
   right: 0;
+  gap: 40px;
+
+  button {
+    padding: 0 0.5rem;
+  }
 }
 
 // Layout

@@ -11,6 +11,7 @@ export class InputMonacoEditor extends HTMLInputElement {
   }
   set value(value: string) {
     super.value = value;
+    this.#editor?.setValue(super.value);
   }
   initialize(editor: monaco.editor.IStandaloneCodeEditor) {
     this.#editor = editor;

@@ -103,6 +103,9 @@ function setOptions(settings: Settings, options: Options) {
   if (options.showDeleteHistory) {
     addRules('.histories > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
   }
+  if (options.showSwitchTabsWin) {
+    addRules('.pane-header.header-tabs > .win-prev, .pane-header.header-tabs > .win-next', [['width', 'auto']]);
+  }
   pipe(
     toggleClass('theme-dark-pane', !isLightPaneBg),
     toggleClass('theme-dark-frame', !isLightFrameBg),

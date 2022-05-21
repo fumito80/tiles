@@ -33,8 +33,6 @@
           <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
           <label><input type="radio" name="new-tab-position" value="re">Right end</label>
         </div>
-        <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
-        <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
         <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
           first</label>
         <div class="d-flex gap-4 mt-1 ms-3">
@@ -46,6 +44,11 @@
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
+        <div class="heading">Open tabs pane</div>
+        <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
+        <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window button</label>
+        <div class="heading">History pane</div>
+        <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
         <div class="heading">Layout</div>
         <div is="layout-panes" name="panes">
           <div draggable="true" data-value="histories">
@@ -74,7 +77,8 @@
             <div class="droppable pane-after"></div>
           </div>
         </div>
-        <div class="notice-layout">NOTICE: To resize a pane width, disable "Auto ZEN mode" from app's menu and then drag a pane border.
+        <div class="notice-layout">NOTICE: To resize a pane width, disable "Auto ZEN mode" from app's menu and then drag
+          a pane border.
         </div>
         <div class="heading">ZEN mode</div>
         <label class="item">
@@ -116,10 +120,13 @@
           </a>
         </div>
         <div id="customize-css" class="collapse position-relative">
-          <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">
-              <option value="vs">Light</option>
-              <option value="vs-dark">Dark</option>
-            </select></label>
+          <div class="css-header">
+            <button class="restore-css btn btn-outline-warning btn-sm" type="button">Restore default</button>
+            <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">
+                <option value="vs">Light</option>
+                <option value="vs-dark">Dark</option>
+              </select></label>
+          </div>
           <div class="customize-css css-editor mt-1"></div>
           <div class="loading">
             <div class="spinner-grow text-info" role="status">

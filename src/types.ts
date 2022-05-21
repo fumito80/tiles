@@ -51,10 +51,6 @@ const css = [
   '.histories::-webkit-scrollbar {',
   '    width: 8px;',
   '}\n',
-  '/* Scroll-bar color */',
-  '::-webkit-scrollbar-thumb {',
-  '    background-color: rgba(0, 0, 0, 0.2);',
-  '}\n',
 ].join('\n');
 
 export type ColorPalette = [
@@ -71,6 +67,7 @@ export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
+  showSwitchTabsWin: true,
   showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,

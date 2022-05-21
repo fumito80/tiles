@@ -28,7 +28,7 @@ import {
   $byId,
   hasClass,
 } from './common';
-import { State, ColorPalette } from './types';
+import { State, ColorPalette, initialOptions } from './types';
 import { setBrowserIcon } from './draw-svg';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
@@ -309,6 +309,15 @@ async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: In
   });
 }
 
+function restoreCss() {
+  // eslint-disable-next-line no-restricted-globals
+  // eslint-disable-next-line no-alert
+  const anser = window.confirm('Reset CSS settings to default.\nAre you sure?');
+  if (anser === true) {
+    $<HTMLInputElement>('input[name="css"]')!.value = initialOptions.css;
+  }
+}
+
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
   $byId('customize-css')?.addEventListener('shown.bs.collapse', async () => {
@@ -323,6 +332,7 @@ function initOthers() {
     });
     addClass('loaded')($editorCollapse);
   });
+  $byClass('restore-css')?.addEventListener('click', restoreCss);
 }
 
 const init = pipe(

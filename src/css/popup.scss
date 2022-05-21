@@ -1714,6 +1714,9 @@ main.zoom-pane {
 
   .win-prev,
   .win-next {
+    width: 0;
+    overflow: hidden;
+
     >i {
       cursor: default;
       font-weight: bold;
