@@ -375,7 +375,6 @@ export default function setEventListners(options: Options) {
     ...(options.zoomTabs ? [$paneTabs] : []),
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
-  if (!options.zoomHistory) {
-    addClass('disable-zoom-history')($main);
-  }
+  toggleClass('disable-zoom-history', !options.zoomHistory)($main);
+  toggleClass('disable-zoom-tabs', !options.zoomTabs)($main);
 }

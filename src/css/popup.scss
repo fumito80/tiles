@@ -1163,6 +1163,12 @@ main::-webkit-scrollbar {
     cursor: default;
   }
 
+  .win-next,
+  .win-prev {
+    width: 0;
+    overflow: hidden;
+    transition: width 1.0s;
+  }
 }
 
 .shade-left,
@@ -1300,20 +1306,13 @@ main::-webkit-scrollbar {
 
   &.zoom-fade-out {
 
-    .collapse-history-date,
-    .win-prev,
-    .win-next {
+    .collapse-history-date {
       display: none;
     }
   }
 }
 
-.auto-zoom {
-
-  .icon-calendar-plus-solid,
-  .icon-calendar-minus-solid {
-    display: none;
-  }
+.auto-zoom:not(.disable-zoom-tabs) {
 
   .pane-header:not(.end) {
 
@@ -1714,8 +1713,6 @@ main.zoom-pane {
 
   .win-prev,
   .win-next {
-    width: 0;
-    overflow: hidden;
 
     >i {
       cursor: default;
