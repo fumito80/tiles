@@ -28,6 +28,7 @@ import {
   last,
   hasClass,
   toggleClass,
+  $$,
 } from './common';
 
 import {
@@ -51,6 +52,7 @@ import {
   removeFolder,
   editBookmarkTitle,
   showMenu,
+  switchTabWindow,
 } from './client';
 
 import { updateAnker } from './html';
@@ -76,7 +78,8 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $byClass('collapse-history-date')?.addEventListener('click', collapseHistoryDate);
+  $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
+  setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
   setEvents([$main], {
     click(e) {

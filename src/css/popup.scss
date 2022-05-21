@@ -209,6 +209,7 @@ button:not(.submit) {
     align-items: center;
     background-color: transparent;
     border: 0;
+    padding: 1px 6px;
     outline: 0;
     font-size: 0.9em;
     color: rgba(0, 0, 0, .4);
@@ -245,9 +246,7 @@ button:not(.submit) {
   transition: visibility 0.1s;
 }
 
-.main-menu-button,
-.pin-bookmark,
-.collapse-history-date {
+.pane-header button {
   display: flex;
   padding: 0;
   justify-content: center;
@@ -998,8 +997,11 @@ main::-webkit-scrollbar {
 .tabs {
   overflow-y: auto;
   transition: width 0.1s;
+  scroll-behavior: smooth;
 
   >div {
+    position: relative;
+    top: 0;
     overflow: hidden;
     border-radius: $pane-radius;
     border: 2px solid #222;
@@ -1093,16 +1095,19 @@ main::-webkit-scrollbar {
     }
   }
 
+  button {
+
+    &:hover::after,
+    &:focus::after {
+      width: 1.5em;
+      height: 1.5em;
+    }
+  }
+
   .icon-history {
     +.collapse-history-date {
       margin: 0 10px;
       margin-left: auto;
-
-      &:hover::after,
-      &:focus::after {
-        width: 1.5em;
-        height: 1.5em;
-      }
 
       +.query-wrap {
         margin-left: 0;
@@ -1116,6 +1121,10 @@ main::-webkit-scrollbar {
 
   .icon-tabs {
     font-size: 1.3em;
+
+    ~.query-wrap {
+      margin-left: 0 !important;
+    }
   }
 
   .icon-bookmarks {
@@ -1275,17 +1284,27 @@ main::-webkit-scrollbar {
 // History date collapse mode
 
 .auto-zoom:not(.disable-zoom-history) {
+
   .collapse-history-date {
     display: none;
   }
 
-  &.zoom-pane .collapse-history-date {
-    display: flex;
-    margin-left: auto;
+  &.zoom-pane {
+
+    .collapse-history-date {
+      display: flex;
+      margin-left: auto;
+    }
+
   }
 
-  &.zoom-fade-out .collapse-history-date {
-    display: none;
+  &.zoom-fade-out {
+
+    .collapse-history-date,
+    .win-prev,
+    .win-next {
+      display: none;
+    }
   }
 }
 
@@ -1294,6 +1313,32 @@ main::-webkit-scrollbar {
   .icon-calendar-plus-solid,
   .icon-calendar-minus-solid {
     display: none;
+  }
+
+  .pane-header:not(.end) {
+
+    .win-prev,
+    .win-next {
+      display: none;
+    }
+  }
+
+  &.zoom-pane {
+    .pane-header {
+
+      .win-prev,
+      .win-next {
+        display: flex;
+      }
+    }
+  }
+
+  &.zoom-fade-out {
+
+    .win-prev,
+    .win-next {
+      display: none;
+    }
   }
 }
 
@@ -1597,7 +1642,6 @@ main.zoom-pane {
     }
 
     .query-wrap {
-      margin-left: auto;
       margin-right: 10px;
     }
 
@@ -1659,5 +1703,28 @@ main.zoom-pane {
 
   &.pane1 {
     grid-column: 7/8;
+  }
+}
+
+.pane-header.header-tabs {
+
+  .icon-tabs+.win-prev {
+    margin-left: auto;
+  }
+
+  .win-prev,
+  .win-next {
+    >i {
+      cursor: default;
+      font-weight: bold;
+    }
+  }
+
+  .win-prev {
+    margin-right: 5px;
+  }
+
+  .win-next {
+    margin-right: 10px;
   }
 }
