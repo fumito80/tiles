@@ -17,7 +17,6 @@ import {
   getLocal,
   setLocal,
   setSplitWidth,
-  getGridTemplateColumns,
   extractDomain,
   getLocaleDate,
   htmlEscape,
@@ -39,6 +38,8 @@ import {
   hasClass,
   toggleClass,
   decode,
+  pick,
+  getNewPaneWidth,
 } from './common';
 
 import {
@@ -150,18 +151,6 @@ function setMouseEventListener(
   }, { once: true });
 }
 
-function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
-  const { pane3, pane2, pane1 } = getGridTemplateColumns();
-  return {
-    ...settings,
-    paneWidth: {
-      pane3,
-      pane2,
-      pane1,
-    },
-  };
-}
-
 function getNewSize({ settings }: Pick<State, 'settings'>) {
   return {
     ...settings,
@@ -182,25 +171,42 @@ export function resizeSplitHandler(
   $targetPane: HTMLElement,
   $splitter: HTMLElement,
   subWidth: number,
+  adjustMouseX: number,
 ) {
   return (e: MouseEvent) => {
     const className = whichClass(splitterClasses, $splitter)!;
-    const width = Math.max(e.clientX - $targetPane.offsetLeft, 100);
-    if (document.body.offsetWidth - (width + subWidth) < 135) {
+    const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, 100);
+    if (document.body.offsetWidth < (width + subWidth)) {
       return;
     }
     setSplitWidth({ [className]: width });
   };
 }
 
-export function resizeWidthHandler($ref: HTMLElement, startWidth: number) {
+export function resizeWidthHandler($ref: HTMLElement, startWidth: number, endPaneMinWidth: number) {
   return (e: MouseEvent) => {
     const width = Math.min(startWidth - e.screenX, 800);
-    if (width - $ref.offsetLeft < 135) {
+    if (width - $ref.offsetLeft < endPaneMinWidth) {
       return;
     }
     addStyle('width', `${width}px`)(document.body);
   };
+}
+
+export function getEndPaneMinWidth($endPane: HTMLElement) {
+  const queryWrapMinWidth = 65;
+  const minWidth = [...$endPane.children]
+    .filter((el) => !hasClass(el, 'query-wrap'))
+    .map((el) => getComputedStyle(el))
+    .map(pick('width', 'marginLeft', 'marginRight'))
+    .reduce(
+      (acc, props) => Object.values(props).reduce(
+        (sum, prop) => sum + Number.parseFloat(prop),
+        acc,
+      ),
+      queryWrapMinWidth,
+    );
+  return Math.max(minWidth, 120);
 }
 
 let timerResizeY: ReturnType<typeof setTimeout>;
@@ -483,14 +489,6 @@ export function switchTabWindow(e: Event) {
   }
   if ($target) {
     const scrollTop = ($target as HTMLElement).offsetTop - ot;
-    // const top = scrollTop - $tabs.scrollTop;
-    // const $$tabs = [...$tabs.children];
-    // addStyle('transition', 'initial')($tabs);
-    // $$tabs.forEach(($el) => addStyle('top', `${top}px`)($el));
     $tabs.scrollTop = scrollTop;
-    // addStyle('transition', 'top .5s ease-in-out')($tabs);
-    // rmStyle('top')($tabs);
-    // $$tabs.forEach(($el) => rmStyle('top')($el));
-    // $$tabs.forEach(($el) => addStyle('top', '0')($el));
   }
 }

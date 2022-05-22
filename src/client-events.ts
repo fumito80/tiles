@@ -53,6 +53,7 @@ import {
   editBookmarkTitle,
   showMenu,
   switchTabWindow,
+  getEndPaneMinWidth,
 } from './client';
 
 import { updateAnker } from './html';
@@ -233,21 +234,32 @@ export default function setEventListners(options: Options) {
   });
 
   const $paneBodies = $$byClass('pane-body');
-  const $paneEnd = last($paneBodies);
+  const $endHeaderPane = last($$byClass('pane-header'));
+  const $endBodyPane = last($paneBodies);
 
   $$byClass('split-h').forEach(($splitter, i) => {
     const $targetPane = $paneBodies[i];
-    addListener('mousedown', () => {
+    addListener('mousedown', (e: MouseEvent) => {
       if (hasClass($main, 'auto-zoom')) {
         return;
       }
-      const subWidth = document.body.offsetWidth - $paneEnd.offsetWidth - $targetPane.offsetWidth;
-      setSplitterHandler(resizeSplitHandler($targetPane, $splitter, subWidth));
+      const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
+      const subWidth = $paneBodies
+        .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
+        .reduce((acc, el) => acc + el.offsetWidth, endPaneMinWidth);
+      const adjustMouseX = e.clientX - $splitter.offsetLeft;
+      const handler = resizeSplitHandler($targetPane, $splitter, subWidth + 16, adjustMouseX);
+      setSplitterHandler(handler);
     })($splitter);
   });
 
   $byClass('resize-x')?.addEventListener('mousedown', (e) => {
-    setResizeHandler(resizeWidthHandler($('.pane-body.end')!, document.body.offsetWidth + e.screenX));
+    const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
+    setResizeHandler(resizeWidthHandler(
+      $endBodyPane,
+      document.body.offsetWidth + e.screenX,
+      endPaneMinWidth,
+    ));
   });
 
   $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));

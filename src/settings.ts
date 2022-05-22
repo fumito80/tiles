@@ -28,7 +28,7 @@ import {
   $byId,
   hasClass,
 } from './common';
-import { State, ColorPalette, initialOptions } from './types';
+import { State, ColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
@@ -309,12 +309,13 @@ async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: In
   });
 }
 
-function restoreCss() {
+async function restoreCss() {
   // eslint-disable-next-line no-restricted-globals
   // eslint-disable-next-line no-alert
   const anser = window.confirm('Reset CSS settings to default.\nAre you sure?');
   if (anser === true) {
-    $<HTMLInputElement>('input[name="css"]')!.value = initialOptions.css;
+    const css = await fetch('./default.css').then((resp) => resp.text());
+    $<HTMLInputElement>('input[name="css"]')!.value = css;
   }
 }
 

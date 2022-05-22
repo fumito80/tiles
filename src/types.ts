@@ -40,19 +40,6 @@ export type HtmlBookmarks = {
 
 export type MyHistoryItem = Partial<chrome.history.HistoryItem & { headerDate: boolean }>;
 
-const css = [
-  'body {',
-  '    font-size: 0.9em;',
-  '}\n',
-  '/* Scroll-bar width */',
-  '.folders::-webkit-scrollbar,',
-  '.leafs::-webkit-scrollbar,',
-  '.tabs::-webkit-scrollbar,',
-  '.histories::-webkit-scrollbar {',
-  '    width: 8px;',
-  '}\n',
-].join('\n');
-
 export type ColorPalette = [
   paneBg: string,
   searching: string,
@@ -73,7 +60,7 @@ export const initialOptions = {
   enableExternalUrl: false,
   externalUrl: '',
   findTabsMatches: 'domain' as 'domain' | 'prefix',
-  css,
+  css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette,
   zoomTabs: true,

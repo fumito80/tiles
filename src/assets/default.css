@@ -1,0 +1,22 @@
+/* Font settings */
+body {
+    font-size: 0.9em;
+}
+
+/* Scroll-bar width */
+.folders::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* - Bookmarks */
+.leafs::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tabs::-webkit-scrollbar {
+    width: 8px;
+}
+
+.histories::-webkit-scrollbar {
+    width: 8px;
+}

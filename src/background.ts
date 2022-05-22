@@ -153,10 +153,11 @@ function regsterWindowEvent() {
 type InitStateKeys = keyof Pick<State, 'settings' | 'clientState' | 'options'>;
 const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options'];
 
-function init(storage: Pick<State, InitStateKeys>) {
+async function init(storage: Pick<State, InitStateKeys>) {
+  const css = await fetch('./default.css').then((resp) => resp.text());
   const settings = { ...initialSettings, ...storage.settings };
   const clientState = storage.clientState || {};
-  const options = { ...initialOptions, ...storage.options };
+  const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
   // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();

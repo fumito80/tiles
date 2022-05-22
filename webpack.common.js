@@ -52,8 +52,8 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
+        { from: '*.*', context: 'src/assets/' },
         { from: '*.html', context: 'src/view/' },
-        { from: '*.json', context: 'src/json/' },
         { from: '*.png', context: 'src/images/' },
         { from: '*.json', context: 'src/_locales/en/', to: '_locales/en' },
         { from: '*.json', context: 'src/_locales/ja/', to: '_locales/ja' },

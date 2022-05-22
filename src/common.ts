@@ -1,5 +1,6 @@
 /* eslint-disable no-redeclare */
 
+import { getEndPaneMinWidth } from './client';
 import {
   PayloadAction,
   MapMessagesPtoB,
@@ -791,7 +792,7 @@ export function getGridTemplateColumns() {
 }
 
 async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
-  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 132)) {
+  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 120)) {
     return true;
   }
   const width = 800;
@@ -816,6 +817,39 @@ export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   }
   const $bodies = $$byClass('pane-body');
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
+}
+
+export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
+  const { pane3, pane2, pane1 } = getGridTemplateColumns();
+  return {
+    ...settings,
+    paneWidth: {
+      pane3,
+      pane2,
+      pane1,
+    },
+  };
+}
+
+export async function recoverMinPaneWidth() {
+  const $endHeaderPane = last($$byClass('pane-header'));
+  const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
+  const saved = await getLocal('settings');
+  const { pane1, pane2, pane3 } = saved.settings.paneWidth;
+  if ((pane1 + pane2 + pane3 + 16 + endPaneMinWidth) <= document.body.offsetWidth) {
+    return;
+  }
+  const [maxWidthPane] = Object.entries(saved.settings.paneWidth)
+    .map(([className, width]) => ({ className, width }))
+    .sort((a, b) => b.width - a.width);
+  const { className } = maxWidthPane;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { [className]: _, ...rest } = saved.settings.paneWidth as Model;
+  const restWidth = Object.values(rest).reduce((acc, value) => acc + value, 0);
+  const altWidth = document.body.offsetWidth - (endPaneMinWidth + restWidth + 16);
+  await setSplitWidth({ [className]: Math.floor(altWidth) });
+  const settings = getNewPaneWidth(saved);
+  setLocal({ settings });
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {
