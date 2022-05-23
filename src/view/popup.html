@@ -142,6 +142,11 @@
             <div class="v-scroll-fake-bottom"></div>
         </div>
     </div>
+    <script nonce="popup">
+        const params = new URLSearchParams(document.location.search);
+        const sheet = document.head.appendChild(document.createElement('style'));
+        sheet.textContent = params.get('css');
+    </script>
     <script src="popup.js"></script>
 </body>
 

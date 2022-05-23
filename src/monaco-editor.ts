@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
 import * as monaco from 'monaco-editor';
+import { setPopupStyle } from './common';
 
 export * as monaco from 'monaco-editor';
 
@@ -18,6 +19,7 @@ export class InputMonacoEditor extends HTMLInputElement {
     this.#editor?.setValue(super.value);
     this.#editor.getModel()?.onDidChangeContent(() => {
       this.dispatchEvent(new Event('change', { bubbles: true }));
+      setPopupStyle({ css: this.value });
     });
     super.value = '';
   }

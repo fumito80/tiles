@@ -1,22 +1,26 @@
-/* Font settings */
 body {
+    /* Overall font size */
     font-size: 0.9em;
 }
 
 /* Scroll-bar width */
+
+/* for pin bookmark/folders pane */
 .folders::-webkit-scrollbar {
     width: 8px;
 }
 
-/* - Bookmarks */
+/* for bookmarks pane */
 .leafs::-webkit-scrollbar {
     width: 8px;
 }
 
+/* for open tabs pane */
 .tabs::-webkit-scrollbar {
     width: 8px;
 }
 
+/* for history pane */
 .histories::-webkit-scrollbar {
     width: 8px;
 }

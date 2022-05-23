@@ -118,14 +118,6 @@ function setOptions(settings: Settings, options: Options) {
   )($main);
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
-
-  const [sheet] = document.styleSheets;
-  options.css
-    .replaceAll('\n', '').trim()
-    .split('}')
-    .filter(Boolean)
-    .map((rule) => rule.trim().concat('}'))
-    .forEach((rule) => sheet.insertRule(rule.trim(), sheet.cssRules.length));
 }
 
 function setExternalUrl(options: Options) {

@@ -66,6 +66,7 @@ export const initialOptions = {
   zoomTabs: true,
   zoomHistory: true,
   zoomRatio: '0.7',
+  fontSize: '0.9em',
 };
 
 export const initialState = {

@@ -25,6 +25,7 @@ import {
   setMessageListener,
   postMessage,
   isDateEq,
+  setPopupStyle,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -166,6 +167,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
   regsterWindowEvent();
+  setPopupStyle(options);
 }
 
 getLocal(...initStateKeys).then(init);

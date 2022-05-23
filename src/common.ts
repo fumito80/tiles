@@ -10,6 +10,7 @@ import {
   SplitterClasses,
   MyHistoryItem,
   Model,
+  Options,
 } from './types';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
@@ -1015,4 +1016,9 @@ export function getGridColStart($target: HTMLElement) {
     gridColStart += 1;
   }
   return gridColStart;
+}
+
+export function setPopupStyle({ css }: Pick<Options, 'css'>) {
+  const encoded = encodeURIComponent(css);
+  chrome.browserAction.setPopup({ popup: `popup.html?css=${encoded}` });
 }
