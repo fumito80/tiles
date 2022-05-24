@@ -165,7 +165,7 @@ const dragAndDropEvents = {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    addClass(targetClass)($byTag('main'));
+    setTimeout(() => addClass(targetClass)($byTag('main')), 0);
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {

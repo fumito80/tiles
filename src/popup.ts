@@ -93,9 +93,10 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .tabs-wrap > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf).collapsed-tabs .tabs-wrap > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
+  addRules('main:not(.drag-start-leaf) .tabs-wrap > div > .tab-wrap:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
