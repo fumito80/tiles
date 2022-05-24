@@ -273,7 +273,7 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     insertHTML('beforeend', htmlLightTheme),
     insertHTML('beforeend', '<div class="desc">Dark/Vivid</div>'),
     insertHTML('beforeend', htmlDarkTheme),
-    insertHTML('beforeend', '<div class="desc">Others</div>'),
+    insertHTML('beforeend', '<div class="desc">Mix</div>'),
     insertHTML('beforeend', htmlOther),
     addListener('click', (e) => {
       const $target = e.target as HTMLElement;

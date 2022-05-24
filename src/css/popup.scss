@@ -51,6 +51,10 @@ $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
   }
 }
 
+.scroll-ease-in-out {
+  transition: transform 0.15s ease-in-out;
+}
+
 // body/other
 
 body {
@@ -221,7 +225,7 @@ button:not(.submit) {
 
   .query {
     width: 100%;
-    max-width: 100px;
+    max-width: 90px;
     background: rgba(0, 0, 0, .1);
     border: 0;
     outline: none;
@@ -1002,33 +1006,36 @@ main::-webkit-scrollbar {
 .tabs {
   overflow-y: auto;
   transition: width 0.1s;
-  scroll-behavior: smooth;
 
-  >div {
-    position: relative;
-    top: 0;
-    overflow: hidden;
-    border-radius: $pane-radius;
-    border: 2px solid rgba(0, 0, 0, 0.5);
+  >.tabs-wrap {
     margin-right: 2px;
-    margin-bottom: 5px;
-    padding: 1px;
 
-    &:last-child {
-      margin-bottom: 0;
+    >div {
+      position: relative;
+      top: 0;
+      overflow: hidden;
+      border-radius: $pane-radius;
+      border: 2px solid rgba(0, 0, 0, 0.5);
+      // margin-right: 2px;
+      margin-bottom: 5px;
+      padding: 1px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      >.match {
+        display: flex !important;
+      }
+
+      >.unmatch {
+        display: none;
+      }
     }
 
-    >.match {
-      display: flex !important;
+    >.empty {
+      padding: 0;
     }
-
-    >.unmatch {
-      display: none;
-    }
-  }
-
-  >.empty {
-    padding: 0;
   }
 }
 
@@ -1364,7 +1371,7 @@ main:not(.date-collapsed) {
   .pane-header:first-child {
 
     >i:first-child~* {
-      display: none;
+      display: none !important;
     }
   }
 
@@ -1600,13 +1607,13 @@ main.zoom-pane {
 
 .theme-dark-pane,
 .theme-dark-frame {
-  .tabs>div {
+  .tabs-wrap>div {
     border-color: transparent;
   }
 }
 
 .theme-dark-pane.theme-dark-frame {
-  .tabs>div {
+  .tabs-wrap>div {
     border-color: rgba(255, 255, 255, 0.5);
     border-width: 1px;
     padding: 2px;

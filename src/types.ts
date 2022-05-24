@@ -54,7 +54,7 @@ export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
-  showSwitchTabsWin: true,
+  showSwitchTabsWin: false,
   showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,

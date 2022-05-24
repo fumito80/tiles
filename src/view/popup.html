@@ -31,7 +31,7 @@
         <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab"></i>Find in tabs first</div>
         <div role="menuitem" data-value="open-new-tab"><i class="icon-tab"></i>Open in new tab</div>
         <hr aria-hidden="true">
-        <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window-restore"></i>Open in new window</div>
+        <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window"></i>Open in new window</div>
         <div role="menuitem" data-value="open-incognito"><i class="icon-fa-mask"></i>Open in incognito window</div>
         <hr aria-hidden="true" class="searched-menu">
         <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i class="icon-fa-sign-in-alt"></i>Show
@@ -46,6 +46,9 @@
     <div class="folder-menu" role="menu">
         <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
         <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
+        <hr aria-hidden="true">
+        <div role="menuitem" data-value="open-all"><i class="icon-fa-window"></i>Open all in new window</div>
+        <div role="menuitem" data-value="open-all-incognito"><i class="icon-fa-mask"></i>Open all in incognito window</div>
         <hr aria-hidden="true">
         <div role="menuitem" data-value="edit"><i class="icon-fa-edit"></i>Edit title</div>
         <hr aria-hidden="true">
@@ -78,7 +81,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
-                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>ZEN mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -99,7 +102,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
-                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>ZEN mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -124,7 +127,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled"></i>
-                        <div class="icon-zoom"></div>Auto ZEN mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>ZEN mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -140,6 +143,9 @@
         <div class="body-histories">
             <div class="rows"></div>
             <div class="v-scroll-fake-bottom"></div>
+        </div>
+        <div class="body-tabs">
+            <div class="tabs-wrap"></div>
         </div>
     </div>
     <script nonce="popup">

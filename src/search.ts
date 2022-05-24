@@ -27,7 +27,7 @@ export function getReFilter(value: string) {
 export function clearSearch() {
   $$('.leafs .search-path').forEach(rmClass('search-path'));
   $$('.leafs .path').forEach(rmClass('path'));
-  $$('.tabs > div > div').forEach(rmClass('match', 'unmatch'));
+  $$('.tabs-wrap > div > div').forEach(rmClass('match', 'unmatch'));
   $$byClass('empty').forEach(rmClass('empty'));
   resetHistory();
   const openFolder = $('.folders .open');
@@ -96,7 +96,7 @@ function search(includeUrl: boolean, $leafs: HTMLElement) {
       }
     }
   });
-  const $paneTabs = $byClass('tabs')!;
+  const $paneTabs = $byClass('tabs-wrap')!;
   $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
     const tab = el.firstElementChild as HTMLElement;
     const isMatch = reFilter.test(tab.textContent!)

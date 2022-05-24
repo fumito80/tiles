@@ -57,7 +57,7 @@ function setTabs(currentWindowId: number) {
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
     const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
-    $byClass('tabs')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
+    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
   });
 }
 
@@ -81,7 +81,7 @@ function setOptions(settings: Settings, options: Options) {
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs > div', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('.leafs, .histories, .tabs-wrap > div', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body', [['background-color', frameBg]]);
   addRules('.folders', [['color', frameColor]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
@@ -93,13 +93,13 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .tabs > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf) .tabs-wrap > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
-    addRules('.tabs > div > div:hover > i', [['display', 'inline-block']]);
+    addRules('.tabs-wrap > div > div:hover > i', [['display', 'inline-block']]);
   }
   if (options.showDeleteHistory) {
     addRules('.histories > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
@@ -170,6 +170,10 @@ function layoutPanes(options: Options) {
       $paneHeader.append(...$byClass(header)!.children);
       addClass(header)($paneHeader);
       addClass(name)($paneBody);
+      const $body = $byClass(`body-${name}`);
+      if ($body) {
+        $paneBody.append(...$body.children);
+      }
       return [name, $paneHeader] as const;
     })
     .filter(([name]) => name !== 'folders');
@@ -177,7 +181,7 @@ function layoutPanes(options: Options) {
   addClass('end')($endHeader);
   // History pane
   const $histories = $byClass('histories');
-  $histories?.append(...$byClass('body-histories')!.children);
+  // $histories?.append(...$byClass('body-histories')!.children);
   addClass('v-scroll')($histories);
   // Bold Splitter
   const $leafs = $('.histories + .leafs');

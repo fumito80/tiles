@@ -440,6 +440,13 @@ export async function addFolder(parentId = '1') {
   }
 }
 
+export function openFolder(folderId: string, incognito = false) {
+  chrome.bookmarks.getChildren(folderId, (bookmarks) => {
+    const url = bookmarks.map((bm) => bm.url).filter((surl) => !!surl) as string[];
+    chrome.windows.create({ url, incognito });
+  });
+}
+
 type MenuClass = 'leaf-menu' | 'folder-menu';
 
 export function showMenu($target: HTMLElement, menuClass: MenuClass) {
@@ -458,12 +465,23 @@ export function showMenu($target: HTMLElement, menuClass: MenuClass) {
   addStyle({ left, top })($menu);
 }
 
+type ScrollTarget = {
+  prev: HTMLElement | null;
+  current: HTMLElement | null;
+  next: HTMLElement | null;
+}
+
 export function switchTabWindow(e: Event) {
-  const $btn = e.currentTarget as HTMLElement;
   const $tabs = $byClass('tabs')!;
-  const st = hasClass($btn, 'win-next') ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
+  if ($tabs.scrollHeight === $tabs.offsetHeight) {
+    return;
+  }
+  const $tabsWrap = $tabs.firstElementChild! as HTMLElement;
+  const $btn = e.currentTarget as HTMLElement;
+  const isNext = hasClass($btn, 'win-next');
+  const st = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
   const ot = $tabs.offsetTop;
-  const targets = ([...$tabs.children] as HTMLElement[]).reduce((acc, $win) => {
+  const targets = ([...$tabsWrap.children] as HTMLElement[]).reduce<ScrollTarget>((acc, $win) => {
     if (acc.current || acc.next) {
       return acc;
     }
@@ -476,19 +494,28 @@ export function switchTabWindow(e: Event) {
       return { ...acc, next: $win };
     }
     return { ...acc, prev: $win };
-  }, {
-    prev: null as unknown as HTMLElement,
-    current: null as unknown as HTMLElement,
-    next: null as unknown as HTMLElement,
-  });
+  }, { prev: null, current: null, next: null });
   let $target;
-  if (hasClass($btn, 'win-next')) {
+  if (isNext) {
     $target = targets.current?.nextElementSibling || targets.next?.nextElementSibling;
   } else {
     $target = targets.current || targets.prev;
   }
   if ($target) {
     const scrollTop = ($target as HTMLElement).offsetTop - ot;
-    $tabs.scrollTop = scrollTop;
+    const translateY = -(Math.min(
+      scrollTop - $tabs.scrollTop,
+      $tabs.scrollHeight - $tabs.offsetHeight - $tabs.scrollTop,
+    ));
+    if (Math.abs(translateY) <= 1) {
+      return;
+    }
+    addClass('scroll-ease-in-out')($tabsWrap);
+    addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
+    $tabsWrap.addEventListener('transitionend', () => {
+      rmClass('scroll-ease-in-out')($tabsWrap);
+      rmStyle('transform')($tabsWrap);
+      $tabs.scrollTop = scrollTop;
+    }, { once: true });
   }
 }

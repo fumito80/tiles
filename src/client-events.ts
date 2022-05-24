@@ -54,6 +54,7 @@ import {
   showMenu,
   switchTabWindow,
   getEndPaneMinWidth,
+  openFolder,
 } from './client';
 
 import { updateAnker } from './html';
@@ -308,9 +309,14 @@ export default function setEventListners(options: Options) {
   setEvents($$byClass('folder-menu'), {
     async click(e) {
       const $folder = getParentElement(e.target as HTMLElement, 4)!;
-      switch ((e.target as HTMLElement).dataset.value) {
+      const { value } = (e.target as HTMLElement).dataset;
+      switch (value) {
         case 'add-bookmark': {
           addBookmark($folder.id);
+          break;
+        }
+        case 'add-folder': {
+          addFolder($folder.id);
           break;
         }
         case 'edit': {
@@ -318,10 +324,10 @@ export default function setEventListners(options: Options) {
           editTitle($title, $folder.id);
           break;
         }
-        case 'add-folder': {
-          addFolder($folder.id);
+        case 'open-all':
+        case 'open-all-incognito':
+          openFolder($folder.id, value === 'open-all-incognito');
           break;
-        }
         case 'remove': {
           removeFolder($folder);
           break;
