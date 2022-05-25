@@ -7,10 +7,10 @@ import {
   extractUrl,
   rmClass,
   addAttr,
-  rmAttr,
   addClass,
   $byClass,
   $$byClass,
+  $byTag,
 } from './common';
 
 const $inputQuery = $byClass('query') as HTMLInputElement;
@@ -44,23 +44,23 @@ export function clearQuery() {
   }
   $inputQuery.value = '';
   addAttr('value', '')($inputQuery);
-  rmAttr('data-searching')($inputQuery.parentElement);
+  rmClass('searching')($byTag('main'));
   clearSearch();
   $inputQuery.focus();
 }
 
-function search(includeUrl: boolean, $leafs: HTMLElement) {
+function search(includeUrl: boolean, $leafs: HTMLElement, $main: HTMLElement) {
   const { value } = $inputQuery;
   if (lastQueryValue === '' && value.length <= 1) {
     return;
   }
-  addAttr('data-searching', '1')($inputQuery.parentElement!);
+  addClass('searching')($main);
   rmClass('open')($('.leafs .open'));
   // eslint-disable-next-line no-param-reassign
   $leafs.scrollTop = 0;
   if (value.length <= 1) {
     clearSearch();
-    $inputQuery.parentElement!.removeAttribute('data-searching');
+    rmClass('searching')($main);
     $inputQuery.value = value;
     lastQueryValue = '';
     return;
@@ -115,7 +115,7 @@ let fnSearch: () => void;
 export function resetQuery(includeUrl: boolean) {
   $inputQuery.removeEventListener('input', fnSearch);
   const $leafs = $byClass('leafs') as HTMLElement;
-  fnSearch = () => search(includeUrl, $leafs);
+  fnSearch = () => search(includeUrl, $leafs, $byTag('main'));
   $inputQuery.addEventListener('input', fnSearch);
   const lqv = lastQueryValue;
   clearQuery();

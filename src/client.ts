@@ -519,3 +519,7 @@ export function switchTabWindow(e: Event) {
     }, { once: true });
   }
 }
+
+export function collapseTabs() {
+  toggleClass('tabs-collapsed')($byTag('main'));
+}

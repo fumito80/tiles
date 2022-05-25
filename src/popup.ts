@@ -90,13 +90,19 @@ function setOptions(settings: Settings, options: Options) {
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
   addRules('.pane-header .pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
-  addRules('.form-query[data-searching], .form-query[data-searching] .query', [['background-color', searchingBg], ['color', searchingColor]]);
+  addRules('.searching .form-query, .searching .form-query .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
-    'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before, main:not(.drag-start-leaf).collapsed-tabs .tabs-wrap > div > .tab-wrap:not(.current-tab):hover, main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover, main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+    [
+      'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before',
+      'main:not(.drag-start-leaf):not(.tabs-collapsed) .tabs-wrap > div > .tab-wrap:not(.current-tab):hover',
+      '.searching .tabs-wrap > div > .tab-wrap:not(.current-tab):hover',
+      'main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover',
+      'main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+    ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('main:not(.drag-start-leaf) .tabs-wrap > div > .tab-wrap:hover', [['border-color', itemHoverBg]]);
+  addRules('main.tabs-collapsed:not(.drag-start-leaf):not(.searching) .tabs-wrap > div > .tab-wrap:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
@@ -116,6 +122,7 @@ function setOptions(settings: Settings, options: Options) {
     toggleClass('theme-dark-search', !isLightSearchingBg),
     toggleClass('auto-zoom', settings.autoZoom),
     toggleClass('checked-include-url', settings.includeUrl),
+    toggleClass('tabs-collapsed', options.collapseTabs),
   )($main);
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
@@ -125,8 +132,8 @@ function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
-  addRules('.form-query[data-searching] .icon-fa-search', [['visibility', 'hidden']]);
-  addRules('.form-query[data-searching]', [
+  addRules('.searching .form-query .icon-fa-search', [['visibility', 'hidden']]);
+  addRules('.searching .form-query', [
     ['background-image', `url("chrome://favicon/${options.externalUrl}")`],
     ['background-repeat', 'no-repeat'],
     ['background-position', '6px center'],

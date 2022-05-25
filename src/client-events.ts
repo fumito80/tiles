@@ -55,6 +55,7 @@ import {
   switchTabWindow,
   getEndPaneMinWidth,
   openFolder,
+  collapseTabs,
 } from './client';
 
 import { updateAnker } from './html';
@@ -80,6 +81,7 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
+  $byClass('collapse-tabs')!.addEventListener('click', collapseTabs);
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
   setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 

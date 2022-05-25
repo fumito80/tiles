@@ -277,12 +277,12 @@ button:not(.submit) {
 
 }
 
-.form-query {
-  &[data-searching]>.icon-x {
-    visibility: inherit;
-  }
+.searching {
+  .form-query {
+    .icon-x {
+      visibility: inherit;
+    }
 
-  &[data-searching] {
     background-color: #cce5ff;
 
     +button {
@@ -1318,6 +1318,7 @@ main::-webkit-scrollbar {
 
   .pane-header:not(.end) {
 
+    .collapse-tabs,
     .win-prev,
     .win-next {
       display: none;
@@ -1327,6 +1328,7 @@ main::-webkit-scrollbar {
   &.zoom-pane {
     .pane-header {
 
+      .collapse-tabs,
       .win-prev,
       .win-next {
         display: flex;
@@ -1338,6 +1340,7 @@ main::-webkit-scrollbar {
 
     .pane-header {
 
+      .collapse-tabs,
       .win-prev,
       .win-next {
         display: none;
@@ -1620,8 +1623,8 @@ main.zoom-pane {
   }
 }
 
-.theme-dark-search {
-  .form-query[data-searching] button>.icon-fa-search {
+.theme-dark-search.searching {
+  .form-query button>.icon-fa-search {
     color: rgba(255, 255, 255, 0.7);
   }
 }
@@ -1717,7 +1720,7 @@ main.zoom-pane {
 .pane-header.header-tabs {
 
   .icon-tabs {
-    +.win-prev {
+    +.collapse-tabs {
       margin-left: auto;
     }
 
@@ -1745,6 +1748,7 @@ main.zoom-pane {
     }
   }
 
+  .collapse-tabs,
   .win-prev {
     margin-right: 5px;
   }
@@ -1755,7 +1759,7 @@ main.zoom-pane {
 }
 
 // Tabs collapse
-main:not(.drag-start-leaf) {
+main.tabs-collapsed:not(.drag-start-leaf):not(.searching) {
 
   .tabs-wrap>div>div:first-child {
     display: block;
@@ -1788,7 +1792,7 @@ main:not(.drag-start-leaf) {
   }
 
   .tabs-wrap>div>.tab-wrap:hover {
-    border-radius: 3px;
+    border-radius: 4px;
   }
 
 }
