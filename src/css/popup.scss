@@ -146,7 +146,6 @@ button:not(.submit) {
   display: flex;
   height: 1.8em;
   align-items: center;
-  padding-left: 20px;
   overflow: hidden;
   white-space: nowrap;
   background-size: 16px;
@@ -154,6 +153,7 @@ button:not(.submit) {
   background-position: 2px center;
 
   >div:first-child {
+    text-indent: 20px;
     width: 100%;
     padding: 0.15em;
     overflow: hidden;
@@ -1016,7 +1016,7 @@ main::-webkit-scrollbar {
       overflow: hidden;
       border-radius: $pane-radius;
       border: 2px solid rgba(0, 0, 0, 0.5);
-      border-top: 0;
+      // border-top: 0;
       margin-bottom: 5px;
       padding: 1px;
 
@@ -1765,9 +1765,9 @@ main.zoom-pane {
     display: flex;
   }
 
-  .tabs-menu-button {
+  .tabs-menu-button:focus {
 
-    &:focus+.tabs-menu {
+    +.tabs-menu {
       display: block;
       position: fixed;
       animation: fade-in 0.15s ease-in-out;
@@ -1786,6 +1786,7 @@ main.zoom-pane {
       }
     }
   }
+
 
   .collapse-tab {
     margin-left: auto;
@@ -1824,7 +1825,6 @@ main {
         display: flex;
         background-color: rgba(0, 0, 0, 0.5);
         margin: -1px;
-        padding-left: 20px;
         color: #efefef;
       }
     }
@@ -1833,22 +1833,23 @@ main {
   &:not(.drag-start-leaf):not(.searching) {
 
     .tabs-wrap>.tabs-collapsed {
+      padding-bottom: 0;
 
       >.tab-wrap:not(.tabs-header) {
         display: inline-flex;
         width: 1.8em;
         margin-top: 2px;
+        margin-bottom: 2px;
         padding-left: 0;
         background-position: center;
         border: 2px solid transparent;
+        border-radius: 4px;
 
         >.tab {
           display: none;
         }
 
         &:hover {
-          border-radius: 4px;
-
           >i {
             display: none;
           }
@@ -1861,7 +1862,7 @@ main {
     .tabs-wrap>div:not(.tabs-collapsed) {
       >.tabs-header {
         >.tab {
-          display: none;
+          visibility: hidden;
         }
 
         margin-bottom: 1px;
@@ -1893,4 +1894,23 @@ main {
       }
     }
   }
+
+  // Dark pane
+  &.theme-dark-pane {
+
+    .tabs-header {
+
+      button>i {
+        color: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    .tabs-wrap>.tabs-collapsed {
+
+      >.tab-wrap:not(.tabs-header) {
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+
 }

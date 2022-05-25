@@ -346,8 +346,9 @@ export default function setEventListners(options: Options) {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
-    const $window = ($target.id ? $target : $parent).parentElement!;
+    const $window = $target.id ? $target : $target.closest('[id]')!;
     const targetClasses = [
+      'tab',
       'icon-x',
       'collapse-tab',
       'tabs-menu-button',
@@ -383,7 +384,7 @@ export default function setEventListners(options: Options) {
         )($parent);
         break;
       }
-      default: {
+      case 'tab': {
         const [, windowId] = $window.id.split('-') || [];
         if (windowId == null) {
           return;
@@ -392,8 +393,9 @@ export default function setEventListners(options: Options) {
         chrome.tabs.update(Number(tabId), { active: true });
         break;
       }
+      default:
     }
-  });
+  }, true);
   setEvents($$byClass('tabs-menu'), {
     click(e) {
       const $target = e.target as HTMLElement;
