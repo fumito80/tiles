@@ -450,7 +450,7 @@ export function openFolder(folderId: string, incognito = false) {
   });
 }
 
-type MenuClass = 'leaf-menu' | 'folder-menu';
+type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu';
 
 export function showMenu($target: HTMLElement, menuClass: MenuClass) {
   const $menu = $byClass(menuClass)!;
@@ -523,11 +523,15 @@ export function switchTabWindow(e: Event) {
   }
 }
 
-export function collapseTabs() {
-  toggleClass('tabs-collapsed')($byTag('main'));
+export function collapseTabsAll(force?: boolean) {
+  const $main = $byTag('main');
+  toggleClass('tabs-collapsed-all', force)($main);
+  const isCollapse = hasClass($main, 'tabs-collapsed-all');
+  $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
 }
 
-export function setTabs(currentWindowId: number) {
+export function setTabs(currentWindowId: number, isCollapse: boolean) {
+  const collapseClass = isCollapse ? 'tabs-collapsed' : '';
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
@@ -541,7 +545,7 @@ export function setTabs(currentWindowId: number) {
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
-    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
-    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
+    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}" class="${collapseClass}">${value}</div>`).join('');
+    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}" class="${collapseClass}">${currentTabs}</div>${html}`;
   });
 }

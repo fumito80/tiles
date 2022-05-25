@@ -64,8 +64,10 @@ export function makeTabsHeader(
 ) {
   const addClass = isCurrentWindow ? ' current-win' : '';
   return `
-    <div draggable="true" class="header tab-wrap${addClass}" title="${htmlEscape(title)}" style="${style}">
+    <div draggable="true" class="tabs-header tab-wrap${addClass}" title="${htmlEscape(title)}" style="${style}">
       <div class="tab">${htmlEscape(content)}</div>
+      <button class="collapse-tab"><i class="icon-list"></i><i class="icon-grid"></i></button>
+      <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
     </div>
   `;
 }

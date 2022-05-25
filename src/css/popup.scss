@@ -174,7 +174,9 @@ button:not(.submit) {
 // Leaf menu
 
 .leaf-menu-button,
-.folder-menu-button {
+.folder-menu-button,
+.tabs-menu-button,
+.collapse-tab {
   display: none;
   z-index: 1;
   padding: 0;
@@ -1011,12 +1013,10 @@ main::-webkit-scrollbar {
     margin-right: 2px;
 
     >div {
-      position: relative;
-      top: 0;
       overflow: hidden;
       border-radius: $pane-radius;
       border: 2px solid rgba(0, 0, 0, 0.5);
-      // margin-right: 2px;
+      border-top: 0;
       margin-bottom: 5px;
       padding: 1px;
 
@@ -1760,11 +1760,68 @@ main.zoom-pane {
 
 // Tabs collapse
 
+.tabs {
+  button {
+    display: flex;
+  }
+
+  .tabs-menu-button {
+
+    &:focus+.tabs-menu {
+      display: block;
+      position: fixed;
+      animation: fade-in 0.15s ease-in-out;
+
+      i {
+        pointer-events: none;
+      }
+
+      .icon-tab-plus {
+        font-size: 1.4em;
+        width: 2.1em;
+      }
+
+      [data-value="close-window"]:hover>i {
+        color: red;
+      }
+    }
+  }
+
+  .collapse-tab {
+    margin-left: auto;
+
+    >i {
+      pointer-events: none;
+    }
+
+    >.icon-list {
+      display: none;
+    }
+
+    >.icon-grid {
+      display: block;
+    }
+  }
+
+  .tabs-collapsed {
+    .collapse-tab {
+      >.icon-list {
+        display: block;
+      }
+
+      >.icon-grid {
+        display: none;
+      }
+    }
+  }
+}
+
 main {
+
   &:not(.drag-start-leaf):not(.searching) {
     .tabs-wrap>div {
-      >.header {
-        display: block;
+      >.tabs-header {
+        display: flex;
         background-color: rgba(0, 0, 0, 0.5);
         margin: -1px;
         padding-left: 20px;
@@ -1773,18 +1830,11 @@ main {
     }
   }
 
-  &.tabs-collapsed:not(.drag-start-leaf):not(.searching) {
+  &:not(.drag-start-leaf):not(.searching) {
 
-    .tabs-wrap>div {
-      // >.header {
-      //   display: block;
-      //   background-color: rgba(0, 0, 0, 0.5);
-      //   margin: -1px;
-      //   padding-left: 20px;
-      //   color: #efefef;
-      // }
+    .tabs-wrap>.tabs-collapsed {
 
-      >.tab-wrap:not(.header) {
+      >.tab-wrap:not(.tabs-header) {
         display: inline-flex;
         width: 1.8em;
         margin-top: 2px;
@@ -1807,14 +1857,40 @@ main {
     }
   }
 
-  &:not(.tabs-collapsed):not(.drag-start-leaf):not(.searching) {
-    .tabs-wrap>div {
-      >.header {
+  &:not(.drag-start-leaf):not(.searching) {
+    .tabs-wrap>div:not(.tabs-collapsed) {
+      >.tabs-header {
         >.tab {
           display: none;
         }
+
+        margin-bottom: 1px;
+        background-image: none !important;
       }
     }
   }
 
+  &.tabs-collapsed-all {
+    .collapse-tabs {
+      >.icon-list {
+        display: block;
+      }
+
+      >.icon-grid {
+        display: none;
+      }
+    }
+  }
+
+  &:not(.tabs-collapsed-all) {
+    .collapse-tabs {
+      >.icon-list {
+        display: none;
+      }
+
+      >.icon-grid {
+        display: block;
+      }
+    }
+  }
 }

@@ -27,43 +27,6 @@
         <div class="safety-zone-right"></div>
     </main>
     <div class="resize-y"></div>
-    <div class="leaf-menu" role="menu">
-        <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab"></i>Find in tabs first</div>
-        <div role="menuitem" data-value="open-new-tab"><i class="icon-tab"></i>Open in new tab</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window"></i>Open in new window</div>
-        <div role="menuitem" data-value="open-incognito"><i class="icon-fa-mask"></i>Open in incognito window</div>
-        <hr aria-hidden="true" class="searched-menu">
-        <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i class="icon-fa-sign-in-alt"></i>Show
-            in
-            folder</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="edit-title"><i class="icon-fa-edit"></i>Edit title</div>
-        <div role="menuitem" data-value="edit-url"><i class="icon-fa-link"></i>Edit URL</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
-    </div>
-    <div class="folder-menu" role="menu">
-        <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
-        <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="open-all"><i class="icon-fa-window"></i>Open all in new window</div>
-        <div role="menuitem" data-value="open-all-incognito"><i class="icon-fa-mask"></i>Open all in incognito window</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="edit"><i class="icon-fa-edit"></i>Edit title</div>
-        <hr aria-hidden="true">
-        <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
-    </div>
-    <div class="draggable-clone">
-        <div class="leaf"></div>
-    </div>
-    <div class="modal">
-        <div class="popup">
-            <div class="popup-desc"></div>
-            <div calss="input"><input type="text"></div>
-            <div class="footer"><button>OK</button><button>Cancel</button></div>
-        </div>
-    </div>
     <div class="components">
         <div class="header-histories">
             <i class="icon-history" title="HISTORY"></i>
@@ -90,7 +53,8 @@
         </div>
         <div class="header-tabs">
             <i class="icon-tabs" title="OPEN TABS"></i>
-            <button class="collapse-tabs" type="button" title="Collapse by window"><i class="icon-collapse-tabs ict1"></i></button>
+            <button class="collapse-tabs" type="button" title="Collapse by window"><i class="icon-list"></i><i
+                    class="icon-grid"></i></button>
             <button class="win-prev" type="button" title="Previous window"><i class="icon-square-up"></i></button>
             <button class="win-next" type="button" title="Next window"><i class="icon-square-down"></i></button>
             <div class="query-wrap"></div>
@@ -147,6 +111,50 @@
         </div>
         <div class="body-tabs">
             <div class="tabs-wrap"></div>
+        </div>
+        <div class="leaf-menu" role="menu">
+            <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab"></i>Find in tabs first</div>
+            <div role="menuitem" data-value="open-new-tab"><i class="icon-tab"></i>Open in new tab</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window"></i>Open in new window</div>
+            <div role="menuitem" data-value="open-incognito"><i class="icon-fa-mask"></i>Open in incognito window</div>
+            <hr aria-hidden="true" class="searched-menu">
+            <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i
+                    class="icon-fa-sign-in-alt"></i>Show
+                in
+                folder</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="edit-title"><i class="icon-fa-edit"></i>Edit title</div>
+            <div role="menuitem" data-value="edit-url"><i class="icon-fa-link"></i>Edit URL</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
+        </div>
+        <div class="folder-menu" role="menu">
+            <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
+            <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="open-all"><i class="icon-fa-window"></i>Open all in new window</div>
+            <div role="menuitem" data-value="open-all-incognito"><i class="icon-fa-mask"></i>Open all in incognito
+                window</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="edit"><i class="icon-fa-edit"></i>Edit title</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
+        </div>
+        <div class="tabs-menu" role="menu">
+            <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
+            <hr aria-hidden="true">
+            <div role="menuitem" data-value="close-window"><i class="icon-closes"></i>Close window</div>
+        </div>
+        <div class="draggable-clone">
+            <div class="leaf"></div>
+        </div>
+        <div class="modal">
+            <div class="popup">
+                <div class="popup-desc"></div>
+                <div calss="input"><input type="text"></div>
+                <div class="footer"><button>OK</button><button>Cancel</button></div>
+            </div>
         </div>
     </div>
     <script nonce="popup">

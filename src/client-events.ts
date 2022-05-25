@@ -55,7 +55,7 @@ import {
   switchTabWindow,
   getEndPaneMinWidth,
   openFolder,
-  collapseTabs,
+  collapseTabsAll,
 } from './client';
 
 import { updateAnker } from './html';
@@ -81,7 +81,7 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $byClass('collapse-tabs')!.addEventListener('click', collapseTabs);
+  $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
   setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
@@ -139,7 +139,7 @@ export default function setEventListners(options: Options) {
         }
         case 'remove': {
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($byClass('leaf-menu'))(document.body);
+          addChild($byClass('leaf-menu'))($byClass('components'));
           pipe(
             addListener('animationend', () => $leaf.remove(), { once: true }),
             rmClass('hilite'),
@@ -345,28 +345,78 @@ export default function setEventListners(options: Options) {
   $paneTabs.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
-    const $window = ($target.id ? $target : $parent).parentElement!;
     const [, tabId] = ($target.id || $parent.id).split('-');
-    if (hasClass($target, 'icon-x')) {
-      pipe(
-        addListener('animationend', () => {
-          chrome.tabs.remove(Number(tabId), () => {
-            $parent.remove();
-            if ($window.childElementCount === 0) {
-              $window.remove();
-            }
+    const $window = ($target.id ? $target : $parent).parentElement!;
+    const targetClasses = [
+      'icon-x',
+      'collapse-tab',
+      'tabs-menu-button',
+    ] as const;
+    const targetClass = whichClass(targetClasses, $target);
+    switch (targetClass) {
+      case 'tabs-menu-button': {
+        showMenu($target, 'tabs-menu');
+        e.stopImmediatePropagation();
+        break;
+      }
+      case 'collapse-tab': {
+        toggleClass('tabs-collapsed')($parent.parentElement);
+        const { length } = $$byClass('tabs-collapsed');
+        if (length === $byClass('tabs-wrap').children.length) {
+          collapseTabsAll(true);
+        } else if (length === 0) {
+          collapseTabsAll(false);
+        }
+        break;
+      }
+      case 'icon-x': {
+        pipe(
+          addListener('animationend', () => {
+            chrome.tabs.remove(Number(tabId), () => {
+              $parent.remove();
+              if ($window.childElementCount === 0) {
+                $window.remove();
+              }
+            });
+          }, { once: true }),
+          setAnimationClass('remove-hilite'),
+        )($parent);
+        break;
+      }
+      default: {
+        const [, windowId] = $window.id.split('-') || [];
+        if (windowId == null) {
+          return;
+        }
+        chrome.windows.update(Number(windowId), { focused: true });
+        chrome.tabs.update(Number(tabId), { active: true });
+        break;
+      }
+    }
+  });
+  setEvents($$byClass('tabs-menu'), {
+    click(e) {
+      const $target = e.target as HTMLElement;
+      const $window = $target.closest('div[id]')!;
+      const [, windowId] = $window.id.split('-').map(Number);
+      switch ($target.dataset.value) {
+        case 'add-new-tab': {
+          chrome.tabs.create({ windowId });
+          chrome.windows.update(windowId, { focused: true });
+          break;
+        }
+        case 'close-window':
+          chrome.windows.remove(windowId, () => {
+            $byClass('components')?.append($target.parentElement!);
+            $window.remove();
           });
-        }, { once: true }),
-        setAnimationClass('remove-hilite'),
-      )($parent);
-      return;
-    }
-    const [, windowId] = $window.id.split('-') || [];
-    if (windowId == null) {
-      return;
-    }
-    chrome.windows.update(Number(windowId), { focused: true });
-    chrome.tabs.update(Number(tabId), { active: true });
+          break;
+        default:
+      }
+    },
+    mousedown(e) {
+      e.preventDefault();
+    },
   });
   const $paneHistory = addListener('click', async (e) => {
     const $target = e.target as HTMLElement;
