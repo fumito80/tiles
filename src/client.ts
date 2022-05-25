@@ -40,6 +40,7 @@ import {
   decode,
   pick,
   getNewPaneWidth,
+  makeStyleIcon,
 } from './common';
 
 import {
@@ -51,7 +52,9 @@ import {
 } from './vscroll';
 
 import { getReFilter } from './search';
-import { makeLeaf, makeNode, updateAnker } from './html';
+import {
+  makeLeaf, makeNode, makeTab, makeTabsHeader, updateAnker,
+} from './html';
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -522,4 +525,23 @@ export function switchTabWindow(e: Event) {
 
 export function collapseTabs() {
   toggleClass('tabs-collapsed')($byTag('main'));
+}
+
+export function setTabs(currentWindowId: number) {
+  chrome.tabs.query({}, (tabs) => {
+    const htmlByWindow = tabs.reduce((acc, tab) => {
+      const { [tab.windowId]: prev = '', ...rest } = acc;
+      const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
+      const domain = extractDomain(tab.url);
+      const title = `${tab.title}\n${domain}`;
+      const style = makeStyleIcon(tab.url!);
+      const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
+      const header = prev
+        || makeTabsHeader(title, style, tab.title!, tab.windowId === currentWindowId);
+      return { ...rest, [tab.windowId]: header + htmlTabs };
+    }, {} as { [key: number]: string });
+    const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
+    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
+    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
+  });
 }

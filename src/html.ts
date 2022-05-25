@@ -56,6 +56,20 @@ export function makeTab(
   `;
 }
 
+export function makeTabsHeader(
+  title: string,
+  style: string,
+  content: string,
+  isCurrentWindow: boolean,
+) {
+  const addClass = isCurrentWindow ? ' current-win' : '';
+  return `
+    <div draggable="true" class="header tab-wrap${addClass}" title="${htmlEscape(title)}" style="${style}">
+      <div class="tab">${htmlEscape(content)}</div>
+    </div>
+  `;
+}
+
 export function makeHistory({
   url, title, lastVisitTime, headerDate, id, headerStyle = '',
 }: MyHistoryItem & { headerStyle?: string }) {

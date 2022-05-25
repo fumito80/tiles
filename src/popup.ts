@@ -16,12 +16,10 @@ import {
   $$,
   addRules,
   addClass,
-  makeStyleIcon,
   cssid,
   setSplitWidth,
   bootstrap,
   getKeys,
-  extractDomain,
   getColorWhiteness,
   lightColorWhiteness,
   setMessageListener,
@@ -37,29 +35,12 @@ import {
   recoverMinPaneWidth,
 } from './common';
 
-import { makeTab } from './html';
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
 import { resetQuery } from './search';
+import { setTabs } from './client';
 
 type Options = State['options'];
-
-function setTabs(currentWindowId: number) {
-  chrome.tabs.query({}, (tabs) => {
-    const htmlByWindow = tabs.reduce((acc, tab) => {
-      const { [tab.windowId]: prev = '', ...rest } = acc;
-      const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
-      const domain = extractDomain(tab.url);
-      const title = `${tab.title}\n${domain}`;
-      const style = makeStyleIcon(tab.url!);
-      const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
-      return { ...rest, [tab.windowId]: prev + htmlTabs };
-    }, {} as { [key: number]: string });
-    const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
-    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}">${value}</div>`).join('');
-    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}">${currentTabs}</div>${html}`;
-  });
-}
 
 const lightColor = '#efefef';
 const darkColor = '#222222';
