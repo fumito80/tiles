@@ -30,6 +30,8 @@ import {
   toggleClass,
   $$,
   when,
+  addStyle,
+  // addStyle,
 } from './common';
 
 import {
@@ -400,6 +402,22 @@ export default function setEventListners(options: Options) {
       }
       default:
     }
+  });
+  $paneTabs.addEventListener('mouseover', (e) => {
+    const $target = e.target as HTMLElement;
+    if (!hasClass($target, 'tab-wrap') || hasClass($target, 'tabs-header')) {
+      return;
+    }
+    const $tooltip = $byClass('tooltip', $target);
+    const rect = $target.getBoundingClientRect();
+    const rectTT = $tooltip.getBoundingClientRect();
+    const left = Math.min(rect.right, document.body.offsetWidth - rectTT.width - 5);
+    addStyle('left', `${Math.max(left, 5)}px`)($tooltip);
+    if (rect.bottom + rectTT.height > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - rectTT.height}px`)($tooltip);
+      return;
+    }
+    addStyle('top', `${rect.bottom}px`)($tooltip);
   });
   setEvents($$byClass('tabs-menu'), {
     click(e) {

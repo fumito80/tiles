@@ -978,12 +978,6 @@ main::-webkit-scrollbar {
       display: none;
     }
 
-    .current-date {
-      position: absolute;
-      width: -webkit-fill-available;
-      z-index: 1;
-    }
-
     .header-date {
       display: flex;
       height: 1.6em;
@@ -991,10 +985,35 @@ main::-webkit-scrollbar {
       padding: 0;
       justify-content: center;
       align-items: center;
-      background-color: darkgray;
-      color: white;
+      // background-color: darkgray;
+      background-color: rgba(0, 0, 0, 0.3);
+      color: $light-font-color;
+      // color: white;
       border-radius: 2px;
       -webkit-user-drag: none;
+    }
+
+    .current-date {
+      position: absolute;
+      width: -webkit-fill-available;
+      z-index: 1;
+
+      &::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      &::after {
+        content: attr(data-value);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        color: $light-font-color;
+        background-color: rgba(0, 0, 0, 0.3);
+      }
     }
   }
 }
@@ -1015,8 +1034,8 @@ main::-webkit-scrollbar {
     >div {
       overflow: hidden;
       border-radius: $pane-radius;
-      border: 2px solid rgba(0, 0, 0, 0.5);
-      // border-top: 0;
+      // border: 2px solid rgba(0, 0, 0, 0.5);
+      border: 2px solid transparent;
       margin-bottom: 5px;
       padding: 1px;
 
@@ -1222,7 +1241,7 @@ main::-webkit-scrollbar {
   position: fixed;
   z-index: 2;
   top: calc(50% - 1em);
-  color: #efefef;
+  color: $light-font-color;
 
   &.icon-fa-angle-right.left {
     font-size: 2em;
@@ -1318,9 +1337,7 @@ main::-webkit-scrollbar {
 
   .pane-header:not(.end) {
 
-    .collapse-tabs,
-    .win-prev,
-    .win-next {
+    button {
       display: none;
     }
   }
@@ -1328,9 +1345,7 @@ main::-webkit-scrollbar {
   &.zoom-pane {
     .pane-header {
 
-      .collapse-tabs,
-      .win-prev,
-      .win-next {
+      button {
         display: flex;
       }
     }
@@ -1340,9 +1355,7 @@ main::-webkit-scrollbar {
 
     .pane-header {
 
-      .collapse-tabs,
-      .win-prev,
-      .win-next {
+      button {
         display: none;
       }
     }
@@ -1741,8 +1754,7 @@ main.zoom-pane {
     }
   }
 
-  .win-prev,
-  .win-next {
+  button {
     display: flex;
     margin-top: 1px;
 
@@ -1764,7 +1776,13 @@ main.zoom-pane {
 
 // Tabs collapse
 
+.icon-grid {
+  transform: scale(0.8);
+}
+
 .tabs {
+  overflow-y: scroll;
+
   button {
     display: flex;
   }
@@ -1791,7 +1809,6 @@ main.zoom-pane {
     }
   }
 
-
   .collapse-tab {
     margin-left: auto;
     margin-right: 2px;
@@ -1806,7 +1823,6 @@ main.zoom-pane {
 
     >.icon-grid {
       display: block;
-      transform: scale(0.8);
     }
   }
 
@@ -1825,18 +1841,19 @@ main.zoom-pane {
 
 main {
 
-  &:not(.drag-start-leaf):not(.searching) {
+  .tabs-header {
+    margin: -1px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: $light-font-color;
+  }
+
+  &:not(.searching) {
+
     .tabs-wrap>div {
       >.tabs-header {
         display: flex;
-        background-color: rgba(0, 0, 0, 0.5);
-        margin: -1px;
-        color: #efefef;
       }
     }
-  }
-
-  &:not(.drag-start-leaf):not(.searching) {
 
     .tabs-wrap>.tabs-collapsed {
       padding-bottom: 0;
@@ -1859,12 +1876,11 @@ main {
           >i {
             display: none;
           }
+
         }
       }
     }
-  }
 
-  &:not(.drag-start-leaf):not(.searching) {
     .tabs-wrap>div:not(.tabs-collapsed) {
       >.tabs-header {
         >.tab {
@@ -1875,6 +1891,7 @@ main {
         background-image: none !important;
       }
     }
+
   }
 
   &.tabs-collapsed-all {
@@ -1897,7 +1914,43 @@ main {
 
       >.icon-grid {
         display: block;
-        transform: scale(0.8);
+      }
+    }
+  }
+
+  // Tooltip
+  .tab-wrap {
+    >.tooltip {
+      display: none;
+    }
+  }
+
+  &:not(.searching) .tabs-collapsed {
+
+    .tab-wrap {
+      >.tooltip {
+        pointer-events: none;
+        position: fixed;
+        z-index: 2;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: pre;
+        max-width: 500px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        // >div {
+        //   position: absolute;
+        //   border-left: 8px solid transparent;
+        //   border-right: 8px solid transparent;
+        //   border-top: 10px solid black;
+        // }
+      }
+
+      &:hover {
+        >.tooltip {
+          display: block;
+        }
       }
     }
   }
@@ -1914,7 +1967,7 @@ main {
 
     .tabs-wrap>.tabs-collapsed {
 
-      >.tab-wrap:not(.tabs-header) {
+      >.tab-wrap:not(.tabs-header):not(.current-tab) {
         background-color: rgba(255, 255, 255, 0.5);
       }
     }

@@ -49,8 +49,9 @@ export function makeTab(
   content: string,
 ) {
   return `
-    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" title="${htmlEscape(title)}" style="${style}">
-      <div class="tab">${htmlEscape(content)}</div><i class="icon-x"></i>
+    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" style="${style}">
+      <div class="tab" title="${htmlEscape(title)}">${htmlEscape(content)}</div><i class="icon-x"></i>
+      <div class="tooltip">${htmlEscape(title)}</div>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
   `;

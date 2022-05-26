@@ -40,7 +40,9 @@ export function rowSetterHistory() {
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
-      setText(today === lastVisitDate ? '' : lastVisitDate!)($currentDate);
+      const currentDate = today === lastVisitDate ? '' : lastVisitDate!;
+      setText(currentDate)($currentDate);
+      addAttr('data-value', currentDate)($currentDate);
       if (headerDate && rowTop !== 0 && isShowFixedHeader) {
         addStyle(invisible)($row);
         return;

@@ -62,7 +62,7 @@ function setOptions(settings: Settings, options: Options) {
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs-wrap > div', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('.leafs, .histories, .tabs-wrap > div, .histories .rows .current-date, .histories .rows .current-date::before', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body', [['background-color', frameBg]]);
   addRules('.folders', [['color', frameColor]]);
   addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
@@ -80,6 +80,7 @@ function setOptions(settings: Settings, options: Options) {
       '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):not(.current-tab):hover',
       'main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover',
       'main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+      '.tooltip',
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
