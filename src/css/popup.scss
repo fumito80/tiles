@@ -1720,6 +1720,10 @@ main.zoom-pane {
 .pane-header.header-tabs {
 
   .icon-tabs {
+    +.win-prev {
+      margin-left: auto;
+    }
+
     +.collapse-tabs {
       margin-left: auto;
     }
@@ -1730,7 +1734,7 @@ main.zoom-pane {
   }
 
   &.end {
-    .win-next {
+    .collapse-tabs {
       +.query-wrap {
         margin-left: 0;
       }
@@ -1748,12 +1752,12 @@ main.zoom-pane {
     }
   }
 
-  .collapse-tabs,
-  .win-prev {
+  .win-prev,
+  .win-next {
     margin-right: 5px;
   }
 
-  .win-next {
+  .collapse-tabs {
     margin-right: 10px;
   }
 }
@@ -1790,6 +1794,7 @@ main.zoom-pane {
 
   .collapse-tab {
     margin-left: auto;
+    margin-right: 2px;
 
     >i {
       pointer-events: none;
@@ -1801,6 +1806,7 @@ main.zoom-pane {
 
     >.icon-grid {
       display: block;
+      transform: scale(0.8);
     }
   }
 
@@ -1891,6 +1897,7 @@ main {
 
       >.icon-grid {
         display: block;
+        transform: scale(0.8);
       }
     }
   }

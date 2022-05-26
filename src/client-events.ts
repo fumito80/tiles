@@ -29,6 +29,7 @@ import {
   hasClass,
   toggleClass,
   $$,
+  when,
 } from './common';
 
 import {
@@ -345,15 +346,18 @@ export default function setEventListners(options: Options) {
   $paneTabs.addEventListener('click', (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
-    const [, tabId] = ($target.id || $parent.id).split('-');
-    const $window = $target.id ? $target : $target.closest('[id]')!;
+    const [type, tabId] = ($target.id || $parent.id).split('-');
+    const $window = when(type === 'win').then($target)
+      .when(!!$target.id).then($parent)
+      .else($parent.parentElement!);
     const targetClasses = [
       'tab',
+      'win',
       'icon-x',
       'collapse-tab',
       'tabs-menu-button',
     ] as const;
-    const targetClass = whichClass(targetClasses, $target);
+    const targetClass = whichClass(targetClasses, $target) || type;
     switch (targetClass) {
       case 'tabs-menu-button': {
         showMenu($target, 'tabs-menu');
@@ -375,7 +379,7 @@ export default function setEventListners(options: Options) {
           addListener('animationend', () => {
             chrome.tabs.remove(Number(tabId), () => {
               $parent.remove();
-              if ($window.childElementCount === 0) {
+              if ($window.childElementCount <= 1) {
                 $window.remove();
               }
             });
@@ -384,7 +388,8 @@ export default function setEventListners(options: Options) {
         )($parent);
         break;
       }
-      case 'tab': {
+      case 'tab':
+      case 'win': {
         const [, windowId] = $window.id.split('-') || [];
         if (windowId == null) {
           return;
@@ -395,7 +400,7 @@ export default function setEventListners(options: Options) {
       }
       default:
     }
-  }, true);
+  });
   setEvents($$byClass('tabs-menu'), {
     click(e) {
       const $target = e.target as HTMLElement;
