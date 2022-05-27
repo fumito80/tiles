@@ -91,9 +91,6 @@ i {
 .icon-fa-trash-alt:before {
   content: "\f1f8";
 }
-.icon-fa-mask:before {
-  content: "\f21b";
-}
 .icon-fa-window-restore:before {
   content: "\f2d2";
 }
@@ -126,4 +123,10 @@ i {
 }
 .icon-closes::before {
   content: "\e917";
+}
+.icon-private::before {
+  content: '\e914';
+}
+.icon-tab-find::before {
+  content: '\e918';
 }

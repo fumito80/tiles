@@ -162,6 +162,8 @@ button:not(.submit) {
 
     &[contenteditable] {
       margin-right: 2px;
+      margin-left: 20px;
+      text-indent: 0;
     }
   }
 
@@ -352,6 +354,17 @@ button:not(.submit) {
     width: 2.5em;
     text-align: center;
     font-size: 1.2em;
+  }
+
+  .icon-tab-plus,
+  .icon-tab-find {
+    font-size: 1.6em;
+    width: 1.9em;
+  }
+
+  .icon-closes {
+    font-size: 1.4em;
+    width: 2.2em;
   }
 }
 
@@ -1605,7 +1618,7 @@ main.zoom-pane {
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:not(.current-tab):hover .icon-x,
   .history:hover .icon-x,
-  .window:hover .tabs-header > button > i {
+  .window:hover .tabs-header>button>i {
     color: lightgray;
   }
 
@@ -1810,11 +1823,6 @@ main.zoom-pane {
         pointer-events: none;
       }
 
-      .icon-tab-plus {
-        font-size: 1.4em;
-        width: 2.1em;
-      }
-
       [data-value="close-window"]:hover>i {
         color: red;
       }
@@ -1857,6 +1865,18 @@ main {
     margin: -1px;
     background-color: rgba(0, 0, 0, 0.3);
     color: $light-font-color;
+
+    .icon-private+.tab {
+      margin-left: 4px;
+    }
+
+    .icon-private {
+      margin-left: 2px;
+      color: #222;
+      background-color: rgba(255, 255, 255, 0.3);
+      padding: 3px 2px;
+      border-radius: 5px;
+    }
   }
 
   &:not(.searching) {
@@ -1868,6 +1888,10 @@ main {
 
       &.tabs-collapsed {
         padding-bottom: 0;
+
+        .icon-private {
+          margin-left: 22px;
+        }
 
         >.tab-wrap:not(.tabs-header) {
           display: inline-flex;
@@ -1887,7 +1911,6 @@ main {
             >i {
               display: none;
             }
-
           }
         }
       }
@@ -1933,6 +1956,12 @@ main {
   .tab-wrap {
     >.tooltip {
       display: none;
+      font-size: 0.9em;
+      line-height: 1.8em;
+
+      &:first-line {
+        font-size: 1.1em;
+      }
     }
   }
 
@@ -1949,18 +1978,12 @@ main {
         max-width: 450px;
         overflow: hidden;
         text-overflow: ellipsis;
-
-        // >div {
-        //   position: absolute;
-        //   border-left: 8px solid transparent;
-        //   border-right: 8px solid transparent;
-        //   border-top: 10px solid black;
-        // }
       }
 
       &:hover {
         >.tooltip {
           display: block;
+          animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
         }
       }
     }

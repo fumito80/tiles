@@ -58,14 +58,14 @@ export function makeTab(
 }
 
 export function makeTabsHeader(
-  title: string,
   style: string,
   content: string,
-  isCurrentWindow: boolean,
+  incognito: boolean,
 ) {
-  const addClass = isCurrentWindow ? ' current-win' : '';
+  const incognitoElem = incognito ? '<i class="icon-private"></i>' : '';
   return `
-    <div draggable="true" class="tabs-header tab-wrap${addClass}" style="${style}">
+    <div draggable="true" class="tabs-header tab-wrap" style="${style}">
+      ${incognitoElem}
       <div class="tab">${htmlEscape(content)}</div>
       <button class="collapse-tab" title="Switch list/icon view"><i class="icon-list"></i><i class="icon-grid"></i></button>
       <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>

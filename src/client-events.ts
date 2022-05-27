@@ -59,6 +59,7 @@ import {
   getEndPaneMinWidth,
   openFolder,
   collapseTabsAll,
+  scrollIntoView,
 } from './client';
 
 import { updateAnker } from './html';
@@ -370,13 +371,14 @@ export default function setEventListners(options: Options) {
         break;
       }
       case 'collapse-tab': {
-        toggleClass('tabs-collapsed')($parent.parentElement);
+        const $win = toggleClass('tabs-collapsed')($parent.parentElement)!;
         const { length } = $$byClass('tabs-collapsed');
-        if (length === $byClass('tabs-wrap').children.length) {
+        if (length === $win.parentElement!.children.length) {
           collapseTabsAll(true);
         } else if (length === 0) {
           collapseTabsAll(false);
         }
+        scrollIntoView($win);
         break;
       }
       case 'icon-x': {

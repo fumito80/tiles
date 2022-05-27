@@ -474,6 +474,29 @@ type ScrollTarget = {
   next: HTMLElement | null;
 }
 
+export function scrollIntoView($target?: HTMLElement | Element | null) {
+  if (!$target) {
+    return;
+  }
+  const $tabsWrap = $target.parentElement! as HTMLElement;
+  const $parent = $tabsWrap.parentElement! as HTMLElement;
+  const scrollTop = ($target as HTMLElement).offsetTop - $parent.offsetTop;
+  const translateY = -(Math.min(
+    scrollTop - $parent.scrollTop,
+    $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
+  ));
+  if (Math.abs(translateY) <= 1) {
+    return;
+  }
+  addClass('scroll-ease-in-out')($tabsWrap);
+  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
+  $tabsWrap.addEventListener('transitionend', () => {
+    rmClass('scroll-ease-in-out')($tabsWrap);
+    rmStyle('transform')($tabsWrap);
+    Object.assign($parent, { scrollTop });
+  }, { once: true });
+}
+
 export function switchTabWindow(e: Event) {
   const $tabs = $byClass('tabs')!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
@@ -504,23 +527,7 @@ export function switchTabWindow(e: Event) {
   } else {
     $target = targets.current || targets.prev;
   }
-  if ($target) {
-    const scrollTop = ($target as HTMLElement).offsetTop - ot;
-    const translateY = -(Math.min(
-      scrollTop - $tabs.scrollTop,
-      $tabs.scrollHeight - $tabs.offsetHeight - $tabs.scrollTop,
-    ));
-    if (Math.abs(translateY) <= 1) {
-      return;
-    }
-    addClass('scroll-ease-in-out')($tabsWrap);
-    addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
-    $tabsWrap.addEventListener('transitionend', () => {
-      rmClass('scroll-ease-in-out')($tabsWrap);
-      rmStyle('transform')($tabsWrap);
-      $tabs.scrollTop = scrollTop;
-    }, { once: true });
-  }
+  scrollIntoView($target);
 }
 
 export function collapseTabsAll(force?: boolean) {
@@ -540,8 +547,7 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       const title = `${tab.title}\n${domain}`;
       const style = makeStyleIcon(tab.url!);
       const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
-      const header = prev
-        || makeTabsHeader(title, style, tab.title!, tab.windowId === currentWindowId);
+      const header = prev || makeTabsHeader(style, tab.title!, tab.incognito);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;

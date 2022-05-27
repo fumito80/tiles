@@ -192,8 +192,8 @@ function init({
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
-  toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst);
-  toggleElement('[data-value="open-new-tab"]', options.findTabsFirst);
+  toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst, 'flex');
+  toggleElement('[data-value="open-new-tab"]', options.findTabsFirst, 'flex');
   setEventListners(options);
   setExternalUrl(options);
   resetQuery(settings.includeUrl);
