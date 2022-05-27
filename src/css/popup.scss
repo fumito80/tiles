@@ -1031,30 +1031,31 @@ main::-webkit-scrollbar {
   >.tabs-wrap {
     margin-right: 2px;
 
-    >div {
-      overflow: hidden;
-      border-radius: $pane-radius;
-      // border: 2px solid rgba(0, 0, 0, 0.5);
-      border: 2px solid transparent;
-      margin-bottom: 5px;
-      padding: 1px;
+  }
 
-      &:last-child {
-        margin-bottom: 0;
-      }
+  .window {
+    overflow: hidden;
+    border-radius: $pane-radius;
+    // border: 2px solid rgba(0, 0, 0, 0.5);
+    border: 2px solid transparent;
+    margin-bottom: 5px;
+    padding: 1px;
 
-      >.match {
-        display: flex !important;
-      }
-
-      >.unmatch {
-        display: none;
-      }
+    &:last-child {
+      margin-bottom: 0;
     }
 
-    >.empty {
-      padding: 0;
+    >.match {
+      display: flex !important;
     }
+
+    >.unmatch {
+      display: none;
+    }
+  }
+
+  >.empty {
+    padding: 0;
   }
 }
 
@@ -1603,19 +1604,23 @@ main.zoom-pane {
   .leaf:hover .icon-fa-ellipsis-v,
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:not(.current-tab):hover .icon-x,
-  .history:hover .icon-x {
+  .history:hover .icon-x,
+  .window:hover .tabs-header > button > i {
     color: lightgray;
   }
 
   .leaf:hover button:hover::after,
   .leaf:hover button:focus::after,
   .marker:hover button:hover::after,
-  .marker:hover button:focus::after {
+  .marker:hover button:focus::after,
+  .window:hover button:hover::after,
+  .window:hover button:focus::after {
     background-color: rgba(255, 255, 255, 0.3);
   }
 
   .leaf:hover button:active::after,
-  .marker:hover button:active::after {
+  .marker:hover button:active::after,
+  .window:hover button:active::after {
     background-color: rgba(255, 255, 255, 0.5);
   }
 
@@ -1623,16 +1628,23 @@ main.zoom-pane {
 
 .theme-dark-pane,
 .theme-dark-frame {
-  .tabs-wrap>div {
+  .window {
     border-color: transparent;
   }
 }
 
 .theme-dark-pane.theme-dark-frame {
-  .tabs-wrap>div {
+  .window {
     border-color: rgba(255, 255, 255, 0.5);
     border-width: 1px;
     padding: 2px;
+
+    .tabs-header {
+      // border-radius: 1px;
+      border-top-left-radius: 3px;
+      border-top-right-radius: 3px;
+      margin-bottom: 1px;
+    }
   }
 }
 
@@ -1849,49 +1861,48 @@ main {
 
   &:not(.searching) {
 
-    .tabs-wrap>div {
+    .window {
       >.tabs-header {
         display: flex;
       }
-    }
 
-    .tabs-wrap>.tabs-collapsed {
-      padding-bottom: 0;
+      &.tabs-collapsed {
+        padding-bottom: 0;
 
-      >.tab-wrap:not(.tabs-header) {
-        display: inline-flex;
-        width: 1.8em;
-        margin-top: 2px;
-        margin-bottom: 2px;
-        padding-left: 0;
-        background-position: center;
-        border: 2px solid transparent;
-        border-radius: 4px;
+        >.tab-wrap:not(.tabs-header) {
+          display: inline-flex;
+          width: 1.8em;
+          margin-top: 2px;
+          margin-bottom: 2px;
+          padding-left: 0;
+          background-position: center;
+          border: 2px solid transparent;
+          border-radius: 4px;
 
-        >.tab {
-          display: none;
-        }
-
-        &:hover {
-          >i {
+          >.tab {
             display: none;
           }
 
+          &:hover {
+            >i {
+              display: none;
+            }
+
+          }
+        }
+      }
+
+      &:not(.tabs-collapsed) {
+        >.tabs-header {
+          >.tab {
+            visibility: hidden;
+          }
+
+          margin-bottom: 1px;
+          background-image: none !important;
         }
       }
     }
-
-    .tabs-wrap>div:not(.tabs-collapsed) {
-      >.tabs-header {
-        >.tab {
-          visibility: hidden;
-        }
-
-        margin-bottom: 1px;
-        background-image: none !important;
-      }
-    }
-
   }
 
   &.tabs-collapsed-all {
@@ -1935,7 +1946,7 @@ main {
         padding: 4px 8px;
         border-radius: 4px;
         white-space: pre;
-        max-width: 500px;
+        max-width: 450px;
         overflow: hidden;
         text-overflow: ellipsis;
 
@@ -1958,7 +1969,7 @@ main {
   // Dark pane
   &.theme-dark-pane {
 
-    .tabs-header {
+    .window:not(:hover) .tabs-header {
 
       button>i {
         color: rgba(255, 255, 255, 0.5);

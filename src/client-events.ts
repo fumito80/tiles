@@ -349,11 +349,12 @@ export default function setEventListners(options: Options) {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
     const [type, tabId] = ($target.id || $parent.id).split('-');
-    const $window = when(type === 'win').then($target)
+    const $window = when(type === 'win').then(() => ($target.id ? $target : $parent))
       .when(!!$target.id).then($parent)
       .else($parent.parentElement!);
     const targetClasses = [
       'tab',
+      'tabs-header',
       'win',
       'icon-x',
       'collapse-tab',
@@ -361,6 +362,8 @@ export default function setEventListners(options: Options) {
     ] as const;
     const targetClass = whichClass(targetClasses, $target) || type;
     switch (targetClass) {
+      case 'tabs-header':
+        break;
       case 'tabs-menu-button': {
         showMenu($target, 'tabs-menu');
         e.stopImmediatePropagation();

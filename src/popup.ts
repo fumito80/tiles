@@ -80,11 +80,12 @@ function setOptions(settings: Settings, options: Options) {
       '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):not(.current-tab):hover',
       'main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover',
       'main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+      '.window:hover .tabs-header',
       '.tooltip',
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
-  addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
+  addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover, .window:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {

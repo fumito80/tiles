@@ -545,7 +545,7 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
-    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}" class="${collapseClass}">${value}</div>`).join('');
-    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}" class="${collapseClass}">${currentTabs}</div>${html}`;
+    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
+    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}" class="window ${collapseClass}">${currentTabs}</div>${html}`;
   });
 }
