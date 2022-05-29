@@ -28,7 +28,7 @@ import {
   $byId,
   hasClass,
 } from './common';
-import { State, ColorPalette } from './types';
+import { State, ColorPalette, defaultColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
@@ -214,17 +214,22 @@ function getColorPaletteHTML(palettes: Palettes, options: Options) {
     .join('');
 }
 
-async function setColorPalette({ options }: Pick<State, 'options'>) {
-  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
-  const base = palettes
-    .map((palette) => palette.map((color) => ({
+function addColorSpec(palette: ColorPalette) {
+  return palette
+    .map((color) => ({
       color,
       whiteness: getColorWhiteness(color),
       chroma: getColorChroma(color),
-    } as ColorInfo)))
-    .map((palette) => palette.map((color) => ({
+    } as ColorInfo))
+    .map((color) => ({
       ...color, vivid: color.chroma * (color.whiteness * 0.1),
-    })))
+    }));
+}
+
+async function setColorPalette({ options }: Pick<State, 'options'>) {
+  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
+  const base = palettes
+    .map(addColorSpec)
     .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
     .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
     .map(([p, cl, cm, cr, m]) => {
@@ -255,7 +260,9 @@ async function setColorPalette({ options }: Pick<State, 'options'>) {
     ))
     .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
     .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
-  const htmlLightTheme = getColorPaletteHTML(lightTheme, options);
+
+  const lightThemeAndDefaultColor = [addColorSpec(defaultColorPalette), ...lightTheme];
+  const htmlLightTheme = getColorPaletteHTML(lightThemeAndDefaultColor, options);
 
   const darkOrVivid = [...other, ...lightTheme]
     .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))

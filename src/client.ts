@@ -468,66 +468,70 @@ export function showMenu($target: HTMLElement, menuClass: MenuClass) {
   addStyle({ left, top })($menu);
 }
 
-type ScrollTarget = {
-  prev: HTMLElement | null;
-  current: HTMLElement | null;
-  next: HTMLElement | null;
-}
-
-export function scrollIntoView($target?: HTMLElement | Element | null) {
-  if (!$target) {
-    return;
-  }
+export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
   const $parent = $tabsWrap.parentElement! as HTMLElement;
-  const scrollTop = ($target as HTMLElement).offsetTop - $parent.offsetTop;
   const translateY = -(Math.min(
     scrollTop - $parent.scrollTop,
     $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
   ));
   if (Math.abs(translateY) <= 1) {
-    return;
+    return null;
   }
   addClass('scroll-ease-in-out')($tabsWrap);
   addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
-  $tabsWrap.addEventListener('transitionend', () => {
-    rmClass('scroll-ease-in-out')($tabsWrap);
-    rmStyle('transform')($tabsWrap);
-    Object.assign($parent, { scrollTop });
-  }, { once: true });
+  return new Promise<null>((resolve) => {
+    $tabsWrap.addEventListener('transitionend', () => {
+      rmClass('scroll-ease-in-out')($tabsWrap);
+      rmStyle('transform')($tabsWrap);
+      Object.assign($parent, { scrollTop });
+      resolve(null);
+    }, { once: true });
+  });
 }
 
-export function switchTabWindow(e: Event) {
+export async function switchTabWindow(e: Event) {
   const $tabs = $byClass('tabs')!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
-    return;
+    return null;
   }
   const $tabsWrap = $tabs.firstElementChild! as HTMLElement;
   const $btn = e.currentTarget as HTMLElement;
   const isNext = hasClass($btn, 'win-next');
-  const st = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
-  const ot = $tabs.offsetTop;
-  const targets = ([...$tabsWrap.children] as HTMLElement[]).reduce<ScrollTarget>((acc, $win) => {
-    if (acc.current || acc.next) {
-      return acc;
-    }
-    const isTopOver = ($win.offsetTop - ot) <= st;
-    const isBottomUnder = ($win.offsetTop + $win.offsetHeight - ot) >= st;
-    if (isTopOver && isBottomUnder) {
-      return { ...acc, current: $win };
-    }
-    if (isBottomUnder) {
-      return { ...acc, next: $win };
-    }
-    return { ...acc, prev: $win };
-  }, { prev: null, current: null, next: null });
-  let $target;
-  if (isNext) {
-    $target = targets.current?.nextElementSibling || targets.next?.nextElementSibling;
-  } else {
-    $target = targets.current || targets.prev;
+  const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
+  const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
+  const tabsOT = $tabs.offsetTop;
+  const $current = ([...$tabsWrap.children] as HTMLElement[])
+    .map(($win) => ({
+      $win,
+      winTop: $win.offsetTop - tabsOT,
+      winBottom: $win.offsetTop + $win.offsetHeight - tabsOT,
+    }))
+    .map(({ $win, winTop, winBottom }) => ({
+      $win,
+      winTop,
+      winBottom,
+      isTopIn: winTop >= tabsTop && winTop <= tabsBottom,
+      isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
+    }))
+    .find(({
+      winTop, winBottom, isTopIn, isBottomIn,
+    }) => (isNext && isTopIn && winBottom >= tabsBottom)
+      || (!isNext && isBottomIn && winTop <= tabsTop)
+      || (winTop < tabsTop && winBottom > tabsBottom));
+  if (!$current) {
+    return null;
   }
-  scrollIntoView($target);
+  const { $win, winTop, winBottom } = $current;
+  let $target = $win;
+  if (winTop <= tabsTop && winBottom > tabsBottom) {
+    $target = $win.nextElementSibling as HTMLElement;
+  }
+  if ($target) {
+    const scrollTop = $target.offsetTop - $tabsWrap.parentElement!.offsetTop;
+    return smoothSroll($target, scrollTop);
+  }
+  return null;
 }
 
 export function collapseTabsAll(force?: boolean) {
@@ -550,8 +554,13 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       const header = prev || makeTabsHeader(style, tab.title!, tab.incognito);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
-    const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
-    const html = Object.entries(rest).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
-    $byClass('tabs-wrap')!.innerHTML = `<div id="win-${currentWindowId}" class="window ${collapseClass}">${currentTabs}</div>${html}`;
+    const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
+    $byClass('tabs-wrap')!.innerHTML = html;
+    // const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
+    // const html = Object.entries(rest).map(([key, value]) =>
+    // `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
+    // $byClass('tabs-wrap')!.innerHTML =
+    // `<div id="win-${currentWindowId}" class="window ${collapseClass}">${currentTabs}</div>${html}
+    // `;
   });
 }

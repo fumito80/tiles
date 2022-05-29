@@ -48,7 +48,7 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-const colorPalette: ColorPalette = ['FFFFFF', 'f6f6f6', 'cce5ff', 'e8e8e9', '1da1f2'];
+export const defaultColorPalette: ColorPalette = ['FFFFFF', 'DEE1E6', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
 export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
@@ -62,7 +62,7 @@ export const initialOptions = {
   findTabsMatches: 'domain' as 'domain' | 'prefix',
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
-  colorPalette,
+  colorPalette: defaultColorPalette,
   zoomTabs: true,
   zoomHistory: true,
   zoomRatio: '0.7',

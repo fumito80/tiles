@@ -152,7 +152,7 @@ button:not(.submit) {
   background-repeat: no-repeat;
   background-position: 2px center;
 
-  >div:first-child {
+  >div:first-of-type {
     text-indent: 20px;
     width: 100%;
     padding: 0.15em;
@@ -1049,7 +1049,7 @@ main::-webkit-scrollbar {
   .window {
     overflow: hidden;
     border-radius: $pane-radius;
-    // border: 2px solid rgba(0, 0, 0, 0.5);
+    // border: 2px solid rgba(0, 0, 0, 0.3);
     border: 2px solid transparent;
     margin-bottom: 5px;
     padding: 1px;
@@ -1862,12 +1862,19 @@ main.zoom-pane {
 main {
 
   .tabs-header {
+    width: -webkit-fill-available !important;
     margin: -1px;
     background-color: rgba(0, 0, 0, 0.3);
     color: $light-font-color;
 
+    >div {
+      opacity: 1;
+      transition: opacity 0.1s;
+    }
+
     .icon-private+.tab {
-      margin-left: 4px;
+      margin-left: 2px;
+      text-indent: 0;
     }
 
     .icon-private {
@@ -1879,32 +1886,43 @@ main {
     }
   }
 
+  .tab {
+    visibility: inherit;
+    transition: visibility 0.1s;
+  }
+
+  .tab-wrap {
+    display: inline-flex;
+    width: 100%;
+    transition: width 0.1s ease-in-out;
+  }
+
   &:not(.searching) {
 
     .window {
-      >.tabs-header {
-        display: flex;
-      }
-
       &.tabs-collapsed {
         padding-bottom: 0;
+
+        >.tabs-header {
+          margin-bottom: 0;
+        }
 
         .icon-private {
           margin-left: 22px;
         }
 
         >.tab-wrap:not(.tabs-header) {
-          display: inline-flex;
           width: 1.8em;
           margin-top: 2px;
           margin-bottom: 2px;
           padding-left: 0;
-          background-position: center;
+          // background-position: center;
+          background-position-x: calc((1.8em - 16px) / 2);
           border: 2px solid transparent;
           border-radius: 4px;
 
           >.tab {
-            display: none;
+            visibility: hidden;
           }
 
           &:hover {
@@ -1918,7 +1936,7 @@ main {
       &:not(.tabs-collapsed) {
         >.tabs-header {
           >.tab {
-            visibility: hidden;
+            opacity: 0;
           }
 
           margin-bottom: 1px;
@@ -1958,9 +1976,13 @@ main {
       display: none;
       font-size: 0.9em;
       line-height: 1.8em;
+      background-color: #FFFFFF;
+      color: #222222;
+      box-shadow: rgb(0 0 0 / 20%) 0px 1px 3px 1px;
 
       &:first-line {
         font-size: 1.1em;
+        font-weight: bold;
       }
     }
   }
@@ -1975,7 +1997,7 @@ main {
         padding: 4px 8px;
         border-radius: 4px;
         white-space: pre;
-        max-width: 450px;
+        max-width: 400px;
         overflow: hidden;
         text-overflow: ellipsis;
       }

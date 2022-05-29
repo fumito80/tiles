@@ -59,7 +59,7 @@ import {
   getEndPaneMinWidth,
   openFolder,
   collapseTabsAll,
-  scrollIntoView,
+  smoothSroll,
 } from './client';
 
 import { updateAnker } from './html';
@@ -87,7 +87,12 @@ export default function setEventListners(options: Options) {
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
   $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
-  setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
+  let promiseScrollEnd = Promise.resolve(null);
+  setEvents($$('.win-next, .win-prev'), {
+    click(e) {
+      promiseScrollEnd = promiseScrollEnd.then(() => switchTabWindow(e));
+    },
+  });
 
   setEvents([$main], {
     click(e) {
@@ -346,7 +351,7 @@ export default function setEventListners(options: Options) {
     },
   });
   const $paneTabs = $byClass('tabs')!;
-  $paneTabs.addEventListener('click', (e) => {
+  $paneTabs.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
     const [type, tabId] = ($target.id || $parent.id).split('-');
@@ -372,13 +377,27 @@ export default function setEventListners(options: Options) {
       }
       case 'collapse-tab': {
         const $win = toggleClass('tabs-collapsed')($parent.parentElement)!;
+        await new Promise<TransitionEvent>((resolve) => {
+          $win.addEventListener('transitionend', resolve);
+        });
         const { length } = $$byClass('tabs-collapsed');
         if (length === $win.parentElement!.children.length) {
           collapseTabsAll(true);
         } else if (length === 0) {
           collapseTabsAll(false);
         }
-        scrollIntoView($win);
+        const $tabs = $win.parentElement!.parentElement!;
+        const winBottom = $win.offsetTop + $win.offsetHeight - $tabs.offsetTop;
+        const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
+        const isTopOver = $tabs.scrollTop <= ($win.offsetTop - $tabs.offsetTop);
+        const isBottomUnder = tabsBottom > winBottom;
+        if (isTopOver && isBottomUnder) {
+          return;
+        }
+        const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
+          ? $win.offsetTop - $tabs.offsetTop
+          : $tabs.scrollTop + (winBottom - tabsBottom) + 1;
+        smoothSroll($win, scrollTop);
         break;
       }
       case 'icon-x': {

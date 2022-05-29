@@ -73,6 +73,8 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.pane-header .pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
   addRules('.searching .form-query, .searching .form-query .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
+  // addRules('.tabs .window', [['border-color', searchingBg]]);
+  // addRules('.tabs-header', [['color', searchingColor], ['background-color', searchingBg]]);
   addRules(
     [
       'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:hover::before',
@@ -85,6 +87,7 @@ function setOptions(settings: Settings, options: Options) {
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
+  addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
   addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover, .window:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
