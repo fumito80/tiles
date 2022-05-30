@@ -1,3 +1,4 @@
+$font-color: #222222;
 $hover-color: #e8e8e9;
 $drag-source-bgcolor0: rgb(232, 240, 254);
 $drag-source-bgcolor: #cce5ff;
@@ -34,11 +35,21 @@ $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
 @keyframes hilite-fade-out {
   from {
     background-color: $hilite-bgcolor;
-    color: #222222;
+    color: $font-color;
   }
 
   to {
     background-color: transparent;
+    color: inherit;
+  }
+}
+
+@keyframes hilite-fade-out-color {
+  from {
+    color: $font-color;
+  }
+
+  to {
     color: inherit;
   }
 }
@@ -81,7 +92,7 @@ button:not(.submit) {
   transition: all .4s;
 
   >i {
-    color: rgba(0, 0, 0, .4);
+    color: rgba(0, 0, 0, .5);
     width: 1.2em;
   }
 
@@ -326,7 +337,7 @@ button:not(.submit) {
     font-weight: 400;
     line-height: 1.25rem;
     padding: 0.15em 0.8em 0.15em 0;
-    color: #222;
+    color: $font-color;
     list-style: none;
     margin: 0;
     white-space: nowrap;
@@ -481,7 +492,7 @@ button:not(.submit) {
       border-radius: 3px;
 
       &::before {
-        color: white;
+        color: $light-font-color;
         content: '\f07c';
       }
     }
@@ -539,9 +550,14 @@ button:not(.submit) {
       animation: fade-in 0.15s ease-in-out;
     }
 
-    &.hilite::before {
-      animation-name: hilite-fade-out !important;
+    &.hilite {
+      animation-name: hilite-fade-out-color !important;
       animation-duration: 1.0s !important;
+
+      &::before {
+        animation-name: hilite-fade-out !important;
+        animation-duration: 1.0s !important;
+      }
     }
 
     &.remove-hilite::before {
@@ -613,8 +629,8 @@ button:not(.submit) {
       pointer-events: all;
       z-index: 3;
       padding-right: 0.3em;
-      background-color: white;
-      color: #222222;
+      background-color: $light-font-color;
+      color: $font-color;
       min-width: 80px;
     }
 
@@ -641,8 +657,8 @@ button:not(.submit) {
   &:focus {
     text-overflow: unset;
     padding-right: 0.3em;
-    background-color: white;
-    color: #222222;
+    background-color: $light-font-color;
+    color: $font-color;
   }
 
   &:empty::before {
@@ -794,7 +810,7 @@ main::-webkit-scrollbar {
         background-color: $drop-folder-bgcolor;
 
         &~.title {
-          color: #222222;
+          color: $font-color;
 
           &::before {
             color: rgba(0, 0, 0, 0.5);
@@ -873,7 +889,7 @@ main::-webkit-scrollbar {
     &.leaf,
     &.tab-wrap,
     &.history:not(.header-date) {
-      color: #222 !important;
+      color: $font-color !important;
       z-index: 3;
     }
 
@@ -885,7 +901,7 @@ main::-webkit-scrollbar {
 
     &.tab-wrap {
       >.tab {
-        color: #222;
+        color: $font-color;
       }
 
       >i::before {
@@ -914,10 +930,10 @@ main::-webkit-scrollbar {
 
     >.title {
       outline: none;
-      color: #222 !important;
+      color: $font-color !important;
 
       &::before {
-        color: #222 !important;
+        color: $font-color !important;
       }
     }
 
@@ -955,7 +971,7 @@ main::-webkit-scrollbar {
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 3px;
-  color: white !important;
+  color: $light-font-color !important;
   background-color: $draggable-bgcolor;
 
   >div {
@@ -1000,10 +1016,8 @@ main::-webkit-scrollbar {
       padding: 0;
       justify-content: center;
       align-items: center;
-      // background-color: darkgray;
       background-color: rgba(0, 0, 0, 0.3);
       color: $light-font-color;
-      // color: white;
       border-radius: 2px;
       -webkit-user-drag: none;
     }
@@ -1084,7 +1098,7 @@ main::-webkit-scrollbar {
     margin-left: auto;
     margin-right: 2px;
     font-size: 1.3em;
-    color: #222;
+    color: $font-color;
     background-color: transparent;
     transition: background-color .4s;
     display: none;
@@ -1093,7 +1107,7 @@ main::-webkit-scrollbar {
       transition: background-color .4s;
       background-color: red;
       border-radius: 1px;
-      color: white;
+      color: $light-font-color;
     }
   }
 }
@@ -1885,7 +1899,7 @@ main {
 
     .icon-private {
       margin-left: 2px;
-      color: #222;
+      color: $font-color;
       background-color: rgba(255, 255, 255, 0.3);
       padding: 3px 2px;
       border-radius: 5px;
@@ -1983,7 +1997,7 @@ main {
       font-size: 0.9em;
       line-height: 1.8em;
       background-color: #FFFFFF;
-      color: #222222;
+      color: $font-color;
       box-shadow: rgb(0 0 0 / 20%) 0px 1px 3px 1px;
 
       &:first-line {

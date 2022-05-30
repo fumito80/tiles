@@ -240,7 +240,7 @@ const dragAndDropEvents = {
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
       setHasChildren($sourceFolders.parentElement);
-      // setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+      setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
     setAnimationClass('hilite')($sourceLeafs);
