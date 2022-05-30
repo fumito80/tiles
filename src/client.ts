@@ -62,7 +62,7 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
     (el) => {
       // eslint-disable-next-line no-void
       void (el as HTMLElement).offsetWidth;
-      // el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
+      el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
       return el;
     },
     addClass(className),
@@ -246,9 +246,13 @@ export function setAnimationFolder(className: string) {
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
   const { url = '' } = await getBookmark(id);
+  const [schemeSrc, domainSrc] = extractDomain(url);
   const finder = options.findTabsMatches === 'prefix'
     ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
-    : (tab: chrome.tabs.Tab) => extractDomain(tab.url) === extractDomain(url);
+    : (tab: chrome.tabs.Tab) => {
+      const [scheme, domain] = extractDomain(tab.url);
+      return domain === domainSrc && scheme === schemeSrc;
+    };
   const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
     chrome.tabs.query({}, (tabs) => {
       chrome.windows.getCurrent((win) => {
@@ -547,8 +551,9 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
       const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
-      const domain = extractDomain(tab.url);
-      const title = `${tab.title}\n${domain}`;
+      const [scheme, domain] = extractDomain(tab.url);
+      const schemeAdd = scheme.startsWith('https') ? '' : scheme;
+      const title = `${tab.title}\n${schemeAdd}${domain}`;
       const style = makeStyleIcon(tab.url!);
       const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
       const header = prev || makeTabsHeader(style, tab.title!, tab.incognito);
@@ -556,11 +561,5 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
     }, {} as { [key: number]: string });
     const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
     $byClass('tabs-wrap')!.innerHTML = html;
-    // const { [currentWindowId]: currentTabs, ...rest } = htmlByWindow;
-    // const html = Object.entries(rest).map(([key, value]) =>
-    // `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
-    // $byClass('tabs-wrap')!.innerHTML =
-    // `<div id="win-${currentWindowId}" class="window ${collapseClass}">${currentTabs}</div>${html}
-    // `;
   });
 }

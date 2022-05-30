@@ -67,7 +67,7 @@ export function makeTabsHeader(
     <div draggable="true" class="tabs-header tab-wrap" style="${style}">
       ${incognitoElem}
       <div class="tab">${htmlEscape(content)}</div>
-      <button class="collapse-tab" title="Switch list/icon view"><i class="icon-list"></i><i class="icon-grid"></i></button>
+      <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
       <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
     </div>
   `;

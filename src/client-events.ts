@@ -364,6 +364,8 @@ export default function setEventListners(options: Options) {
       'win',
       'icon-x',
       'collapse-tab',
+      'icon-list',
+      'icon-grid',
       'tabs-menu-button',
     ] as const;
     const targetClass = whichClass(targetClasses, $target) || type;
@@ -375,11 +377,14 @@ export default function setEventListners(options: Options) {
         e.stopImmediatePropagation();
         break;
       }
-      case 'collapse-tab': {
-        const $win = toggleClass('tabs-collapsed')($parent.parentElement)!;
-        await new Promise<TransitionEvent>((resolve) => {
-          $win.addEventListener('transitionend', resolve);
+      case 'icon-list':
+      case 'icon-grid': {
+        const $win = $parent.parentElement!.parentElement!;
+        const promiseCollapse = new Promise<TransitionEvent>((resolve) => {
+          $win.addEventListener('transitionend', resolve, { once: true });
         });
+        toggleClass('tabs-collapsed')($win);
+        await promiseCollapse;
         const { length } = $$byClass('tabs-collapsed');
         if (length === $win.parentElement!.children.length) {
           collapseTabsAll(true);
@@ -396,7 +401,7 @@ export default function setEventListners(options: Options) {
         }
         const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
           ? $win.offsetTop - $tabs.offsetTop
-          : $tabs.scrollTop + (winBottom - tabsBottom) + 1;
+          : $tabs.scrollTop + (winBottom - tabsBottom);
         smoothSroll($win, scrollTop);
         break;
       }

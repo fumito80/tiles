@@ -48,7 +48,7 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-export const defaultColorPalette: ColorPalette = ['FFFFFF', 'DEE1E6', 'CCE5FF', 'F6F6F6', '1DA1F2'];
+export const defaultColorPalette: ColorPalette = ['FFFFFF', 'e8e8e9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
 export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,

@@ -871,8 +871,8 @@ export function extractUrl(faviconUrl?: string) {
 }
 
 export function extractDomain(url?: string) {
-  const [, domain = ''] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(url || '') || [];
-  return domain;
+  const [, scheme = '', domain = ''] = /^([\w-]+?:\/\/)([\s\S]+?)(\/|$)/.exec(url || '') || [];
+  return [scheme, domain];
 }
 
 export async function getHistoryById(historyId: string): Promise<MyHistoryItem> {
