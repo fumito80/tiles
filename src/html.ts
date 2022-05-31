@@ -64,7 +64,7 @@ export function makeTabsHeader(
 ) {
   const incognitoElem = incognito ? '<i class="icon-private"></i>' : '';
   return `
-    <div draggable="true" class="tabs-header tab-wrap" style="${style}">
+    <div draggable="true" class="tabs-header" style="${style}">
       ${incognitoElem}
       <div class="tab">${htmlEscape(content)}</div>
       <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>

@@ -12,12 +12,14 @@ import {
   setHTML,
   addClass,
   addChild,
-  switches,
   $byId,
   $byClass,
   $byTag,
   hasClass,
   decode,
+  addStyle,
+  setText,
+  when,
 } from './common';
 import {
   addBookmark,
@@ -27,7 +29,7 @@ import {
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -75,17 +77,18 @@ function dropWithTabs(
         if (chrome.runtime.lastError) {
           return;
         }
-        let domIndex = index;
-        if (sourceTab.windowId === windowId && rest.index > sourceTab.index) {
-          domIndex += 1;
-        }
         const $source = $byId(sourceId)!;
         const $sourceParent = $source.parentElement!;
-        const $destParent = $dropTarget.parentElement!;
-        $destParent?.insertBefore($source, $destParent.children[domIndex]);
-        if ($sourceParent.children.length === 0) {
+        const position = positions[dropAreaClass];
+        $dropTarget.insertAdjacentElement(position, $source);
+        if ($sourceParent.children.length <= 1) {
           $sourceParent.remove();
+          return;
         }
+        const $header = $source.parentElement!.firstElementChild!;
+        const $first = $header.nextElementSibling as HTMLElement;
+        addStyle('background-image', $first.style.backgroundImage)($header);
+        setText($first.textContent)($header?.firstElementChild || null);
       });
     });
     $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
@@ -141,8 +144,7 @@ const dragAndDropEvents = {
     if (!className) {
       return;
     }
-    const [targetClass, $dragTarget, id] = switches(className)
-      .case('marker')
+    const [targetClass, $dragTarget, id] = when(['marker', 'tabs-header'].includes(className))
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $byTag('main')!;
@@ -217,6 +219,12 @@ const dragAndDropEvents = {
     }
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
+      return;
+    }
+    if (sourceClass === 'tabs-header') {
+      // dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
+      // eslint-disable-next-line no-console
+      console.log(sourceClass);
       return;
     }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));

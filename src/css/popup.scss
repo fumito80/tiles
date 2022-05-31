@@ -9,9 +9,13 @@ $draggable-bgcolor: rgba(0, 123, 255, .7);
 $common-marker: #1A73E8;
 $pane-radius: 5px;
 
+// for light theme
+$light-folder-color: rgba(0, 0, 0, 0.5);
+
 // for dark theme
-$light-font-color: #efefef;
+$dark-font-color: #efefef;
 $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
+$dark-folder-color: rgba(255, 255, 255, 0.5);
 
 @import 'glyphs';
 
@@ -54,6 +58,26 @@ $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
   }
 }
 
+@keyframes hilite-folder-light {
+  from {
+    color: $font-color;
+  }
+
+  to {
+    color: $light-folder-color;
+  }
+}
+
+@keyframes hilite-folder-dark {
+  from {
+    color: $font-color;
+  }
+
+  to {
+    color: $dark-folder-color;
+  }
+}
+
 @keyframes hilite-fade-in {
   from {
     background-color: transparent;
@@ -82,7 +106,7 @@ main {
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
-  // transition: all 0.1s;
+  transition: transform 0.1s;
 }
 
 button:not(.submit) {
@@ -154,6 +178,7 @@ button:not(.submit) {
 
 .leaf,
 .tab-wrap,
+.tabs-header,
 .history {
   position: relative;
   display: flex;
@@ -375,7 +400,7 @@ button:not(.submit) {
     width: 1.9em;
   }
 
-  .icon-closes {
+  .icon-close {
     font-size: 1.4em;
     width: 2.2em;
   }
@@ -492,7 +517,7 @@ button:not(.submit) {
       border-radius: 3px;
 
       &::before {
-        color: $light-font-color;
+        color: $dark-font-color;
         content: '\f07c';
       }
     }
@@ -553,6 +578,11 @@ button:not(.submit) {
     &.hilite {
       animation-name: hilite-fade-out-color !important;
       animation-duration: 1.0s !important;
+
+      >.title::before {
+        animation-name: hilite-folder-light !important;
+        animation-duration: 1.0s !important;
+      }
 
       &::before {
         animation-name: hilite-fade-out !important;
@@ -629,7 +659,7 @@ button:not(.submit) {
       pointer-events: all;
       z-index: 3;
       padding-right: 0.3em;
-      background-color: $light-font-color;
+      background-color: $dark-font-color;
       color: $font-color;
       min-width: 80px;
     }
@@ -657,7 +687,7 @@ button:not(.submit) {
   &:focus {
     text-overflow: unset;
     padding-right: 0.3em;
-    background-color: $light-font-color;
+    background-color: $dark-font-color;
     color: $font-color;
   }
 
@@ -813,7 +843,7 @@ main::-webkit-scrollbar {
           color: $font-color;
 
           &::before {
-            color: rgba(0, 0, 0, 0.5);
+            color: $light-folder-color;
           }
         }
       }
@@ -889,7 +919,7 @@ main::-webkit-scrollbar {
     &.leaf,
     &.tab-wrap,
     &.history:not(.header-date) {
-      color: $font-color !important;
+      color: $font-color  !important;
       z-index: 3;
     }
 
@@ -930,10 +960,10 @@ main::-webkit-scrollbar {
 
     >.title {
       outline: none;
-      color: $font-color !important;
+      color: $font-color  !important;
 
       &::before {
-        color: $font-color !important;
+        color: $font-color  !important;
       }
     }
 
@@ -971,7 +1001,7 @@ main::-webkit-scrollbar {
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 3px;
-  color: $light-font-color !important;
+  color: $dark-font-color  !important;
   background-color: $draggable-bgcolor;
 
   >div {
@@ -985,6 +1015,10 @@ main::-webkit-scrollbar {
     >.icon-x {
       display: none;
     }
+  }
+
+  .tooltip {
+    display: none;
   }
 }
 
@@ -1017,7 +1051,7 @@ main::-webkit-scrollbar {
       justify-content: center;
       align-items: center;
       background-color: rgba(0, 0, 0, 0.3);
-      color: $light-font-color;
+      color: $dark-font-color;
       border-radius: 2px;
       -webkit-user-drag: none;
     }
@@ -1040,7 +1074,7 @@ main::-webkit-scrollbar {
         width: 100%;
         height: 100%;
         text-align: center;
-        color: $light-font-color;
+        color: $dark-font-color;
         background-color: rgba(0, 0, 0, 0.3);
       }
     }
@@ -1107,7 +1141,7 @@ main::-webkit-scrollbar {
       transition: background-color .4s;
       background-color: red;
       border-radius: 1px;
-      color: $light-font-color;
+      color: $dark-font-color;
     }
   }
 }
@@ -1271,7 +1305,7 @@ main::-webkit-scrollbar {
   position: fixed;
   z-index: 2;
   top: calc(50% - 1em);
-  color: $light-font-color;
+  color: $dark-font-color;
 
   &.icon-fa-angle-right.left {
     font-size: 2em;
@@ -1515,7 +1549,7 @@ main.zoom-pane {
   }
 
   .leafs .title::before {
-    color: $light-font-color;
+    color: $dark-font-color;
   }
 
   &.zoom-pane .shade-left,
@@ -1531,14 +1565,14 @@ main.zoom-pane {
       >.drop-top {
 
         &.drag-enter::before {
-          border-color: lightgray;
+          border-color: lightgray !important;
         }
       }
 
       >.drop-bottom {
 
         &.drag-enter::before {
-          border-color: lightgray;
+          border-color: lightgray !important;
         }
       }
     }
@@ -1589,7 +1623,7 @@ main.zoom-pane {
 
   .title::before,
   .form-query .submit>i {
-    color: rgba(255, 255, 255, 0.5);
+    color: $dark-folder-color;
   }
 
   .form-query,
@@ -1601,7 +1635,7 @@ main.zoom-pane {
   .form-query button:hover .icon-fa-ellipsis-v,
   .form-query button:focus .icon-fa-ellipsis-v,
   .pane-header button:not(.submit)>i {
-    color: rgba(255, 255, 255, 0.5);
+    color: $dark-folder-color;
   }
 
   .form-query button:hover::after,
@@ -1614,7 +1648,7 @@ main.zoom-pane {
   .form-query button:active::after,
   .form-query button:active::after,
   .pane-header button:active::after {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: $dark-folder-color;
   }
 
   .folders::-webkit-scrollbar-thumb,
@@ -1624,6 +1658,11 @@ main.zoom-pane {
     &:hover {
       background-color: rgba(255, 255, 255, .5);
     }
+  }
+
+  .marker.hilite>.title::before {
+    animation-name: hilite-folder-dark !important;
+    animation-duration: 1.0s !important;
   }
 
 }
@@ -1650,7 +1689,7 @@ main.zoom-pane {
   .leaf:hover button:active::after,
   .marker:hover button:active::after,
   .window:hover button:active::after {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: $dark-folder-color;
   }
 
 }
@@ -1664,12 +1703,11 @@ main.zoom-pane {
 
 .theme-dark-pane.theme-dark-frame {
   .window {
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: $dark-folder-color;
     border-width: 1px;
     padding: 2px;
 
     .tabs-header {
-      // border-radius: 1px;
       border-top-left-radius: 3px;
       border-top-right-radius: 3px;
       margin-bottom: 1px;
@@ -1885,7 +1923,7 @@ main {
     width: -webkit-fill-available !important;
     margin: -1px;
     background-color: rgba(0, 0, 0, 0.3);
-    color: $light-font-color;
+    color: $dark-font-color;
 
     >div {
       opacity: 1;
@@ -1915,6 +1953,7 @@ main {
     display: inline-flex;
     width: 100%;
     transition: width 0.15s;
+    float: left;
   }
 
   &:not(.searching) {
@@ -1931,10 +1970,11 @@ main {
           margin-left: 22px;
         }
 
-        >.tab-wrap:not(.tabs-header) {
+        >.tab-wrap {
           width: 1.8em;
-          margin-top: 2px;
-          margin-bottom: 2px;
+          // margin-top: 2px;
+          // margin-bottom: 2px;
+          margin: 2px;
           padding-left: 0;
           // background-position: center;
           background-position-x: calc((1.8em - 16px) / 2);
@@ -2010,7 +2050,7 @@ main {
 
   &:not(.searching) .tabs-collapsed {
 
-    .tab-wrap {
+    .tab-wrap:not(.drag-source) {
       >.tooltip {
         pointer-events: none;
         position: fixed;
@@ -2033,21 +2073,78 @@ main {
   }
 
   // Dark pane
-  &.theme-dark-pane {
+  &:not(.searching).theme-dark-pane {
 
     .window:not(:hover) .tabs-header {
 
       button>i {
-        color: rgba(255, 255, 255, 0.5);
+        color: $dark-folder-color;
       }
     }
 
     .tabs-wrap>.tabs-collapsed {
 
-      >.tab-wrap:not(.tabs-header):not(.current-tab) {
-        background-color: rgba(255, 255, 255, 0.5);
+      >.tab-wrap:not(.current-tab) {
+        background-color: $dark-folder-color;
       }
     }
   }
 
+}
+
+
+.drag-start-leaf .tabs-collapsed .tab-wrap:not(.match):not(.unmatch) {
+
+  >.drop-top,
+  >.drop-bottom {
+    top: 0;
+    height: 100%;
+
+    &.drag-enter::before {
+      top: -2px;
+      height: calc(100% + 4px);
+      border-top: none;
+      border-color: #1A73E8;
+      border-left-width: 4px;
+      border-left-style: solid;
+    }
+  }
+
+  >.drop-top {
+    left: calc(-50% - 11px);
+    width: calc(100% + 11px);
+
+    &.drag-enter::before {
+      left: 50%;
+    }
+  }
+
+  >.drop-bottom {
+    left: 50%;
+    width: calc(100% + 8px);
+
+    &.drag-enter::before {
+      left: calc(50% - 1px);
+    }
+  }
+
+  >.drop-top.drag-enter::after,
+  >.drop-bottom.drag-enter::after {
+    content: '';
+    display: none;
+  }
+
+}
+
+.draggable-clone .tabs-header {
+  background-position-x: 26px;
+  padding-left: 24px;
+
+  &::before {
+    content: "\e90c";
+    left: 5px;
+    position: absolute;
+    font-family: glyphs;
+    color: #efefef;
+  }
 }

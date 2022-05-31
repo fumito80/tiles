@@ -44,7 +44,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
-                        <div class="icon-zoom"></div>Xen mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -67,7 +67,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
-                        <div class="icon-zoom"></div>Xen mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -92,7 +92,7 @@
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled"></i>
-                        <div class="icon-zoom"></div>Xen mode<i class="icon-check-solid"></i>
+                        <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -144,10 +144,7 @@
         <div class="tabs-menu" role="menu">
             <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
             <hr aria-hidden="true">
-            <div role="menuitem" data-value="close-window"><i class="icon-closes"></i>Close window</div>
-        </div>
-        <div class="draggable-clone">
-            <div class="leaf"></div>
+            <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>
         </div>
         <div class="modal">
             <div class="popup">
@@ -156,6 +153,9 @@
                 <div class="footer"><button>OK</button><button>Cancel</button></div>
             </div>
         </div>
+    </div>
+    <div class="draggable-clone">
+        <div class="leaf"></div>
     </div>
     <script nonce="popup">
         const params = new URLSearchParams(document.location.search);
