@@ -26,6 +26,7 @@ import {
   getBookmark,
   setHasChildren,
   setAnimationClass,
+  addFolderFromTabs,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
@@ -224,7 +225,8 @@ const dragAndDropEvents = {
     if (sourceClass === 'tabs-header') {
       // dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
       // eslint-disable-next-line no-console
-      console.log(sourceClass);
+      addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId);
+      // console.log(sourceClass);
       return;
     }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));

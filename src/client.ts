@@ -414,11 +414,9 @@ export function showModalInput(desc: string) {
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
-export async function addFolder(parentId = '1') {
-  const index = (parentId === '1') ? 0 : undefined;
-  const params = {
-    title: 'Enter title', parentId, index,
-  };
+export async function addFolder(parentId = '1', title = 'Enter title', indexIn: number | undefined = undefined) {
+  const index = indexIn ?? (parentId === '1' ? 0 : undefined);
+  const params = { title, parentId, index };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlNode = makeNode({
     id, children: '', length: 0, ...params,
@@ -441,10 +439,31 @@ export async function addFolder(parentId = '1') {
   }
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
-  const title = await editTitle($target.firstElementChild as HTMLElement, id, true);
-  if (!title) {
-    removeFolder($target.parentElement!.parentElement!);
-  }
+  return new Promise<string | void>((resolve) => {
+    editTitle($target.firstElementChild as HTMLElement, id, true).then((titled) => {
+      if (!titled) {
+        removeFolder($target.parentElement!.parentElement!);
+        resolve();
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
+export async function addFolderFromTabs(
+  parentFolderId: string,
+  index: number,
+  elementId: string,
+) {
+  const [, windowId] = elementId.split('-');
+  chrome.tabs.query({ windowId: Number(windowId) }, async (tabs) => {
+    const parentId = await addFolder(parentFolderId, tabs[0].title, index);
+    if (!parentId) {
+      return;
+    }
+    tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }));
+  });
 }
 
 export function openFolder(folderId: string, incognito = false) {
