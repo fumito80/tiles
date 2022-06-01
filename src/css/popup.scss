@@ -89,7 +89,7 @@ $dark-folder-color: rgba(255, 255, 255, 0.5);
 }
 
 .scroll-ease-in-out {
-  transition: transform 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 // body/other
@@ -377,6 +377,10 @@ button:not(.submit) {
 
   >div:hover {
     background-color: $hover-color;
+
+    .icon-fa-trash-alt {
+      color: red;
+    }
   }
 
   .searched-menu {
@@ -732,7 +736,8 @@ main::-webkit-scrollbar {
 .drag-start-leaf .tab-wrap,
 .drag-start-leaf .folders>.folder>.marker,
 .drag-start-folder .leaf,
-.drag-start-folder .marker {
+.drag-start-folder .marker,
+.drag-start-folder .tabs-header:not(.drag-source)~.tab-wrap {
 
   >.drop-top.drag-enter::after,
   >.drop-bottom.drag-enter::after {
@@ -746,10 +751,11 @@ main::-webkit-scrollbar {
 }
 
 .drag-start-leaf,
-.drag-start-folder .folders {
+.drag-start-folder .folders,
+.drag-start-folder .tabs {
 
   .leaf:not(.search-path),
-  .tab-wrap:not(.match):not(.unmatch) {
+  .tabs-header:not(.drag-source)~.tab-wrap:not(.match):not(.unmatch) {
     overflow: visible;
 
     >.drop-top,
@@ -1558,7 +1564,8 @@ main.zoom-pane {
   }
 
   &.drag-start-leaf,
-  &.drag-start-folder .folders {
+  &.drag-start-folder .folders,
+  &.drag-start-folder .tabs {
 
     .leaf:not(.search-path),
     .tab-wrap:not(.match):not(.unmatch) {
@@ -1600,7 +1607,8 @@ main.zoom-pane {
   &.drag-start-leaf .tab-wrap,
   &.drag-start-leaf .folders>.folder>.marker,
   &.drag-start-folder .leaf,
-  &.drag-start-folder .marker {
+  &.drag-start-folder .marker,
+  &.drag-start-folder .tab-wrap {
 
     >.drop-top.drag-enter::after,
     >.drop-bottom.drag-enter::after {
@@ -1917,30 +1925,36 @@ main.zoom-pane {
   }
 }
 
+.tabs-header {
+  width: -webkit-fill-available !important;
+  margin: -1px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: $dark-font-color;
+
+  >div {
+    opacity: 1;
+    transition: opacity 0.15s;
+  }
+
+  .icon-private+.tab {
+    margin-left: 2px;
+    text-indent: 0;
+  }
+
+  .icon-private {
+    margin-left: 2px;
+    color: $font-color;
+    background-color: rgba(255, 255, 255, 0.3);
+    padding: 3px 2px;
+    border-radius: 5px;
+  }
+}
+
 main {
 
-  .tabs-header {
-    width: -webkit-fill-available !important;
-    margin: -1px;
-    background-color: rgba(0, 0, 0, 0.3);
-    color: $dark-font-color;
-
-    >div {
-      opacity: 1;
-      transition: opacity 0.15s;
-    }
-
-    .icon-private+.tab {
-      margin-left: 2px;
-      text-indent: 0;
-    }
-
-    .icon-private {
-      margin-left: 2px;
-      color: $font-color;
-      background-color: rgba(255, 255, 255, 0.3);
-      padding: 3px 2px;
-      border-radius: 5px;
+  &.searching {
+    .tabs-header {
+      display: none;
     }
   }
 
@@ -2042,7 +2056,6 @@ main {
 
       &:first-line {
         font-size: 1.1em;
-        // font-weight: bold;
         font-weight: 600;
       }
     }
@@ -2093,58 +2106,70 @@ main {
 }
 
 
-.drag-start-leaf .tabs-collapsed .tab-wrap:not(.match):not(.unmatch) {
+.drag-start-leaf,
+.drag-start-folder {
+  .tabs-collapsed .tabs-header:not(.drag-source)~.tab-wrap:not(.match):not(.unmatch) {
 
-  >.drop-top,
-  >.drop-bottom {
-    top: 0;
-    height: 100%;
+    >.drop-top,
+    >.drop-bottom {
+      top: 0;
+      height: 100%;
 
-    &.drag-enter::before {
-      top: -2px;
-      height: calc(100% + 4px);
-      border-top: none;
-      border-color: #1A73E8;
-      border-left-width: 4px;
-      border-left-style: solid;
+      &.drag-enter::before {
+        top: -2px;
+        height: calc(100% + 4px);
+        border-top: none;
+        border-color: #1A73E8;
+        border-left-width: 4px;
+        border-left-style: solid;
+      }
     }
-  }
 
-  >.drop-top {
-    left: calc(-50% - 11px);
-    width: calc(100% + 11px);
+    >.drop-top {
+      left: calc(-50% - 11px);
+      width: calc(100% + 11px);
 
-    &.drag-enter::before {
+      &.drag-enter::before {
+        left: 50%;
+      }
+    }
+
+    >.drop-bottom {
       left: 50%;
+      width: calc(100% + 8px);
+
+      &.drag-enter::before {
+        left: calc(50% - 1px);
+      }
     }
-  }
 
-  >.drop-bottom {
-    left: 50%;
-    width: calc(100% + 8px);
-
-    &.drag-enter::before {
-      left: calc(50% - 1px);
+    >.drop-top.drag-enter::after,
+    >.drop-bottom.drag-enter::after {
+      content: '';
+      display: none;
     }
-  }
 
-  >.drop-top.drag-enter::after,
-  >.drop-bottom.drag-enter::after {
-    content: '';
-    display: none;
   }
-
 }
 
 .draggable-clone .tabs-header {
   background-position-x: 26px;
   padding-left: 24px;
+  max-width: 160px;
 
   &::before {
-    content: "\e90c";
+    content: '\e90a';
     left: 5px;
     position: absolute;
     font-family: glyphs;
-    color: #efefef;
+    color: $dark-font-color;
+  }
+
+  .icon-private {
+    margin-left: 24px;
+
+    +.tab {
+      text-indent: 2px;
+    }
   }
 }

@@ -2,6 +2,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const WebpackNotifierPlugin = require('webpack-notifier');
 
 module.exports = {
   entry: {
@@ -64,5 +65,6 @@ module.exports = {
       exclude: 'node_modules',
     }),
     new CleanWebpackPlugin(),
+    new WebpackNotifierPlugin({ alwaysNotify: true }),
   ],
 };

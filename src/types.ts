@@ -54,7 +54,7 @@ export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
-  showSwitchTabsWin: false,
+  showSwitchTabsWin: true,
   showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,
@@ -63,11 +63,11 @@ export const initialOptions = {
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,
-  zoomTabs: true,
+  zoomTabs: false,
   zoomHistory: true,
   zoomRatio: '0.7',
   fontSize: '0.9em',
-  collapseTabs: true,
+  collapseTabs: false,
 };
 
 export const initialState = {

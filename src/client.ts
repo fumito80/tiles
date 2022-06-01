@@ -414,16 +414,16 @@ export function showModalInput(desc: string) {
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
-export async function addFolder(parentId = '1', title = 'Enter title', indexIn: number | undefined = undefined) {
+export async function addFolder(parentId = '1', title = '', indexIn: number | undefined = undefined) {
   const index = indexIn ?? (parentId === '1' ? 0 : undefined);
-  const params = { title, parentId, index };
+  const params = { title: title || 'Enter title', parentId, index };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlNode = makeNode({
     id, children: '', length: 0, ...params,
   });
   if (parentId === '1') {
-    $byClass('folders')!.insertAdjacentHTML('afterbegin', htmlNode);
-    $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
+    insertHTML('beforebegin', htmlNode)($byClass('folders')!.children[index!]);
+    insertHTML('beforebegin', htmlNode)($(`.leafs ${cssid(1)}`)!.children[index!]);
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
       const $title = pipe(
@@ -440,8 +440,8 @@ export async function addFolder(parentId = '1', title = 'Enter title', indexIn: 
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
   return new Promise<string | void>((resolve) => {
-    editTitle($target.firstElementChild as HTMLElement, id, true).then((titled) => {
-      if (!titled) {
+    editTitle($target.firstElementChild as HTMLElement, id, !title).then((retitled) => {
+      if (!retitled && !title) {
         removeFolder($target.parentElement!.parentElement!);
         resolve();
         return;
@@ -499,62 +499,65 @@ export async function smoothSroll($target: HTMLElement, scrollTop: number) {
     $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
   ));
   if (Math.abs(translateY) <= 1) {
-    return null;
+    return undefined;
   }
-  addClass('scroll-ease-in-out')($tabsWrap);
-  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
-  return new Promise<null>((resolve) => {
+  const promise = new Promise<void>((resolve) => {
     $tabsWrap.addEventListener('transitionend', () => {
       rmClass('scroll-ease-in-out')($tabsWrap);
       rmStyle('transform')($tabsWrap);
       Object.assign($parent, { scrollTop });
-      resolve(null);
+      resolve();
     }, { once: true });
   });
+  addClass('scroll-ease-in-out')($tabsWrap);
+  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
+  return promise;
 }
 
+let promiseSwitchTabEnd = Promise.resolve();
+
 export async function switchTabWindow(e: Event) {
+  const $btn = e.currentTarget as HTMLElement;
   const $tabs = $byClass('tabs')!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
-    return null;
+    return;
   }
   const $tabsWrap = $tabs.firstElementChild! as HTMLElement;
-  const $btn = e.currentTarget as HTMLElement;
-  const isNext = hasClass($btn, 'win-next');
-  const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
-  const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-  const tabsOT = $tabs.offsetTop;
-  const $current = ([...$tabsWrap.children] as HTMLElement[])
-    .map(($win) => ({
-      $win,
-      winTop: $win.offsetTop - tabsOT,
-      winBottom: $win.offsetTop + $win.offsetHeight - tabsOT,
-    }))
-    .map(({ $win, winTop, winBottom }) => ({
-      $win,
-      winTop,
-      winBottom,
-      isTopIn: winTop >= tabsTop && winTop <= tabsBottom,
-      isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
-    }))
-    .find(({
-      winTop, winBottom, isTopIn, isBottomIn,
-    }) => (isNext && isTopIn && winBottom >= tabsBottom)
-      || (!isNext && isBottomIn && winTop <= tabsTop)
-      || (winTop < tabsTop && winBottom > tabsBottom));
-  if (!$current) {
-    return null;
-  }
-  const { $win, winTop, winBottom } = $current;
-  let $target = $win;
-  if (winTop <= tabsTop && winBottom > tabsBottom) {
-    $target = $win.nextElementSibling as HTMLElement;
-  }
-  if ($target) {
+  promiseSwitchTabEnd = promiseSwitchTabEnd.then(() => new Promise((resolve) => {
+    const isNext = hasClass($btn, 'win-next');
+    const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
+    const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
+    const tabsOT = $tabs.offsetTop;
+    const $current = ([...$tabsWrap.children] as HTMLElement[])
+      .map(($win) => ({
+        $win,
+        winTop: $win.offsetTop - tabsOT,
+        winBottom: $win.offsetTop + $win.offsetHeight - tabsOT,
+      }))
+      .map(({ $win, winTop, winBottom }) => ({
+        $win,
+        winTop,
+        winBottom,
+        isTopIn: winTop >= tabsTop && winTop <= tabsBottom,
+        isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
+      }))
+      .find(({
+        winTop, winBottom, isTopIn, isBottomIn,
+      }) => (isNext && isTopIn && winBottom >= tabsBottom)
+        || (!isNext && isBottomIn && winTop <= tabsTop)
+        || (winTop < tabsTop && winBottom > tabsBottom));
+    if (!$current) {
+      resolve();
+      return;
+    }
+    const { $win, winTop, winBottom } = $current;
+    let $target = $win;
+    if (winTop <= tabsTop && winBottom > tabsBottom) {
+      $target = $win.nextElementSibling as HTMLElement;
+    }
     const scrollTop = $target.offsetTop - $tabsWrap.parentElement!.offsetTop;
-    return smoothSroll($target, scrollTop);
-  }
-  return null;
+    smoothSroll($target, scrollTop).then(resolve);
+  }));
 }
 
 export function collapseTabsAll(force?: boolean) {
@@ -572,10 +575,10 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
       const [scheme, domain] = extractDomain(tab.url);
       const schemeAdd = scheme.startsWith('https') ? '' : scheme;
-      const title = `${tab.title}\n${schemeAdd}${domain}`;
+      const tooltip = `${tab.title}\n${schemeAdd}${domain}`;
       const style = makeStyleIcon(tab.url!);
-      const htmlTabs = makeTab(tab.id!, className, title, style, tab.title!);
-      const header = prev || makeTabsHeader(style, tab.title!, tab.incognito);
+      const htmlTabs = makeTab(tab.id!, className, tooltip, style, tab.title!);
+      const header = prev || makeTabsHeader(tooltip, style, tab.title!, tab.incognito);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');

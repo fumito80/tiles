@@ -20,6 +20,8 @@ import {
   addStyle,
   setText,
   when,
+  addAttr,
+  curry,
 } from './common';
 import {
   addBookmark,
@@ -39,61 +41,100 @@ function getSubTree(id: string) {
   });
 }
 
-function dropWithTabs(
+function renameTabsHeader($source: HTMLElement) {
+  const $header = $source.parentElement!.firstElementChild!;
+  const $first = $header.nextElementSibling as HTMLElement;
+  const $content = $first.firstElementChild!;
+  addStyle('background-image', $first.style.backgroundImage)($header);
+  setText($content.textContent)($header.firstElementChild);
+  addAttr('title', $content.getAttribute('title')!)($header.firstElementChild);
+}
+
+function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLElement) {
+  const $source = $byId(sourceId)!;
+  const $sourceParent = $source.parentElement!;
+  const position = positions[dropAreaClass];
+  $dropTarget.insertAdjacentElement(position, $source);
+  renameTabsHeader($source);
+  if ($sourceParent.children.length <= 1) {
+    $sourceParent.remove();
+    return;
+  }
+  if ($sourceParent.id !== $dropTarget.parentElement?.id) {
+    renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
+  }
+}
+
+async function dropWithTabs(
   $dropTarget: HTMLElement,
-  sourceId: string,
+  srcElementId: string,
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
   const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
-  const [, tabId] = (isDroppedTab ? $dropTarget.id : sourceId).split('-');
-  chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
-    if (!isDroppedTab) {
-      const { url, title } = rest;
-      addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
-      return;
-    }
-    if (sourceClass === 'leaf') {
-      const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-      const { url } = await getBookmark(sourceId);
-      chrome.tabs.create({ index, url, windowId }, () => {
-        chrome.windows.update(windowId, { focused: true });
-      });
-      return;
-    }
-    const [, sourceTabId] = sourceId.split('-');
-    chrome.tabs.get(Number(sourceTabId), async (sourceTab) => {
-      let index: number;
-      if (sourceTab.windowId === windowId) {
-        index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
-        if (rest.index < sourceTab.index) {
-          // move to right
-          index = rest.index;
-        }
-      } else {
-        index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
-      }
-      chrome.tabs.move([Number(sourceTabId)], { windowId, index }, () => {
+  const [, sourceId] = (isDroppedTab ? $dropTarget.id : srcElementId).split('-').map(Number);
+  const { windowId, ...rest } = await cbToResolve(curry(chrome.tabs.get)(sourceId));
+  // Tab to bookmark
+  if (!isDroppedTab) {
+    const { url, title } = rest;
+    addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+    return;
+  }
+  let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
+  // Bookmark to tabs
+  if (sourceClass === 'leaf') {
+    const { url } = await getBookmark(srcElementId);
+    chrome.tabs.create({ index, url, windowId }, () => {
+      chrome.windows.update(windowId, { focused: true });
+    });
+    return;
+  }
+  // Merge window
+  if (sourceClass === 'tabs-header') {
+    chrome.tabs.query({ windowId: sourceId }, (tabs) => {
+      const tabIds = tabs.map((tab) => tab.id!);
+      chrome.tabs.move(tabIds, { windowId, index }, () => {
         if (chrome.runtime.lastError) {
+          // eslint-disable-next-line no-alert
+          alert(chrome.runtime.lastError.message);
           return;
         }
-        const $source = $byId(sourceId)!;
-        const $sourceParent = $source.parentElement!;
-        const position = positions[dropAreaClass];
-        $dropTarget.insertAdjacentElement(position, $source);
-        if ($sourceParent.children.length <= 1) {
-          $sourceParent.remove();
-          return;
-        }
-        const $header = $source.parentElement!.firstElementChild!;
-        const $first = $header.nextElementSibling as HTMLElement;
-        addStyle('background-image', $first.style.backgroundImage)($header);
-        setText($first.textContent)($header?.firstElementChild || null);
+        tabIds.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
+        $byId(srcElementId).remove();
       });
     });
-    $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
+    return;
+  }
+  // Move folder to tab
+  if (sourceClass === 'marker') {
+    chrome.bookmarks.getChildren(srcElementId, (bms) => {
+      bms.forEach(({ url }, i) => chrome.tabs.create({ url, index: index + i, windowId }));
+    });
+    return;
+  }
+  // Move tab
+  const [, sourceTabId] = srcElementId.split('-').map(Number);
+  chrome.tabs.get(sourceTabId, async (sourceTab) => {
+    if (sourceTab.windowId === windowId) {
+      index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
+      if (rest.index < sourceTab.index) {
+        // move to right
+        index = rest.index;
+      }
+    } else {
+      index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+    }
+    chrome.tabs.move([sourceTabId], { windowId, index }, () => {
+      if (chrome.runtime.lastError) {
+        // eslint-disable-next-line no-alert
+        alert(chrome.runtime.lastError.message);
+        return;
+      }
+      moveTab(srcElementId, dropAreaClass, $dropTarget);
+    });
   });
+  $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
 
 async function dropFromHistory(
@@ -223,10 +264,8 @@ const dragAndDropEvents = {
       return;
     }
     if (sourceClass === 'tabs-header') {
-      // dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
       // eslint-disable-next-line no-console
       addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId);
-      // console.log(sourceClass);
       return;
     }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));

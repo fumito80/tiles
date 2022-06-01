@@ -73,8 +73,6 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.pane-header .pin-bookmark:hover > .icon-fa-star-o', [['color', keyBg]]);
   addRules('.searching .form-query, .searching .form-query .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
-  // addRules('.tabs .window', [['border-color', searchingBg]]);
-  // addRules('.tabs-header', [['color', searchingColor], ['background-color', searchingBg]]);
   addRules(
     [
       'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:not(.hilite):hover::before',
@@ -175,7 +173,6 @@ function layoutPanes(options: Options) {
   addClass('end')($endHeader);
   // History pane
   const $histories = $byClass('histories');
-  // $histories?.append(...$byClass('body-histories')!.children);
   addClass('v-scroll')($histories);
   // Bold Splitter
   const $leafs = $('.histories + .leafs');

@@ -31,7 +31,6 @@ import {
   $$,
   when,
   addStyle,
-  // addStyle,
 } from './common';
 
 import {
@@ -87,12 +86,7 @@ export default function setEventListners(options: Options) {
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
   $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
-  let promiseScrollEnd = Promise.resolve(null);
-  setEvents($$('.win-next, .win-prev'), {
-    click(e) {
-      promiseScrollEnd = promiseScrollEnd.then(() => switchTabWindow(e));
-    },
-  });
+  setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
   setEvents([$main], {
     click(e) {
