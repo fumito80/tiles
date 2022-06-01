@@ -29,6 +29,8 @@ import {
   hasClass,
   toggleClass,
   $$,
+  when,
+  addStyle,
 } from './common';
 
 import {
@@ -55,6 +57,8 @@ import {
   switchTabWindow,
   getEndPaneMinWidth,
   openFolder,
+  collapseTabsAll,
+  smoothSroll,
 } from './client';
 
 import { updateAnker } from './html';
@@ -80,6 +84,7 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
+  $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
   setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
@@ -137,7 +142,7 @@ export default function setEventListners(options: Options) {
         }
         case 'remove': {
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($byClass('leaf-menu'))(document.body);
+          addChild($byClass('leaf-menu'))($byClass('components'));
           pipe(
             addListener('animationend', () => $leaf.remove(), { once: true }),
             rmClass('hilite'),
@@ -340,31 +345,126 @@ export default function setEventListners(options: Options) {
     },
   });
   const $paneTabs = $byClass('tabs')!;
-  $paneTabs.addEventListener('click', (e) => {
+  $paneTabs.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
-    const $window = ($target.id ? $target : $parent).parentElement!;
-    const [, tabId] = ($target.id || $parent.id).split('-');
-    if (hasClass($target, 'icon-x')) {
-      pipe(
-        addListener('animationend', () => {
-          chrome.tabs.remove(Number(tabId), () => {
-            $parent.remove();
-            if ($window.childElementCount === 0) {
-              $window.remove();
-            }
+    const [type, tabId] = ($target.id || $parent.id).split('-');
+    const $window = when(type === 'win').then(() => ($target.id ? $target : $parent))
+      .when(!!$target.id).then($parent)
+      .else($parent.parentElement!);
+    const targetClasses = [
+      'tab',
+      'tabs-header',
+      'win',
+      'icon-x',
+      'collapse-tab',
+      'icon-list',
+      'icon-grid',
+      'tabs-menu-button',
+    ] as const;
+    const targetClass = whichClass(targetClasses, $target) || type;
+    switch (targetClass) {
+      case 'tabs-header':
+        break;
+      case 'tabs-menu-button': {
+        showMenu($target, 'tabs-menu');
+        e.stopImmediatePropagation();
+        break;
+      }
+      case 'icon-list':
+      case 'icon-grid': {
+        const $win = $parent.parentElement!.parentElement!;
+        const promiseCollapse = new Promise<TransitionEvent>((resolve) => {
+          $win.addEventListener('transitionend', resolve, { once: true });
+        });
+        toggleClass('tabs-collapsed')($win);
+        await promiseCollapse;
+        const { length } = $$byClass('tabs-collapsed');
+        if (length === $win.parentElement!.children.length) {
+          collapseTabsAll(true);
+        } else if (length === 0) {
+          collapseTabsAll(false);
+        }
+        const $tabs = $win.parentElement!.parentElement!;
+        const winBottom = $win.offsetTop + $win.offsetHeight - $tabs.offsetTop;
+        const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
+        const isTopOver = $tabs.scrollTop <= ($win.offsetTop - $tabs.offsetTop);
+        const isBottomUnder = tabsBottom > winBottom;
+        if (isTopOver && isBottomUnder) {
+          return;
+        }
+        const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
+          ? $win.offsetTop - $tabs.offsetTop
+          : $tabs.scrollTop + (winBottom - tabsBottom);
+        smoothSroll($win, scrollTop);
+        break;
+      }
+      case 'icon-x': {
+        pipe(
+          addListener('animationend', () => {
+            chrome.tabs.remove(Number(tabId), () => {
+              $parent.remove();
+              if ($window.childElementCount <= 1) {
+                $window.remove();
+              }
+            });
+          }, { once: true }),
+          setAnimationClass('remove-hilite'),
+        )($parent);
+        break;
+      }
+      case 'tab':
+      case 'win': {
+        const [, windowId] = $window.id.split('-') || [];
+        if (windowId == null) {
+          return;
+        }
+        chrome.windows.update(Number(windowId), { focused: true });
+        chrome.tabs.update(Number(tabId), { active: true });
+        break;
+      }
+      default:
+    }
+  });
+  $paneTabs.addEventListener('mouseover', (e) => {
+    const $target = e.target as HTMLElement;
+    if (!hasClass($target, 'tab-wrap') || hasClass($target, 'tabs-header')) {
+      return;
+    }
+    const $tooltip = $byClass('tooltip', $target);
+    const rect = $target.getBoundingClientRect();
+    const rectTT = $tooltip.getBoundingClientRect();
+    const left = Math.min(rect.right, document.body.offsetWidth - rectTT.width - 5);
+    addStyle('left', `${Math.max(left, 5)}px`)($tooltip);
+    if (rect.bottom + rectTT.height > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - rectTT.height}px`)($tooltip);
+      return;
+    }
+    addStyle('top', `${rect.bottom}px`)($tooltip);
+  });
+  setEvents($$byClass('tabs-menu'), {
+    click(e) {
+      const $target = e.target as HTMLElement;
+      const $window = $target.closest('div[id]')!;
+      const [, windowId] = $window.id.split('-').map(Number);
+      switch ($target.dataset.value) {
+        case 'add-new-tab': {
+          chrome.tabs.create({ windowId });
+          chrome.windows.update(windowId, { focused: true });
+          break;
+        }
+        case 'close-window':
+          chrome.windows.remove(windowId, () => {
+            $byClass('components')?.append($target.parentElement!);
+            $window.remove();
           });
-        }, { once: true }),
-        setAnimationClass('remove-hilite'),
-      )($parent);
-      return;
-    }
-    const [, windowId] = $window.id.split('-') || [];
-    if (windowId == null) {
-      return;
-    }
-    chrome.windows.update(Number(windowId), { focused: true });
-    chrome.tabs.update(Number(tabId), { active: true });
+          break;
+        default:
+      }
+    },
+    mousedown(e) {
+      e.preventDefault();
+    },
   });
   const $paneHistory = addListener('click', async (e) => {
     const $target = e.target as HTMLElement;

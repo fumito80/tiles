@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- <defs>
+    <clipPath id="clip-lt" clip-rule="nonzero">
+      <path d="M0 0 h220 v220 h-220 v-220 h50 v50 v120 h120 v-120 h-120 z"/>
+    </clipPath>
+    <clipPath id="clip-rt" clip-rule="nonzero">
+      <path d="M292 0 h220 v220 h-220 v-220 h50 v50 v120 h120 v-120 h-120 z"/>
+    </clipPath>
+    <clipPath id="clip-lb" clip-rule="nonzero">
+      <path d="M0 292 h220 v220 h-220 v-220 h50 v50 v120 h120 v-120 h-120 z"/>
+    </clipPath>
+    <clipPath id="clip-rb" clip-rule="nonzero">
+      <path d="M292 292 h220 v220 h-220 v-220 h50 v50 v120 h120 v-120 h-120 z"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-lt)" /> -->
+  <path d="
+  M80 0 
+  h60 q80 0 80 80 v60 q0 80 -80 80 h-60 q-80 0 -80 -80 v-60 q0 -80 80 -80
+  v40 q-40 0 -40 40 v60 q0 40 40 40 h60 q40 0 40 -40 v-60 q0 -40 -40 -40 h-60 z
+  " />
+  <path d="
+  M371 0 
+  h60 q80 0 80 80 v60 q0 80 -80 80 h-60 q-80 0 -80 -80 v-60 q0 -80 80 -80 z
+  " />
+  <path d="
+  M371 291
+  h60 q80 0 80 80 v60 q0 80 -80 80 h-60 q-80 0 -80 -80 v-60 q0 -80 80 -80
+  v40 q-40 0 -40 40 v60 q0 40 40 40 h60 q40 0 40 -40 v-60 q0 -40 -40 -40 h-60 z
+  " />
+  <path d="
+  M80 291 
+  h60 q80 0 80 80 v60 q0 80 -80 80 h-60 q-80 0 -80 -80 v-60 q0 -80 80 -80 z
+  " />
+  <!-- <rect x="292" y="0" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-rt)" /> -->
+  <!-- <rect x="0" y="292" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-lb)" /> -->
+  <!-- <rect x="292" y="292" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-rb)" /> -->
+  <!-- <defs>
+    <clipPath id="clip" clip-rule="evenodd">
+        <rect x="25" y="25" width="30" height="50"/>
+        <rect x="125" y="25" width="30" height="50"/>
+        <text x="30" y="100">ここがクリップ領域</text>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="200" height="200" fill="lightblue"/>
+  <circle clip-path="url(#clip)" cx="100" cy="100" r="90" stroke="pink" stroke-width="10" fill="red"/> -->
+</svg>

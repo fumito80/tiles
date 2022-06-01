@@ -71,7 +71,7 @@ regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 function setHtmlHistory(histories: Histories) {
   const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
-  const htmlHistory = `<div class="current-date history header-date"></div>${html}`;
+  const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
   return setLocal({ htmlHistory, histories }).then(() => histories);
 }
 

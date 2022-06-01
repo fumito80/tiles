@@ -40,6 +40,7 @@ import {
   decode,
   pick,
   getNewPaneWidth,
+  makeStyleIcon,
 } from './common';
 
 import {
@@ -51,7 +52,9 @@ import {
 } from './vscroll';
 
 import { getReFilter } from './search';
-import { makeLeaf, makeNode, updateAnker } from './html';
+import {
+  makeLeaf, makeNode, makeTab, makeTabsHeader, updateAnker,
+} from './html';
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -59,7 +62,7 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
     (el) => {
       // eslint-disable-next-line no-void
       void (el as HTMLElement).offsetWidth;
-      // el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
+      el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
       return el;
     },
     addClass(className),
@@ -243,9 +246,13 @@ export function setAnimationFolder(className: string) {
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
   const { id } = $anchor.parentElement!;
   const { url = '' } = await getBookmark(id);
+  const [schemeSrc, domainSrc] = extractDomain(url);
   const finder = options.findTabsMatches === 'prefix'
     ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
-    : (tab: chrome.tabs.Tab) => extractDomain(tab.url) === extractDomain(url);
+    : (tab: chrome.tabs.Tab) => {
+      const [scheme, domain] = extractDomain(tab.url);
+      return domain === domainSrc && scheme === schemeSrc;
+    };
   const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
     chrome.tabs.query({}, (tabs) => {
       chrome.windows.getCurrent((win) => {
@@ -407,18 +414,16 @@ export function showModalInput(desc: string) {
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
-export async function addFolder(parentId = '1') {
-  const index = (parentId === '1') ? 0 : undefined;
-  const params = {
-    title: 'Enter title', parentId, index,
-  };
+export async function addFolder(parentId = '1', title = '', indexIn: number | undefined = undefined) {
+  const index = indexIn ?? (parentId === '1' ? 0 : undefined);
+  const params = { title: title || 'Enter title', parentId, index };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
   const htmlNode = makeNode({
     id, children: '', length: 0, ...params,
   });
   if (parentId === '1') {
-    $byClass('folders')!.insertAdjacentHTML('afterbegin', htmlNode);
-    $(`.leafs ${cssid(1)}`)!.insertAdjacentHTML('afterbegin', htmlNode);
+    insertHTML('beforebegin', htmlNode)($byClass('folders')!.children[index!]);
+    insertHTML('beforebegin', htmlNode)($(`.leafs ${cssid(1)}`)!.children[index!]);
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
       const $title = pipe(
@@ -434,10 +439,31 @@ export async function addFolder(parentId = '1') {
   }
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
-  const title = await editTitle($target.firstElementChild as HTMLElement, id, true);
-  if (!title) {
-    removeFolder($target.parentElement!.parentElement!);
-  }
+  return new Promise<string | void>((resolve) => {
+    editTitle($target.firstElementChild as HTMLElement, id, !title).then((retitled) => {
+      if (!retitled && !title) {
+        removeFolder($target.parentElement!.parentElement!);
+        resolve();
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
+export async function addFolderFromTabs(
+  parentFolderId: string,
+  index: number,
+  elementId: string,
+) {
+  const [, windowId] = elementId.split('-');
+  chrome.tabs.query({ windowId: Number(windowId) }, async (tabs) => {
+    const parentId = await addFolder(parentFolderId, tabs[0].title, index);
+    if (!parentId) {
+      return;
+    }
+    tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }));
+  });
 }
 
 export function openFolder(folderId: string, incognito = false) {
@@ -447,7 +473,7 @@ export function openFolder(folderId: string, incognito = false) {
   });
 }
 
-type MenuClass = 'leaf-menu' | 'folder-menu';
+type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu';
 
 export function showMenu($target: HTMLElement, menuClass: MenuClass) {
   const $menu = $byClass(menuClass)!;
@@ -465,57 +491,97 @@ export function showMenu($target: HTMLElement, menuClass: MenuClass) {
   addStyle({ left, top })($menu);
 }
 
-type ScrollTarget = {
-  prev: HTMLElement | null;
-  current: HTMLElement | null;
-  next: HTMLElement | null;
+export async function smoothSroll($target: HTMLElement, scrollTop: number) {
+  const $tabsWrap = $target.parentElement! as HTMLElement;
+  const $parent = $tabsWrap.parentElement! as HTMLElement;
+  const translateY = -(Math.min(
+    scrollTop - $parent.scrollTop,
+    $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
+  ));
+  if (Math.abs(translateY) <= 1) {
+    return undefined;
+  }
+  const promise = new Promise<void>((resolve) => {
+    $tabsWrap.addEventListener('transitionend', () => {
+      rmClass('scroll-ease-in-out')($tabsWrap);
+      rmStyle('transform')($tabsWrap);
+      Object.assign($parent, { scrollTop });
+      resolve();
+    }, { once: true });
+  });
+  addClass('scroll-ease-in-out')($tabsWrap);
+  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
+  return promise;
 }
 
-export function switchTabWindow(e: Event) {
+let promiseSwitchTabEnd = Promise.resolve();
+
+export async function switchTabWindow(e: Event) {
+  const $btn = e.currentTarget as HTMLElement;
   const $tabs = $byClass('tabs')!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
     return;
   }
   const $tabsWrap = $tabs.firstElementChild! as HTMLElement;
-  const $btn = e.currentTarget as HTMLElement;
-  const isNext = hasClass($btn, 'win-next');
-  const st = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
-  const ot = $tabs.offsetTop;
-  const targets = ([...$tabsWrap.children] as HTMLElement[]).reduce<ScrollTarget>((acc, $win) => {
-    if (acc.current || acc.next) {
-      return acc;
-    }
-    const isTopOver = ($win.offsetTop - ot) <= st;
-    const isBottomUnder = ($win.offsetTop + $win.offsetHeight - ot) >= st;
-    if (isTopOver && isBottomUnder) {
-      return { ...acc, current: $win };
-    }
-    if (isBottomUnder) {
-      return { ...acc, next: $win };
-    }
-    return { ...acc, prev: $win };
-  }, { prev: null, current: null, next: null });
-  let $target;
-  if (isNext) {
-    $target = targets.current?.nextElementSibling || targets.next?.nextElementSibling;
-  } else {
-    $target = targets.current || targets.prev;
-  }
-  if ($target) {
-    const scrollTop = ($target as HTMLElement).offsetTop - ot;
-    const translateY = -(Math.min(
-      scrollTop - $tabs.scrollTop,
-      $tabs.scrollHeight - $tabs.offsetHeight - $tabs.scrollTop,
-    ));
-    if (Math.abs(translateY) <= 1) {
+  promiseSwitchTabEnd = promiseSwitchTabEnd.then(() => new Promise((resolve) => {
+    const isNext = hasClass($btn, 'win-next');
+    const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
+    const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
+    const tabsOT = $tabs.offsetTop;
+    const $current = ([...$tabsWrap.children] as HTMLElement[])
+      .map(($win) => ({
+        $win,
+        winTop: $win.offsetTop - tabsOT,
+        winBottom: $win.offsetTop + $win.offsetHeight - tabsOT,
+      }))
+      .map(({ $win, winTop, winBottom }) => ({
+        $win,
+        winTop,
+        winBottom,
+        isTopIn: winTop >= tabsTop && winTop <= tabsBottom,
+        isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
+      }))
+      .find(({
+        winTop, winBottom, isTopIn, isBottomIn,
+      }) => (isNext && isTopIn && winBottom >= tabsBottom)
+        || (!isNext && isBottomIn && winTop <= tabsTop)
+        || (winTop < tabsTop && winBottom > tabsBottom));
+    if (!$current) {
+      resolve();
       return;
     }
-    addClass('scroll-ease-in-out')($tabsWrap);
-    addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
-    $tabsWrap.addEventListener('transitionend', () => {
-      rmClass('scroll-ease-in-out')($tabsWrap);
-      rmStyle('transform')($tabsWrap);
-      $tabs.scrollTop = scrollTop;
-    }, { once: true });
-  }
+    const { $win, winTop, winBottom } = $current;
+    let $target = $win;
+    if (winTop <= tabsTop && winBottom > tabsBottom) {
+      $target = $win.nextElementSibling as HTMLElement;
+    }
+    const scrollTop = $target.offsetTop - $tabsWrap.parentElement!.offsetTop;
+    smoothSroll($target, scrollTop).then(resolve);
+  }));
+}
+
+export function collapseTabsAll(force?: boolean) {
+  const $main = $byTag('main');
+  toggleClass('tabs-collapsed-all', force)($main);
+  const isCollapse = hasClass($main, 'tabs-collapsed-all');
+  $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
+}
+
+export function setTabs(currentWindowId: number, isCollapse: boolean) {
+  const collapseClass = isCollapse ? 'tabs-collapsed' : '';
+  chrome.tabs.query({}, (tabs) => {
+    const htmlByWindow = tabs.reduce((acc, tab) => {
+      const { [tab.windowId]: prev = '', ...rest } = acc;
+      const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
+      const [scheme, domain] = extractDomain(tab.url);
+      const schemeAdd = scheme.startsWith('https') ? '' : scheme;
+      const tooltip = `${tab.title}\n${schemeAdd}${domain}`;
+      const style = makeStyleIcon(tab.url!);
+      const htmlTabs = makeTab(tab.id!, className, tooltip, style, tab.title!);
+      const header = prev || makeTabsHeader(tooltip, style, tab.title!, tab.incognito);
+      return { ...rest, [tab.windowId]: header + htmlTabs };
+    }, {} as { [key: number]: string });
+    const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
+    $byClass('tabs-wrap')!.innerHTML = html;
+  });
 }

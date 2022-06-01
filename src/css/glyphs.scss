@@ -91,9 +91,6 @@ i {
 .icon-fa-trash-alt:before {
   content: "\f1f8";
 }
-.icon-fa-mask:before {
-  content: "\f21b";
-}
 .icon-fa-window-restore:before {
   content: "\f2d2";
 }
@@ -108,4 +105,31 @@ i {
 }
 .icon-fa-window::before {
   content: "\e90f";
+}
+.icon-collapse-tabs::before {
+  content: "\e911";
+}
+.icon-expand-tabs::before {
+  content: "\e916";
+}
+.icon-list::before {
+  content: "\e903";
+}
+.icon-grid::before {
+  content: "\e913";
+}
+.icon-tab-plus::before {
+  content: "\e919";
+}
+.icon-close::before {
+  content: "\e91a";
+}
+.icon-closes::before {
+  content: "\e917";
+}
+.icon-private::before {
+  content: '\e914';
+}
+.icon-tab-find::before {
+  content: '\e918';
 }

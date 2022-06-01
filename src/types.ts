@@ -48,13 +48,13 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-const colorPalette: ColorPalette = ['FFFFFF', 'f6f6f6', 'cce5ff', 'e8e8e9', '1da1f2'];
+export const defaultColorPalette: ColorPalette = ['FFFFFF', 'e8e8e9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
 export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
-  showSwitchTabsWin: false,
+  showSwitchTabsWin: true,
   showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,
@@ -62,11 +62,12 @@ export const initialOptions = {
   findTabsMatches: 'domain' as 'domain' | 'prefix',
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
-  colorPalette,
-  zoomTabs: true,
+  colorPalette: defaultColorPalette,
+  zoomTabs: false,
   zoomHistory: true,
   zoomRatio: '0.7',
   fontSize: '0.9em',
+  collapseTabs: false,
 };
 
 export const initialState = {

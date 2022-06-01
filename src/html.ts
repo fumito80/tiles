@@ -48,10 +48,30 @@ export function makeTab(
   style: string,
   content: string,
 ) {
+  const tooltip = htmlEscape(title);
   return `
-    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" title="${htmlEscape(title)}" style="${style}">
-      <div class="tab">${htmlEscape(content)}</div><i class="icon-x"></i>
+    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" style="${style}">
+      <div class="tab" title="${tooltip}">${htmlEscape(content)}</div><i class="icon-x"></i>
+      <div class="tooltip">${tooltip}</div>
       <div class="drop-top"></div><div class="drop-bottom"></div>
+    </div>
+  `;
+}
+
+export function makeTabsHeader(
+  title: string,
+  style: string,
+  content: string,
+  incognito: boolean,
+) {
+  const incognitoElem = incognito ? '<i class="icon-private"></i>' : '';
+  const tooltip = htmlEscape(title);
+  return `
+    <div draggable="true" class="tabs-header" style="${style}">
+      ${incognitoElem}
+      <div class="tab" title="${tooltip}">${htmlEscape(content)}</div>
+      <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
+      <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
     </div>
   `;
 }

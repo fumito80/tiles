@@ -12,22 +12,27 @@ import {
   setHTML,
   addClass,
   addChild,
-  switches,
   $byId,
   $byClass,
   $byTag,
   hasClass,
   decode,
+  addStyle,
+  setText,
+  when,
+  addAttr,
+  curry,
 } from './common';
 import {
   addBookmark,
   getBookmark,
   setHasChildren,
   setAnimationClass,
+  addFolderFromTabs,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -36,60 +41,100 @@ function getSubTree(id: string) {
   });
 }
 
-function dropWithTabs(
+function renameTabsHeader($source: HTMLElement) {
+  const $header = $source.parentElement!.firstElementChild!;
+  const $first = $header.nextElementSibling as HTMLElement;
+  const $content = $first.firstElementChild!;
+  addStyle('background-image', $first.style.backgroundImage)($header);
+  setText($content.textContent)($header.firstElementChild);
+  addAttr('title', $content.getAttribute('title')!)($header.firstElementChild);
+}
+
+function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLElement) {
+  const $source = $byId(sourceId)!;
+  const $sourceParent = $source.parentElement!;
+  const position = positions[dropAreaClass];
+  $dropTarget.insertAdjacentElement(position, $source);
+  renameTabsHeader($source);
+  if ($sourceParent.children.length <= 1) {
+    $sourceParent.remove();
+    return;
+  }
+  if ($sourceParent.id !== $dropTarget.parentElement?.id) {
+    renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
+  }
+}
+
+async function dropWithTabs(
   $dropTarget: HTMLElement,
-  sourceId: string,
+  srcElementId: string,
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
   const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
-  const [, tabId] = (isDroppedTab ? $dropTarget.id : sourceId).split('-');
-  chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
-    if (!isDroppedTab) {
-      const { url, title } = rest;
-      addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
-      return;
-    }
-    if (sourceClass === 'leaf') {
-      const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-      const { url } = await getBookmark(sourceId);
-      chrome.tabs.create({ index, url, windowId }, () => {
-        chrome.windows.update(windowId, { focused: true });
-      });
-      return;
-    }
-    const [, sourceTabId] = sourceId.split('-');
-    chrome.tabs.get(Number(sourceTabId), async (sourceTab) => {
-      let index: number;
-      if (sourceTab.windowId === windowId) {
-        index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
-        if (rest.index < sourceTab.index) {
-          // move to right
-          index = rest.index;
-        }
-      } else {
-        index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
-      }
-      chrome.tabs.move([Number(sourceTabId)], { windowId, index }, () => {
+  const [, sourceId] = (isDroppedTab ? $dropTarget.id : srcElementId).split('-').map(Number);
+  const { windowId, ...rest } = await cbToResolve(curry(chrome.tabs.get)(sourceId));
+  // Tab to bookmark
+  if (!isDroppedTab) {
+    const { url, title } = rest;
+    addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+    return;
+  }
+  let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
+  // Bookmark to tabs
+  if (sourceClass === 'leaf') {
+    const { url } = await getBookmark(srcElementId);
+    chrome.tabs.create({ index, url, windowId }, () => {
+      chrome.windows.update(windowId, { focused: true });
+    });
+    return;
+  }
+  // Merge window
+  if (sourceClass === 'tabs-header') {
+    chrome.tabs.query({ windowId: sourceId }, (tabs) => {
+      const tabIds = tabs.map((tab) => tab.id!);
+      chrome.tabs.move(tabIds, { windowId, index }, () => {
         if (chrome.runtime.lastError) {
+          // eslint-disable-next-line no-alert
+          alert(chrome.runtime.lastError.message);
           return;
         }
-        let domIndex = index;
-        if (sourceTab.windowId === windowId && rest.index > sourceTab.index) {
-          domIndex += 1;
-        }
-        const $source = $byId(sourceId)!;
-        const $sourceParent = $source.parentElement!;
-        const $destParent = $dropTarget.parentElement!;
-        $destParent?.insertBefore($source, $destParent.children[domIndex]);
-        if ($sourceParent.children.length === 0) {
-          $sourceParent.remove();
-        }
+        tabIds.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
+        $byId(srcElementId).remove();
       });
     });
-    $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
+    return;
+  }
+  // Move folder to tab
+  if (sourceClass === 'marker') {
+    chrome.bookmarks.getChildren(srcElementId, (bms) => {
+      bms.forEach(({ url }, i) => chrome.tabs.create({ url, index: index + i, windowId }));
+    });
+    return;
+  }
+  // Move tab
+  const [, sourceTabId] = srcElementId.split('-').map(Number);
+  chrome.tabs.get(sourceTabId, async (sourceTab) => {
+    if (sourceTab.windowId === windowId) {
+      index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
+      if (rest.index < sourceTab.index) {
+        // move to right
+        index = rest.index;
+      }
+    } else {
+      index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+    }
+    chrome.tabs.move([sourceTabId], { windowId, index }, () => {
+      if (chrome.runtime.lastError) {
+        // eslint-disable-next-line no-alert
+        alert(chrome.runtime.lastError.message);
+        return;
+      }
+      moveTab(srcElementId, dropAreaClass, $dropTarget);
+    });
   });
+  $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
 
 async function dropFromHistory(
@@ -141,8 +186,7 @@ const dragAndDropEvents = {
     if (!className) {
       return;
     }
-    const [targetClass, $dragTarget, id] = switches(className)
-      .case('marker')
+    const [targetClass, $dragTarget, id] = when(['marker', 'tabs-header'].includes(className))
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $byTag('main')!;
@@ -165,7 +209,7 @@ const dragAndDropEvents = {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    addClass(targetClass)($byTag('main'));
+    setTimeout(() => addClass(targetClass)($byTag('main')), 0);
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -219,6 +263,11 @@ const dragAndDropEvents = {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
       return;
     }
+    if (sourceClass === 'tabs-header') {
+      // eslint-disable-next-line no-console
+      addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId);
+      return;
+    }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
     const position = positions[dropAreaClass];
     const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
@@ -240,7 +289,7 @@ const dragAndDropEvents = {
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
       setHasChildren($sourceFolders.parentElement);
-      // setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+      setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
     setAnimationClass('hilite')($sourceLeafs);

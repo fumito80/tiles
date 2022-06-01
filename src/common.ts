@@ -21,9 +21,9 @@ type AnyFunction = (...p: any[]) => any;
 
 export function $<T extends HTMLElement>(
   selector: string | null = null,
-  parent: HTMLElement | DocumentFragment | Document | Element = document,
+  parent: HTMLElement | DocumentFragment | Document | null | Element = document,
 ) {
-  return parent.querySelector<T>(selector!);
+  return parent?.querySelector<T>(selector!) ?? null;
 }
 
 export function $$<T extends HTMLElement>(
@@ -164,9 +164,8 @@ export function setText(text: string | null) {
 
 // eslint-disable-next-line no-undef
 export function insertHTML(position: InsertPosition, html: string) {
-  return <T extends Element>($el: T) => {
-    // eslint-disable-next-line no-param-reassign
-    $el.insertAdjacentHTML(position, html);
+  return <T extends Element | null>($el: T) => {
+    $el?.insertAdjacentHTML(position, html);
     return $el;
   };
 }
@@ -740,7 +739,6 @@ export function propNe(name: string, value: any) {
 
 export function makeStyleIcon(url?: string) {
   return url ? `background-image: url('chrome://favicon/${url}');` : '';
-  // return `background-image: url('${faviconUrl}/?page_url=${url}')`;
 }
 
 export function regsterChromeEvents(listener: Function) {
@@ -871,8 +869,8 @@ export function extractUrl(faviconUrl?: string) {
 }
 
 export function extractDomain(url?: string) {
-  const [, domain = ''] = /^\w+?:\/\/([\s\S]+?)(\/|$)/.exec(url || '') || [];
-  return domain;
+  const [, scheme = '', domain = ''] = /^([\w-]+?:\/\/)([\s\S]+?)(\/|$)/.exec(url || '') || [];
+  return [scheme, domain];
 }
 
 export async function getHistoryById(historyId: string): Promise<MyHistoryItem> {

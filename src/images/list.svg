@@ -1,0 +1,11 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+<!-- <rect x="30" y="100" width="840" height="700" rx="100" ry="100" /> -->
+<path d="
+M230 60 H670 q200 0 200 200 V640 q0 200 -200 200 H230 q-200 0 -200 -200 V260 q0 -200 200 -200
+v60 q-140 0 -140 140 V640 q0 140 140 140 H670 q140 0 140 -140 V260 q0 -140 -140 -140 H230
+" />
+<rect x="170" y="250" width="160" height="160" rx="80" ry="60" />
+<rect x="380" y="290" width="350" height="80" rx="40" ry="40" />
+<rect x="170" y="490" width="160" height="160" rx="60" ry="60" />
+<rect x="380" y="530" width="350" height="80" rx="40" ry="40" />
+</svg>
