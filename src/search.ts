@@ -100,7 +100,7 @@ function search(includeUrl: boolean, $leafs: HTMLElement, $main: HTMLElement) {
   $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
     const tab = el.firstElementChild as HTMLElement;
     const isMatch = reFilter.test(tab.textContent!)
-      || (includeUrl && reFilter.test(el.title));
+      || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));
     el.classList.toggle('match', isMatch);
     el.classList.toggle('unmatch', !isMatch);
   });

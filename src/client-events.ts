@@ -420,7 +420,10 @@ export default function setEventListners(options: Options) {
           return;
         }
         chrome.windows.update(Number(windowId), { focused: true });
-        chrome.tabs.update(Number(tabId), { active: true });
+        chrome.tabs.update(Number(tabId), { active: true }, () => {
+          // eslint-disable-next-line no-void
+          void chrome.runtime.lastError;
+        });
         break;
       }
       default:
