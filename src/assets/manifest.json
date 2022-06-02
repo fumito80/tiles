@@ -9,7 +9,7 @@
     "bookmarks",
     "tabs",
     "history",
-    "chrome://favicon/*"
+    "chrome://favicon/"
   ],
   "options_page": "settings.html",
   "browser_action": {

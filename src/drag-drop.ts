@@ -21,7 +21,6 @@ import {
   setText,
   when,
   addAttr,
-  curry,
 } from './common';
 import {
   addBookmark,
@@ -65,6 +64,17 @@ function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLEleme
   }
 }
 
+function getChromeId(preId: number | string) {
+  const [id] = /\d+/.exec(preId as string) || [];
+  return Number(id);
+}
+
+async function getTabInfo(preId: number | string) {
+  return new Promise<chrome.tabs.Tab>((resolve) => {
+    chrome.tabs.get(getChromeId(preId), resolve);
+  });
+}
+
 async function dropWithTabs(
   $dropTarget: HTMLElement,
   srcElementId: string,
@@ -72,15 +82,12 @@ async function dropWithTabs(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
-  const [, sourceId] = (isDroppedTab ? $dropTarget.id : srcElementId).split('-').map(Number);
-  const { windowId, ...rest } = await cbToResolve(curry(chrome.tabs.get)(sourceId));
-  // Tab to bookmark
-  if (!isDroppedTab) {
-    const { url, title } = rest;
+  if (!hasClass($dropTarget, 'tab-wrap')) {
+    const { url, title } = await getTabInfo(srcElementId);
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
   }
+  const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
@@ -92,7 +99,8 @@ async function dropWithTabs(
   }
   // Merge window
   if (sourceClass === 'tabs-header') {
-    chrome.tabs.query({ windowId: sourceId }, (tabs) => {
+    const sourceWindowId = getChromeId(srcElementId);
+    chrome.tabs.query({ windowId: sourceWindowId }, (tabs) => {
       const tabIds = tabs.map((tab) => tab.id!);
       chrome.tabs.move(tabIds, { windowId, index }, () => {
         if (chrome.runtime.lastError) {
@@ -101,7 +109,6 @@ async function dropWithTabs(
           return;
         }
         tabIds.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
-        $byId(srcElementId).remove();
       });
     });
     return;
@@ -114,25 +121,23 @@ async function dropWithTabs(
     return;
   }
   // Move tab
-  const [, sourceTabId] = srcElementId.split('-').map(Number);
-  chrome.tabs.get(sourceTabId, async (sourceTab) => {
-    if (sourceTab.windowId === windowId) {
-      index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
-      if (rest.index < sourceTab.index) {
-        // move to right
-        index = rest.index;
-      }
-    } else {
-      index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+  const sourceTab = await getTabInfo(srcElementId);
+  if (sourceTab.windowId === windowId) {
+    index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
+    if (rest.index < sourceTab.index) {
+      // move to right
+      index = rest.index;
     }
-    chrome.tabs.move([sourceTabId], { windowId, index }, () => {
-      if (chrome.runtime.lastError) {
-        // eslint-disable-next-line no-alert
-        alert(chrome.runtime.lastError.message);
-        return;
-      }
-      moveTab(srcElementId, dropAreaClass, $dropTarget);
-    });
+  } else {
+    index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+  }
+  chrome.tabs.move([sourceTab.id!], { windowId, index }, () => {
+    if (chrome.runtime.lastError) {
+      // eslint-disable-next-line no-alert
+      alert(chrome.runtime.lastError.message);
+      return;
+    }
+    moveTab(srcElementId, dropAreaClass, $dropTarget);
   });
   $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
@@ -144,17 +149,14 @@ async function dropFromHistory(
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
   const { url, title } = await getHistoryById(sourceId);
-  const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
-  if (!isDroppedTab) {
+  if (!hasClass($dropTarget, 'tab-wrap')) {
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
   }
-  const [, tabId] = $dropTarget.id.split('-');
-  chrome.tabs.get(Number(tabId), async ({ windowId, ...rest }) => {
-    const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-    chrome.tabs.create({ index, url, windowId }, () => {
-      chrome.windows.update(windowId, { focused: true });
-    });
+  const { windowId, ...rest } = await getTabInfo($dropTarget.id);
+  const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
+  chrome.tabs.create({ index, url, windowId }, () => {
+    chrome.windows.update(windowId, { focused: true });
   });
 }
 

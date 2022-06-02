@@ -9,11 +9,11 @@ export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 export const initialSettings = {
   postPage: false,
   width: 800,
-  height: 450,
+  height: 500,
   paneWidth: {
     pane1: 200,
-    pane2: 200,
-    pane3: 200,
+    pane2: 320,
+    pane3: 100,
   },
   bodyColor: '#222222',
   tabs: true,
@@ -67,7 +67,7 @@ export const initialOptions = {
   zoomHistory: true,
   zoomRatio: '0.7',
   fontSize: '0.9em',
-  collapseTabs: false,
+  collapseTabs: true,
 };
 
 export const initialState = {

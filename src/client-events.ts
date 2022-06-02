@@ -59,7 +59,6 @@ import {
   openFolder,
   collapseTabsAll,
   smoothSroll,
-  // setScrollPosition,
 } from './client';
 
 import { updateAnker } from './html';
@@ -387,18 +386,17 @@ export default function setEventListners(options: Options) {
           collapseTabsAll(false);
         }
         const $tabs = $win.parentElement!.parentElement!;
-        const winBottom = $win.offsetTop + $win.offsetHeight - $tabs.offsetTop;
+        const winBottom = $win.offsetTop + $win.offsetHeight;
         const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-        const isTopOver = $tabs.scrollTop <= ($win.offsetTop - $tabs.offsetTop);
+        const isTopOver = $tabs.scrollTop <= $win.offsetTop;
         const isBottomUnder = tabsBottom > winBottom;
         if (isTopOver && isBottomUnder) {
           return;
         }
         const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
-          ? $win.offsetTop - $tabs.offsetTop
+          ? $win.offsetTop
           : $tabs.scrollTop + (winBottom - tabsBottom);
         smoothSroll($win, scrollTop);
-        // setScrollPosition();
         break;
       }
       case 'icon-x': {

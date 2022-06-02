@@ -569,25 +569,6 @@ export function collapseTabsAll(force?: boolean) {
   $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
 }
 
-export function setScrollPosition() {
-  const $tabs = $byClass('tabs-wrap')!;
-  const total = $tabs.offsetHeight;
-  const [, ...rest] = [...$tabs.children] as HTMLElement[];
-  if (rest.length === 0) {
-    return;
-  }
-  const $tabsPos = $byClass('tabs-position')!;
-  const rect = $tabs.parentElement!.getBoundingClientRect();
-  addStyle('top', `${rect.top}px`)($tabsPos);
-  addStyle('height', `${rect.height}px`)($tabsPos);
-  addStyle('left', `${rect.right - 8}px`)($tabsPos);
-  const htmlPos = rest.map((win) => {
-    const currentPos = (win.offsetTop / total) * 100;
-    return `<div style="top:${currentPos}%"></div>`;
-  }).join('');
-  $tabsPos.innerHTML = htmlPos;
-}
-
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
   const collapseClass = isCollapse ? 'tabs-collapsed' : '';
   chrome.tabs.query({}, (tabs) => {
@@ -597,7 +578,7 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       const [scheme, domain] = extractDomain(tab.url);
       const schemeAdd = scheme.startsWith('https') ? '' : scheme;
       const tooltip = `${tab.title}\n${schemeAdd}${domain}`;
-      const style = makeStyleIcon(tab.url!);
+      const style = makeStyleIcon(tab.url);
       const htmlTabs = makeTab(tab.id!, className, tooltip, style, tab.title!);
       const header = prev || makeTabsHeader(tooltip, style, tab.title!, tab.incognito);
       return { ...rest, [tab.windowId]: header + htmlTabs };
@@ -605,6 +586,5 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
     const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
     const $tabs = $byClass('tabs-wrap')!;
     $tabs.innerHTML = html;
-    // setScrollPosition();
   });
 }
