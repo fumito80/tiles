@@ -59,6 +59,7 @@ import {
   openFolder,
   collapseTabsAll,
   smoothSroll,
+  // setScrollPosition,
 } from './client';
 
 import { updateAnker } from './html';
@@ -397,6 +398,7 @@ export default function setEventListners(options: Options) {
           ? $win.offsetTop - $tabs.offsetTop
           : $tabs.scrollTop + (winBottom - tabsBottom);
         smoothSroll($win, scrollTop);
+        // setScrollPosition();
         break;
       }
       case 'icon-x': {
@@ -434,7 +436,11 @@ export default function setEventListners(options: Options) {
     const $tooltip = $byClass('tooltip', $target);
     const rect = $target.getBoundingClientRect();
     const rectTT = $tooltip.getBoundingClientRect();
-    const left = Math.min(rect.right, document.body.offsetWidth - rectTT.width - 5);
+    const rectMain = $main.getBoundingClientRect();
+    const left = Math.min(
+      rect.right - rectMain.left,
+      rectMain.width - rectMain.left - rectTT.width - 5,
+    );
     addStyle('left', `${Math.max(left, 5)}px`)($tooltip);
     if (rect.bottom + rectTT.height > document.body.offsetHeight) {
       addStyle('top', `${rect.top - rectTT.height}px`)($tooltip);

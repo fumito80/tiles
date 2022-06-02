@@ -518,45 +518,47 @@ let promiseSwitchTabEnd = Promise.resolve();
 
 export async function switchTabWindow(e: Event) {
   const $btn = e.currentTarget as HTMLElement;
-  const $tabs = $byClass('tabs')!;
+  const $tabsWrap = $byClass('tabs-wrap') as HTMLElement;
+  const $tabs = $tabsWrap.parentElement!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
     return;
   }
-  const $tabsWrap = $tabs.firstElementChild! as HTMLElement;
   promiseSwitchTabEnd = promiseSwitchTabEnd.then(() => new Promise((resolve) => {
     const isNext = hasClass($btn, 'win-next');
     const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
     const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-    const tabsOT = $tabs.offsetTop;
     const $current = ([...$tabsWrap.children] as HTMLElement[])
       .map(($win) => ({
         $win,
-        winTop: $win.offsetTop - tabsOT,
-        winBottom: $win.offsetTop + $win.offsetHeight - tabsOT,
+        winTop: $win.offsetTop,
+        winBottom: $win.offsetTop + $win.offsetHeight,
       }))
       .map(({ $win, winTop, winBottom }) => ({
         $win,
         winTop,
         winBottom,
-        isTopIn: winTop >= tabsTop && winTop <= tabsBottom,
+        isTopIn: winTop >= tabsTop && winTop <= (tabsBottom + 5),
         isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
       }))
       .find(({
         winTop, winBottom, isTopIn, isBottomIn,
       }) => (isNext && isTopIn && winBottom >= tabsBottom)
         || (!isNext && isBottomIn && winTop <= tabsTop)
-        || (winTop < tabsTop && winBottom > tabsBottom));
+        || (winTop <= tabsTop && winBottom >= tabsBottom));
     if (!$current) {
       resolve();
       return;
     }
     const { $win, winTop, winBottom } = $current;
     let $target = $win;
-    if (winTop <= tabsTop && winBottom > tabsBottom) {
-      $target = $win.nextElementSibling as HTMLElement;
+    if (winTop <= tabsTop && winBottom >= tabsBottom) {
+      $target = (isNext ? $win.nextElementSibling : $win) as HTMLElement;
     }
-    const scrollTop = $target.offsetTop - $tabsWrap.parentElement!.offsetTop;
-    smoothSroll($target, scrollTop).then(resolve);
+    if (!$target) {
+      resolve();
+      return;
+    }
+    smoothSroll($target, $target.offsetTop).then(resolve);
   }));
 }
 
@@ -565,6 +567,25 @@ export function collapseTabsAll(force?: boolean) {
   toggleClass('tabs-collapsed-all', force)($main);
   const isCollapse = hasClass($main, 'tabs-collapsed-all');
   $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
+}
+
+export function setScrollPosition() {
+  const $tabs = $byClass('tabs-wrap')!;
+  const total = $tabs.offsetHeight;
+  const [, ...rest] = [...$tabs.children] as HTMLElement[];
+  if (rest.length === 0) {
+    return;
+  }
+  const $tabsPos = $byClass('tabs-position')!;
+  const rect = $tabs.parentElement!.getBoundingClientRect();
+  addStyle('top', `${rect.top}px`)($tabsPos);
+  addStyle('height', `${rect.height}px`)($tabsPos);
+  addStyle('left', `${rect.right - 8}px`)($tabsPos);
+  const htmlPos = rest.map((win) => {
+    const currentPos = (win.offsetTop / total) * 100;
+    return `<div style="top:${currentPos}%"></div>`;
+  }).join('');
+  $tabsPos.innerHTML = htmlPos;
 }
 
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
@@ -582,6 +603,8 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
-    $byClass('tabs-wrap')!.innerHTML = html;
+    const $tabs = $byClass('tabs-wrap')!;
+    $tabs.innerHTML = html;
+    // setScrollPosition();
   });
 }

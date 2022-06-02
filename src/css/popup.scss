@@ -1056,7 +1056,7 @@ main::-webkit-scrollbar {
       padding: 0;
       justify-content: center;
       align-items: center;
-      background-color: rgba(0, 0, 0, 0.3);
+      background-color: rgba(0, 0, 0, 0.4);
       color: $dark-font-color;
       border-radius: 2px;
       -webkit-user-drag: none;
@@ -1081,7 +1081,7 @@ main::-webkit-scrollbar {
         height: 100%;
         text-align: center;
         color: $dark-font-color;
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.4);
       }
     }
   }
@@ -1876,6 +1876,7 @@ main.zoom-pane {
 }
 
 .tabs {
+  position: relative;
   overflow-y: scroll;
 
   button {
@@ -1928,7 +1929,7 @@ main.zoom-pane {
 .tabs-header {
   width: -webkit-fill-available !important;
   margin: -1px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.4);
   color: $dark-font-color;
 
   >div {
@@ -2045,6 +2046,7 @@ main {
   }
 
   // Tooltip
+  
   .tab-wrap {
     >.tooltip {
       display: none;
@@ -2067,7 +2069,7 @@ main {
       >.tooltip {
         pointer-events: none;
         position: fixed;
-        z-index: 2;
+        z-index: 3;
         padding: 4px 8px;
         border-radius: 4px;
         white-space: pre;
@@ -2171,5 +2173,20 @@ main {
     +.tab {
       text-indent: 2px;
     }
+  }
+}
+
+// Tabs scroll position
+
+.tabs-position {
+  position: fixed;
+  width: 8px;
+  height: 100%;
+  pointer-events: none;
+
+  >div {
+    position: absolute;
+    width: 100%;
+    border-top: 1px solid $font-color;
   }
 }
