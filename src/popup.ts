@@ -70,7 +70,7 @@ function setOptions(settings: Settings, options: Options) {
     ['color', `${keyColor} !important`],
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
-  addRules('.pane-header .pin-bookmark:hover::after', [['color', keyBg]]);
+  addRules('.pane-header .pin-bookmark:hover::after', [['color', `${keyBg} !important`]]);
   addRules('.searching .form-query, .searching .form-query .query', [['background-color', searchingBg], ['color', searchingColor]]);
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(

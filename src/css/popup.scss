@@ -1235,12 +1235,12 @@ main::-webkit-scrollbar {
   }
 
   &.end,
-  .pin-bookmark {
-    +.menu-button {
+  .pin-bookmark+ {
+    .menu-button {
       display: block;
     }
 
-    +.query-wrap {
+    .query-wrap {
       margin-right: 0;
     }
   }
@@ -1666,8 +1666,11 @@ main.zoom-pane {
 
   .form-query button:hover .icon-fa-ellipsis-v,
   .form-query button:focus .icon-fa-ellipsis-v,
-  .pane-header button:not(.submit)>i {
-    color: $dark-folder-color;
+  .pane-header button:not(.submit) {
+    &.pin-bookmark::after,
+    >i {
+      color: $dark-folder-color;
+    }
   }
 
   .form-query button:hover::after,
@@ -1955,6 +1958,7 @@ main.zoom-pane {
   margin: -1px;
   background-color: rgba(0, 0, 0, 0.4);
   color: $dark-font-color;
+  transition: background-color 0.1s;
 
   >div {
     opacity: 1;
