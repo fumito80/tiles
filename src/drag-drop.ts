@@ -64,7 +64,7 @@ function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLEleme
   }
 }
 
-function getChromeId(preId: number | string) {
+export function getChromeId(preId: number | string) {
   const [id] = /\d+/.exec(preId as string) || [];
   return Number(id);
 }
@@ -100,7 +100,10 @@ async function dropWithTabs(
   // Merge window
   if (sourceClass === 'tabs-header') {
     const sourceWindowId = getChromeId(srcElementId);
-    chrome.tabs.query({ windowId: sourceWindowId }, (tabs) => {
+    chrome.windows.get(sourceWindowId, { populate: true }, ({ tabs }) => {
+      if (!tabs) {
+        return;
+      }
       const tabIds = tabs.map((tab) => tab.id!);
       chrome.tabs.move(tabIds, { windowId, index }, () => {
         if (chrome.runtime.lastError) {
@@ -108,7 +111,8 @@ async function dropWithTabs(
           alert(chrome.runtime.lastError.message);
           return;
         }
-        tabIds.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
+        const ids = dropAreaClass === 'drop-top' ? tabIds : tabIds.reverse();
+        ids.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
       });
     });
     return;

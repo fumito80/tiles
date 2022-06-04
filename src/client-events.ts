@@ -63,7 +63,7 @@ import {
 
 import { updateAnker } from './html';
 import { resetVScrollData } from './vscroll';
-import dragAndDropEvents from './drag-drop';
+import dragAndDropEvents, { getChromeId } from './drag-drop';
 import { clearQuery, resetQuery } from './search';
 import { setZoomSetting } from './zoom';
 
@@ -415,7 +415,7 @@ export default function setEventListners(options: Options) {
       }
       case 'tab':
       case 'win': {
-        const [, windowId] = $window.id.split('-') || [];
+        const windowId = getChromeId($window.id);
         if (windowId == null) {
           return;
         }
@@ -423,6 +423,7 @@ export default function setEventListners(options: Options) {
         chrome.tabs.update(Number(tabId), { active: true }, () => {
           // eslint-disable-next-line no-void
           void chrome.runtime.lastError;
+          window.close();
         });
         break;
       }
@@ -453,7 +454,7 @@ export default function setEventListners(options: Options) {
     click(e) {
       const $target = e.target as HTMLElement;
       const $window = $target.closest('div[id]')!;
-      const [, windowId] = $window.id.split('-').map(Number);
+      const windowId = getChromeId($window.id);
       switch ($target.dataset.value) {
         case 'add-new-tab': {
           chrome.tabs.create({ windowId });

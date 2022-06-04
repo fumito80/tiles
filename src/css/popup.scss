@@ -139,7 +139,7 @@ button:not(.submit) {
     position: absolute;
     width: 1.3em;
     height: 1.3em;
-    transition: all .2s;
+    transition: all .1s;
   }
 
   &:active::after {
@@ -398,6 +398,7 @@ button:not(.submit) {
     font-size: 1.2em;
   }
 
+  .icon-tabs,
   .icon-tab-plus,
   .icon-tab-find {
     font-size: 1.6em;
@@ -1667,6 +1668,7 @@ main.zoom-pane {
   .form-query button:hover .icon-fa-ellipsis-v,
   .form-query button:focus .icon-fa-ellipsis-v,
   .pane-header button:not(.submit) {
+
     &.pin-bookmark::after,
     >i {
       color: $dark-folder-color;
@@ -1902,6 +1904,27 @@ main.zoom-pane {
   }
 }
 
+.tab-wrap[data-initial]::before {
+  content: attr(data-initial);
+  width: 1.3em;
+  height: 1.3em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  text-transform: capitalize;
+  color: $dark-font-color;
+  background-color: gray;
+  border-radius: 50%;
+  margin: 2px;
+  line-height: 1;
+}
+
+.tab-wrap[data-file]::before {
+  border-radius: 1px;
+  border-top-right-radius: 6px;
+}
+
 .tabs {
   position: relative;
   overflow-y: scroll;
@@ -1949,6 +1972,10 @@ main.zoom-pane {
       >.icon-grid {
         display: none;
       }
+    }
+
+    .tab-wrap[data-initial]::before {
+      margin: 0.25em;
     }
   }
 }
@@ -2204,15 +2231,15 @@ main {
 
 // Tabs scroll position
 
-.tabs-position {
-  position: fixed;
-  width: 8px;
-  height: 100%;
-  pointer-events: none;
+// .tabs-position {
+//   position: fixed;
+//   width: 8px;
+//   height: 100%;
+//   pointer-events: none;
 
-  >div {
-    position: absolute;
-    width: 100%;
-    border-top: 1px solid $font-color;
-  }
-}
+//   >div {
+//     position: absolute;
+//     width: 100%;
+//     border-top: 1px solid $font-color;
+//   }
+// }

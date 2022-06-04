@@ -42,16 +42,14 @@ export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.Bo
 }
 
 export function makeTab(
-  id: number,
+  tab: chrome.tabs.Tab,
   addClass: string,
-  title: string,
-  style: string,
-  content: string,
+  tooltip: string,
+  faviconAttr: string,
 ) {
-  const tooltip = htmlEscape(title);
   return `
-    <div id="tab-${id}" draggable="true" class="tab-wrap ${addClass}" style="${style}">
-      <div class="tab" title="${tooltip}">${htmlEscape(content)}</div><i class="icon-x"></i>
+    <div id="tab-${tab.id}" draggable="true" class="tab-wrap ${addClass}" ${faviconAttr}>
+      <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div><i class="icon-x"></i>
       <div class="tooltip">${tooltip}</div>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>
@@ -59,17 +57,15 @@ export function makeTab(
 }
 
 export function makeTabsHeader(
-  title: string,
-  style: string,
-  content: string,
-  incognito: boolean,
+  tab: chrome.tabs.Tab,
+  tooltip: string,
+  faviconAttr: string,
 ) {
-  const incognitoElem = incognito ? '<i class="icon-private"></i>' : '';
-  const tooltip = htmlEscape(title);
+  const incognitoElem = tab.incognito ? '<i class="icon-private"></i>' : '';
   return `
-    <div draggable="true" class="tabs-header" style="${style}">
+    <div draggable="true" class="tabs-header" ${faviconAttr}>
       ${incognitoElem}
-      <div class="tab" title="${tooltip}">${htmlEscape(content)}</div>
+      <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div>
       <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
       <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
     </div>

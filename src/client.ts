@@ -55,6 +55,7 @@ import { getReFilter } from './search';
 import {
   makeLeaf, makeNode, makeTab, makeTabsHeader, updateAnker,
 } from './html';
+import { getChromeId } from './drag-drop';
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -98,12 +99,10 @@ export async function openBookmark(
       createNewTab(options, url!);
       break;
     }
-    case OpenBookmarkType.window: {
-      chrome.windows.create({ url });
-      break;
-    }
+    case OpenBookmarkType.window:
     case OpenBookmarkType.incognito: {
-      chrome.windows.create({ url, incognito: true });
+      const incognito = openType === OpenBookmarkType.incognito;
+      chrome.windows.create({ url, incognito }, window.close);
       break;
     }
     default:
@@ -272,7 +271,7 @@ export async function findInTabsBookmark(options: Options, $anchor: HTMLElement)
     return;
   }
   chrome.windows.update(tab.windowId, { focused: true });
-  chrome.tabs.update(tab.id, { active: true });
+  chrome.tabs.update(tab.id, { active: true }, window.close);
 }
 
 async function restoreHistory(includeUrl: boolean) {
@@ -377,7 +376,11 @@ export async function editBookmarkTitle($leaf: HTMLElement) {
   setAnimationClass('hilite')($leaf);
 }
 
-export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null) {
+export async function addBookmark(
+  parentId = '1',
+  paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
+  silent = false,
+) {
   const { title, url } = paramsIn ?? await getCurrentTab();
   const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
@@ -400,7 +403,7 @@ export async function addBookmark(parentId = '1', paramsIn: chrome.bookmarks.Boo
     }
   }
   const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
-  if ($target) {
+  if ($target && !silent) {
     ($target as any).scrollIntoViewIfNeeded();
     setAnimationClass('hilite')($target);
     editBookmarkTitle($target);
@@ -456,20 +459,23 @@ export async function addFolderFromTabs(
   index: number,
   elementId: string,
 ) {
-  const [, windowId] = elementId.split('-');
-  chrome.tabs.query({ windowId: Number(windowId) }, async (tabs) => {
+  const windowId = getChromeId(elementId);
+  chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
+    if (!tabs) {
+      return;
+    }
     const parentId = await addFolder(parentFolderId, tabs[0].title, index);
     if (!parentId) {
       return;
     }
-    tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }));
+    tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }, true));
   });
 }
 
 export function openFolder(folderId: string, incognito = false) {
   chrome.bookmarks.getChildren(folderId, (bookmarks) => {
     const url = bookmarks.map((bm) => bm.url).filter((surl) => !!surl) as string[];
-    chrome.windows.create({ url, incognito });
+    chrome.windows.create({ url, incognito }, window.close);
   });
 }
 
@@ -569,18 +575,36 @@ export function collapseTabsAll(force?: boolean) {
   $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
 }
 
+function getTabFaviconAttr(tab: chrome.tabs.Tab) {
+  if (tab.url?.startsWith('file://')) {
+    return `data-initial="${htmlEscape(tab.title!.substring(0, 1))}" data-file="yes"`;
+  }
+  if (tab.favIconUrl || !tab.url?.startsWith('http')) {
+    const faviconUrl = makeStyleIcon(tab.url);
+    return `style="${faviconUrl}"`;
+  }
+  return `data-initial="${htmlEscape(tab.title!.substring(0, 1))}"`;
+}
+
+function getTooltip(tab: chrome.tabs.Tab) {
+  if (tab.url?.startsWith('file:///')) {
+    return htmlEscape(`${tab.title}\n${tab.url}`);
+  }
+  const [scheme, domain] = extractDomain(tab.url);
+  const schemeAdd = scheme.startsWith('https') ? '' : scheme;
+  return htmlEscape(`${tab.title}\n${schemeAdd}${domain}`);
+}
+
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
   const collapseClass = isCollapse ? 'tabs-collapsed' : '';
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
       const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
-      const [scheme, domain] = extractDomain(tab.url);
-      const schemeAdd = scheme.startsWith('https') ? '' : scheme;
-      const tooltip = `${tab.title}\n${schemeAdd}${domain}`;
-      const style = makeStyleIcon(tab.url);
-      const htmlTabs = makeTab(tab.id!, className, tooltip, style, tab.title!);
-      const header = prev || makeTabsHeader(tooltip, style, tab.title!, tab.incognito);
+      const faviconAttr = getTabFaviconAttr(tab);
+      const tooltip = getTooltip(tab);
+      const htmlTabs = makeTab(tab, className, tooltip, faviconAttr);
+      const header = prev || makeTabsHeader(tab, tooltip, faviconAttr);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
     const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
