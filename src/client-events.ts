@@ -88,6 +88,7 @@ export default function setEventListners(options: Options) {
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
   setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
+  const $leafMenu = $byClass('leaf-menu');
   setEvents([$main], {
     click(e) {
       const $target = e.target as HTMLElement;
@@ -102,6 +103,11 @@ export default function setEventListners(options: Options) {
         return;
       }
       $byClass('query')!.focus();
+    },
+    mousedown(e) {
+      if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
+        addStyle({ top: '-1000px' })($leafMenu);
+      }
     },
     ...dragAndDropEvents,
   });
@@ -184,52 +190,60 @@ export default function setEventListners(options: Options) {
     }
   })($byClass('leafs')!);
 
-  $byClass('folders')!.addEventListener('click', (e) => {
-    const $target = e.target as HTMLDivElement;
-    const targetClasses = [
-      'anchor',
-      'marker',
-      'title',
-      'folder-menu-button',
-      'icon-fa-angle-right',
-    ] as const;
-    const targetClass = whichClass(targetClasses, $target);
-    switch (targetClass) {
-      case 'anchor':
-        if ($target.hasAttribute('contenteditable')) {
-          return;
-        }
-        findTabsFirstOrNot(options, $target!);
-        break;
-      case 'marker':
-        $byClass('title', $target)!.click();
-        break;
-      case 'icon-fa-angle-right':
-        onClickAngle(e);
-        break;
-      case 'title': {
-        clearQuery();
-        const $foldersFolder = $target.parentElement?.parentElement!;
-        const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
-        const isOpen = hasClass($foldersFolder, 'open');
-        if (isOpen) {
-          folders.forEach(addClass('path'));
-          return;
-        }
-        $leafs.scrollTop = 0;
-        $$byClass('open').forEach(rmClass('open'));
-        folders.forEach(addClass('open'));
-        saveStateOpenedPath($foldersFolder);
-        $$byClass('hilite').forEach(rmClass('hilite'));
-        break;
+  const $foldersMenu = $byClass('folder-menu');
+  setEvents([$byClass('folders')], {
+    mousedown(e) {
+      if (hasClass(e.target as HTMLElement, 'folder-menu-button')) {
+        addStyle({ top: '-1000px' })($foldersMenu);
       }
-      case 'folder-menu-button': {
-        showMenu($target, 'folder-menu');
-        e.stopImmediatePropagation();
-        break;
+    },
+    click(e) {
+      const $target = e.target as HTMLDivElement;
+      const targetClasses = [
+        'anchor',
+        'marker',
+        'title',
+        'folder-menu-button',
+        'icon-fa-angle-right',
+      ] as const;
+      const targetClass = whichClass(targetClasses, $target);
+      switch (targetClass) {
+        case 'anchor':
+          if ($target.hasAttribute('contenteditable')) {
+            return;
+          }
+          findTabsFirstOrNot(options, $target!);
+          break;
+        case 'marker':
+          $byClass('title', $target)!.click();
+          break;
+        case 'icon-fa-angle-right':
+          onClickAngle(e);
+          break;
+        case 'title': {
+          clearQuery();
+          const $foldersFolder = $target.parentElement?.parentElement!;
+          const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
+          const isOpen = hasClass($foldersFolder, 'open');
+          if (isOpen) {
+            folders.forEach(addClass('path'));
+            return;
+          }
+          $leafs.scrollTop = 0;
+          $$byClass('open').forEach(rmClass('open'));
+          folders.forEach(addClass('open'));
+          saveStateOpenedPath($foldersFolder);
+          $$byClass('hilite').forEach(rmClass('hilite'));
+          break;
+        }
+        case 'folder-menu-button': {
+          showMenu($target, 'folder-menu');
+          e.stopImmediatePropagation();
+          break;
+        }
+        default:
       }
-      default:
-    }
+    },
   });
 
   addListener('click', () => addBookmark())($byClass('pin-bookmark'));
@@ -345,6 +359,12 @@ export default function setEventListners(options: Options) {
     },
   });
   const $paneTabs = $byClass('tabs')!;
+  const $tabsMenu = $byClass('tabs-menu');
+  $paneTabs.addEventListener('mousedown', (e) => {
+    if (hasClass(e.target as HTMLElement, 'tabs-menu-button')) {
+      addStyle({ top: '-1000px' })($tabsMenu);
+    }
+  });
   $paneTabs.addEventListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     const $parent = $target.parentElement!;
