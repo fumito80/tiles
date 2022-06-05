@@ -277,8 +277,9 @@ button:not(.submit) {
 
   .icon-x {
     font-size: 1.4em;
-    visibility: hidden;
+    margin-right: 2px;
     cursor: pointer;
+    visibility: hidden;
   }
 }
 
@@ -1143,11 +1144,11 @@ main::-webkit-scrollbar {
     font-size: 1.3em;
     color: $font-color;
     background-color: transparent;
-    transition: background-color .4s;
+    transition: background-color .1s;
     display: none;
 
     &:hover::before {
-      transition: background-color .4s;
+      transition: background-color .1s;
       background-color: red;
       border-radius: 1px;
       color: $dark-font-color;
@@ -1704,7 +1705,7 @@ main.zoom-pane {
 
   .leaf:hover .icon-fa-ellipsis-v,
   .marker:hover .icon-fa-ellipsis-v,
-  // .tab-wrap:not(.current-tab):hover .icon-x,
+  .tab-wrap:hover .icon-x,
   .history:hover .icon-x,
   .window:hover .tabs-header>button>i {
     color: lightgray;
@@ -1740,12 +1741,6 @@ main.zoom-pane {
     border-width: 1px;
     padding: 2px;
     padding-bottom: 3px;
-
-    // .tabs-header {
-    //   border-top-left-radius: 3px;
-    //   border-top-right-radius: 3px;
-    //   margin-bottom: 2px;
-    // }
   }
 }
 
@@ -2031,10 +2026,6 @@ main {
       &.tabs-collapsed {
         padding-bottom: 0;
 
-        // >.tabs-header {
-        //   margin-bottom: 0;
-        // }
-
         .icon-private {
           margin-left: 22px;
         }
@@ -2066,7 +2057,6 @@ main {
             opacity: 0;
           }
 
-          // margin-bottom: 1px;
           background-image: none !important;
         }
       }
@@ -2240,8 +2230,7 @@ main {
     position: absolute;
     width: 100%;
     height: 1px;
-    // background-color: white;
-    bottom: 0px;
+    bottom: 0;
   }
 }
 

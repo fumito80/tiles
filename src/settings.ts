@@ -1,69 +1,20 @@
 import './css/settings.scss';
 import * as bootstrap from 'bootstrap';
-import {
-  $,
-  $$,
-  curry,
-  getSync,
-  setSync,
-  setLocal,
-  bootstrap as myBootstrap,
-  whichClass,
-  pipe,
-  tap,
-  objectEqaul,
-  getColorWhiteness,
-  getColorChroma,
-  prop,
-  getRGB,
-  lightColorWhiteness,
-  addListener,
-  rmClass,
-  addClass,
-  setText,
-  insertHTML,
-  camelToSnake,
-  $byTag,
-  $byClass,
-  $byId,
-  hasClass,
-} from './common';
-import { State, ColorPalette, defaultColorPalette } from './types';
-import { setBrowserIcon } from './draw-svg';
+import { State } from './types';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
-
-class ColorPaletteClass extends HTMLDivElement {
-  #value?: ColorPalette;
-  #inputs: HTMLInputElement[];
-  constructor() {
-    super();
-    this.#inputs = [...this.children] as HTMLInputElement[];
-    this.#inputs.forEach(
-      addListener('change', () => {
-        this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
-      }),
-    );
-  }
-  get value() {
-    return this.#value!;
-  }
-  set value(value: ColorPalette) {
-    this.#value = value;
-    value.forEach((color, i) => {
-      const input = this.children[i] as HTMLInputElement;
-      input.value = `#${color}`;
-    });
-    this.dispatchEvent(new Event('change', { bubbles: true }));
-    setBrowserIcon(value);
-  }
-  // eslint-disable-next-line class-methods-use-this
-  get validity() {
-    return { valid: true };
-  }
-}
-
-customElements.define('color-palette', ColorPaletteClass, { extends: 'div' });
+import setColorPalette from './settings-colors';
+import {
+  $, $$, $byTag, $byClass, $byId,
+  curry, pipe, tap,
+  getSync, setSync, setLocal,
+  bootstrap as myBootstrap,
+  whichClass,
+  objectEqaul,
+  addListener,
+  rmClass, addClass, setText, hasClass,
+  camelToSnake,
+} from './common';
 
 type Options = State['options'];
 type OptionNames = keyof Options;
@@ -172,131 +123,6 @@ function setAppInfo() {
   const { version, name } = chrome.runtime.getManifest() as chrome.runtime.Manifest;
   setText(`Version ${version}`)($byClass('version'));
   setText(name)($byTag('title'));
-}
-
-type ColorInfo = {
-  color: string;
-  whiteness: number;
-  chroma: number;
-  vivid: number;
-}
-
-type Palettes = {
-  vivid: number;
-  color: string;
-  whiteness: number;
-  chroma: number;
-}[][];
-
-function getColorPaletteHTML(palettes: Palettes, options: Options) {
-  return palettes
-    .map(([p, f, h1, h2, m]) => {
-      const [r, g, b] = getRGB(p.color);
-      const [r1, g1, b1] = getRGB(h1.color);
-      const [r2, g2, b2] = getRGB(h2.color);
-      return ((Math.abs(r1 - r) + Math.abs(g1 - g) + Math.abs(b1 - b))
-        > (Math.abs(r2 - r) + Math.abs(g2 - g) + Math.abs(b2 - b)))
-        ? [p, f, h1, h2, m]
-        : [p, f, h2, h1, m];
-    })
-    .map((palette) => {
-      const colors = palette
-        .map((color) => {
-          const isLight = color.whiteness > lightColorWhiteness;
-          return `<div data-color="${color.color}" style="background-color: #${color.color}; color: ${isLight ? 'black' : 'white'}"></div>`;
-        })
-        .join('');
-      if (objectEqaul(palette.map(prop('color')), options.colorPalette, true)) {
-        return `<div class="selected">${colors}</div>`;
-      }
-      return `<div>${colors}</div>`;
-    })
-    .join('');
-}
-
-function addColorSpec(palette: ColorPalette) {
-  return palette
-    .map((color) => ({
-      color,
-      whiteness: getColorWhiteness(color),
-      chroma: getColorChroma(color),
-    } as ColorInfo))
-    .map((color) => ({
-      ...color, vivid: color.chroma * (color.whiteness * 0.1),
-    }));
-}
-
-async function setColorPalette({ options }: Pick<State, 'options'>) {
-  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
-  const base = palettes
-    .map(addColorSpec)
-    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
-    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
-    .map(([p, cl, cm, cr, m]) => {
-      if (cl.whiteness <= lightColorWhiteness) {
-        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
-      }
-      return [p, cl, cm, cr, m];
-    });
-
-  const other = base.filter(
-    ([paneBg, frameBg]) => (
-      paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
-    )
-    || (
-      paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
-    ),
-  );
-  const htmlOther = getColorPaletteHTML(other, options);
-
-  const dark1 = base.filter(
-    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
-      && frameBg.whiteness <= lightColorWhiteness,
-  );
-
-  const lightTheme = base
-    .concat([...dark1, ...other].map(
-      (palette) => palette.concat().sort((a, b) => b.whiteness - a.whiteness),
-    ))
-    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
-    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
-
-  const lightThemeAndDefaultColor = [addColorSpec(defaultColorPalette), ...lightTheme];
-  const htmlLightTheme = getColorPaletteHTML(lightThemeAndDefaultColor, options);
-
-  const darkOrVivid = [...other, ...lightTheme]
-    .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))
-    .filter(
-      ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
-      && frameBg.whiteness <= lightColorWhiteness,
-    )
-    .concat(dark1);
-  const htmlDarkTheme = getColorPaletteHTML(darkOrVivid, options);
-
-  const $colorPalettes = $byClass('color-palettes')!;
-
-  pipe(
-    insertHTML('beforeend', '<div class="desc">Light theme</div>'),
-    insertHTML('beforeend', htmlLightTheme),
-    insertHTML('beforeend', '<div class="desc">Dark/Vivid</div>'),
-    insertHTML('beforeend', htmlDarkTheme),
-    insertHTML('beforeend', '<div class="desc">Mix</div>'),
-    insertHTML('beforeend', htmlOther),
-    addListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (hasClass($target, 'desc')) {
-        return;
-      }
-      if ($target.parentElement !== $colorPalettes) {
-        return;
-      }
-      const palette = ([...$target.children] as HTMLElement[])
-        .map((el) => el.dataset.color as string) as ColorPalette;
-      $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
-      rmClass('selected')($byClass('selected'));
-      addClass('selected')($target);
-    }),
-  )($colorPalettes);
 }
 
 type InitParams = {
