@@ -62,12 +62,15 @@ function setOptions(settings: Settings, options: Options) {
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs-wrap > div, .histories .rows .current-date, .histories .rows .current-date::before', [['background-color', paneBg], ['color', paneColor]]);
+  addRules('.leafs, .histories, .tabs-wrap > div, .histories .rows .current-date, .histories .rows .current-date::before, .current-window .tabs-header::after', [['background-color', paneBg], ['color', paneColor]]);
   addRules('body', [['background-color', frameBg]]);
   addRules('.folders', [['color', frameColor]]);
-  addRules('.folders .open > .marker > .title, .current-tab, .current-tab > .icon-x::before', [
+  addRules('.folders .open > .marker > .title, .current-tab::after, .current-window .tabs-header::before', [
     ['background-color', keyBg],
-    ['color', `${keyColor} !important`],
+    ['color', keyColor],
+  ]);
+  addRules('.current-window .tabs-header', [
+    ['border-bottom', `4px solid ${keyBg}`],
   ]);
   addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
   addRules('.pane-header .pin-bookmark:hover::after', [['color', `${keyBg} !important`]]);
@@ -76,17 +79,17 @@ function setOptions(settings: Settings, options: Options) {
   addRules(
     [
       'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:not(.hilite):hover::before',
-      'main:not(.drag-start-leaf) .tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:not(.tabs-header):not(.current-tab):hover',
-      '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):not(.current-tab):hover',
+      'main:not(.drag-start-leaf) .tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:not(.tabs-header):hover',
+      '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):hover',
       'main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover',
       'main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
-      '.window:hover .tabs-header',
+      '.window.tabs-collapsed:hover .tabs-header, .tabs-header:hover',
       '.tooltip',
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
-  addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover, main:not(.searching) .window:hover', [['border-color', itemHoverBg]]);
+  addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
   addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
@@ -175,7 +178,7 @@ function layoutPanes(options: Options) {
   const $histories = $byClass('histories');
   addClass('v-scroll')($histories);
   // Bold Splitter
-  const $leafs = $('.histories + .leafs');
+  const $leafs = $('.histories + .leafs, .histories + .tabs');
   if ($leafs) {
     const gridColStart = getGridColStart($leafs);
     const $splitter = $$byClass('split-h')[gridColStart - 1];

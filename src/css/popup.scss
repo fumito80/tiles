@@ -1107,10 +1107,10 @@ main::-webkit-scrollbar {
   .window {
     overflow: hidden;
     border-radius: $pane-radius;
-    // border: 2px solid rgba(0, 0, 0, 0.3);
     border: 2px solid transparent;
     margin-bottom: 5px;
     padding: 1px;
+    padding-bottom: 2px;
     transition: border 0.1s;
 
     &:last-child {
@@ -1153,10 +1153,6 @@ main::-webkit-scrollbar {
       color: $dark-font-color;
     }
   }
-}
-
-.current-tab {
-  border-radius: 3px;
 }
 
 .v-scroll {
@@ -1708,7 +1704,7 @@ main.zoom-pane {
 
   .leaf:hover .icon-fa-ellipsis-v,
   .marker:hover .icon-fa-ellipsis-v,
-  .tab-wrap:not(.current-tab):hover .icon-x,
+  // .tab-wrap:not(.current-tab):hover .icon-x,
   .history:hover .icon-x,
   .window:hover .tabs-header>button>i {
     color: lightgray;
@@ -1738,17 +1734,18 @@ main.zoom-pane {
   }
 }
 
-.theme-dark-pane.theme-dark-frame .tabs {
+.theme-dark-pane.theme-dark-frame .tabs .tabs-wrap {
   .window {
     border-color: $dark-folder-color;
     border-width: 1px;
     padding: 2px;
+    padding-bottom: 3px;
 
-    .tabs-header {
-      border-top-left-radius: 3px;
-      border-top-right-radius: 3px;
-      margin-bottom: 2px;
-    }
+    // .tabs-header {
+    //   border-top-left-radius: 3px;
+    //   border-top-right-radius: 3px;
+    //   margin-bottom: 2px;
+    // }
   }
 }
 
@@ -1916,8 +1913,8 @@ main.zoom-pane {
   color: $dark-font-color;
   background-color: gray;
   border-radius: 50%;
-  margin: 2px;
   line-height: 1;
+  margin-left: 6px;
 }
 
 .tab-wrap[data-file]::before {
@@ -1981,10 +1978,11 @@ main.zoom-pane {
 }
 
 .tabs-header {
-  width: -webkit-fill-available !important;
-  margin: -1px;
   background-color: rgba(0, 0, 0, 0.4);
   color: $dark-font-color;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  margin-bottom: 2px;
   transition: background-color 0.1s;
 
   >div {
@@ -2023,6 +2021,7 @@ main {
     display: inline-flex;
     width: 100%;
     float: left;
+    overflow: visible;
     transition: width 0.15s;
   }
 
@@ -2032,9 +2031,9 @@ main {
       &.tabs-collapsed {
         padding-bottom: 0;
 
-        >.tabs-header {
-          margin-bottom: 0;
-        }
+        // >.tabs-header {
+        //   margin-bottom: 0;
+        // }
 
         .icon-private {
           margin-left: 22px;
@@ -2067,7 +2066,7 @@ main {
             opacity: 0;
           }
 
-          margin-bottom: 1px;
+          // margin-bottom: 1px;
           background-image: none !important;
         }
       }
@@ -2152,7 +2151,7 @@ main {
 
     .tabs-wrap>.tabs-collapsed {
 
-      >.tab-wrap:not(.current-tab) {
+      >.tab-wrap {
         background-color: $dark-folder-color;
       }
     }
@@ -2208,12 +2207,12 @@ main {
 }
 
 .draggable-clone .tabs-header {
-  background-position-x: 26px;
-  padding-left: 24px;
+  background-position-x: 24px;
+  padding-left: 22px;
   max-width: 160px;
 
   &::before {
-    content: '\e90a';
+    content: '\e90f';
     left: 5px;
     position: absolute;
     font-family: glyphs;
@@ -2229,17 +2228,43 @@ main {
   }
 }
 
-// Tabs scroll position
+.current-tab::after {
+  content: '';
+  position: absolute;
+  border-radius: 1px;
+}
 
-// .tabs-position {
-//   position: fixed;
-//   width: 8px;
-//   height: 100%;
-//   pointer-events: none;
+.current-window {
+  .tabs-header::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    // background-color: white;
+    bottom: 0px;
+  }
+}
 
-//   >div {
-//     position: absolute;
-//     width: 100%;
-//     border-top: 1px solid $font-color;
-//   }
-// }
+.searching,
+.window:not(.tabs-collapsed) {
+  .tab-wrap {
+    background-position-x: 7px;
+
+    .tab {
+      text-indent: 25px;
+    }
+
+    &.current-tab::after {
+      width: 4px;
+      height: 100%;
+    }
+  }
+}
+
+main:not(.searching) .tabs-collapsed {
+  .current-tab::after {
+    width: 100%;
+    height: 4px;
+    bottom: -4px;
+  }
+}

@@ -31,7 +31,7 @@ import {
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'tabs-header'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -41,12 +41,14 @@ function getSubTree(id: string) {
 }
 
 function renameTabsHeader($source: HTMLElement) {
-  const $header = $source.parentElement!.firstElementChild!;
+  const $header = $source.parentElement!.firstElementChild as HTMLElement;
   const $first = $header.nextElementSibling as HTMLElement;
-  const $content = $first.firstElementChild!;
+  const $content = $byClass('tab', $first);
   addStyle('background-image', $first.style.backgroundImage)($header);
-  setText($content.textContent)($header.firstElementChild);
-  addAttr('title', $content.getAttribute('title')!)($header.firstElementChild);
+  pipe(
+    setText($content.textContent),
+    addAttr('title', $content.getAttribute('title')!),
+  )($byClass('tab', $header));
 }
 
 function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLElement) {
@@ -98,7 +100,7 @@ async function dropWithTabs(
     return;
   }
   // Merge window
-  if (sourceClass === 'tabs-header') {
+  if (sourceClass === 'window') {
     const sourceWindowId = getChromeId(srcElementId);
     chrome.windows.get(sourceWindowId, { populate: true }, ({ tabs }) => {
       if (!tabs) {
@@ -192,8 +194,9 @@ const dragAndDropEvents = {
     if (!className) {
       return;
     }
-    const [targetClass, $dragTarget, id] = when(['marker', 'tabs-header'].includes(className))
+    const [targetClass, $dragTarget, id] = when(className === 'marker')
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
+      .when(className === 'window').then(['drag-start-folder', $target.firstElementChild!, $target.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
     const $main = $byTag('main')!;
     if (hasClass($main, 'zoom-pane')) {
@@ -269,7 +272,7 @@ const dragAndDropEvents = {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
       return;
     }
-    if (sourceClass === 'tabs-header') {
+    if (sourceClass === 'window') {
       // eslint-disable-next-line no-console
       addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId);
       return;

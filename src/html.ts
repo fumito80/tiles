@@ -48,7 +48,7 @@ export function makeTab(
   faviconAttr: string,
 ) {
   return `
-    <div id="tab-${tab.id}" draggable="true" class="tab-wrap ${addClass}" ${faviconAttr}>
+    <div id="tab-${tab.id}" draggable="true" class="tab-wrap${addClass}" ${faviconAttr}>
       <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div><i class="icon-x"></i>
       <div class="tooltip">${tooltip}</div>
       <div class="drop-top"></div><div class="drop-bottom"></div>
@@ -63,7 +63,7 @@ export function makeTabsHeader(
 ) {
   const incognitoElem = tab.incognito ? '<i class="icon-private"></i>' : '';
   return `
-    <div draggable="true" class="tabs-header" ${faviconAttr}>
+    <div class="tabs-header" ${faviconAttr}>
       ${incognitoElem}
       <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div>
       <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>

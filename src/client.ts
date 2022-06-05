@@ -524,7 +524,7 @@ let promiseSwitchTabEnd = Promise.resolve();
 
 export async function switchTabWindow(e: Event) {
   const $btn = e.currentTarget as HTMLElement;
-  const $tabsWrap = $byClass('tabs-wrap') as HTMLElement;
+  const $tabsWrap = $byClass('tabs-wrap');
   const $tabs = $tabsWrap.parentElement!;
   if ($tabs.scrollHeight === $tabs.offsetHeight) {
     return;
@@ -596,18 +596,25 @@ function getTooltip(tab: chrome.tabs.Tab) {
 }
 
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
-  const collapseClass = isCollapse ? 'tabs-collapsed' : '';
+  const collapseClass = isCollapse ? ' tabs-collapsed' : '';
   chrome.tabs.query({}, (tabs) => {
     const htmlByWindow = tabs.reduce((acc, tab) => {
       const { [tab.windowId]: prev = '', ...rest } = acc;
-      const className = tab.active && tab.windowId === currentWindowId ? 'current-tab' : '';
+      const className = tab.active ? ' current-tab' : '';
       const faviconAttr = getTabFaviconAttr(tab);
       const tooltip = getTooltip(tab);
       const htmlTabs = makeTab(tab, className, tooltip, faviconAttr);
+      // const header = tab.active ? makeTabsHeader(tab, tooltip, faviconAttr) : '';
+      // return { ...rest, [tab.windowId]: header + prev + htmlTabs };
       const header = prev || makeTabsHeader(tab, tooltip, faviconAttr);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
-    const html = Object.entries(htmlByWindow).map(([key, value]) => `<div id="win-${key}" class="window ${collapseClass}">${value}</div>`).join('');
+    const html = Object.entries(htmlByWindow)
+      .map(([id, value]) => {
+        const currentWindow = currentWindowId === Number(id) ? ' current-window' : '';
+        return `<div id="win-${id}" class="window${currentWindow}${collapseClass}" draggable="true">${value}</div>`;
+      })
+      .join('');
     const $tabs = $byClass('tabs-wrap')!;
     $tabs.innerHTML = html;
   });
