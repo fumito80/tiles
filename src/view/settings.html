@@ -25,31 +25,49 @@
     </header>
     <article>
       <form>
-        <div class="heading">General</div>
-        <div class="item"><input type="checkbox" class="bullet" tabindex="-1">New tab position</div>
-        <div class="d-flex gap-4 mt-1 ms-3">
-          <label><input type="radio" name="new-tab-position" value="le">Left end</label>
-          <label><input type="radio" name="new-tab-position" value="ls">Left side</label>
-          <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
-          <label><input type="radio" name="new-tab-position" value="re">Right end</label>
+
+        <div class="heading">Theme</div>
+        <div class="item-collaplse">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
+            <div>Color scheme</div><i class="icon-fa-angle-right ms-1"></i>
+          </a>
+          <div is="color-palette" name="color-palette" class="ms-4">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of history, tabs, and bookmarks panes">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of frame and folders">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of item while hovering">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of search box while typing">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of selected folder and tab">
+          </div>
         </div>
-        <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
-          first</label>
-        <div class="d-flex gap-4 mt-1 ms-3">
-          <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
-          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
+        <div id="color-palettes" class="collapse mt-2">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#light-theme" type="button"
+                role="tab" aria-controls="light-theme" aria-selected="true">Light theme</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dark-theme" type="button" role="tab"
+                aria-controls="dark-theme" aria-selected="true">Dark theme</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mix-theme" type="button" role="tab"
+                aria-controls="mix-theme" aria-selected="true">Mix</button>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="light-theme" role="tabpanel" aria-labelledby="light-theme"
+              tabindex="0"></div>
+            <div class="tab-pane fade" id="dark-theme" role="tabpanel" aria-labelledby="dark-theme" tabindex="0"></div>
+            <div class="tab-pane fade" id="mix-theme" role="tabpanel" aria-labelledby="mix-theme" tabindex="0"></div>
+          </div>
         </div>
-        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search box
-            press enter
-            key, it opens the following URL with the input string as a parameter</span><input type="url"
-            name="external-url" class="form-control mt-1 mx-3"
-            placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
-        <div class="heading">Open tabs pane</div>
-        <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
-        <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window button</label>
-        <label class="item"><input type="checkbox" name="collapse-tabs">Icon view at startup</label>
-        <div class="heading">History pane</div>
-        <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
+
         <div class="heading">Layout</div>
         <div is="layout-panes" name="panes">
           <div draggable="true" data-value="histories">
@@ -91,28 +109,37 @@
             <option value="0.9">90%</option>
           </select>
         </label>
+
+        <div class="heading">General</div>
+        <div class="item"><input type="checkbox" class="bullet" tabindex="-1">New tab position</div>
+        <div class="d-flex gap-4 mt-1 ms-3">
+          <label><input type="radio" name="new-tab-position" value="le">Left end</label>
+          <label><input type="radio" name="new-tab-position" value="ls">Left side</label>
+          <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
+          <label><input type="radio" name="new-tab-position" value="re">Right end</label>
+        </div>
+        <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
+          first</label>
+        <div class="d-flex gap-4 mt-1 ms-3">
+          <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
+          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
+        </div>
+        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search box
+            press enter
+            key, it opens the following URL with the input string as a parameter</span><input type="url"
+            name="external-url" class="form-control mt-1 mx-3"
+            placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
+
+        <div class="heading">Open tabs pane</div>
+        <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
+        <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window
+          button</label>
+        <label class="item"><input type="checkbox" name="collapse-tabs">Icon view at startup</label>
+
+        <div class="heading">History pane</div>
+        <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
+
         <div class="heading">Style</div>
-        <div class="item-collaplse">
-          <input type="checkbox" class="bullet" tabindex="-1">
-          <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
-            <div>Color scheme</div><i class="icon-fa-angle-right ms-1"></i>
-          </a>
-          <div is="color-palette" name="color-palette" class="ms-4">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of history, tabs, and bookmarks panes">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of frame and folders">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of item while hovering">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of search box while typing">
-            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of selected folder and tab">
-          </div>
-        </div>
-        <div id="color-palettes" class="collapse mt-2">
-          <div class="color-palettes"></div>
-        </div>
         <div class="item-collaplse">
           <input type="checkbox" class="bullet" tabindex="-1">
           <a role="button" data-bs-toggle="collapse" href="#customize-css" aria-expanded="false">
@@ -135,6 +162,7 @@
           </div>
         </div>
         <input is="monaco-editor" type="hidden" name="css">
+
       </form>
     </article>
   </main>

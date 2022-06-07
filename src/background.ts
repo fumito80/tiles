@@ -30,6 +30,7 @@ import {
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import { setBrowserIcon } from './draw-svg';
+import makeColorPalette from './settings-colors';
 
 type Histories = State['histories'];
 
@@ -156,7 +157,8 @@ const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options
 
 async function init(storage: Pick<State, InitStateKeys>) {
   const css = await fetch('./default.css').then((resp) => resp.text());
-  const settings = { ...initialSettings, ...storage.settings };
+  const theme = await makeColorPalette();
+  const settings = { ...initialSettings, ...storage.settings, theme };
   const clientState = storage.clientState || {};
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
   // const historyRows = settings.historyMax.rows;

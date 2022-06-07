@@ -899,7 +899,7 @@ export function getColorChroma(colorCode: string) {
   const [r, g, b] = getRGB(colorCode);
   const iMax = Math.max(r, g, b);
   const iMin = Math.min(r, g, b);
-  return (iMax - iMin) / iMax;
+  return (iMax - iMin) / 255;
 }
 
 export const lightColorWhiteness = 0.6;

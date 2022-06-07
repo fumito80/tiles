@@ -3,7 +3,7 @@ import * as bootstrap from 'bootstrap';
 import { State } from './types';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
-import setColorPalette from './settings-colors';
+import './settings-colors';
 import {
   $, $$, $byTag, $byClass, $byId,
   curry, pipe, tap,
@@ -171,7 +171,6 @@ function initOthers() {
 
 const init = pipe(
   tap<Pick<State, 'options'>>(setAppInfo),
-  tap(setColorPalette),
   initInputs,
   setSyncListener,
   saveOptions,

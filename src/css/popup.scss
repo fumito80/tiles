@@ -1898,8 +1898,10 @@ main.zoom-pane {
 
 .tab-wrap[data-initial]::before {
   content: attr(data-initial);
-  width: 1.3em;
-  height: 1.3em;
+  font-size: 14.5px;
+  width: 18px;
+  height: 18px;
+  margin-left: 5px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1907,12 +1909,14 @@ main.zoom-pane {
   text-transform: capitalize;
   color: $dark-font-color;
   background-color: gray;
+  border: 1px solid $dark-font-color;
   border-radius: 50%;
   line-height: 1;
-  margin-left: 6px;
 }
 
 .tab-wrap[data-file]::before {
+  width: 16px;
+  margin-left: 6px;
   border-radius: 1px;
   border-top-right-radius: 6px;
 }
@@ -1967,12 +1971,17 @@ main.zoom-pane {
     }
 
     .tab-wrap[data-initial]::before {
-      margin: 0.25em;
+      margin-left: 3px;
+    }
+
+    .tab-wrap[data-file]::before {
+      margin-left: 4px;
     }
   }
 }
 
 .tabs-header {
+  background-position-x: 3px;
   background-color: rgba(0, 0, 0, 0.4);
   color: $dark-font-color;
   border-top-left-radius: 3px;
@@ -2031,11 +2040,11 @@ main {
         }
 
         >.tab-wrap {
-          width: 1.8em;
+          width: 26px;
+          height: 26px;
           margin: 2px;
           padding-left: 0;
-          // background-position: center;
-          background-position-x: calc((1.8em - 16px) / 2);
+          background-position-x: 5px;
           border: 2px solid transparent;
           border-radius: 4px;
 

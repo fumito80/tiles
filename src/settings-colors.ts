@@ -1,12 +1,11 @@
-import { State, ColorPalette, defaultColorPalette } from './types';
+import * as bootstrap from 'bootstrap';
+import { ColorPalette, defaultColorPalette } from './types';
 import { setBrowserIcon } from './draw-svg';
 
 import {
   $, $byClass,
-  pipe,
   getColorWhiteness,
   getColorChroma,
-  prop,
   getRGB,
   lightColorWhiteness,
   insertHTML,
@@ -15,6 +14,9 @@ import {
   rmClass,
   addClass,
   hasClass,
+  $byId,
+  getLocal,
+  $$,
 } from './common';
 
 type ColorInfo = {
@@ -23,8 +25,6 @@ type ColorInfo = {
   chroma: number;
   vivid: number;
 }
-
-type Options = State['options'];
 
 class ColorPaletteClass extends HTMLDivElement {
   #value?: ColorPalette;
@@ -58,11 +58,11 @@ class ColorPaletteClass extends HTMLDivElement {
 
 customElements.define('color-palette', ColorPaletteClass, { extends: 'div' });
 
-// function changeSelectColor([p, f, h, s1, s2]: ColorInfo[]) {
-//   return s1.chroma < s2.chroma
-//     ? [p, f, h, s1, s2]
-//     : [p, f, h, s2, s1];
-// }
+function getRGBDiff(a: ColorInfo, b: ColorInfo) {
+  const [r1, g1, b1] = getRGB(a.color);
+  const [r2, g2, b2] = getRGB(b.color);
+  return Math.abs(r2 - r1) + Math.abs(g2 - g1) + Math.abs(b2 - b1);
+}
 
 function flipSelectColor([p, f, h, s1, s2]: ColorInfo[]) {
   return [p, f, h, s2, s1];
@@ -72,23 +72,54 @@ function flipHoverColor([p, f, h1, h2, m]: ColorInfo[]) {
   return [p, f, h2, h1, m];
 }
 
-function getRGBDiff(a: ColorInfo, b: ColorInfo) {
-  const [r1, g1, b1] = getRGB(a.color);
-  const [r2, g2, b2] = getRGB(b.color);
-  return Math.abs(r2 - r1) + Math.abs(g2 - g1) + Math.abs(b2 - b1);
+function changeSelectColorChroma3([p, f, s1, s2, s3]: ColorInfo[]) {
+  const diff1 = s1.chroma * (1.0 - s1.whiteness);
+  const diff2 = s2.chroma * (1.0 - s2.whiteness);
+  const diff3 = s3.chroma * (1.0 - s3.whiteness);
+  if (diff1 < diff2 && diff3 < diff2) {
+    return [p, f, s1, s3, s2];
+  }
+  if (diff2 < diff1 && diff3 < diff1) {
+    return [p, f, s2, s3, s1];
+  }
+  return [p, f, s1, s2, s3];
 }
 
-function changeHoverColor([p, f, h1, h2, m]: ColorInfo[]) {
-  return getRGBDiff(p, h1) > getRGBDiff(p, h2) ? [p, f, h1, h2, m] : [p, f, h2, h1, m];
+function changeHoverColorChroma2([p, f, h1, h2, s]: ColorInfo[]) {
+  const diff1 = h1.chroma * (1 - h1.whiteness);
+  const diff2 = h2.chroma * (1 - h2.whiteness);
+  if (diff1 < diff2) {
+    return [p, f, h2, h1, s];
+  }
+  return [p, f, h1, h2, s];
+}
+
+function changeSelectColorChroma3Dark([p, f, s1, s2, s3]: ColorInfo[]) {
+  const diff1 = s1.chroma * (3 - s1.whiteness);
+  const diff2 = s2.chroma * (3 - s2.whiteness);
+  const diff3 = s3.chroma * (3 - s3.whiteness);
+  if (diff1 < diff2 && diff3 < diff2) {
+    return [p, f, s1, s3, s2];
+  }
+  if (diff2 < diff1 && diff3 < diff1) {
+    return [p, f, s2, s3, s1];
+  }
+  return [p, f, s1, s2, s3];
+}
+
+function changeHoverColorChroma2Dark([p, f, h1, h2, s]: ColorInfo[]) {
+  const diff1 = h1.chroma * (h1.whiteness);
+  const diff2 = h2.chroma * (h2.whiteness);
+  if (diff1 < diff2) {
+    return [p, f, h2, h1, s];
+  }
+  return [p, f, h1, h2, s];
 }
 
 function getColorPaletteHTML(
   palettes: ColorInfo[][],
-  options: Options,
-  addon1 = changeHoverColor,
 ) {
   return palettes
-    .map(addon1)
     .map((palette) => {
       const colors = palette
         .map((color) => {
@@ -96,9 +127,6 @@ function getColorPaletteHTML(
           return `<div data-color="${color.color}" style="background-color: #${color.color}; color: ${isLight ? 'black' : 'white'}"></div>`;
         })
         .join('');
-      if (objectEqaul(palette.map(prop('color')), options.colorPalette, true)) {
-        return `<div class="selected">${colors}</div>`;
-      }
       return `<div>${colors}</div>`;
     })
     .join('');
@@ -118,13 +146,30 @@ function filterUnmatchColor(palettes: ColorInfo[][], colorMatchTh: number) {
   return palettes
     .filter(([p, f, h]) => getRGBDiff(p, h) > colorMatchTh && getRGBDiff(f, h) > colorMatchTh)
     .filter(([p, f,,, s]) => getRGBDiff(p, s) > colorMatchTh && getRGBDiff(f, s) > colorMatchTh)
-    .filter((el, i, self) => !self.slice(0, i).find((pre) => objectEqaul(el, pre, true)));
+    .filter(([p, f], i, self) => !self.slice(0, i).find(
+      ([p1, f1]) => objectEqaul({ p, f }, { p: p1, f: f1 }, true),
+    ));
 }
 
 function recombiPalette(palettes: ColorInfo[][], colorMatchTh: number) {
-  const recomibined = palettes
-    .concat(palettes.map(flipSelectColor))
+  const recomibined = palettes.map(changeSelectColorChroma3).map(changeHoverColorChroma2)
     .concat(palettes.map(flipHoverColor).map(flipSelectColor))
+    .concat(palettes)
+    .concat(palettes.map(flipSelectColor))
+    .concat(palettes.map(flipSelectColor).map(flipHoverColor).map(flipSelectColor))
+    .concat(palettes.map(flipSelectColor).map(flipHoverColor))
+    .concat(palettes.map(flipHoverColor))
+    .flatMap(([p, f], _, self) => self.filter(
+      ([p1, f1]) => p.color === p1.color && f.color === f1.color,
+    ));
+  return filterUnmatchColor(recomibined, colorMatchTh);
+}
+
+function recombiPaletteDark(palettes: ColorInfo[][], colorMatchTh: number) {
+  const recomibined = palettes.map(changeSelectColorChroma3Dark).map(changeHoverColorChroma2Dark)
+    .concat(palettes.map(flipHoverColor).map(flipSelectColor))
+    .concat(palettes)
+    .concat(palettes.map(flipSelectColor))
     .concat(palettes.map(flipHoverColor))
     .concat(palettes.map(flipSelectColor).map(flipHoverColor))
     .concat(palettes.map(flipSelectColor).map(flipHoverColor).map(flipSelectColor))
@@ -134,7 +179,7 @@ function recombiPalette(palettes: ColorInfo[][], colorMatchTh: number) {
   return filterUnmatchColor(recomibined, colorMatchTh);
 }
 
-export default async function setColorPalette({ options }: Pick<State, 'options'>) {
+export default async function makeColorPalette() {
   const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
   const base = palettes
     .map(addColorSpec)
@@ -147,7 +192,7 @@ export default async function setColorPalette({ options }: Pick<State, 'options'
       return [p, cl, cm, cr, m];
     });
 
-  const other = base.filter(
+  const others = base.filter(
     ([paneBg, frameBg]) => (
       paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
     )
@@ -155,7 +200,7 @@ export default async function setColorPalette({ options }: Pick<State, 'options'
       paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
     ),
   );
-  const htmlOther = getColorPaletteHTML(recombiPalette(other, 200), options, (a) => a);
+  const other = getColorPaletteHTML(recombiPalette(others, 100));
 
   const dark1 = base.filter(
     ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
@@ -163,13 +208,13 @@ export default async function setColorPalette({ options }: Pick<State, 'options'
   );
 
   const lightTheme = base
-    .concat([...dark1, ...other].map(
+    .concat([...dark1, ...others].map(
       (palette) => palette.concat().sort((a, b) => b.whiteness - a.whiteness),
     ))
     .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
     .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
 
-  const darkOrVivid = [...other, ...lightTheme]
+  const darkOrVivid = [...others, ...lightTheme]
     .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))
     .filter(
       ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
@@ -177,35 +222,43 @@ export default async function setColorPalette({ options }: Pick<State, 'options'
     )
     .concat(dark1);
 
-  const htmlDarkTheme = getColorPaletteHTML(recombiPalette(darkOrVivid, 200), options, (a) => a);
+  const dark = getColorPaletteHTML(recombiPaletteDark(darkOrVivid, 100));
 
   const lightThemesAndDefault = [
     addColorSpec(defaultColorPalette),
     ...recombiPalette(lightTheme, 80),
   ];
-  const htmlLightTheme = getColorPaletteHTML(lightThemesAndDefault, options, (a) => a);
+  const light = getColorPaletteHTML(lightThemesAndDefault);
 
-  const $colorPalettes = $byClass('color-palettes')!;
-  pipe(
-    insertHTML('beforeend', '<div class="desc">Light theme</div>'),
-    insertHTML('beforeend', htmlLightTheme),
-    insertHTML('beforeend', '<div class="desc">Dark theme</div>'),
-    insertHTML('beforeend', htmlDarkTheme),
-    insertHTML('beforeend', '<div class="desc">Mix</div>'),
-    insertHTML('beforeend', htmlOther),
-    addListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (hasClass($target, 'desc')) {
-        return;
-      }
-      if ($target.parentElement !== $colorPalettes) {
-        return;
-      }
-      const palette = ([...$target.children] as HTMLElement[])
-        .map((el) => el.dataset.color as string) as ColorPalette;
-      $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
-      rmClass('selected')($byClass('selected'));
-      addClass('selected')($target);
-    }),
-  )($colorPalettes);
+  return { light, dark, other };
 }
+
+getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
+  insertHTML('beforeend', theme.light)($byId('light-theme'));
+  insertHTML('beforeend', theme.dark)($byId('dark-theme'));
+  insertHTML('beforeend', theme.other)($byId('mix-theme'));
+
+  const $selected = $$('.tab-pane > div').find((el) => ([...el.children] as HTMLElement[]).every(
+    (color, i) => color.dataset.color === options.colorPalette[i],
+  ));
+  if ($selected) {
+    addClass('selected')($selected);
+    const tab = new bootstrap.Tab($(`[aria-controls="${$selected.parentElement!.id}"]`)!);
+    $byId('color-palettes').addEventListener('shown.bs.collapse', () => {
+      ($selected as any).scrollIntoViewIfNeeded();
+    }, { once: true });
+    tab?.show();
+  }
+
+  addListener('click', (e) => {
+    const $target = e.target as HTMLElement;
+    if (!hasClass($target.parentElement, 'tab-pane')) {
+      return;
+    }
+    const palette = ([...$target.children] as HTMLElement[])
+      .map((el) => el.dataset.color as string) as ColorPalette;
+    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
+    rmClass('selected')($byClass('selected'));
+    addClass('selected')($target);
+  })($byClass('tab-content'));
+});

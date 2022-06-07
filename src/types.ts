@@ -24,6 +24,11 @@ export const initialSettings = {
   },
   autoZoom: true,
   includeUrl: false,
+  theme: {
+    light: '',
+    dark: '',
+    other: '',
+  },
 };
 
 export type Settings = typeof initialSettings;
