@@ -439,12 +439,14 @@ export default function setEventListners(options: Options) {
         if (windowId == null) {
           return;
         }
-        chrome.windows.update(Number(windowId), { focused: true });
-        chrome.tabs.update(Number(tabId), { active: true }, () => {
-          // eslint-disable-next-line no-void
-          void chrome.runtime.lastError;
-          window.close();
-        });
+        chrome.windows.update(windowId, { focused: true });
+        if (tabId != null) {
+          chrome.tabs.update(Number(tabId), { active: true }, () => {
+            // eslint-disable-next-line no-void
+            void chrome.runtime.lastError;
+            window.close();
+          });
+        }
         break;
       }
       default:

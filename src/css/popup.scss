@@ -1728,6 +1728,17 @@ main.zoom-pane {
 
 }
 
+main:not(.theme-dark-hover) {
+  .leaf:hover button:hover::after,
+  .leaf:hover button:focus::after,
+  .marker:hover button:hover::after,
+  .marker:hover button:focus::after,
+  .window:hover button:hover::after,
+  .window:hover button:focus::after {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
 .theme-dark-pane,
 .theme-dark-frame {
   .window {
@@ -1898,7 +1909,7 @@ main.zoom-pane {
 
 .tab-wrap[data-initial]::before {
   content: attr(data-initial);
-  font-size: 14.5px;
+  font-size: 13.5px;
   width: 18px;
   height: 18px;
   margin-left: 5px;
@@ -1968,14 +1979,6 @@ main.zoom-pane {
       >.icon-grid {
         display: none;
       }
-    }
-
-    .tab-wrap[data-initial]::before {
-      margin-left: 3px;
-    }
-
-    .tab-wrap[data-file]::before {
-      margin-left: 4px;
     }
   }
 }
@@ -2139,7 +2142,7 @@ main {
   }
 
   // Dark pane
-  &:not(.searching).theme-dark-pane {
+  &.theme-dark-pane {
 
     .window:not(:hover) .tabs-header {
 
@@ -2148,14 +2151,22 @@ main {
       }
     }
 
-    .tabs-wrap>.tabs-collapsed {
+    .window:not(.tabs-collapsed):hover .tabs-header {
 
-      >.tab-wrap {
-        background-color: $dark-folder-color;
+      button>i {
+        color: $dark-folder-color;
+      }
+    }
+
+    &:not(.searching).theme-dark-pane {
+      .tabs-wrap>.tabs-collapsed {
+
+        >.tab-wrap {
+          background-color: $dark-folder-color;
+        }
       }
     }
   }
-
 }
 
 
@@ -2264,5 +2275,13 @@ main:not(.searching) .tabs-collapsed {
     width: 100%;
     height: 4px;
     bottom: -4px;
+  }
+
+  .tab-wrap[data-initial]::before {
+    margin-left: 3px;
+  }
+
+  .tab-wrap[data-file]::before {
+    margin-left: 4px;
   }
 }

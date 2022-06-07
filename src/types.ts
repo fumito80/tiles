@@ -12,7 +12,7 @@ export const initialSettings = {
   height: 500,
   paneWidth: {
     pane1: 200,
-    pane2: 320,
+    pane2: 325,
     pane3: 100,
   },
   bodyColor: '#222222',

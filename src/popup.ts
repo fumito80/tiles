@@ -91,7 +91,7 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
   addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
-  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
+  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before, main .tabs .window:not(.tabs-collapsed) .tabs-header:hover > button > i', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   if (options.showCloseTab) {
     addRules('.tabs-wrap > div > div:hover > i', [['display', 'inline-block']]);
   }
