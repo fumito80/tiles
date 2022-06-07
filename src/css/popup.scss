@@ -1,9 +1,7 @@
 $font-color: #222222;
 $hover-color: #e8e8e9;
-$drag-source-bgcolor0: rgb(232, 240, 254);
-$drag-source-bgcolor: #cce5ff;
-$drop-folder-bgcolor0: #d1ecf1;
-$drop-folder-bgcolor: #cce5ff;
+$drop-folder-bgcolor: rgba(255, 255, 255, .5);
+$drop-folder-bgcolor-light: rgba(0, 0, 0, .4);
 $hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, .7);
 $common-marker: #1A73E8;
@@ -845,13 +843,14 @@ main::-webkit-scrollbar {
       height: 100%;
 
       &.drag-enter {
-        background-color: $drop-folder-bgcolor;
+        background-color: $drop-folder-bgcolor-light;
 
-        &~.title {
-          color: $font-color;
+        ~.title {
+          color: $dark-font-color;
+          background-color: transparent;
 
           &::before {
-            color: $light-folder-color;
+            color: $dark-folder-color !important;
           }
         }
       }
@@ -922,13 +921,18 @@ main::-webkit-scrollbar {
 
 .drag-start-leaf {
   .drag-source {
-    background-color: $drag-source-bgcolor  !important;
 
     &.leaf,
     &.tab-wrap,
-    &.history:not(.header-date) {
-      color: $font-color  !important;
+    &.history,
+    &.history>div {
+      color: rgba(0, 0, 0, 0.6);
       z-index: 3;
+
+      .icon-x,
+      button {
+        display: none;
+      }
     }
 
     +.folder>.marker>.drop-top {
@@ -939,14 +943,21 @@ main::-webkit-scrollbar {
 
     &.tab-wrap {
       >.tab {
-        color: $font-color;
-      }
-
-      >i::before {
-        background-color: inherit;
+        color: rgba(0, 0, 0, 0.6);
       }
     }
 
+  }
+
+  &.theme-dark-hover {
+    .drag-source {
+
+      &.leaf,
+      &.history>div,
+      .tab {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
   }
 
   :not(.drag-source) {
@@ -959,29 +970,70 @@ main::-webkit-scrollbar {
 }
 
 .drag-start-folder {
-  .marker.drag-source {
-    z-index: 3;
+  .drag-source {
 
-    &::before {
-      background-color: $drag-source-bgcolor;
-    }
+    &.marker {
+      z-index: 3;
 
-    >.title {
-      outline: none;
-      color: $font-color  !important;
+      &:hover button {
+        display: none;
+      }
 
-      &::before {
-        color: $font-color  !important;
+      >.title {
+        color: rgba(0, 0, 0, 0.6) !important;
+        outline: none;
+
+        &::before {
+          color: rgba(0, 0, 0, 0.4) !important;
+        }
+      }
+
+      ~* {
+        pointer-events: none;
       }
     }
 
-    ~* {
-      pointer-events: none;
+    &.tabs-header {
+      >.tab {
+        color: rgba(0, 0, 0, 0.6);
+      }
+
+      button {
+        display: none;
+      }
     }
   }
 
-  .marker:not(.drag-source)::before {
-    background-color: transparent;
+  &.theme-dark-hover {
+    .drag-source {
+
+      &.tabs-header>.tab,
+      >.title {
+        color: rgba(255, 255, 255, 0.6) !important;
+
+        &::before {
+          color: rgba(255, 255, 255, 0.4) !important;
+        }
+      }
+    }
+  }
+
+  .folder.open > .marker.drag-source > .title {
+    color: rgba(0, 0, 0, 0.6) !important;
+
+    &::before {
+      color: rgba(0, 0, 0, 0.4) !important;
+    }
+  }
+
+  &.theme-dark-key {
+    .folder.open > .marker.drag-source > .title {
+      color: rgba(255, 255, 255, 0.6) !important;
+
+      &::before {
+        color: rgba(255, 255, 255, 0.4) !important;
+      }
+    }
   }
 
   .folder.path:not([data-children="0"])+.folder>.marker>.drop-top {
@@ -1009,12 +1061,9 @@ main::-webkit-scrollbar {
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 3px;
-  color: $dark-font-color  !important;
-  background-color: $draggable-bgcolor;
 
   >div {
     padding-right: 8px !important;
-    background-color: $draggable-bgcolor;
 
     >.icon-fa-angle-right {
       display: none;
@@ -1672,17 +1721,20 @@ main.zoom-pane {
     }
   }
 
-  .form-query button:hover::after,
-  .form-query button:focus::after,
-  .pane-header button:hover::after,
-  .pane-header button:focus::after {
-    background-color: rgba(255, 255, 255, 0.3);
+  .form-query,
+  .pane-header {
+
+    button:hover::after,
+    button:focus::after {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
   }
 
-  .form-query button:active::after,
-  .form-query button:active::after,
-  .pane-header button:active::after {
-    background-color: $dark-folder-color;
+  .form-query,
+  .pane-header {
+    button:active::after {
+      background-color: $dark-folder-color;
+    }
   }
 
   .folders::-webkit-scrollbar-thumb,
@@ -1699,6 +1751,26 @@ main.zoom-pane {
     animation-duration: 1.0s !important;
   }
 
+  &.drag-start-leaf,
+  &.drag-start-folder {
+    .folders .marker>.drop-folder {
+      position: absolute;
+      z-index: 1;
+      height: 100%;
+
+      &.drag-enter {
+        background-color: $drop-folder-bgcolor;
+
+        &~.title {
+          color: $font-color;
+
+          &::before {
+            color: $light-folder-color !important;
+          }
+        }
+      }
+    }
+  }
 }
 
 .theme-dark-hover {
@@ -1707,35 +1779,41 @@ main.zoom-pane {
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:hover .icon-x,
   .history:hover .icon-x,
-  .window:hover .tabs-header>button>i {
+  .window.tabs-collapsed:hover .tabs-header>button>i {
     color: lightgray;
   }
 
-  .leaf:hover button:hover::after,
-  .leaf:hover button:focus::after,
-  .marker:hover button:hover::after,
-  .marker:hover button:focus::after,
-  .window:hover button:hover::after,
-  .window:hover button:focus::after {
-    background-color: rgba(255, 255, 255, 0.3);
-  }
+  .leaf,
+  .marker,
+  .window,
+  .tabs-header {
 
-  .leaf:hover button:active::after,
-  .marker:hover button:active::after,
-  .window:hover button:active::after {
-    background-color: $dark-folder-color;
-  }
+    button:hover::after,
+    button:focus::after {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
 
+    button:active::after {
+      background-color: $dark-folder-color;
+    }
+  }
 }
 
 main:not(.theme-dark-hover) {
-  .leaf:hover button:hover::after,
-  .leaf:hover button:focus::after,
-  .marker:hover button:hover::after,
-  .marker:hover button:focus::after,
-  .window:hover button:hover::after,
-  .window:hover button:focus::after {
-    background-color: rgba(0, 0, 0, 0.1);
+
+  .leaf,
+  .marker,
+  .window,
+  .tabs-header {
+
+    button:hover::after,
+    button:focus::after {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    button:active::after {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
   }
 }
 
@@ -2142,6 +2220,7 @@ main {
   }
 
   // Dark pane
+
   &.theme-dark-pane {
 
     .window:not(:hover) .tabs-header {

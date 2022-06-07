@@ -78,20 +78,24 @@ function setOptions(settings: Settings, options: Options) {
   addRules('.form-query .icon-x', [['color', searchingColor]]);
   addRules(
     [
-      'main:not(.drag-start-leaf) .leaf:hover, main:not(.drag-start-folder) .folders .marker:not(.hilite):hover::before',
-      'main:not(.drag-start-leaf) .tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:not(.tabs-header):hover',
+      '.leaf:hover, .folders .marker:not(.hilite):hover::before',
+      '.tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:not(.tabs-header):hover',
       '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):hover',
-      'main:not(.drag-start-leaf) .histories .rows > .history:not(.header-date):hover',
-      'main.date-collapsed:not(.drag-start-leaf) .header-date:hover',
+      '.histories .rows > .history:not(.header-date):hover',
+      '.date-collapsed .header-date:hover',
       '.window.tabs-collapsed:hover .tabs-header, .tabs-header:hover',
       '.tooltip',
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
-  addRules('main:not(.drag-start-leaf):not(.searching) .tabs-wrap > div.tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
-  addRules('.folders .marker:hover > .icon-fa-angle-right, main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
-  addRules('main:not(.drag-start-folder) .folders .folder:not(.open) > .marker:hover > .title::before, main .tabs .window:not(.tabs-collapsed) .tabs-header:hover > button > i', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
+  addRules('main:not(.searching) .tabs-wrap > .tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
+  addRules('.folders .marker:hover > .icon-fa-angle-right, .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
+  addRules('.folders .folder:not(.open) > .marker:hover > .title::before, main .tabs .window:not(.tabs-collapsed) .tabs-header:hover > button > i', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
+  // drag-source
+  addRules('.tabs .window.tabs-collapsed > .tab-wrap.drag-source', [['border-color', itemHoverBg]]);
+  addRules('.draggable-clone, .draggable-clone > div, .draggable-clone .title::before', [['background-color', itemHoverBg], ['color', itemHoverColor]]);
+  addRules('.leaf.drag-source, .history.drag-source', [['background-color', itemHoverBg]]);
   if (options.showCloseTab) {
     addRules('.tabs-wrap > div > div:hover > i', [['display', 'inline-block']]);
   }
@@ -107,6 +111,7 @@ function setOptions(settings: Settings, options: Options) {
     toggleClass('theme-dark-frame', !isLightFrameBg),
     toggleClass('theme-dark-hover', !isLightHoverBg),
     toggleClass('theme-dark-search', !isLightSearchingBg),
+    toggleClass('theme-dark-key', !isLightKeyBg),
     toggleClass('auto-zoom', settings.autoZoom),
     toggleClass('checked-include-url', settings.includeUrl),
     toggleClass('tabs-collapsed-all', options.collapseTabs),
