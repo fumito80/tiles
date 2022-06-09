@@ -120,10 +120,11 @@ async function enterZoom(
       resolve();
     }, { once: true });
   });
+  const $safetyZoneRight = $byClass('safety-zone-right');
+  rmStyle('width')($safetyZoneRight);
   addStyle('width', `${width}px`)($target);
   addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
   addStyle('left', `calc(-100% + ${$target.offsetLeft - 4}px)`)($shadeLeft);
-  const $safetyZoneRight = $byClass('safety-zone-right');
   let shiftSafetyZone: number;
   if (isCenter) {
     const offset = ($main.offsetWidth - width) / 2 - $target.offsetLeft;
@@ -132,7 +133,10 @@ async function enterZoom(
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
     addStyle('transform', `translateX(${-offset}px)`)($byClass('pane-header'));
     addClass('zoom-center')($main);
-    shiftSafetyZone = $target.offsetLeft + 12 - offset;
+    shiftSafetyZone = $target.offsetLeft + (offset > 0 ? 14 - offset : 4);
+    if (zoomRatio >= 0.9) {
+      addStyle('width', '10px')($safetyZoneRight);
+    }
   } else {
     addStyle('left', '-100px')($iconAngleLeft);
     addStyle('right', '5px')($iconAngleRight);

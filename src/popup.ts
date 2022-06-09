@@ -79,23 +79,23 @@ function setOptions(settings: Settings, options: Options) {
   addRules(
     [
       '.leaf:hover, .folders .marker:not(.hilite):hover::before',
-      '.tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:not(.tabs-header):hover',
-      '.searching .tabs-wrap > div > .tab-wrap:not(.tabs-header):hover',
+      'main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:hover',
+      '.searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > div > .tab-wrap:hover',
       '.histories .rows > .history:not(.header-date):hover',
       '.date-collapsed .header-date:hover',
-      '.window.tabs-collapsed:hover .tabs-header, .tabs-header:hover',
+      'main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover .tabs-header, .tabs-header:hover',
       '.tooltip',
     ].join(','),
     [['background-color', itemHoverBg], ['color', itemHoverColor]],
   );
   addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
-  addRules('main:not(.searching) .tabs-wrap > .tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
+  addRules('main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > .tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
   addRules('.folders .marker:hover > .icon-fa-angle-right, .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
   addRules('.folders .folder:not(.open) > .marker:hover > .title::before, main .tabs .window:not(.tabs-collapsed) .tabs-header:hover > button > i', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
   // drag-source
-  addRules('.tabs .window.tabs-collapsed > .tab-wrap.drag-source', [['border-color', itemHoverBg]]);
+  addRules('.tabs .window.tabs-collapsed > .tab-wrap.drag-source', [['background-color', itemHoverBg], ['border-color', itemHoverBg]]);
   addRules('.draggable-clone, .draggable-clone > div, .draggable-clone .title::before', [['background-color', itemHoverBg], ['color', itemHoverColor]]);
-  addRules('.leaf.drag-source, .history.drag-source', [['background-color', itemHoverBg]]);
+  addRules('.drag-source, .drag-source::before', [['background-color', itemHoverBg]]);
   if (options.showCloseTab) {
     addRules('.tabs-wrap > div > div:hover > i', [['display', 'inline-block']]);
   }

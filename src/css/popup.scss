@@ -850,7 +850,7 @@ main::-webkit-scrollbar {
           background-color: transparent;
 
           &::before {
-            color: $dark-folder-color !important;
+            color: $dark-folder-color  !important;
           }
         }
       }
@@ -1018,7 +1018,7 @@ main::-webkit-scrollbar {
     }
   }
 
-  .folder.open > .marker.drag-source > .title {
+  .folder.open>.marker.drag-source>.title {
     color: rgba(0, 0, 0, 0.6) !important;
 
     &::before {
@@ -1027,7 +1027,7 @@ main::-webkit-scrollbar {
   }
 
   &.theme-dark-key {
-    .folder.open > .marker.drag-source > .title {
+    .folder.open>.marker.drag-source>.title {
       color: rgba(255, 255, 255, 0.6) !important;
 
       &::before {
@@ -1765,7 +1765,7 @@ main.zoom-pane {
           color: $font-color;
 
           &::before {
-            color: $light-folder-color !important;
+            color: $light-folder-color  !important;
           }
         }
       }
@@ -2195,7 +2195,7 @@ main {
     }
   }
 
-  &:not(.searching) .tabs-collapsed {
+  &:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-collapsed {
 
     .tab-wrap:not(.drag-source) {
       >.tooltip {
@@ -2282,7 +2282,8 @@ main {
       width: calc(100% + 8px);
 
       &.drag-enter::before {
-        left: calc(50% - 1px);
+        // left: calc(50% - 1px);
+        left: 16px;
       }
     }
 
@@ -2292,6 +2293,9 @@ main {
       display: none;
     }
 
+    &:last-child>.drop-bottom {
+      width: 1000px;
+    }
   }
 }
 

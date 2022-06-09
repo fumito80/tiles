@@ -59,6 +59,7 @@ import {
   openFolder,
   collapseTabsAll,
   smoothSroll,
+  saveStateAllPaths,
 } from './client';
 
 import { updateAnker } from './html';
@@ -218,7 +219,10 @@ export default function setEventListners(options: Options) {
           $byClass('title', $target)!.click();
           break;
         case 'icon-fa-angle-right':
-          onClickAngle(e);
+          onClickAngle($target);
+          if (!options.exclusiveOpenBmFolderTree) {
+            saveStateAllPaths();
+          }
           break;
         case 'title': {
           clearQuery();
@@ -227,12 +231,15 @@ export default function setEventListners(options: Options) {
           const isOpen = hasClass($foldersFolder, 'open');
           if (isOpen) {
             folders.forEach(addClass('path'));
+            if (!options.exclusiveOpenBmFolderTree) {
+              saveStateAllPaths($foldersFolder.id);
+            }
             return;
           }
           $leafs.scrollTop = 0;
           $$byClass('open').forEach(rmClass('open'));
           folders.forEach(addClass('open'));
-          saveStateOpenedPath($foldersFolder);
+          saveStateOpenedPath($foldersFolder, options.exclusiveOpenBmFolderTree);
           $$byClass('hilite').forEach(rmClass('hilite'));
           break;
         }

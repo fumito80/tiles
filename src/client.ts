@@ -41,6 +41,7 @@ import {
   pick,
   getNewPaneWidth,
   makeStyleIcon,
+  prop,
 } from './common';
 
 import {
@@ -113,18 +114,13 @@ export function setHasChildren($target: HTMLElement) {
   $target.setAttribute('data-children', String($target.children.length - 1));
 }
 
-export function onClickAngle(e: MouseEvent) {
-  const $target = e.target as HTMLAnchorElement;
-  const $folder = $target.parentElement?.parentElement!;
-  if ($byClass('open', $folder)) {
-    ($target.nextElementSibling as HTMLDivElement)?.click();
-  }
-  toggleClass('path')($folder);
-}
-
-export function saveStateOpenedPath(foldersFolder: HTMLElement) {
-  $$byClass('path').forEach(rmClass('path'));
+export function saveStateOpenedPath(foldersFolder: HTMLElement, exclusiveOpenBmFolderTree: Options['exclusiveOpenBmFolderTree']) {
   let paths: Array<string> = [];
+  if (exclusiveOpenBmFolderTree) {
+    $$byClass('path').forEach(rmClass('path'));
+  } else {
+    paths = $$('.folders .path').map(prop('id'));
+  }
   for (let $folder = foldersFolder as HTMLElement | null; $folder && hasClass($folder, 'folder'); $folder = $folder.parentElement) {
     addClass('path')($folder);
     paths = [...paths, $folder.id];
@@ -134,6 +130,20 @@ export function saveStateOpenedPath(foldersFolder: HTMLElement) {
     open: foldersFolder.id,
   };
   setLocal({ clientState });
+}
+
+export function saveStateAllPaths(id?: string) {
+  const open = id ?? $byClass('open')?.id;
+  const paths = $$('.folders .path').map(prop('id'));
+  setLocal({ clientState: { open, paths } });
+}
+
+export function onClickAngle($target: HTMLElement) {
+  const $folder = $target.parentElement?.parentElement!;
+  if ($byClass('open', $folder)) {
+    ($target.nextElementSibling as HTMLDivElement)?.click();
+  }
+  toggleClass('path')($folder);
 }
 
 function setMouseEventListener(
@@ -203,7 +213,7 @@ export function getEndPaneMinWidth($endPane: HTMLElement) {
     .map(pick('width', 'marginLeft', 'marginRight'))
     .reduce(
       (acc, props) => Object.values(props).reduce(
-        (sum, prop) => sum + Number.parseFloat(prop),
+        (sum, prop1) => sum + Number.parseFloat(prop1),
         acc,
       ),
       queryWrapMinWidth,

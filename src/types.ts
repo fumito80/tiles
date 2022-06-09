@@ -73,6 +73,7 @@ export const initialOptions = {
   zoomRatio: '0.7',
   fontSize: '0.9em',
   collapseTabs: true,
+  exclusiveOpenBmFolderTree: true,
 };
 
 export const initialState = {
