@@ -61,7 +61,7 @@ export function makeTabsHeader(
   tooltip: string,
   faviconAttr: string,
 ) {
-  const incognitoElem = tab.incognito ? '<i class="icon-private"></i>' : '';
+  const incognitoElem = tab.incognito ? '<i class="icon-incognito"></i>' : '';
   return `
     <div class="tabs-header" ${faviconAttr}>
       ${incognitoElem}

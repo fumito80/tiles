@@ -906,14 +906,16 @@ export const lightColorWhiteness = 0.6;
 
 export function getColorWhiteness(colorCode: string) {
   const [r, g, b] = getRGB(colorCode);
-  // return Math.max((r * g) / (0xFF * 0xFF), (g * b) / (0xFF * 0xFF));
   return Math.max(
     ((r || 1) * (g || 1) * (b || 1)) / (0xFF * 0xFF * 0xFF),
     (g * b) / (0xFF * 0xFF),
     (r * b) / (0xFF * 0xFF),
     (r * g) / (0xFF * 0xFF),
   );
-  // return Math.max(r, g, b) / 0xFF;
+  // const [r, g, b] = getRGB(colorCode).map((c) => c / 255);
+  // const max = Math.max(r, g, b);
+  // const min = Math.min(r, g, b);
+  // return (max + min) / 2;
 }
 
 const escapes = new Map();

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="472" height="472" viewBox="20 20 482 482">
+  <rect x="32" y="250" width="447" height="32" rx="10" ry="10" />
+  <path d="
+  M200 200
+  A75 75 0 1 1 360 200
+  A75 75 0 1 1 200 200
+  h30
+  A45 45 0 1 0 330 200
+  A45 45 0 1 0 230 200 z
+  "
+  transform="translate(-130,190)"
+  />
+  <path d="
+  M200 200
+  A75 75 0 1 1 360 200
+  A75 75 0 1 1 200 200
+  h30
+  A45 45 0 1 0 330 200
+  A45 45 0 1 0 230 200 z
+  "
+  transform="translate(81,190)"
+  />
+  <path d="
+  M200 300
+  A150 150 0 0 1 311 300
+  v30
+  A120 120 0 0 0 200 330
+  z
+  "
+  transform="translate(0,60)"
+  />
+  <path d="
+  M110 180
+  L170 10
+  L240 35
+  Q255 40 270 35
+  L341 10
+  L401 180
+  z
+  "
+  transform="translate(0,50)"
+  />
+  <!-- <rect x="0" y="292" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-lb)" /> -->
+  <!-- <rect x="292" y="292" width="220" height="220" rx="80" ry="80" clip-path="url(#clip-rb)" /> -->
+  <!-- <defs>
+    <clipPath id="clip" clip-rule="evenodd">
+        <rect x="25" y="25" width="30" height="50"/>
+        <rect x="125" y="25" width="30" height="50"/>
+        <text x="30" y="100">ここがクリップ領域</text>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="200" height="200" fill="lightblue"/>
+  <circle clip-path="url(#clip)" cx="100" cy="100" r="90" stroke="pink" stroke-width="10" fill="red"/> -->
+</svg>

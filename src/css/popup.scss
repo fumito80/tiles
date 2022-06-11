@@ -15,6 +15,10 @@ $dark-font-color: #efefef;
 $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
 $dark-folder-color: rgba(255, 255, 255, 0.5);
 
+:root {
+  --xen-mode-transition: all 0.05s ease-in-out;
+}
+
 @import 'glyphs';
 
 @keyframes fade-in {
@@ -104,7 +108,7 @@ main {
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
-  transition: transform 0.1s;
+  transition: var(--xen-mode-transition);
 }
 
 button:not(.submit) {
@@ -415,7 +419,7 @@ button:not(.submit) {
 .leafs {
   overflow-y: auto;
   border-radius: $pane-radius;
-  transition: width 0.1s ease-in-out;
+  transition: var(--xen-mode-transition);
 
   .leaf-menu-button:focus+.leaf-menu {
     position: fixed;
@@ -1084,7 +1088,7 @@ main::-webkit-scrollbar {
 .histories {
   position: relative;
   border-radius: $pane-radius;
-  transition: width 0.1s ease-in-out;
+  transition: var(--xen-mode-transition);
 
   .rows {
     display: grid;
@@ -1147,7 +1151,7 @@ main::-webkit-scrollbar {
 
 .tabs {
   overflow-y: auto;
-  transition: width 0.1s ease-in-out;
+  transition: var(--xen-mode-transition);
 
   >.tabs-wrap {
     margin-right: 2px;
@@ -1223,7 +1227,7 @@ main::-webkit-scrollbar {
 .pane-header {
   display: flex;
   align-items: center;
-  transition: all 0.1s;
+  transition: var(--xen-mode-transition);
   position: relative;
 
   .query-wrap:not(:empty):first-child {
@@ -1322,7 +1326,7 @@ main::-webkit-scrollbar {
 
   .pane-header {
     .form-query {
-      transition: width 0.1s;
+      transition: var(--xen-mode-transition);
     }
   }
 
@@ -1335,7 +1339,7 @@ main::-webkit-scrollbar {
 
 .shade-left,
 .shade-right {
-  transition: all 0.1s;
+  transition: var(--xen-mode-transition);
 }
 
 .auto-zoom.zoom-pane {
@@ -2075,12 +2079,12 @@ main:not(.theme-dark-hover) {
     transition: opacity 0.15s;
   }
 
-  .icon-private+.tab {
+  .icon-incognito+.tab {
     margin-left: 2px;
     text-indent: 0;
   }
 
-  .icon-private {
+  .icon-incognito {
     margin-left: 2px;
     color: $font-color;
     background-color: rgba(255, 255, 255, 0.3);
@@ -2116,7 +2120,7 @@ main {
       &.tabs-collapsed {
         padding-bottom: 0;
 
-        .icon-private {
+        .icon-incognito {
           margin-left: 22px;
         }
 
@@ -2312,7 +2316,7 @@ main {
     color: $dark-font-color;
   }
 
-  .icon-private {
+  .icon-incognito {
     margin-left: 24px;
 
     +.tab {
