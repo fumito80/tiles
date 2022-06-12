@@ -566,7 +566,7 @@ export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9>(
   fn8: (a: R7) => R8,
   fn9: (a: R8) => R9,
 ): (...a: T) => R9;
-export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
+export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12>(
   fn1: (...a: T) => R1,
   fn2: (a: R1) => R2,
   fn3: (a: R2) => R3,
@@ -577,7 +577,9 @@ export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R
   fn8: (a: R7) => R8,
   fn9: (a: R8) => R9,
   fn10: (a: R9) => R10,
-): (...a: T) => R10;
+  fn11: (a: R10) => R11,
+  fn12: (a: R11) => R12,
+): (...a: T) => R12;
 
 export function pipe(fn: any, ...fns: Array<any>) {
   return (...values: any) => fns.reduce((prevValue, nextFn) => nextFn(prevValue), fn(...values));
@@ -1018,7 +1020,34 @@ export function getGridColStart($target: HTMLElement) {
   return gridColStart;
 }
 
-export function setPopupStyle({ css }: Pick<Options, 'css'>) {
-  const encoded = encodeURIComponent(css);
+export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+  const lightColor = '#efefef';
+  const darkColor = '#222222';
+  const [
+    [paneBg, paneColor],
+    [frameBg, frameColor],
+    [itemHoverBg, itemHoverColor],
+    [searchingBg, searchingColor],
+    [keyBg, keyColor],
+  ] = colorPalette
+    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
+    .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
+  const variables = Object
+    .entries({
+      paneBg,
+      paneColor,
+      frameBg,
+      frameColor,
+      itemHoverBg,
+      itemHoverColor,
+      searchingBg,
+      searchingColor,
+      keyBg,
+      keyColor,
+    })
+    .map(([key, value]) => `    --${camelToSnake(key)}: ${value};`)
+    .join('\n');
+  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
   chrome.browserAction.setPopup({ popup: `popup.html?css=${encoded}` });
 }

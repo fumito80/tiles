@@ -14,6 +14,7 @@ import {
   addListener,
   rmClass, addClass, setText, hasClass,
   camelToSnake,
+  setPopupStyle,
 } from './common';
 
 type Options = State['options'];
@@ -79,7 +80,13 @@ function getOptions(inputs: Inputs) {
 }
 
 function saveOptions(inputs: Inputs) {
-  return () => pipe(getOptions, setLocal)(inputs);
+  return async (e: Event) => {
+    const { options: { css, colorPalette } } = await pipe(getOptions, setLocal)(inputs);
+    const name = (e.target as Element).getAttribute('name');
+    if (['color-palette', 'css'].includes(name!)) {
+      setPopupStyle({ css, colorPalette });
+    }
+  };
 }
 
 function setSyncListener(inputs: Inputs) {

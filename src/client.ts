@@ -614,8 +614,6 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
       const faviconAttr = getTabFaviconAttr(tab);
       const tooltip = getTooltip(tab);
       const htmlTabs = makeTab(tab, className, tooltip, faviconAttr);
-      // const header = tab.active ? makeTabsHeader(tab, tooltip, faviconAttr) : '';
-      // return { ...rest, [tab.windowId]: header + prev + htmlTabs };
       const header = prev || makeTabsHeader(tab, tooltip, faviconAttr);
       return { ...rest, [tab.windowId]: header + htmlTabs };
     }, {} as { [key: number]: string });
@@ -628,4 +626,11 @@ export function setTabs(currentWindowId: number, isCollapse: boolean) {
     const $tabs = $byClass('tabs-wrap')!;
     $tabs.innerHTML = html;
   });
+}
+
+export function setOpenPaths($folder: HTMLElement) {
+  for (let $current = $folder.parentElement; $current && hasClass($current, 'folder'); $current = $current.parentElement) {
+    addClass('path')($current);
+  }
+  saveStateAllPaths();
 }

@@ -12,10 +12,8 @@ import {
 } from './types';
 
 import {
-  $,
-  $$,
-  addRules,
-  addClass,
+  $, $$,
+  addStyle, addClass, toggleClass,
   cssid,
   setSplitWidth,
   bootstrap,
@@ -23,16 +21,12 @@ import {
   getColorWhiteness,
   lightColorWhiteness,
   setMessageListener,
-  setHTML,
-  addStyle,
-  insertHTML,
+  setHTML, insertHTML,
   getGridColStart,
-  $$byClass,
-  $byClass,
-  $byTag,
+  $$byClass, $byClass, $byTag,
   pipe,
-  toggleClass,
   recoverMinPaneWidth,
+  camelToSnake,
 } from './common';
 
 import setEventListners from './client-events';
@@ -42,94 +36,53 @@ import { setTabs } from './client';
 
 type Options = State['options'];
 
-const lightColor = '#efefef';
-const darkColor = '#222222';
-
 function setOptions(settings: Settings, options: Options) {
-  addRules('body', [
-    ['width', `${settings.width}px`],
-    ['height', `${settings.height}px`],
-    ['color', settings.bodyColor],
-  ]);
-  const $main = $byTag('main')!;
-  const [
-    [paneBg, paneColor, isLightPaneBg],
-    [frameBg, frameColor, isLightFrameBg],
-    [itemHoverBg, itemHoverColor, isLightHoverBg],
-    [searchingBg, searchingColor, isLightSearchingBg],
-    [keyBg, keyColor, isLightKeyBg],
-  ] = options.colorPalette
-    .map((code) => [`#${code}`, getColorWhiteness(code)])
-    .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
-    .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  addRules('.leafs, .histories, .tabs-wrap > div, .histories .rows .current-date, .histories .rows .current-date::before, .current-window .tabs-header::after', [['background-color', paneBg], ['color', paneColor]]);
-  addRules('body', [['background-color', frameBg]]);
-  addRules('.folders', [['color', frameColor]]);
-  addRules('.folders .open > .marker > .title, .current-tab::after, .current-window .tabs-header::before', [
-    ['background-color', keyBg],
-    ['color', keyColor],
-  ]);
-  addRules('.current-window .tabs-header', [
-    ['border-bottom', `4px solid ${keyBg}`],
-  ]);
-  addRules('.folders .open > .marker > .title::before', [['color', isLightKeyBg ? 'rgba(0, 0, 0, 0.5) !important' : 'rgba(255, 255, 255, 0.8) !important']]);
-  addRules('.pane-header .pin-bookmark:hover::after', [['color', `${keyBg} !important`]]);
-  addRules('.searching .form-query, .searching .form-query .query', [['background-color', searchingBg], ['color', searchingColor]]);
-  addRules('.form-query .icon-x', [['color', searchingColor]]);
-  addRules(
-    [
-      '.leaf:hover, .folders .marker:not(.hilite):hover::before',
-      'main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > div:not(.tabs-collapsed) > .tab-wrap:hover',
-      '.searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > div > .tab-wrap:hover',
-      '.histories .rows > .history:not(.header-date):hover',
-      '.date-collapsed .header-date:hover',
-      'main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover .tabs-header, .tabs-header:hover',
-      '.tooltip',
-    ].join(','),
-    [['background-color', itemHoverBg], ['color', itemHoverColor]],
-  );
-  addRules('.shade-right:hover ~ .zoom-out, .shade-left:hover ~ .zoom-out', [['color', itemHoverBg]]);
-  addRules('main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap > .tabs-collapsed > .tab-wrap:hover', [['border-color', itemHoverBg]]);
-  addRules('.folders .marker:hover > .icon-fa-angle-right, .folders .folder:not(.open) > .marker:not(.hilite):hover .title', [['color', itemHoverColor]]);
-  addRules('.folders .folder:not(.open) > .marker:hover > .title::before, main .tabs .window:not(.tabs-collapsed) .tabs-header:hover > button > i', [['color', isLightHoverBg ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)']]);
-  // drag-source
-  addRules('.tabs .window.tabs-collapsed > .tab-wrap.drag-source', [['background-color', itemHoverBg], ['border-color', itemHoverBg]]);
-  addRules('.draggable-clone, .draggable-clone > div, .draggable-clone .title::before', [['background-color', itemHoverBg], ['color', itemHoverColor]]);
-  addRules('.drag-source, .drag-source::before', [['background-color', itemHoverBg]]);
-  if (options.showCloseTab) {
-    addRules('.tabs-wrap > div > div:hover > i', [['display', 'inline-block']]);
-  }
-  if (options.showDeleteHistory) {
-    addRules('.histories > div > div:not(.header-date):hover > i', [['display', 'inline-block']]);
-  }
-  if (!options.showSwitchTabsWin) {
-    $byClass('win-prev').remove();
-    $byClass('win-next').remove();
-  }
   pipe(
-    toggleClass('theme-dark-pane', !isLightPaneBg),
-    toggleClass('theme-dark-frame', !isLightFrameBg),
-    toggleClass('theme-dark-hover', !isLightHoverBg),
-    toggleClass('theme-dark-search', !isLightSearchingBg),
-    toggleClass('theme-dark-key', !isLightKeyBg),
+    addStyle('width', `${settings.width}px`),
+    addStyle('height', `${settings.height}px`),
+  )(document.body);
+
+  const $main = $byTag('main');
+  const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
+    .colorPalette
+    .map((code) => getColorWhiteness(code))
+    .map((whiteness) => whiteness <= lightColorWhiteness);
+  Object.entries({
+    themeDarkPane,
+    themeDarkFrame,
+    themeDarkHover,
+    themeDarkSearch,
+    themeDarkKey,
+  }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($main));
+
+  pipe(
     toggleClass('auto-zoom', settings.autoZoom),
     toggleClass('checked-include-url', settings.includeUrl),
     toggleClass('tabs-collapsed-all', options.collapseTabs),
   )($main);
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
+
+  if (options.showCloseTab) {
+    addStyle('--show-close-tab', 'inline-block')($byClass('tabs'));
+  }
+  if (options.showDeleteHistory) {
+    addStyle('--show-delete-history', 'inline-block')($byClass('histories'));
+  }
+  if (!options.showSwitchTabsWin) {
+    $byClass('win-prev').remove();
+    $byClass('win-next').remove();
+  }
 }
 
 function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
-  addRules('.searching .form-query .icon-fa-search', [['visibility', 'hidden']]);
-  addRules('.searching .form-query', [
-    ['background-image', `url("chrome://favicon/${options.externalUrl}")`],
-    ['background-repeat', 'no-repeat'],
-    ['background-position', '6px center'],
-  ]);
+  pipe(
+    addStyle('--external-url-image', `url("chrome://favicon/${options.externalUrl}")`),
+    addStyle('--external-url', 'hidden'),
+  )($byClass('form-query')!);
 }
 
 function setBookmarks(html: HtmlBookmarks) {

@@ -28,6 +28,7 @@ import {
   setHasChildren,
   setAnimationClass,
   addFolderFromTabs,
+  setOpenPaths,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 
@@ -298,6 +299,7 @@ const dragAndDropEvents = {
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
       setHasChildren($sourceFolders.parentElement);
+      setOpenPaths($sourceFolders);
       setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);

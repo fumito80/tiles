@@ -13,13 +13,14 @@ $light-folder-color: rgba(0, 0, 0, 0.5);
 // for dark theme
 $dark-font-color: #efefef;
 $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
-$dark-folder-color: rgba(255, 255, 255, 0.5);
+$dark-folder-color: rgba(255, 255, 255, 0.8);
+$dark-icon-color: rgba(255, 255, 255, 0.5);
 
 :root {
-  --xen-mode-transition: all 0.05s ease-in-out;
+  --xen-mode-transition: all .05s ease-in-out;
 }
 
-@import 'glyphs';
+@import './glyphs';
 
 @keyframes fade-in {
   0% {
@@ -109,6 +110,21 @@ main {
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
   transition: var(--xen-mode-transition);
+
+  .leaf,
+  .marker,
+  .window,
+  .tabs-header {
+
+    button:hover::after,
+    button:focus::after {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    button:active::after {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+  }
 }
 
 button:not(.submit) {
@@ -249,8 +265,10 @@ button:not(.submit) {
   align-items: center;
   margin: 2px 0 4px 0;
   padding: 3px 0;
-  background: rgba(0, 0, 0, 0.1);
   border-radius: 20px;
+  background-color: rgba(0, 0, 0, 0.1);
+  background-repeat: no-repeat;
+  background-position: 4px center;
 
   .submit {
     display: flex;
@@ -270,7 +288,6 @@ button:not(.submit) {
   .query {
     width: 100%;
     max-width: 90px;
-    background: rgba(0, 0, 0, .1);
     border: 0;
     outline: none;
     font-size: inherit;
@@ -328,11 +345,15 @@ button:not(.submit) {
       visibility: inherit;
     }
 
-    background-color: #cce5ff;
+    .icon-fa-search {
+      visibility: var(--external-url, visible);
+    }
 
     +button {
       cursor: pointer;
     }
+
+    background-image: var(--external-url-image, none);
   }
 }
 
@@ -525,7 +546,7 @@ button:not(.submit) {
       border-radius: 3px;
 
       &::before {
-        color: $dark-font-color;
+        color: $light-folder-color;
         content: '\f07c';
       }
     }
@@ -558,6 +579,10 @@ button:not(.submit) {
 
       >.icon-fa-angle-right {
         z-index: 2;
+      }
+
+      >.title::before {
+        color: rgba(0, 0, 0, 0.5);
       }
     }
 
@@ -685,10 +710,9 @@ button:not(.submit) {
     font-size: inherit;
     text-rendering: auto;
     margin-left: 1px;
-    color: rgba(0, 0, 0, .5);
+    color: $light-folder-color;
     width: 1.0em;
   }
-
 }
 
 .anchor {
@@ -1081,6 +1105,10 @@ main::-webkit-scrollbar {
   .tooltip {
     display: none;
   }
+
+  [data-initial] .tab {
+    text-indent: 25px;
+  }
 }
 
 // History
@@ -1097,6 +1125,10 @@ main::-webkit-scrollbar {
 
     >.history {
       margin: 0 2px;
+
+      &:hover>.icon-x {
+        display: var(--show-delete-history, none);
+      }
     }
 
     >div:empty {
@@ -1155,7 +1187,6 @@ main::-webkit-scrollbar {
 
   >.tabs-wrap {
     margin-right: 2px;
-
   }
 
   .window {
@@ -1183,14 +1214,18 @@ main::-webkit-scrollbar {
   >.empty {
     padding: 0;
   }
+
+  .tab-wrap:hover>.icon-x {
+    display: var(--show-close-tab, none);
+  }
 }
 
 .pane-body.end.tabs {
   margin-right: 1px;
 }
 
-.tabs,
-.histories {
+.tab-wrap,
+.history {
   .icon-x {
     margin-left: auto;
     margin-right: 2px;
@@ -1325,7 +1360,9 @@ main::-webkit-scrollbar {
 .auto-zoom {
 
   .pane-header {
-    .form-query {
+
+    .form-query,
+    .query {
       transition: var(--xen-mode-transition);
     }
   }
@@ -1613,234 +1650,6 @@ main.zoom-pane {
 
 .bold-separator {
   margin: 0 1px;
-}
-
-// Dark theme handling
-
-.theme-dark-pane {
-
-  .leafs::-webkit-scrollbar-thumb,
-  .histories::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, .3);
-  }
-
-  .leafs::-webkit-scrollbar-thumb:hover,
-  .histories::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, .5);
-  }
-
-  .leafs .title::before {
-    color: $dark-font-color;
-  }
-
-  &.zoom-pane .shade-left,
-  &.zoom-pane .shade-right {
-    background-color: $dark-shade-bg-color;
-  }
-
-  &.drag-start-leaf,
-  &.drag-start-folder .folders,
-  &.drag-start-folder .tabs {
-
-    .leaf:not(.search-path),
-    .tab-wrap:not(.match):not(.unmatch) {
-      >.drop-top {
-
-        &.drag-enter::before {
-          border-color: lightgray !important;
-        }
-      }
-
-      >.drop-bottom {
-
-        &.drag-enter::before {
-          border-color: lightgray !important;
-        }
-      }
-    }
-  }
-
-  &.drag-start-leaf .folders>.folder>.marker,
-  &.drag-start-folder .marker {
-
-    >.drop-top {
-
-      &.drag-enter::before {
-        border-top-color: lightgray;
-      }
-    }
-
-    >.drop-bottom {
-
-      &.drag-enter {
-        border-bottom-color: lightgray;
-      }
-    }
-  }
-
-  &.drag-start-leaf .leaf,
-  &.drag-start-leaf .tab-wrap,
-  &.drag-start-leaf .folders>.folder>.marker,
-  &.drag-start-folder .leaf,
-  &.drag-start-folder .marker,
-  &.drag-start-folder .tab-wrap {
-
-    >.drop-top.drag-enter::after,
-    >.drop-bottom.drag-enter::after {
-      border-left-color: lightgray;
-    }
-  }
-
-}
-
-.theme-dark-frame {
-  .pane-header::before {
-    background-color: rgba(255, 255, 255, 0.15);
-  }
-
-  .pane-header,
-  .form-query button>i,
-  .form-query .query {
-    color: lightgray;
-  }
-
-  .title::before,
-  .form-query .submit>i {
-    color: $dark-folder-color;
-  }
-
-  .form-query,
-  button:not(.submit):hover::after,
-  button:not(.submit):focus::after {
-    background-color: rgba(255, 255, 255, 0.3);
-  }
-
-  .form-query button:hover .icon-fa-ellipsis-v,
-  .form-query button:focus .icon-fa-ellipsis-v,
-  .pane-header button:not(.submit) {
-
-    &.pin-bookmark::after,
-    >i {
-      color: $dark-folder-color;
-    }
-  }
-
-  .form-query,
-  .pane-header {
-
-    button:hover::after,
-    button:focus::after {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  .form-query,
-  .pane-header {
-    button:active::after {
-      background-color: $dark-folder-color;
-    }
-  }
-
-  .folders::-webkit-scrollbar-thumb,
-  .tabs::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, .3);
-
-    &:hover {
-      background-color: rgba(255, 255, 255, .5);
-    }
-  }
-
-  .marker.hilite>.title::before {
-    animation-name: hilite-folder-dark !important;
-    animation-duration: 1.0s !important;
-  }
-
-  &.drag-start-leaf,
-  &.drag-start-folder {
-    .folders .marker>.drop-folder {
-      position: absolute;
-      z-index: 1;
-      height: 100%;
-
-      &.drag-enter {
-        background-color: $drop-folder-bgcolor;
-
-        &~.title {
-          color: $font-color;
-
-          &::before {
-            color: $light-folder-color  !important;
-          }
-        }
-      }
-    }
-  }
-}
-
-.theme-dark-hover {
-
-  .leaf:hover .icon-fa-ellipsis-v,
-  .marker:hover .icon-fa-ellipsis-v,
-  .tab-wrap:hover .icon-x,
-  .history:hover .icon-x,
-  .window.tabs-collapsed:hover .tabs-header>button>i {
-    color: lightgray;
-  }
-
-  .leaf,
-  .marker,
-  .window,
-  .tabs-header {
-
-    button:hover::after,
-    button:focus::after {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-
-    button:active::after {
-      background-color: $dark-folder-color;
-    }
-  }
-}
-
-main:not(.theme-dark-hover) {
-
-  .leaf,
-  .marker,
-  .window,
-  .tabs-header {
-
-    button:hover::after,
-    button:focus::after {
-      background-color: rgba(0, 0, 0, 0.1);
-    }
-
-    button:active::after {
-      background-color: rgba(0, 0, 0, 0.2);
-    }
-  }
-}
-
-.theme-dark-pane,
-.theme-dark-frame {
-  .window {
-    border-color: transparent;
-  }
-}
-
-.theme-dark-pane.theme-dark-frame .tabs .tabs-wrap {
-  .window {
-    border-color: $dark-folder-color;
-    border-width: 1px;
-    padding: 2px;
-    padding-bottom: 3px;
-  }
-}
-
-.theme-dark-search.searching {
-  .form-query button>.icon-fa-search {
-    color: rgba(255, 255, 255, 0.7);
-  }
 }
 
 // Pane separator
@@ -2222,36 +2031,7 @@ main {
       }
     }
   }
-
-  // Dark pane
-
-  &.theme-dark-pane {
-
-    .window:not(:hover) .tabs-header {
-
-      button>i {
-        color: $dark-folder-color;
-      }
-    }
-
-    .window:not(.tabs-collapsed):hover .tabs-header {
-
-      button>i {
-        color: $dark-folder-color;
-      }
-    }
-
-    &:not(.searching).theme-dark-pane {
-      .tabs-wrap>.tabs-collapsed {
-
-        >.tab-wrap {
-          background-color: $dark-folder-color;
-        }
-      }
-    }
-  }
 }
-
 
 .drag-start-leaf,
 .drag-start-folder {
@@ -2372,3 +2152,5 @@ main:not(.searching) .tabs-collapsed {
     margin-left: 4px;
   }
 }
+
+@import './color-theme';
