@@ -798,7 +798,7 @@ async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
   }
   const width = 800;
   const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
-  addRules('body', [['width', `${width}px`]]);
+  addStyle('width', `${width}px`)(document.body);
   // eslint-disable-next-line no-use-before-define
   setSplitWidth(paneWidth);
   const saved = await getLocal('settings');

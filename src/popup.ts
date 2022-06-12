@@ -42,24 +42,22 @@ function setOptions(settings: Settings, options: Options) {
     addStyle('height', `${settings.height}px`),
   )(document.body);
 
-  const $main = $byTag('main');
   const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
     .colorPalette
     .map((code) => getColorWhiteness(code))
     .map((whiteness) => whiteness <= lightColorWhiteness);
+
+  const $main = $byTag('main');
   Object.entries({
     themeDarkPane,
     themeDarkFrame,
     themeDarkHover,
     themeDarkSearch,
     themeDarkKey,
+    autoZoom: settings.autoZoom,
+    checkedIncludeUrl: settings.includeUrl,
+    tabsCollapsedAll: options.collapseTabs,
   }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($main));
-
-  pipe(
-    toggleClass('auto-zoom', settings.autoZoom),
-    toggleClass('checked-include-url', settings.includeUrl),
-    toggleClass('tabs-collapsed-all', options.collapseTabs),
-  )($main);
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
 
