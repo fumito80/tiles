@@ -40,7 +40,6 @@ import {
   decode,
   pick,
   getNewPaneWidth,
-  makeStyleIcon,
   prop,
 } from './common';
 
@@ -53,10 +52,9 @@ import {
 } from './vscroll';
 
 import { getReFilter } from './search';
-import {
-  makeLeaf, makeNode, makeTab, makeTabsHeader, updateAnker,
-} from './html';
+import { makeLeaf, makeNode, updateAnker } from './html';
 import { getChromeId } from './drag-drop';
+import { OpenTab, OpenTabs, WindowHeader } from './tabs';
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -585,46 +583,28 @@ export function collapseTabsAll(force?: boolean) {
   $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
 }
 
-function getTabFaviconAttr(tab: chrome.tabs.Tab) {
-  if (tab.url?.startsWith('file://')) {
-    return `data-initial="${htmlEscape(tab.title!.substring(0, 1))}" data-file="yes"`;
-  }
-  if (tab.favIconUrl || !tab.url?.startsWith('http')) {
-    const faviconUrl = makeStyleIcon(tab.url);
-    return `style="${faviconUrl}"`;
-  }
-  return `data-initial="${htmlEscape(tab.title!.substring(0, 1))}"`;
-}
-
-function getTooltip(tab: chrome.tabs.Tab) {
-  if (tab.url?.startsWith('file:///')) {
-    return htmlEscape(`${tab.title}\n${tab.url}`);
-  }
-  const [scheme, domain] = extractDomain(tab.url);
-  const schemeAdd = scheme.startsWith('https') ? '' : scheme;
-  return htmlEscape(`${tab.title}\n${schemeAdd}${domain}`);
-}
+customElements.define('open-tab', OpenTab, { extends: 'div' });
+customElements.define('open-tabs', OpenTabs, { extends: 'div' });
+customElements.define('tabs-header', WindowHeader, { extends: 'div' });
 
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
-  const collapseClass = isCollapse ? ' tabs-collapsed' : '';
-  chrome.tabs.query({}, (tabs) => {
-    const htmlByWindow = tabs.reduce((acc, tab) => {
-      const { [tab.windowId]: prev = '', ...rest } = acc;
-      const className = tab.active ? ' current-tab' : '';
-      const faviconAttr = getTabFaviconAttr(tab);
-      const tooltip = getTooltip(tab);
-      const htmlTabs = makeTab(tab, className, tooltip, faviconAttr);
-      const header = prev || makeTabsHeader(tab, tooltip, faviconAttr);
-      return { ...rest, [tab.windowId]: header + htmlTabs };
-    }, {} as { [key: number]: string });
-    const html = Object.entries(htmlByWindow)
-      .map(([id, value]) => {
-        const currentWindow = currentWindowId === Number(id) ? ' current-window' : '';
-        return `<div id="win-${id}" class="window${currentWindow}${collapseClass}" draggable="true">${value}</div>`;
-      })
-      .join('');
-    const $tabs = $byClass('tabs-wrap')!;
-    $tabs.innerHTML = html;
+  const $tabs = $byClass('tabs-wrap')!;
+  const $template = $byTag<HTMLTemplateElement>('template').content;
+  const $tmplHeader = $('[is="tabs-header"]', $template) as WindowHeader;
+  const $tmplOpenTab = $('[is="open-tab"]', $template) as OpenTab;
+  const $tmplOpenTabs = $('[is="open-tabs"]', $template) as OpenTabs;
+  chrome.windows.getAll({ populate: true }, (windows) => {
+    windows.forEach((win) => {
+      const $win = $tabs.appendChild(document.importNode($tmplOpenTabs, true));
+      $win.init(
+        win.id!,
+        currentWindowId === win.id,
+        isCollapse,
+        $tmplOpenTab,
+        $tmplHeader,
+        win.tabs,
+      );
+    });
   });
 }
 

@@ -117,7 +117,8 @@
             <div role="menuitem" data-value="open-new-tab"><i class="icon-tabs"></i>Open in new tab</div>
             <hr aria-hidden="true">
             <div role="menuitem" data-value="open-new-window"><i class="icon-fa-window"></i>Open in new window</div>
-            <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Open in incognito window</div>
+            <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Open in incognito window
+            </div>
             <hr aria-hidden="true" class="searched-menu">
             <div role="menuitem" data-value="show-in-folder" class="searched-menu"><i
                     class="icon-fa-sign-in-alt"></i>Show
@@ -154,6 +155,21 @@
             </div>
         </div>
     </div>
+    <template>
+        <div is="open-tabs" class="window" draggable="true"></div>
+        <div is="open-tab" draggable="true" class="tab-wrap">
+            <div class="tab" title=""></div><i class="icon-x"></i>
+            <div class="tooltip"></div>
+            <div class="drop-top"></div>
+            <div class="drop-bottom"></div>
+        </div>
+        <div is="tabs-header" class="tabs-header">
+            <i class="icon-incognito"></i>
+            <div class="tab" title=""></div>
+            <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
+            <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
+        </div>      
+    </template>
     <div class="draggable-clone">
         <div class="leaf"></div>
     </div>
