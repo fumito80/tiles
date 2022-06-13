@@ -41,37 +41,6 @@ export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.Bo
   });
 }
 
-export function makeTab(
-  tab: chrome.tabs.Tab,
-  addClass: string,
-  tooltip: string,
-  faviconAttr: string,
-) {
-  return `
-    <div id="tab-${tab.id}" draggable="true" class="tab-wrap${addClass}" ${faviconAttr}>
-      <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div><i class="icon-x"></i>
-      <div class="tooltip">${tooltip}</div>
-      <div class="drop-top"></div><div class="drop-bottom"></div>
-    </div>
-  `;
-}
-
-export function makeTabsHeader(
-  tab: chrome.tabs.Tab,
-  tooltip: string,
-  faviconAttr: string,
-) {
-  const incognitoElem = tab.incognito ? '<i class="icon-incognito"></i>' : '';
-  return `
-    <div class="tabs-header" ${faviconAttr}>
-      ${incognitoElem}
-      <div class="tab" title="${tooltip}">${htmlEscape(tab.title!)}</div>
-      <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
-      <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
-    </div>
-  `;
-}
-
 export function makeHistory({
   url, title, lastVisitTime, headerDate, id, headerStyle = '',
 }: MyHistoryItem & { headerStyle?: string }) {

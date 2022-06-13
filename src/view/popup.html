@@ -8,14 +8,6 @@
 
 <body>
     <main>
-        <div class="pane-header"></div>
-        <div class="pane-header"></div>
-        <div class="pane-header"></div>
-        <div class="pane-header"></div>
-        <div class="pane-body"></div>
-        <div class="pane-body"></div>
-        <div class="pane-body"></div>
-        <div class="pane-body end"></div>
         <div class="resize-x"></div>
         <div class="split-h pane3"></div>
         <div class="split-h pane2"></div>
@@ -28,7 +20,7 @@
     </main>
     <div class="resize-y"></div>
     <div class="components">
-        <div class="header-histories">
+        <div class="pane-header header-histories">
             <i class="icon-history" title="HISTORY"></i>
             <button class="collapse-history-date" type="button">
                 <i class="icon-calendar-plus-solid" title="Expand date"></i>
@@ -51,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="header-tabs">
+        <div class="pane-header header-tabs">
             <i class="icon-tabs" title="OPEN TABS"></i>
             <button class="win-prev" type="button" title="Previous window"><i class="icon-square-up"></i></button>
             <button class="win-next" type="button" title="Next window"><i class="icon-square-down"></i></button>
@@ -75,7 +67,7 @@
                 </div>
             </div>
         </div>
-        <div class="header-leafs">
+        <div class="pane-header header-leafs">
             <i class="icon-bookmarks" title="BOOKMARKS"></i>
             <div class="query-wrap"></div>
             <button class="pin-bookmark" title="Pin a bookmark" type="button"></button>
@@ -98,20 +90,21 @@
                 </div>
             </div>
         </div>
-        <div class="header-folders"></div>
+        <div class="pane-header header-folders"></div>
+        <div class="pane-body leafs"></div>
+        <div class="pane-body folders"></div>
+        <div class="pane-body histories">
+            <div class="rows"></div>
+            <div class="v-scroll-fake-bottom"></div>
+        </div>
+        <div class="pane-body tabs" is="body-tabs">
+            <div class="tabs-wrap"></div>
+        </div>
         <form class="form-query" autocomplete="off">
             <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
             <input type="text" class="query" name="query" autofocus="true">
             <i class="icon-x"></i>
         </form>
-        <div class="body-histories">
-            <div class="rows"></div>
-            <div class="v-scroll-fake-bottom"></div>
-        </div>
-        <div class="body-tabs">
-            <!-- <div class="tabs-position"></div> -->
-            <div class="tabs-wrap"></div>
-        </div>
         <div class="leaf-menu" role="menu">
             <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab-find"></i>Find in tabs first</div>
             <div role="menuitem" data-value="open-new-tab"><i class="icon-tabs"></i>Open in new tab</div>
@@ -156,19 +149,20 @@
         </div>
     </div>
     <template>
-        <div is="open-tabs" class="window" draggable="true"></div>
-        <div is="open-tab" draggable="true" class="tab-wrap">
+        <open-window class="window" draggable="true"></open-window>
+        <open-tab draggable="true" class="tab-wrap">
             <div class="tab" title=""></div><i class="icon-x"></i>
             <div class="tooltip"></div>
             <div class="drop-top"></div>
             <div class="drop-bottom"></div>
-        </div>
-        <div is="tabs-header" class="tabs-header">
+        </open-tab>
+        <window-header class="tabs-header">
             <i class="icon-incognito"></i>
             <div class="tab" title=""></div>
-            <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid" title="Show grid view"></i></button>
+            <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid"
+                    title="Show grid view"></i></button>
             <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
-        </div>      
+        </window-header>
     </template>
     <div class="draggable-clone">
         <div class="leaf"></div>

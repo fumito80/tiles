@@ -27,6 +27,8 @@ import {
   pipe,
   recoverMinPaneWidth,
   camelToSnake,
+  last,
+  hasClass,
 } from './common';
 
 import setEventListners from './client-events';
@@ -106,30 +108,18 @@ function setHistory($target: HTMLElement, htmlHistory: string) {
 }
 
 function layoutPanes(options: Options) {
-  const $headers = $$byClass('pane-header');
-  const $bodies = $$byClass('pane-body');
-  const [,, [, $endHeader]] = options.panes
-    .reduce<string[]>((acc, name) => {
-      if (name === 'bookmarks') {
-        return [...acc, 'leafs', 'folders'];
-      }
-      return [...acc, name];
-    }, [])
-    .map((name, i) => [name, $headers[i], $bodies[i]] as const)
-    .map(([name, $paneHeader, $paneBody]) => {
-      const header = `header-${name}`;
-      $paneHeader.append(...$byClass(header)!.children);
-      addClass(header)($paneHeader);
-      addClass(name)($paneBody);
-      const $body = $byClass(`body-${name}`);
-      if ($body) {
-        $paneBody.append(...$body.children);
-      }
-      return [name, $paneHeader] as const;
-    })
-    .filter(([name]) => name !== 'folders');
+  const panes = options.panes.reduce<string[]>(
+    (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
+    [],
+  );
+  const $headers = panes.map((name) => $byClass(`header-${name}`));
+  const $bodies = panes.map((name) => $byClass(name));
+  const $main = $byTag('main');
+  [...$headers, ...$bodies].reverse().map((el) => $main.insertAdjacentElement('afterbegin', el));
+  const $endHeader = last($headers.filter((el) => !hasClass(el, 'header-folders')));
   $byClass('query-wrap', $endHeader)!.append($byClass('form-query')!);
   addClass('end')($endHeader);
+  addClass('end')(last($bodies));
   // History pane
   const $histories = $byClass('histories');
   addClass('v-scroll')($histories);

@@ -25,7 +25,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
   return htmlEscape(`${tab.title}\n${schemeAdd}${domain}`);
 }
 
-export class WindowHeader extends HTMLDivElement {
+export class WindowHeader extends HTMLElement {
   init(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children];
     $tab.textContent = tab.title!;
@@ -38,7 +38,7 @@ export class WindowHeader extends HTMLDivElement {
   }
 }
 
-export class OpenTab extends HTMLDivElement {
+export class OpenTab extends HTMLElement {
   init(tab: chrome.tabs.Tab) {
     this.id = `tab-${tab.id}`;
     this.classList.toggle('current-tab', tab.active);
@@ -51,7 +51,7 @@ export class OpenTab extends HTMLDivElement {
   }
 }
 
-export class OpenTabs extends HTMLDivElement {
+export class Window extends HTMLElement {
   #tmplTab: OpenTab | null = null;
   #tmplHeader: WindowHeader | null = null;
   init(
@@ -76,5 +76,28 @@ export class OpenTabs extends HTMLDivElement {
   addTabs([first, ...rest]: chrome.tabs.Tab[]) {
     this.addTab(first, this.#tmplHeader!);
     [first, ...rest].forEach((tab) => this.addTab(tab, this.#tmplTab!));
+  }
+}
+
+export class Tabs extends HTMLDivElement {
+  init(
+    windows: chrome.windows.Window[],
+    currentWindowId: number,
+    isCollapse: boolean,
+    tmplOpenTab: OpenTab,
+    tmplHeader: WindowHeader,
+    tmplWindows: Window,
+  ) {
+    windows.forEach((win) => {
+      const $win = this.firstElementChild!.appendChild(document.importNode(tmplWindows, true));
+      $win.init(
+        win.id!,
+        currentWindowId === win.id,
+        isCollapse,
+        tmplOpenTab,
+        tmplHeader,
+        win.tabs,
+      );
+    });
   }
 }

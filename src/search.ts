@@ -11,6 +11,7 @@ import {
   $byClass,
   $$byClass,
   $byTag,
+  $$byTag,
 } from './common';
 
 const $inputQuery = $byClass('query') as HTMLInputElement;
@@ -27,7 +28,7 @@ export function getReFilter(value: string) {
 export function clearSearch() {
   $$('.leafs .search-path').forEach(rmClass('search-path'));
   $$('.leafs .path').forEach(rmClass('path'));
-  $$('.tabs-wrap > div > div').forEach(rmClass('match', 'unmatch'));
+  $$byTag('open-tab').forEach(rmClass('match', 'unmatch'));
   $$byClass('empty').forEach(rmClass('empty'));
   resetHistory();
   const openFolder = $('.folders .open');
@@ -67,19 +68,19 @@ function search(includeUrl: boolean, $leafs: HTMLElement, $main: HTMLElement) {
   }
   const reFilter = getReFilter(value)!;
   const selectorTabs = when(lastQueryValue !== '' && value.startsWith(lastQueryValue))
-    .then('.match' as const)
+    .then('match' as const)
     .when(lastQueryValue.startsWith(value))
-    .then('.unmatch' as const)
-    .else('.tab-wrap' as const);
+    .then('unmatch' as const)
+    .else('tab-wrap' as const);
   const targetBookmarks = switches(selectorTabs)
-    .case('.match')
+    .case('match')
     .then(() => {
       const target = $$('.leafs .search-path');
       target.forEach(rmClass('search-path'));
       $$('.leafs .path').forEach(rmClass('path'));
       return target;
     })
-    .case('.unmatch')
+    .case('unmatch')
     .then(() => $$('.leafs .leaf:not(.search-path)'))
     .else(() => {
       $$('.leafs .search-path').forEach(rmClass('search-path'));
@@ -97,7 +98,7 @@ function search(includeUrl: boolean, $leafs: HTMLElement, $main: HTMLElement) {
     }
   });
   const $paneTabs = $byClass('tabs-wrap')!;
-  $$(`:scope > div > ${selectorTabs}`, $paneTabs).forEach((el) => {
+  $$byClass(selectorTabs, $paneTabs).forEach((el) => {
     const tab = el.firstElementChild as HTMLElement;
     const isMatch = reFilter.test(tab.textContent!)
       || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));

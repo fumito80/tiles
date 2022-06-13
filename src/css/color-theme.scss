@@ -1,29 +1,28 @@
 // for Theme
 
-.leafs,
-.histories,
-.tabs-wrap>div,
-.histories .rows .current-date,
-.histories .rows .current-date::before,
-.current-window .tabs-header::after {
-  background-color: var(--pane-bg);
-  color: var(--pane-color);
-}
-
-main,
-.resize-y {
+body {
   background-color: var(--frame-bg);
   color: var(--frame-color);
 }
 
+.leafs,
+.histories,
+.tabs-wrap>open-window,
+.histories .rows .current-date,
+.histories .rows .current-date::before,
+.current-window window-header::after {
+  background-color: var(--pane-bg);
+  color: var(--pane-color);
+}
+
 .folders .open>.marker>.title,
 .current-tab::after,
-.current-window .tabs-header::before {
+.current-window window-header::before {
   background-color: var(--key-bg);
   color: var(--key-color);
 }
 
-.current-window .tabs-header {
+.current-window window-header {
   border-bottom: 4px solid var(--key-bg);
 }
 
@@ -37,12 +36,12 @@ main.searching .form-query {
 
 .leaf:hover,
 .folders .marker:not(.hilite):hover::before,
-main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>div:not(.tabs-collapsed)>.tab-wrap:hover,
-.searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>div>.tab-wrap:hover,
+main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+.searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window>.tab-wrap:hover,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed .header-date:hover,
-main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover .tabs-header,
-.tabs-header:hover,
+main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover window-header,
+window-header:hover,
 .tooltip,
 .draggable-clone,
 .draggable-clone>div,
@@ -67,7 +66,7 @@ main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.t
   color: var(--item-hover-color);
 }
 
-.tabs .window.tabs-collapsed>.tab-wrap.drag-source {
+.tabs open-window.tabs-collapsed>.tab-wrap.drag-source {
   background-color: var(--item-hover-bg);
   border-color: var(--item-hover-bg);
 }
@@ -148,7 +147,7 @@ main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.t
     }
   }
 
-  .window .tabs-header {
+  open-window window-header {
 
     button>i {
       color: $dark-icon-color;
@@ -258,16 +257,16 @@ main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.t
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:hover .icon-x,
   .history:hover .icon-x,
-  .window.tabs-collapsed:hover .tabs-header>button>i,
-  .window:not(.tabs-collapsed) .tabs-header:hover>button>i,
+  .window.tabs-collapsed:hover window-header>button>i,
+  .window:not(.tabs-collapsed) window-header:hover>button>i,
   .folders .folder:not(.open)>.marker:hover>.title::before {
     color: rgba(255, 255, 255, 0.5);
   }
 
   .leaf,
   .marker,
-  .window,
-  .tabs-header {
+  open-window,
+  window-header {
 
     button:hover::after,
     button:focus::after {
@@ -289,8 +288,8 @@ main:not(.theme-dark-hover) {
 
   .leaf,
   .marker,
-  .window,
-  .tabs-header {
+  open-window,
+  window-header {
 
     button:hover::after,
     button:focus::after {

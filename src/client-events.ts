@@ -482,7 +482,7 @@ export default function setEventListners(options: Options) {
   setEvents($$byClass('tabs-menu'), {
     click(e) {
       const $target = e.target as HTMLElement;
-      const $window = $target.closest('div[id]')!;
+      const $window = $target.closest('[id]')!;
       const windowId = getChromeId($window.id);
       switch ($target.dataset.value) {
         case 'add-new-tab': {

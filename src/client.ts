@@ -41,6 +41,7 @@ import {
   pick,
   getNewPaneWidth,
   prop,
+  $$byTag,
 } from './common';
 
 import {
@@ -54,7 +55,9 @@ import {
 import { getReFilter } from './search';
 import { makeLeaf, makeNode, updateAnker } from './html';
 import { getChromeId } from './drag-drop';
-import { OpenTab, OpenTabs, WindowHeader } from './tabs';
+import {
+  OpenTab, Tabs, Window, WindowHeader,
+} from './tabs';
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -580,31 +583,22 @@ export function collapseTabsAll(force?: boolean) {
   const $main = $byTag('main');
   toggleClass('tabs-collapsed-all', force)($main);
   const isCollapse = hasClass($main, 'tabs-collapsed-all');
-  $$('.tabs-wrap > div').forEach(toggleClass('tabs-collapsed', isCollapse));
+  $$byTag('open-window').forEach(toggleClass('tabs-collapsed', isCollapse));
 }
 
-customElements.define('open-tab', OpenTab, { extends: 'div' });
-customElements.define('open-tabs', OpenTabs, { extends: 'div' });
-customElements.define('tabs-header', WindowHeader, { extends: 'div' });
+customElements.define('open-tab', OpenTab);
+customElements.define('open-window', Window);
+customElements.define('window-header', WindowHeader);
+customElements.define('body-tabs', Tabs, { extends: 'div' });
 
 export function setTabs(currentWindowId: number, isCollapse: boolean) {
-  const $tabs = $byClass('tabs-wrap')!;
+  const $tabs = $byClass('tabs') as Tabs;
   const $template = $byTag<HTMLTemplateElement>('template').content;
-  const $tmplHeader = $('[is="tabs-header"]', $template) as WindowHeader;
-  const $tmplOpenTab = $('[is="open-tab"]', $template) as OpenTab;
-  const $tmplOpenTabs = $('[is="open-tabs"]', $template) as OpenTabs;
+  const $tmplHeader = $('window-header', $template) as WindowHeader;
+  const $tmplOpenTab = $('open-tab', $template) as OpenTab;
+  const $tmplWindow = $('open-window', $template) as Window;
   chrome.windows.getAll({ populate: true }, (windows) => {
-    windows.forEach((win) => {
-      const $win = $tabs.appendChild(document.importNode($tmplOpenTabs, true));
-      $win.init(
-        win.id!,
-        currentWindowId === win.id,
-        isCollapse,
-        $tmplOpenTab,
-        $tmplHeader,
-        win.tabs,
-      );
-    });
+    $tabs.init(windows, currentWindowId, isCollapse, $tmplOpenTab, $tmplHeader, $tmplWindow);
   });
 }
 

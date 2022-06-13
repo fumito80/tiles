@@ -113,8 +113,8 @@ main {
 
   .leaf,
   .marker,
-  .window,
-  .tabs-header {
+  open-window,
+  window-header {
 
     button:hover::after,
     button:focus::after {
@@ -195,8 +195,8 @@ button:not(.submit) {
 // Item Common
 
 .leaf,
-.tab-wrap,
-.tabs-header,
+open-tab,
+window-header,
 .history {
   position: relative;
   display: flex;
@@ -761,11 +761,11 @@ main::-webkit-scrollbar {
 }
 
 .drag-start-leaf .leaf,
-.drag-start-leaf .tab-wrap,
+.drag-start-leaf open-tab,
 .drag-start-leaf .folders>.folder>.marker,
 .drag-start-folder .leaf,
 .drag-start-folder .marker,
-.drag-start-folder .tabs-header:not(.drag-source)~.tab-wrap {
+.drag-start-folder window-header:not(.drag-source)~.tab-wrap {
 
   >.drop-top.drag-enter::after,
   >.drop-bottom.drag-enter::after {
@@ -783,7 +783,7 @@ main::-webkit-scrollbar {
 .drag-start-folder .tabs {
 
   .leaf:not(.search-path),
-  .tabs-header:not(.drag-source)~.tab-wrap:not(.match):not(.unmatch) {
+  window-header:not(.drag-source)~open-tab:not(.match):not(.unmatch) {
     overflow: visible;
 
     >.drop-top,
@@ -1181,6 +1181,11 @@ main::-webkit-scrollbar {
 
 // Tabs
 
+open-window,
+open-tab {
+  display: block;
+}
+
 .tabs {
   overflow-y: auto;
   transition: var(--xen-mode-transition);
@@ -1189,7 +1194,7 @@ main::-webkit-scrollbar {
     margin-right: 2px;
   }
 
-  .window {
+  open-window {
     overflow: hidden;
     border-radius: $pane-radius;
     border: 2px solid transparent;
@@ -1874,7 +1879,7 @@ main.zoom-pane {
   }
 }
 
-.tabs-header {
+window-header {
   background-position-x: 3px;
   background-color: rgba(0, 0, 0, 0.4);
   color: $dark-font-color;
@@ -1905,7 +1910,7 @@ main.zoom-pane {
 main {
 
   &.searching {
-    .tabs-header {
+    window-header {
       display: none;
     }
   }
@@ -1915,7 +1920,7 @@ main {
     transition: visibility 0.15s;
   }
 
-  .tab-wrap {
+  open-tab {
     display: inline-flex;
     width: 100%;
     float: left;
@@ -1925,7 +1930,7 @@ main {
 
   &:not(.searching) {
 
-    .window {
+    open-window {
       &.tabs-collapsed {
         padding-bottom: 0;
 
@@ -1955,7 +1960,7 @@ main {
       }
 
       &:not(.tabs-collapsed) {
-        >.tabs-header {
+        >window-header {
           >.tab {
             opacity: 0;
           }
@@ -2035,7 +2040,7 @@ main {
 
 .drag-start-leaf,
 .drag-start-folder {
-  .tabs-collapsed .tabs-header:not(.drag-source)~.tab-wrap:not(.match):not(.unmatch) {
+  .tabs-collapsed window-header:not(.drag-source)~open-tab:not(.match):not(.unmatch) {
 
     >.drop-top,
     >.drop-bottom {
@@ -2083,7 +2088,7 @@ main {
   }
 }
 
-.draggable-clone .tabs-header {
+.draggable-clone window-header {
   background-position-x: 24px;
   padding-left: 22px;
   max-width: 160px;
@@ -2112,7 +2117,7 @@ main {
 }
 
 .current-window {
-  .tabs-header::after {
+  window-header::after {
     content: '';
     position: absolute;
     width: 100%;
