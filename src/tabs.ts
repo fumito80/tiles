@@ -1,6 +1,8 @@
 /* eslint-disable max-classes-per-file */
 
+import { $byClass, toggleClass, toggleElement } from './client';
 import { extractDomain, htmlEscape, makeStyleIcon } from './common';
+import { Action, IPubSubElement, Store } from './store';
 
 export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
   if (tab.url?.startsWith('file://')) {
@@ -81,6 +83,7 @@ export class Window extends HTMLElement {
 
 export class Tabs extends HTMLDivElement {
   init(
+    store: Store,
     windows: chrome.windows.Window[],
     currentWindowId: number,
     isCollapse: boolean,
@@ -98,6 +101,44 @@ export class Tabs extends HTMLDivElement {
         tmplHeader,
         win.tabs,
       );
+    });
+    store.subscribe('collapsed-all', (changes) => {
+      [...this.firstElementChild!.children].forEach(toggleClass('tabs-collapsed', changes.newValue));
+    });
+  }
+  // search(selectorTabs: ) {
+  //   $$byClass(selectorTabs, $paneTabs).forEach((el) => {
+  //     const tab = el.firstElementChild as HTMLElement;
+  //     const isMatch = reFilter.test(tab.textContent!)
+  //       || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));
+  //     el.classList.toggle('match', isMatch);
+  //     el.classList.toggle('unmatch', !isMatch);
+  //   });
+  //   ([...$paneTabs.children] as HTMLElement[])
+  //     .forEach((win) => win.classList.toggle('empty', win.offsetHeight < 10));
+  // }
+}
+
+export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
+  #initValue = true;
+  #buttonCollapse = $byClass('collapse-tabs', this);
+  init(initValue: boolean) {
+    this.#initValue = initValue;
+  }
+  provideActions() {
+    return {
+      'collapsed-all': {
+        initValue: this.#initValue,
+        target: this.#buttonCollapse,
+        eventType: 'click',
+        valueProcesser: (_, currentValue) => !currentValue,
+      } as Action<'click', boolean>,
+    } as const;
+  }
+  setStore(store: Store) {
+    store.subscribe('collapsed-all', (changes) => {
+      toggleElement(changes.newValue)($byClass('icon-list', this));
+      toggleElement(!changes.newValue)($byClass('icon-grid', this));
     });
   }
 }

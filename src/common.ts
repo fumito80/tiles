@@ -1,174 +1,28 @@
 /* eslint-disable no-redeclare */
 
-import { getEndPaneMinWidth } from './client';
 import {
   PayloadAction,
   MapMessagesPtoB,
   MapMessagesBtoP,
   MessageTypePayloadAction,
   State,
-  SplitterClasses,
   MyHistoryItem,
   Model,
   Options,
+  ColorPalette,
+  defaultColorPalette,
 } from './types';
+
+import {
+  getColorPaletteHTML,
+  recombiPalette,
+  addColorSpec,
+  recombiPaletteDark,
+} from './settings-colors';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
 type AnyFunction = (...p: any[]) => any;
-
-// DOM operation
-
-export function $<T extends HTMLElement>(
-  selector: string | null = null,
-  parent: HTMLElement | DocumentFragment | Document | null | Element = document,
-) {
-  return parent?.querySelector<T>(selector!) ?? null;
-}
-
-export function $$<T extends HTMLElement>(
-  selector: string,
-  parent: HTMLElement | DocumentFragment | Document = document,
-) {
-  return [...parent.querySelectorAll(selector)] as Array<T>;
-}
-
-export function $byClass<T extends HTMLElement>(
-  className: string | null,
-  parent: HTMLElement | Document = document,
-) {
-  return parent.getElementsByClassName(className!)[0] as T;
-}
-
-export function $byId<T extends HTMLElement>(
-  id: string,
-) {
-  return document.getElementById(id) as T;
-}
-
-export function $$byClass<T extends HTMLElement>(
-  className: string,
-  parent: HTMLElement | Document = document,
-) {
-  return [...parent.getElementsByClassName(className)] as Array<T>;
-}
-
-export function $byTag<T extends HTMLElement>(
-  tagName: string,
-  parent: HTMLElement | Document = document,
-) {
-  return parent.getElementsByTagName(tagName)[0] as T;
-}
-
-export function $$byTag<T extends HTMLElement>(
-  tagName: string,
-  parent: HTMLElement | Document = document,
-) {
-  return [...parent.getElementsByTagName(tagName)] as Array<T>;
-}
-
-export function addChild<T extends Element | null>($child: T) {
-  return <U extends Element | null>($parent: U) => {
-    if ($parent && $child) {
-      $parent.appendChild($child);
-    }
-    return $child;
-  };
-}
-
-export function addStyle(styleName: string, value: string): <T extends Element | null>($el: T) => T;
-export function addStyle(styleNames: Model): <T extends Element | null>($el: T) => T;
-export function addStyle(styleName: string | Model, value?: string) {
-  return <T extends Element | null>($el: T) => {
-    if (typeof styleName === 'string') {
-      ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
-    } else {
-      Object.entries(styleName).forEach(([k, v]) => {
-        ($el as unknown as HTMLElement)?.style?.setProperty(k, v);
-      });
-    }
-    return $el;
-  };
-}
-
-export function rmStyle(...styleNames: string[]) {
-  return <T extends Element | null>($el: T) => {
-    styleNames.forEach(
-      (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
-    );
-    return $el;
-  };
-}
-
-export function addAttr(attrName: string, value: string) {
-  return <T extends Element | null>($el: T) => {
-    $el?.setAttribute(attrName, value);
-    return $el;
-  };
-}
-
-export function rmAttr(attrName: string) {
-  return <T extends Element | null>($el: T) => {
-    $el?.removeAttribute(attrName);
-    return $el;
-  };
-}
-
-export function addClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
-    $el?.classList.add(...classNames);
-    return $el;
-  };
-}
-
-export function rmClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
-    $el?.classList.remove(...classNames);
-    return $el;
-  };
-}
-
-export function hasClass($el: Element | null, ...classNames: string[]) {
-  if (!$el) {
-    return false;
-  }
-  return classNames.some((className) => $el.classList.contains(className));
-}
-
-export function toggleClass(className: string, force?: boolean) {
-  return <T extends Element | null>($el?: T) => {
-    $el?.classList.toggle(className, force);
-    return $el;
-  };
-}
-
-export function setHTML(html: string) {
-  return <T extends Element | null>($el: T) => {
-    if ($el) {
-      // eslint-disable-next-line no-param-reassign
-      $el.innerHTML = html;
-    }
-    return $el;
-  };
-}
-
-export function setText(text: string | null) {
-  return <T extends Element | null>($el: T) => {
-    if ($el) {
-      // eslint-disable-next-line no-param-reassign
-      $el.textContent = text;
-    }
-    return $el;
-  };
-}
-
-// eslint-disable-next-line no-undef
-export function insertHTML(position: InsertPosition, html: string) {
-  return <T extends Element | null>($el: T) => {
-    $el?.insertAdjacentHTML(position, html);
-    return $el;
-  };
-}
 
 // eslint-disable-next-line no-undef
 type EventListener<K extends keyof HTMLElementEventMap, T extends HTMLElement> = (
@@ -395,10 +249,8 @@ export function tail<T extends Array<any>>([, ...rest]: readonly [any, ...T]) {
   return rest;
 }
 
-type Last<T extends Array<any>> = T[Exclude<keyof T, keyof Tail<T>>];
-
-export function last<T extends Array<any>>(args: T) {
-  return args.at(-1) as Last<T>;
+export function last<T>(args: T[]) {
+  return args.at(-1) ?? null as T | null;
 }
 
 // test
@@ -712,12 +564,6 @@ export function whichClass<T extends ReadonlyArray<string>>(
   return classNames.find((name) => element?.classList.contains(name));
 }
 
-export function addRules(selector: string, ruleProps: [string, string][]) {
-  const rules = ruleProps.map(([prop, value]) => `${prop}:${value};`).join('');
-  const [sheet] = document.styleSheets;
-  sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
-}
-
 export function prop<T, U extends keyof T>(name: U): (target: T) => T[U];
 export function prop<T extends Element, U extends keyof T>(name: U): (target: T | null) => T[U];
 export function prop(name: any) {
@@ -736,11 +582,12 @@ export function propNe(name: string, value: any) {
   return (target: any) => target[name] !== value;
 }
 
+const preFaviconUrl = 'chrome://favicon/';
 // for V3
-// const faviconUrl = chrome.runtime.getURL('_favicon');
+// const preFaviconUrl = chrome.runtime.getURL('_favicon/?pageUrl=');
 
 export function makeStyleIcon(url?: string) {
-  return url ? `background-image: url('chrome://favicon/${url}');` : '';
+  return url ? `background-image: url('${preFaviconUrl}${url}');` : '';
 }
 
 export function regsterChromeEvents(listener: Function) {
@@ -779,78 +626,6 @@ export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
 
 export function getSync<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.sync, ...keyNames);
-}
-
-export function getGridTemplateColumns() {
-  const [pane3, pane2, pane1] = $$byClass('pane-body')
-    .map((el) => el.style.getPropertyValue('width'))
-    .map((n) => Number.parseInt(n, 10));
-  return {
-    pane1,
-    pane2,
-    pane3,
-  };
-}
-
-async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
-  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 120)) {
-    return true;
-  }
-  const width = 800;
-  const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
-  addStyle('width', `${width}px`)(document.body);
-  // eslint-disable-next-line no-use-before-define
-  setSplitWidth(paneWidth);
-  const saved = await getLocal('settings');
-  const settings = {
-    ...saved.settings,
-    width,
-    paneWidth,
-  };
-  setLocal({ settings });
-  return false;
-}
-
-export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  if (!await checkSplitWidth(pane1, pane2, pane3)) {
-    return;
-  }
-  const $bodies = $$byClass('pane-body');
-  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
-}
-
-export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
-  const { pane3, pane2, pane1 } = getGridTemplateColumns();
-  return {
-    ...settings,
-    paneWidth: {
-      pane3,
-      pane2,
-      pane1,
-    },
-  };
-}
-
-export async function recoverMinPaneWidth() {
-  const $endHeaderPane = last($$byClass('pane-header'));
-  const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-  const saved = await getLocal('settings');
-  const { pane1, pane2, pane3 } = saved.settings.paneWidth;
-  if ((pane1 + pane2 + pane3 + 16 + endPaneMinWidth) <= document.body.offsetWidth) {
-    return;
-  }
-  const [maxWidthPane] = Object.entries(saved.settings.paneWidth)
-    .map(([className, width]) => ({ className, width }))
-    .sort((a, b) => b.width - a.width);
-  const { className } = maxWidthPane;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { [className]: _, ...rest } = saved.settings.paneWidth as Model;
-  const restWidth = Object.values(rest).reduce((acc, value) => acc + value, 0);
-  const altWidth = document.body.offsetWidth - (endPaneMinWidth + restWidth + 16);
-  await setSplitWidth({ [className]: Math.floor(altWidth) });
-  const settings = getNewPaneWidth(saved);
-  setLocal({ settings });
 }
 
 export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T) {
@@ -1050,4 +825,58 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     .join('\n');
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
   chrome.browserAction.setPopup({ popup: `popup.html?css=${encoded}` });
+}
+
+export async function makeColorPalette() {
+  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
+  const base = palettes
+    .map(addColorSpec)
+    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
+    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
+    .map(([p, cl, cm, cr, m]) => {
+      if (cl.whiteness <= lightColorWhiteness) {
+        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
+      }
+      return [p, cl, cm, cr, m];
+    });
+
+  const others = base.filter(
+    ([paneBg, frameBg]) => (
+      paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
+    )
+    || (
+      paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
+    ),
+  );
+  const other = getColorPaletteHTML(recombiPalette(others, 100));
+
+  const dark1 = base.filter(
+    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
+      && frameBg.whiteness <= lightColorWhiteness,
+  );
+
+  const lightTheme = base
+    .concat([...dark1, ...others].map(
+      (palette) => palette.concat().sort((a, b) => b.whiteness - a.whiteness),
+    ))
+    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
+    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
+
+  const darkOrVivid = [...others, ...lightTheme]
+    .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))
+    .filter(
+      ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
+      && frameBg.whiteness <= lightColorWhiteness,
+    )
+    .concat(dark1);
+
+  const dark = getColorPaletteHTML(recombiPaletteDark(darkOrVivid, 100));
+
+  const lightThemesAndDefault = [
+    addColorSpec(defaultColorPalette),
+    ...recombiPalette(lightTheme, 80),
+  ];
+  const light = getColorPaletteHTML(lightThemesAndDefault);
+
+  return { light, dark, other };
 }

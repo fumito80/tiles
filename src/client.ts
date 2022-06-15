@@ -1,14 +1,16 @@
+/* eslint-disable no-redeclare */
+
 import {
   splitterClasses,
   OpenBookmarkType,
   Options,
   State,
   Settings,
+  SplitterClasses,
+  Model,
 } from './types';
 
 import {
-  $,
-  $$,
   whichClass,
   cssid,
   curry,
@@ -16,32 +18,17 @@ import {
   getCurrentTab,
   getLocal,
   setLocal,
-  setSplitWidth,
   extractDomain,
   getLocaleDate,
   htmlEscape,
   curry3,
   pipe,
-  rmClass,
-  addClass,
-  addStyle,
-  addListener,
-  addChild,
-  addAttr,
-  insertHTML,
-  setText,
-  rmAttr,
-  rmStyle,
-  $byClass,
-  $$byClass,
-  $byTag,
-  hasClass,
-  toggleClass,
   decode,
   pick,
-  getNewPaneWidth,
   prop,
-  $$byTag,
+  last,
+  addListener,
+  makeStyleIcon,
 } from './common';
 
 import {
@@ -53,11 +40,268 @@ import {
 } from './vscroll';
 
 import { getReFilter } from './search';
-import { makeLeaf, makeNode, updateAnker } from './html';
+import { makeLeaf, makeNode } from './html';
 import { getChromeId } from './drag-drop';
 import {
   OpenTab, Tabs, Window, WindowHeader,
 } from './tabs';
+
+import { Store } from './store';
+
+// DOM operation
+
+export function $<T extends HTMLElement>(
+  selector: string | null = null,
+  parent: HTMLElement | DocumentFragment | Document | null | Element = document,
+) {
+  return parent?.querySelector<T>(selector!) ?? null;
+}
+
+export function $$<T extends HTMLElement>(
+  selector: string,
+  parent: HTMLElement | DocumentFragment | Document = document,
+) {
+  return [...parent.querySelectorAll(selector)] as Array<T>;
+}
+
+export function $byClass<T extends HTMLElement>(
+  className: string | null,
+  parent: HTMLElement | Document = document,
+) {
+  return parent.getElementsByClassName(className!)[0] as T;
+}
+
+export function $byId<T extends HTMLElement>(
+  id: string,
+) {
+  return document.getElementById(id) as T;
+}
+
+export function $$byClass<T extends HTMLElement>(
+  className: string,
+  parent: HTMLElement | Document = document,
+) {
+  return [...parent.getElementsByClassName(className)] as Array<T>;
+}
+
+export function $byTag<T extends HTMLElement>(
+  tagName: string,
+  parent: HTMLElement | Document = document,
+) {
+  return parent.getElementsByTagName(tagName)[0] as T;
+}
+
+export function $$byTag<T extends HTMLElement>(
+  tagName: string,
+  parent: HTMLElement | Document = document,
+) {
+  return [...parent.getElementsByTagName(tagName)] as Array<T>;
+}
+
+export function addChild<T extends Element | null>($child: T) {
+  return <U extends Element | null>($parent: U) => {
+    if ($parent && $child) {
+      $parent.appendChild($child);
+    }
+    return $child;
+  };
+}
+
+export function addStyle(styleNames: Model): <T extends Element | null>($el: T) => T;
+export function addStyle(styleName: string, value: string): <T extends Element | null>($el: T) => T;
+export function addStyle(styleName: string | Model, value?: string) {
+  return <T extends Element | null>($el: T) => {
+    if (typeof styleName === 'string') {
+      ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
+    } else {
+      Object.entries(styleName).forEach(([k, v]) => {
+        ($el as unknown as HTMLElement)?.style?.setProperty(k, v);
+      });
+    }
+    return $el;
+  };
+}
+
+export function rmStyle(...styleNames: string[]) {
+  return <T extends Element | null>($el: T) => {
+    styleNames.forEach(
+      (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
+    );
+    return $el;
+  };
+}
+
+export function addAttr(attrName: string, value: string) {
+  return <T extends Element | null>($el: T) => {
+    $el?.setAttribute(attrName, value);
+    return $el;
+  };
+}
+
+export function rmAttr(attrName: string) {
+  return <T extends Element | null>($el: T) => {
+    $el?.removeAttribute(attrName);
+    return $el;
+  };
+}
+
+export function addClass(...classNames: string[]) {
+  return <T extends Element | null>($el: T) => {
+    $el?.classList.add(...classNames);
+    return $el;
+  };
+}
+
+export function rmClass(...classNames: string[]) {
+  return <T extends Element | null>($el: T) => {
+    $el?.classList.remove(...classNames);
+    return $el;
+  };
+}
+
+export function hasClass($el: Element | null, ...classNames: string[]) {
+  if (!$el) {
+    return false;
+  }
+  return classNames.some((className) => $el.classList.contains(className));
+}
+
+export function toggleElement(isShow = true, shownDisplayType = 'block') {
+  return (selectorOrElement: string | HTMLElement, parent = document) => {
+    const display = isShow ? shownDisplayType : 'none';
+    const $target = typeof selectorOrElement === 'string' ? $(selectorOrElement, parent) : selectorOrElement;
+    addStyle({ display })($target);
+  };
+}
+
+export function toggleClass(className: string, force?: boolean) {
+  return <T extends Element | null>($el?: T) => {
+    $el?.classList.toggle(className, force);
+    return $el;
+  };
+}
+
+export function setHTML(html: string) {
+  return <T extends Element | null>($el: T) => {
+    if ($el) {
+      // eslint-disable-next-line no-param-reassign
+      $el.innerHTML = html;
+    }
+    return $el;
+  };
+}
+
+export function setText(text: string | null) {
+  return <T extends Element | null>($el: T) => {
+    if ($el) {
+      // eslint-disable-next-line no-param-reassign
+      $el.textContent = text;
+    }
+    return $el;
+  };
+}
+
+// eslint-disable-next-line no-undef
+export function insertHTML(position: InsertPosition, html: string) {
+  return <T extends Element | null>($el: T) => {
+    $el?.insertAdjacentHTML(position, html);
+    return $el;
+  };
+}
+
+export function addRules(selector: string, ruleProps: [string, string][]) {
+  const rules = ruleProps.map(([prop1, value]) => `${prop1}:${value};`).join('');
+  const [sheet] = document.styleSheets;
+  sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
+}
+
+export function getGridTemplateColumns() {
+  const [pane3, pane2, pane1] = $$byClass('pane-body')
+    .map((el) => el.style.getPropertyValue('width'))
+    .map((n) => Number.parseInt(n, 10));
+  return {
+    pane1,
+    pane2,
+    pane3,
+  };
+}
+
+async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
+  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 120)) {
+    return true;
+  }
+  const width = 800;
+  const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
+  addStyle('width', `${width}px`)(document.body);
+  // eslint-disable-next-line no-use-before-define
+  setSplitWidth(paneWidth);
+  const saved = await getLocal('settings');
+  const settings = {
+    ...saved.settings,
+    width,
+    paneWidth,
+  };
+  setLocal({ settings });
+  return false;
+}
+
+export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
+  const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
+  if (!await checkSplitWidth(pane1, pane2, pane3)) {
+    return;
+  }
+  const $bodies = $$byClass('pane-body');
+  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
+}
+
+export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
+  const { pane3, pane2, pane1 } = getGridTemplateColumns();
+  return {
+    ...settings,
+    paneWidth: {
+      pane3,
+      pane2,
+      pane1,
+    },
+  };
+}
+
+export function getEndPaneMinWidth($endPane: HTMLElement) {
+  const queryWrapMinWidth = 65;
+  const minWidth = [...$endPane.children]
+    .filter((el) => !hasClass(el, 'query-wrap'))
+    .map((el) => getComputedStyle(el))
+    .map(pick('width', 'marginLeft', 'marginRight'))
+    .reduce(
+      (acc, props) => Object.values(props).reduce(
+        (sum, prop1) => sum + Number.parseFloat(prop1),
+        acc,
+      ),
+      queryWrapMinWidth,
+    );
+  return Math.max(minWidth, 120);
+}
+
+export async function recoverMinPaneWidth() {
+  const $endHeaderPane = last($$byClass('pane-header'))!;
+  const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
+  const saved = await getLocal('settings');
+  const { pane1, pane2, pane3 } = saved.settings.paneWidth;
+  if ((pane1 + pane2 + pane3 + 16 + endPaneMinWidth) <= document.body.offsetWidth) {
+    return;
+  }
+  const [maxWidthPane] = Object.entries(saved.settings.paneWidth)
+    .map(([className, width]) => ({ className, width }))
+    .sort((a, b) => b.width - a.width);
+  const { className } = maxWidthPane;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { [className]: _, ...rest } = saved.settings.paneWidth as Model;
+  const restWidth = Object.values(rest).reduce((acc, value) => acc + value, 0);
+  const altWidth = document.body.offsetWidth - (endPaneMinWidth + restWidth + 16);
+  await setSplitWidth({ [className]: Math.floor(altWidth) });
+  const settings = getNewPaneWidth(saved);
+  setLocal({ settings });
+}
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
   return pipe(
@@ -206,22 +450,6 @@ export function resizeWidthHandler($ref: HTMLElement, startWidth: number, endPan
   };
 }
 
-export function getEndPaneMinWidth($endPane: HTMLElement) {
-  const queryWrapMinWidth = 65;
-  const minWidth = [...$endPane.children]
-    .filter((el) => !hasClass(el, 'query-wrap'))
-    .map((el) => getComputedStyle(el))
-    .map(pick('width', 'marginLeft', 'marginRight'))
-    .reduce(
-      (acc, props) => Object.values(props).reduce(
-        (sum, prop1) => sum + Number.parseFloat(prop1),
-        acc,
-      ),
-      queryWrapMinWidth,
-    );
-  return Math.max(minWidth, 120);
-}
-
 let timerResizeY: ReturnType<typeof setTimeout>;
 
 export function resizeHeightHandler(e: MouseEvent) {
@@ -251,6 +479,16 @@ export function setAnimationFolder(className: string) {
       addClass(className),
     )(el);
   };
+}
+
+export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
+  const style = makeStyleIcon(url);
+  $$(cssid(id)).forEach((el) => {
+    el.setAttribute('style', style);
+    const $anchor = el.firstElementChild as HTMLAnchorElement;
+    $anchor.setAttribute('title', title);
+    $anchor.textContent = title;
+  });
 }
 
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
@@ -579,26 +817,21 @@ export async function switchTabWindow(e: Event) {
   }));
 }
 
-export function collapseTabsAll(force?: boolean) {
-  const $main = $byTag('main');
-  toggleClass('tabs-collapsed-all', force)($main);
-  const isCollapse = hasClass($main, 'tabs-collapsed-all');
-  $$byTag('open-window').forEach(toggleClass('tabs-collapsed', isCollapse));
-}
+// export function collapseTabsAll(force?: boolean) {
+//   const $main = $byTag('main');
+//   toggleClass('tabs-collapsed-all', force)($main);
+//   const isCollapse = hasClass($main, 'tabs-collapsed-all');
+//   $$byTag('open-window').forEach(toggleClass('tabs-collapsed', isCollapse));
+// }
 
-customElements.define('open-tab', OpenTab);
-customElements.define('open-window', Window);
-customElements.define('window-header', WindowHeader);
-customElements.define('body-tabs', Tabs, { extends: 'div' });
-
-export function setTabs(currentWindowId: number, isCollapse: boolean) {
+export function setTabs(store: Store, currentWindowId: number, isCollapse: boolean) {
   const $tabs = $byClass('tabs') as Tabs;
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const $tmplHeader = $('window-header', $template) as WindowHeader;
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
   chrome.windows.getAll({ populate: true }, (windows) => {
-    $tabs.init(windows, currentWindowId, isCollapse, $tmplOpenTab, $tmplHeader, $tmplWindow);
+    $tabs.init(store, windows, currentWindowId, isCollapse, $tmplOpenTab, $tmplHeader, $tmplWindow);
   });
 }
 

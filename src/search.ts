@@ -1,10 +1,13 @@
 import { resetHistory } from './vscroll';
 import {
-  $,
-  $$,
   when,
   switches,
   extractUrl,
+} from './common';
+
+import {
+  $,
+  $$,
   rmClass,
   addAttr,
   addClass,
@@ -12,7 +15,7 @@ import {
   $$byClass,
   $byTag,
   $$byTag,
-} from './common';
+} from './client';
 
 const $inputQuery = $byClass('query') as HTMLInputElement;
 

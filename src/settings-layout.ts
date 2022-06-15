@@ -1,7 +1,7 @@
+import { State, InsertPosition } from './types';
 import {
   $, $byClass, addClass, hasClass, rmClass,
-} from './common';
-import { State, InsertPosition } from './types';
+} from './client';
 
 type Panes = State['options']['panes'][number];
 

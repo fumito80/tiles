@@ -1,8 +1,9 @@
 import { Options } from './types';
+import { getLocal, getGridColStart } from './common';
 import {
   $, $$byClass, $byClass,
-  getLocal, setSplitWidth, addStyle, addClass, rmStyle, getGridColStart, rmClass, hasClass,
-} from './common';
+  setSplitWidth, addStyle, addClass, rmStyle, rmClass, hasClass,
+} from './client';
 
 type ZoomingElements = {
   $main: HTMLElement,

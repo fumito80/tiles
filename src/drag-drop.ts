@@ -1,14 +1,18 @@
 import { dropAreaClasses, positions } from './types';
 import {
-  $, $$,
+  pipe,
   cbToResolve,
   curry3,
   cssid,
   whichClass,
   propEq,
   getHistoryById,
+  decode,
+  when,
+} from './common';
+import {
+  $, $$,
   rmClass,
-  pipe,
   setHTML,
   addClass,
   addChild,
@@ -16,13 +20,9 @@ import {
   $byClass,
   $byTag,
   hasClass,
-  decode,
   addStyle,
   setText,
-  when,
   addAttr,
-} from './common';
-import {
   addBookmark,
   getBookmark,
   setHasChildren,

@@ -1,25 +1,61 @@
 import './css/settings.scss';
 import * as bootstrap from 'bootstrap';
-import { State } from './types';
+import { State, ColorPalette } from './types';
 import './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
-import './settings-colors';
+import { setBrowserIcon } from './draw-svg';
 import {
-  $, $$, $byTag, $byClass, $byId,
   curry, pipe, tap,
   getSync, setSync, setLocal,
   bootstrap as myBootstrap,
   whichClass,
   objectEqaul,
   addListener,
-  rmClass, addClass, setText, hasClass,
   camelToSnake,
   setPopupStyle,
+  getLocal,
 } from './common';
+import {
+  $, $$, $byTag, $byClass, $byId,
+  rmClass, addClass, setText, hasClass,
+  insertHTML,
+} from './client';
 
 type Options = State['options'];
 type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
+
+class ColorPaletteClass extends HTMLDivElement {
+  #value?: ColorPalette;
+  #inputs: HTMLInputElement[];
+  constructor() {
+    super();
+    this.#inputs = [...this.children] as HTMLInputElement[];
+    this.#inputs.forEach(
+      addListener('change', () => {
+        this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
+      }),
+    );
+  }
+  get value() {
+    return this.#value!;
+  }
+  set value(value: ColorPalette) {
+    this.#value = value;
+    value.forEach((color, i) => {
+      const input = this.children[i] as HTMLInputElement;
+      input.value = `#${color}`;
+    });
+    this.dispatchEvent(new Event('change', { bubbles: true }));
+    setBrowserIcon(value);
+  }
+  // eslint-disable-next-line class-methods-use-this
+  get validity() {
+    return { valid: true };
+  }
+}
+
+customElements.define('color-palette', ColorPaletteClass, { extends: 'div' });
 
 // @ts-ignore
 // eslint-disable-next-line no-restricted-globals
@@ -186,3 +222,33 @@ const init = pipe(
 );
 
 myBootstrap('options').then(init);
+
+getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
+  insertHTML('beforeend', theme.light)($byId('light-theme'));
+  insertHTML('beforeend', theme.dark)($byId('dark-theme'));
+  insertHTML('beforeend', theme.other)($byId('mix-theme'));
+
+  const $selected = $$('.tab-pane > div').find((el) => ([...el.children] as HTMLElement[]).every(
+    (color, i) => color.dataset.color === options.colorPalette[i],
+  ));
+  if ($selected) {
+    addClass('selected')($selected);
+    const tab = new bootstrap.Tab($(`[aria-controls="${$selected.parentElement!.id}"]`)!);
+    $byId('color-palettes').addEventListener('shown.bs.collapse', () => {
+      ($selected as any).scrollIntoViewIfNeeded();
+    }, { once: true });
+    tab?.show();
+  }
+
+  addListener('click', (e) => {
+    const $target = e.target as HTMLElement;
+    if (!hasClass($target.parentElement, 'tab-pane')) {
+      return;
+    }
+    const palette = ([...$target.children] as HTMLElement[])
+      .map((el) => el.dataset.color as string) as ColorPalette;
+    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
+    rmClass('selected')($byClass('selected'));
+    addClass('selected')($target);
+  })($byClass('tab-content'));
+});

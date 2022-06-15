@@ -1,11 +1,13 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  $, $byClass, $byTag,
   pipe, pick,
   getLocal, setLocal, getLocaleDate,
   isDateEq, htmlEscape,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, hasClass,
 } from './common';
+import {
+  $, $byClass, $byTag,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, hasClass,
+} from './client';
 import { makeHistory } from './html';
 
 const invisible = { transform: 'translateY(-10000px)' };

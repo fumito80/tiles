@@ -12,29 +12,40 @@ import {
 } from './types';
 
 import {
-  $, $$,
-  addStyle, addClass, toggleClass,
+  pipe,
   cssid,
-  setSplitWidth,
   bootstrap,
   getKeys,
   getColorWhiteness,
   lightColorWhiteness,
   setMessageListener,
-  setHTML, insertHTML,
   getGridColStart,
-  $$byClass, $byClass, $byTag,
-  pipe,
-  recoverMinPaneWidth,
   camelToSnake,
   last,
-  hasClass,
+  filter,
+  curry,
 } from './common';
 
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
 import { resetQuery } from './search';
-import { setTabs } from './client';
+import {
+  $, $$,
+  addStyle, addClass, toggleClass,
+  setSplitWidth,
+  hasClass,
+  addChild,
+  setHTML, insertHTML,
+  $$byClass, $byClass, $byTag,
+  recoverMinPaneWidth,
+  setTabs,
+  toggleElement,
+} from './client';
+import { initStore } from './store';
+import {
+  HeaderTabs,
+  OpenTab, Tabs, Window, WindowHeader,
+} from './tabs';
 
 type Options = State['options'];
 
@@ -98,11 +109,6 @@ function setBookmarksState(clState: ClientState) {
   }
 }
 
-function toggleElement(selector: string, isShow = true, shownDisplayType = 'block') {
-  const display = isShow ? shownDisplayType : 'none';
-  addStyle({ display })($(selector));
-}
-
 function setHistory($target: HTMLElement, htmlHistory: string) {
   insertHTML('afterbegin', htmlHistory)($target);
 }
@@ -114,15 +120,15 @@ function layoutPanes(options: Options) {
   );
   const $headers = panes.map((name) => $byClass(`header-${name}`));
   const $bodies = panes.map((name) => $byClass(name));
-  const $main = $byTag('main');
-  [...$headers, ...$bodies].reverse().map((el) => $main.insertAdjacentElement('afterbegin', el));
-  const $endHeader = last($headers.filter((el) => !hasClass(el, 'header-folders')));
-  $byClass('query-wrap', $endHeader)!.append($byClass('form-query')!);
-  addClass('end')($endHeader);
+  $byTag('main').prepend(...$headers, ...$bodies);
+  pipe(
+    filter((el) => !hasClass(el, 'header-folders')),
+    last,
+    addClass('end'),
+    curry($byClass)('query-wrap'),
+    addChild($byClass('form-query')),
+  )($headers);
   addClass('end')(last($bodies));
-  // History pane
-  const $histories = $byClass('histories');
-  addClass('v-scroll')($histories);
   // Bold Splitter
   const $leafs = $('.histories + .leafs, .histories + .tabs');
   if ($leafs) {
@@ -130,20 +136,27 @@ function layoutPanes(options: Options) {
     const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
+  return [...$headers, ...$bodies].reduce((acc, pane) => {
+    const name = pane.getAttribute('is');
+    if (!name) {
+      return acc;
+    }
+    return { ...acc, [name]: pane };
+  }, {});
 }
 
 function init({
   settings, htmlBookmarks, clientState, options, currentWindowId, htmlHistory,
 }: State) {
-  layoutPanes(options);
+  const store = initStore(layoutPanes(options), options);
   setOptions(settings, options);
-  setTabs(currentWindowId, options.collapseTabs);
+  setTabs(store, currentWindowId, options.collapseTabs);
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
-  toggleElement('[data-value="find-in-tabs"]', !options.findTabsFirst, 'flex');
-  toggleElement('[data-value="open-new-tab"]', options.findTabsFirst, 'flex');
-  setEventListners(options);
+  toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
+  toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
+  setEventListners(store, options);
   setExternalUrl(options);
   resetQuery(settings.includeUrl);
   resetHistory({ initialize: true }).then(refreshVScroll);
@@ -156,3 +169,9 @@ export const mapMessagesBtoP = {
 };
 
 setMessageListener(mapMessagesBtoP, true);
+
+customElements.define('open-tab', OpenTab);
+customElements.define('open-window', Window);
+customElements.define('window-header', WindowHeader);
+customElements.define('body-tabs', Tabs, { extends: 'div' });
+customElements.define('header-tabs', HeaderTabs, { extends: 'div' });

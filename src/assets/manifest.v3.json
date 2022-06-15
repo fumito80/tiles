@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "x-resources",
-  "description": "You can grid your browsing resources as you like and make it one-stop searching.",
-  "version": "0.1.0",
+  "name": "Popup'n My Resources",
+  "version": "0.16.2",
+  "default_locale": "en",
+  "description": "Search/view across bookmarks, tabs, and history for a one-stop access to your browsing resources.",
   "permissions": [
     "storage",
     "bookmarks",
@@ -10,14 +11,17 @@
     "history"
   ],
   "action": {
-    "default_title": "Resource Grid",
+    "default_title": "Popup'n My Resources",
     "default_popup": "popup.html"
   },
   "commands": {
     "_execute_action": {
-      "suggested_key": "Ctrl+Shift+F",
-      "description": "Toggle Resource Grid"
-    }
+      "description": "Toggle Popup'n My Resources",
+      "suggested_key": {
+        "mac": "Command+Shift+P",
+        "default": "Alt+Shift+P"
+     }
+  }
   },
   "background": {
     "service_worker": "background.js"

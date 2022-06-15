@@ -4,7 +4,6 @@ import {
 } from './types';
 
 import {
-  $,
   setEvents,
   whichClass,
   cssid,
@@ -17,24 +16,25 @@ import {
   removeUrlHistory,
   getLocal,
   setLocal,
-  addChild,
   pipe,
   addListener,
+  last,
+  when,
+} from './common';
+
+import {
+  setAnimationClass,
+  $,
+  $$,
+  addChild,
   rmClass,
   addClass,
   $byTag,
   $byClass,
   $$byClass,
-  last,
   hasClass,
   toggleClass,
-  $$,
-  when,
   addStyle,
-} from './common';
-
-import {
-  setAnimationClass,
   createNewTab,
   getBookmark,
   openBookmark,
@@ -57,18 +57,18 @@ import {
   switchTabWindow,
   getEndPaneMinWidth,
   openFolder,
-  collapseTabsAll,
   smoothSroll,
   saveStateAllPaths,
+  updateAnker,
 } from './client';
 
-import { updateAnker } from './html';
 import { resetVScrollData } from './vscroll';
 import dragAndDropEvents, { getChromeId } from './drag-drop';
 import { clearQuery, resetQuery } from './search';
 import { setZoomSetting } from './zoom';
+import { Store } from './store';
 
-export default function setEventListners(options: Options) {
+export default function setEventListners(store: Store, options: Options) {
   const $main = $byTag('main')!;
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
   $byClass('form-query')!.addEventListener('submit', (e: Event) => {
@@ -85,7 +85,7 @@ export default function setEventListners(options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
+  // $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
   setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
@@ -261,8 +261,8 @@ export default function setEventListners(options: Options) {
   });
 
   const $paneBodies = $$byClass('pane-body');
-  const $endHeaderPane = last($$byClass('pane-header'));
-  const $endBodyPane = last($paneBodies);
+  const $endHeaderPane = last($$byClass('pane-header'))!;
+  const $endBodyPane = last($paneBodies)!;
 
   $$byClass('split-h').forEach(($splitter, i) => {
     const $targetPane = $paneBodies[i];
@@ -408,9 +408,9 @@ export default function setEventListners(options: Options) {
         await promiseCollapse;
         const { length } = $$byClass('tabs-collapsed');
         if (length === $win.parentElement!.children.length) {
-          collapseTabsAll(true);
+          store.dispatch('collapsed-all', true);
         } else if (length === 0) {
-          collapseTabsAll(false);
+          store.dispatch('collapsed-all', false);
         }
         const $tabs = $win.parentElement!.parentElement!;
         const winBottom = $win.offsetTop + $win.offsetHeight;

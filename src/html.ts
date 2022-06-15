@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  makeStyleIcon, $$, cssid, htmlEscape, getLocaleDate,
+  makeStyleIcon, htmlEscape, getLocaleDate,
 } from './common';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
@@ -29,16 +29,6 @@ export function makeNode({
       ${children}
     </div>
   `;
-}
-
-export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
-  const style = makeStyleIcon(url);
-  $$(cssid(id)).forEach((el) => {
-    el.setAttribute('style', style);
-    const $anchor = el.firstElementChild as HTMLAnchorElement;
-    $anchor.setAttribute('title', title);
-    $anchor.textContent = title;
-  });
 }
 
 export function makeHistory({

@@ -1,22 +1,11 @@
-import * as bootstrap from 'bootstrap';
-import { ColorPalette, defaultColorPalette } from './types';
-import { setBrowserIcon } from './draw-svg';
+import { ColorPalette } from './types';
 
 import {
-  $, $byClass,
   getColorWhiteness,
   getColorChroma,
   getRGB,
   lightColorWhiteness,
-  insertHTML,
   objectEqaul,
-  addListener,
-  rmClass,
-  addClass,
-  hasClass,
-  $byId,
-  getLocal,
-  $$,
 } from './common';
 
 type ColorInfo = {
@@ -25,38 +14,6 @@ type ColorInfo = {
   chroma: number;
   vivid: number;
 }
-
-class ColorPaletteClass extends HTMLDivElement {
-  #value?: ColorPalette;
-  #inputs: HTMLInputElement[];
-  constructor() {
-    super();
-    this.#inputs = [...this.children] as HTMLInputElement[];
-    this.#inputs.forEach(
-      addListener('change', () => {
-        this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
-      }),
-    );
-  }
-  get value() {
-    return this.#value!;
-  }
-  set value(value: ColorPalette) {
-    this.#value = value;
-    value.forEach((color, i) => {
-      const input = this.children[i] as HTMLInputElement;
-      input.value = `#${color}`;
-    });
-    this.dispatchEvent(new Event('change', { bubbles: true }));
-    setBrowserIcon(value);
-  }
-  // eslint-disable-next-line class-methods-use-this
-  get validity() {
-    return { valid: true };
-  }
-}
-
-customElements.define('color-palette', ColorPaletteClass, { extends: 'div' });
 
 function getRGBDiff(a: ColorInfo, b: ColorInfo) {
   const [r1, g1, b1] = getRGB(a.color);
@@ -116,7 +73,7 @@ function changeHoverColorChroma2Dark([p, f, h1, h2, s]: ColorInfo[]) {
   return [p, f, h1, h2, s];
 }
 
-function getColorPaletteHTML(
+export function getColorPaletteHTML(
   palettes: ColorInfo[][],
 ) {
   return palettes
@@ -132,7 +89,7 @@ function getColorPaletteHTML(
     .join('');
 }
 
-function addColorSpec(palette: ColorPalette) {
+export function addColorSpec(palette: ColorPalette) {
   return palette
     .map((color) => ({
       color,
@@ -151,7 +108,7 @@ function filterUnmatchColor(palettes: ColorInfo[][], colorMatchTh: number) {
     ));
 }
 
-function recombiPalette(palettes: ColorInfo[][], colorMatchTh: number) {
+export function recombiPalette(palettes: ColorInfo[][], colorMatchTh: number) {
   const recomibined = palettes.map(changeSelectColorChroma3).map(changeHoverColorChroma2)
     .concat(palettes.map(flipHoverColor).map(flipSelectColor))
     .concat(palettes)
@@ -165,7 +122,7 @@ function recombiPalette(palettes: ColorInfo[][], colorMatchTh: number) {
   return filterUnmatchColor(recomibined, colorMatchTh);
 }
 
-function recombiPaletteDark(palettes: ColorInfo[][], colorMatchTh: number) {
+export function recombiPaletteDark(palettes: ColorInfo[][], colorMatchTh: number) {
   const recomibined = palettes.map(changeSelectColorChroma3Dark).map(changeHoverColorChroma2Dark)
     .concat(palettes.map(flipHoverColor).map(flipSelectColor))
     .concat(palettes)
@@ -178,87 +135,3 @@ function recombiPaletteDark(palettes: ColorInfo[][], colorMatchTh: number) {
     ));
   return filterUnmatchColor(recomibined, colorMatchTh);
 }
-
-export default async function makeColorPalette() {
-  const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
-  const base = palettes
-    .map(addColorSpec)
-    .map((palette) => [...palette].sort((x, y) => x.vivid - y.vivid))
-    .map(([a, b, c, d, e]) => [a, b, c, d].sort((x, y) => x.chroma - y.chroma).concat(e))
-    .map(([p, cl, cm, cr, m]) => {
-      if (cl.whiteness <= lightColorWhiteness) {
-        return (cm.whiteness > lightColorWhiteness) ? [p, cm, cl, cr, m] : [p, cr, cl, cm, m];
-      }
-      return [p, cl, cm, cr, m];
-    });
-
-  const others = base.filter(
-    ([paneBg, frameBg]) => (
-      paneBg.whiteness <= lightColorWhiteness && frameBg.whiteness > lightColorWhiteness
-    )
-    || (
-      paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
-    ),
-  );
-  const other = getColorPaletteHTML(recombiPalette(others, 100));
-
-  const dark1 = base.filter(
-    ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
-      && frameBg.whiteness <= lightColorWhiteness,
-  );
-
-  const lightTheme = base
-    .concat([...dark1, ...others].map(
-      (palette) => palette.concat().sort((a, b) => b.whiteness - a.whiteness),
-    ))
-    .filter(([paneBg]) => paneBg.whiteness > lightColorWhiteness)
-    .filter(([, frameBg]) => frameBg.whiteness > lightColorWhiteness);
-
-  const darkOrVivid = [...others, ...lightTheme]
-    .map((palette) => palette.concat().sort((a, b) => a.whiteness - b.whiteness))
-    .filter(
-      ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
-      && frameBg.whiteness <= lightColorWhiteness,
-    )
-    .concat(dark1);
-
-  const dark = getColorPaletteHTML(recombiPaletteDark(darkOrVivid, 100));
-
-  const lightThemesAndDefault = [
-    addColorSpec(defaultColorPalette),
-    ...recombiPalette(lightTheme, 80),
-  ];
-  const light = getColorPaletteHTML(lightThemesAndDefault);
-
-  return { light, dark, other };
-}
-
-getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
-  insertHTML('beforeend', theme.light)($byId('light-theme'));
-  insertHTML('beforeend', theme.dark)($byId('dark-theme'));
-  insertHTML('beforeend', theme.other)($byId('mix-theme'));
-
-  const $selected = $$('.tab-pane > div').find((el) => ([...el.children] as HTMLElement[]).every(
-    (color, i) => color.dataset.color === options.colorPalette[i],
-  ));
-  if ($selected) {
-    addClass('selected')($selected);
-    const tab = new bootstrap.Tab($(`[aria-controls="${$selected.parentElement!.id}"]`)!);
-    $byId('color-palettes').addEventListener('shown.bs.collapse', () => {
-      ($selected as any).scrollIntoViewIfNeeded();
-    }, { once: true });
-    tab?.show();
-  }
-
-  addListener('click', (e) => {
-    const $target = e.target as HTMLElement;
-    if (!hasClass($target.parentElement, 'tab-pane')) {
-      return;
-    }
-    const palette = ([...$target.children] as HTMLElement[])
-      .map((el) => el.dataset.color as string) as ColorPalette;
-    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
-    rmClass('selected')($byClass('selected'));
-    addClass('selected')($target);
-  })($byClass('tab-content'));
-});

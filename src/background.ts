@@ -26,11 +26,11 @@ import {
   postMessage,
   isDateEq,
   setPopupStyle,
+  makeColorPalette,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import { setBrowserIcon } from './draw-svg';
-import makeColorPalette from './settings-colors';
 
 type Histories = State['histories'];
 
