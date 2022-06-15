@@ -1971,30 +1971,6 @@ main {
     }
   }
 
-  &.tabs-collapsed-all {
-    .collapse-tabs {
-      >.icon-list {
-        display: block;
-      }
-
-      >.icon-grid {
-        display: none;
-      }
-    }
-  }
-
-  &:not(.tabs-collapsed-all) {
-    .collapse-tabs {
-      >.icon-list {
-        display: none;
-      }
-
-      >.icon-grid {
-        display: block;
-      }
-    }
-  }
-
   // Tooltip
 
   .tab-wrap {

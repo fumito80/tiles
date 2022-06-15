@@ -817,13 +817,6 @@ export async function switchTabWindow(e: Event) {
   }));
 }
 
-// export function collapseTabsAll(force?: boolean) {
-//   const $main = $byTag('main');
-//   toggleClass('tabs-collapsed-all', force)($main);
-//   const isCollapse = hasClass($main, 'tabs-collapsed-all');
-//   $$byTag('open-window').forEach(toggleClass('tabs-collapsed', isCollapse));
-// }
-
 export function setTabs(store: Store, currentWindowId: number, isCollapse: boolean) {
   const $tabs = $byClass('tabs') as Tabs;
   const $template = $byTag<HTMLTemplateElement>('template').content;

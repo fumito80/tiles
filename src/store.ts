@@ -3,7 +3,7 @@ import { HeaderTabs } from './tabs';
 
 // eslint-disable-next-line no-undef
 export type Action<A extends keyof HTMLElementEventMap, R> = {
-  initValue: R;
+  initValue?: R;
   target: HTMLElement;
   eventType: A;
   // eslint-disable-next-line no-undef
@@ -52,12 +52,18 @@ export function registerEvents<T extends Actions>(
   };
 }
 
+// eslint-disable-next-line no-undef
+export function makeAction<T extends keyof HTMLElementEventMap, U>(action: Action<T, U>) {
+  return action;
+}
+
 // const store = registerEvents({
-//   test: {
-//     srcElement: $('') as HTMLInputElement,
+//   test: makeAction({
+//     initValue: true,
+//     srcElement: $('test'),
 //     action: 'click',
-//     valueProcesser: (e) => (e.target as HTMLInputElement).value,
-//   },
+//     valueProcesser: (e, currentValue) => (e.target as HTMLInputElement).value,
+//   }),
 // });
 
 // store.subscribe('test', ({ oldValue, newValue }) => console.log(oldValue, newValue));

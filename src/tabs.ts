@@ -2,7 +2,7 @@
 
 import { $byClass, toggleClass, toggleElement } from './client';
 import { extractDomain, htmlEscape, makeStyleIcon } from './common';
-import { Action, IPubSubElement, Store } from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 
 export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
   if (tab.url?.startsWith('file://')) {
@@ -120,25 +120,26 @@ export class Tabs extends HTMLDivElement {
 }
 
 export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
-  #initValue = true;
+  #collapsed = true;
   #buttonCollapse = $byClass('collapse-tabs', this);
-  init(initValue: boolean) {
-    this.#initValue = initValue;
+  init(collapsed: boolean) {
+    this.#collapsed = collapsed;
   }
   provideActions() {
     return {
-      'collapsed-all': {
-        initValue: this.#initValue,
+      'collapsed-all': makeAction({
+        initValue: !this.#collapsed,
         target: this.#buttonCollapse,
         eventType: 'click',
         valueProcesser: (_, currentValue) => !currentValue,
-      } as Action<'click', boolean>,
-    } as const;
+      }),
+    };
   }
   setStore(store: Store) {
     store.subscribe('collapsed-all', (changes) => {
       toggleElement(changes.newValue)($byClass('icon-list', this));
       toggleElement(!changes.newValue)($byClass('icon-grid', this));
     });
+    store.dispatch('collapsed-all', this.#collapsed);
   }
 }
