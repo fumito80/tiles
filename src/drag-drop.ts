@@ -65,6 +65,7 @@ function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLEleme
   }
   if ($sourceParent.id !== $dropTarget.parentElement?.id) {
     renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
+    rmClass('current-tab')($source);
   }
 }
 

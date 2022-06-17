@@ -1091,7 +1091,8 @@ main::-webkit-scrollbar {
   text-overflow: ellipsis;
   border-radius: 3px;
 
-  >div {
+  >div,
+  >open-tab {
     padding-right: 8px !important;
 
     >.icon-fa-angle-right {
