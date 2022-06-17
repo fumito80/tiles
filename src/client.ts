@@ -29,6 +29,7 @@ import {
   last,
   addListener,
   makeStyleIcon,
+  getChromeId,
 } from './common';
 
 import {
@@ -41,12 +42,7 @@ import {
 
 import { getReFilter } from './search';
 import { makeLeaf, makeNode } from './html';
-import { getChromeId } from './drag-drop';
-import {
-  OpenTab, Tabs, Window, WindowHeader,
-} from './tabs';
-
-import { Store } from './store';
+import { OpenTab, Tabs, Window } from './tabs';
 
 // DOM operation
 
@@ -730,101 +726,33 @@ export function openFolder(folderId: string, incognito = false) {
 
 type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu';
 
-export function showMenu($target: HTMLElement, menuClass: MenuClass) {
-  const $menu = $byClass(menuClass)!;
-  if ($target.parentElement !== $menu.parentElement) {
-    $target.insertAdjacentElement('afterend', $menu);
-  }
-  const rect = $target.getBoundingClientRect();
-  const { width, height } = $menu.getBoundingClientRect();
-  const left = (rect.left + rect.width - 5) <= width
-    ? `${rect.left}px`
-    : `${rect.left - width + rect.width}px`;
-  const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
-    ? `${rect.top - height}px`
-    : `${rect.top + rect.height}px`;
-  addStyle({ left, top })($menu);
+export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
+  return (e: MouseEvent) => {
+    e.stopImmediatePropagation();
+    const $target = e.target as HTMLElement;
+    const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
+    if ($target.parentElement !== $menu.parentElement) {
+      $target.insertAdjacentElement('afterend', $menu);
+    }
+    const rect = $target.getBoundingClientRect();
+    const { width, height } = $menu.getBoundingClientRect();
+    const left = (rect.left + rect.width - 5) <= width
+      ? `${rect.left}px`
+      : `${rect.left - width + rect.width}px`;
+    const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
+      ? `${rect.top - height}px`
+      : `${rect.top + rect.height}px`;
+    addStyle({ left, top })($menu);
+  };
 }
 
-export async function smoothSroll($target: HTMLElement, scrollTop: number) {
-  const $tabsWrap = $target.parentElement! as HTMLElement;
-  const $parent = $tabsWrap.parentElement! as HTMLElement;
-  const translateY = -(Math.min(
-    scrollTop - $parent.scrollTop,
-    $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
-  ));
-  if (Math.abs(translateY) <= 1) {
-    return undefined;
-  }
-  const promise = new Promise<void>((resolve) => {
-    $tabsWrap.addEventListener('transitionend', () => {
-      rmClass('scroll-ease-in-out')($tabsWrap);
-      rmStyle('transform')($tabsWrap);
-      Object.assign($parent, { scrollTop });
-      resolve();
-    }, { once: true });
-  });
-  addClass('scroll-ease-in-out')($tabsWrap);
-  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
-  return promise;
-}
-
-let promiseSwitchTabEnd = Promise.resolve();
-
-export async function switchTabWindow(e: Event) {
-  const $btn = e.currentTarget as HTMLElement;
-  const $tabsWrap = $byClass('tabs-wrap');
-  const $tabs = $tabsWrap.parentElement!;
-  if ($tabs.scrollHeight === $tabs.offsetHeight) {
-    return;
-  }
-  promiseSwitchTabEnd = promiseSwitchTabEnd.then(() => new Promise((resolve) => {
-    const isNext = hasClass($btn, 'win-next');
-    const tabsTop = isNext ? Math.ceil($tabs.scrollTop) : Math.floor($tabs.scrollTop) - 1;
-    const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-    const $current = ([...$tabsWrap.children] as HTMLElement[])
-      .map(($win) => ({
-        $win,
-        winTop: $win.offsetTop,
-        winBottom: $win.offsetTop + $win.offsetHeight,
-      }))
-      .map(({ $win, winTop, winBottom }) => ({
-        $win,
-        winTop,
-        winBottom,
-        isTopIn: winTop >= tabsTop && winTop <= (tabsBottom + 5),
-        isBottomIn: winBottom >= (tabsTop - 5) && winBottom <= tabsBottom,
-      }))
-      .find(({
-        winTop, winBottom, isTopIn, isBottomIn,
-      }) => (isNext && isTopIn && winBottom >= tabsBottom)
-        || (!isNext && isBottomIn && winTop <= tabsTop)
-        || (winTop <= tabsTop && winBottom >= tabsBottom));
-    if (!$current) {
-      resolve();
-      return;
-    }
-    const { $win, winTop, winBottom } = $current;
-    let $target = $win;
-    if (winTop <= tabsTop && winBottom >= tabsBottom) {
-      $target = (isNext ? $win.nextElementSibling : $win) as HTMLElement;
-    }
-    if (!$target) {
-      resolve();
-      return;
-    }
-    smoothSroll($target, $target.offsetTop).then(resolve);
-  }));
-}
-
-export function setTabs(store: Store, currentWindowId: number, isCollapse: boolean) {
+export function setTabs(currentWindowId: number, collapsed: boolean) {
   const $tabs = $byClass('tabs') as Tabs;
   const $template = $byTag<HTMLTemplateElement>('template').content;
-  const $tmplHeader = $('window-header', $template) as WindowHeader;
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
   chrome.windows.getAll({ populate: true }, (windows) => {
-    $tabs.init(store, windows, currentWindowId, isCollapse, $tmplOpenTab, $tmplHeader, $tmplWindow);
+    $tabs.init(windows, currentWindowId, collapsed, $tmplOpenTab, $tmplWindow);
   });
 }
 

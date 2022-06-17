@@ -880,3 +880,8 @@ export async function makeColorPalette() {
 
   return { light, dark, other };
 }
+
+export function getChromeId(preId: number | string) {
+  const [id] = /\d+/.exec(preId as string) || [];
+  return Number(id);
+}

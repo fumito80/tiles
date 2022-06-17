@@ -19,13 +19,11 @@ import {
   pipe,
   addListener,
   last,
-  when,
 } from './common';
 
 import {
   setAnimationClass,
   $,
-  $$,
   addChild,
   rmClass,
   addClass,
@@ -54,16 +52,14 @@ import {
   removeFolder,
   editBookmarkTitle,
   showMenu,
-  switchTabWindow,
   getEndPaneMinWidth,
   openFolder,
-  smoothSroll,
   saveStateAllPaths,
   updateAnker,
 } from './client';
 
 import { resetVScrollData } from './vscroll';
-import dragAndDropEvents, { getChromeId } from './drag-drop';
+import dragAndDropEvents from './drag-drop';
 import { clearQuery, resetQuery } from './search';
 import { setZoomSetting } from './zoom';
 import { Store } from './store';
@@ -85,9 +81,7 @@ export default function setEventListners(store: Store, options: Options) {
     return false;
   });
   $('.form-query .icon-x')?.addEventListener('click', clearQuery);
-  // $byClass('collapse-tabs')!.addEventListener('click', () => collapseTabsAll());
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
-  setEvents($$('.win-next, .win-prev'), { click: switchTabWindow });
 
   const $leafMenu = $byClass('leaf-menu');
   setEvents([$main], {
@@ -97,7 +91,7 @@ export default function setEventListners(store: Store, options: Options) {
         return;
       }
       if (hasClass($target, 'leaf-menu-button')) {
-        showMenu($target, 'leaf-menu');
+        showMenu('leaf-menu')(e);
         return;
       }
       if ($target.hasAttribute('contenteditable')) {
@@ -244,8 +238,7 @@ export default function setEventListners(store: Store, options: Options) {
           break;
         }
         case 'folder-menu-button': {
-          showMenu($target, 'folder-menu');
-          e.stopImmediatePropagation();
+          showMenu('folder-menu')(e);
           break;
         }
         default:
@@ -365,144 +358,8 @@ export default function setEventListners(store: Store, options: Options) {
       e.preventDefault();
     },
   });
+
   const $paneTabs = $byClass('tabs')!;
-  const $tabsMenu = $byClass('tabs-menu');
-  $paneTabs.addEventListener('mousedown', (e) => {
-    if (hasClass(e.target as HTMLElement, 'tabs-menu-button')) {
-      addStyle({ top: '-1000px' })($tabsMenu);
-    }
-  });
-  $paneTabs.addEventListener('click', async (e) => {
-    const $target = e.target as HTMLElement;
-    const $parent = $target.parentElement!;
-    const [type, tabId] = ($target.id || $parent.id).split('-');
-    const $window = when(type === 'win').then(() => ($target.id ? $target : $parent))
-      .when(!!$target.id).then($parent)
-      .else($parent.parentElement!);
-    const targetClasses = [
-      'tab',
-      'tabs-header',
-      'win',
-      'icon-x',
-      'collapse-tab',
-      'icon-list',
-      'icon-grid',
-      'tabs-menu-button',
-    ] as const;
-    const targetClass = whichClass(targetClasses, $target) || type;
-    switch (targetClass) {
-      case 'tabs-header':
-        break;
-      case 'tabs-menu-button': {
-        showMenu($target, 'tabs-menu');
-        e.stopImmediatePropagation();
-        break;
-      }
-      case 'icon-list':
-      case 'icon-grid': {
-        const $win = $parent.parentElement!.parentElement!;
-        const promiseCollapse = new Promise<TransitionEvent>((resolve) => {
-          $win.addEventListener('transitionend', resolve, { once: true });
-        });
-        toggleClass('tabs-collapsed')($win);
-        await promiseCollapse;
-        const { length } = $$byClass('tabs-collapsed');
-        if (length === $win.parentElement!.children.length) {
-          store.dispatch('collapsed-all', true);
-        } else if (length === 0) {
-          store.dispatch('collapsed-all', false);
-        }
-        const $tabs = $win.parentElement!.parentElement!;
-        const winBottom = $win.offsetTop + $win.offsetHeight;
-        const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-        const isTopOver = $tabs.scrollTop <= $win.offsetTop;
-        const isBottomUnder = tabsBottom > winBottom;
-        if (isTopOver && isBottomUnder) {
-          return;
-        }
-        const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
-          ? $win.offsetTop
-          : $tabs.scrollTop + (winBottom - tabsBottom);
-        smoothSroll($win, scrollTop);
-        break;
-      }
-      case 'icon-x': {
-        pipe(
-          addListener('animationend', () => {
-            chrome.tabs.remove(Number(tabId), () => {
-              $parent.remove();
-              if ($window.childElementCount <= 1) {
-                $window.remove();
-              }
-            });
-          }, { once: true }),
-          setAnimationClass('remove-hilite'),
-        )($parent);
-        break;
-      }
-      case 'tab':
-      case 'win': {
-        const windowId = getChromeId($window.id);
-        if (windowId == null) {
-          return;
-        }
-        chrome.windows.update(windowId, { focused: true });
-        if (tabId != null) {
-          chrome.tabs.update(Number(tabId), { active: true }, () => {
-            // eslint-disable-next-line no-void
-            void chrome.runtime.lastError;
-            window.close();
-          });
-        }
-        break;
-      }
-      default:
-    }
-  });
-  $paneTabs.addEventListener('mouseover', (e) => {
-    const $target = e.target as HTMLElement;
-    if (!hasClass($target, 'tab-wrap') || hasClass($target, 'tabs-header')) {
-      return;
-    }
-    const $tooltip = $byClass('tooltip', $target);
-    const rect = $target.getBoundingClientRect();
-    const rectTT = $tooltip.getBoundingClientRect();
-    const rectMain = $main.getBoundingClientRect();
-    const left = Math.min(
-      rect.right - rectMain.left,
-      rectMain.width - rectMain.left - rectTT.width - 5,
-    );
-    addStyle('left', `${Math.max(left, 5)}px`)($tooltip);
-    if (rect.bottom + rectTT.height > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - rectTT.height}px`)($tooltip);
-      return;
-    }
-    addStyle('top', `${rect.bottom}px`)($tooltip);
-  });
-  setEvents($$byClass('tabs-menu'), {
-    click(e) {
-      const $target = e.target as HTMLElement;
-      const $window = $target.closest('[id]')!;
-      const windowId = getChromeId($window.id);
-      switch ($target.dataset.value) {
-        case 'add-new-tab': {
-          chrome.tabs.create({ windowId });
-          chrome.windows.update(windowId, { focused: true });
-          break;
-        }
-        case 'close-window':
-          chrome.windows.remove(windowId, () => {
-            $byClass('components')?.append($target.parentElement!);
-            $window.remove();
-          });
-          break;
-        default:
-      }
-    },
-    mousedown(e) {
-      e.preventDefault();
-    },
-  });
   const $paneHistory = addListener('click', async (e) => {
     const $target = e.target as HTMLElement;
     if (hasClass($target, 'header-date') && hasClass($main, 'date-collapsed')) {

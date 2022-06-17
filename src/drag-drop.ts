@@ -9,6 +9,7 @@ import {
   getHistoryById,
   decode,
   when,
+  getChromeId,
 } from './common';
 import {
   $, $$,
@@ -65,11 +66,6 @@ function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLEleme
   if ($sourceParent.id !== $dropTarget.parentElement?.id) {
     renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
   }
-}
-
-export function getChromeId(preId: number | string) {
-  const [id] = /\d+/.exec(preId as string) || [];
-  return Number(id);
 }
 
 async function getTabInfo(preId: number | string) {

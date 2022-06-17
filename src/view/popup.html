@@ -135,11 +135,6 @@
             <hr aria-hidden="true">
             <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
         </div>
-        <div class="tabs-menu" role="menu">
-            <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
-            <hr aria-hidden="true">
-            <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>
-        </div>
         <div class="modal">
             <div class="popup">
                 <div class="popup-desc"></div>
@@ -149,20 +144,26 @@
         </div>
     </div>
     <template>
-        <open-window class="window" draggable="true"></open-window>
+        <open-window class="window" draggable="true">
+            <window-header class="tabs-header">
+                <i class="icon-incognito"></i>
+                <div class="tab" title=""></div>
+                <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid"
+                        title="Show grid view"></i></button>
+                <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
+                <div class="tabs-menu" role="menu">
+                    <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>
+                </div>
+            </window-header>
+        </open-window>
         <open-tab draggable="true" class="tab-wrap">
             <div class="tab" title=""></div><i class="icon-x"></i>
             <div class="tooltip"></div>
             <div class="drop-top"></div>
             <div class="drop-bottom"></div>
         </open-tab>
-        <window-header class="tabs-header">
-            <i class="icon-incognito"></i>
-            <div class="tab" title=""></div>
-            <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid"
-                    title="Show grid view"></i></button>
-            <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
-        </window-header>
     </template>
     <div class="draggable-clone">
         <div class="leaf"></div>

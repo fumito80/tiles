@@ -69,7 +69,6 @@ function setOptions(settings: Settings, options: Options) {
     themeDarkKey,
     autoZoom: settings.autoZoom,
     checkedIncludeUrl: settings.includeUrl,
-    tabsCollapsedAll: options.collapseTabs,
   }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($main));
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
@@ -148,9 +147,10 @@ function layoutPanes(options: Options) {
 function init({
   settings, htmlBookmarks, clientState, options, currentWindowId, htmlHistory,
 }: State) {
-  const store = initStore(layoutPanes(options), options);
+  const compos = layoutPanes(options);
+  const store = initStore(compos, options);
   setOptions(settings, options);
-  setTabs(store, currentWindowId, options.collapseTabs);
+  setTabs(currentWindowId, options.collapseTabs);
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
