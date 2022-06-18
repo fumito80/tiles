@@ -1,5 +1,11 @@
 import { mapMessagesPtoB } from './background';
 import { mapMessagesBtoP } from './popup';
+import { HeaderTabs, Tabs } from './tabs';
+
+export type storedElements = {
+  'header-tabs': HeaderTabs,
+  'body-tabs': Tabs,
+}
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
 export type MapMessagesBtoP = typeof mapMessagesBtoP;
@@ -87,7 +93,6 @@ export const initialState = {
     rowHeight: 0,
   },
   options: initialOptions,
-  currentWindowId: chrome.windows.WINDOW_ID_NONE as number,
 };
 
 export type State = typeof initialState;

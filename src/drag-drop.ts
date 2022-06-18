@@ -32,6 +32,7 @@ import {
   setOpenPaths,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
+import { Window } from './tabs';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -54,7 +55,7 @@ function renameTabsHeader($source: HTMLElement) {
 }
 
 function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLElement) {
-  const $source = $byId(sourceId)!;
+  const $source = $byId(sourceId);
   const $sourceParent = $source.parentElement!;
   const position = positions[dropAreaClass];
   $dropTarget.insertAdjacentElement(position, $source);
@@ -65,7 +66,10 @@ function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLEleme
   }
   if ($sourceParent.id !== $dropTarget.parentElement?.id) {
     renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
-    rmClass('current-tab')($source);
+    if (hasClass($source, 'current-tab')) {
+      rmClass('current-tab')($source);
+      ($sourceParent as Window).refreshTabs();
+    }
   }
 }
 

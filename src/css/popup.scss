@@ -1123,7 +1123,8 @@ main::-webkit-scrollbar {
   .rows {
     display: grid;
     grid-auto-rows: min-content;
-    padding: 2px 0;
+    // padding: 2px 0;
+    padding: 0.1em 0;
 
     >.history {
       margin: 0 2px;
@@ -1148,6 +1149,10 @@ main::-webkit-scrollbar {
       color: $dark-font-color;
       border-radius: 2px;
       -webkit-user-drag: none;
+      &:nth-child(2) {
+        margin-top: 0;
+        // visibility: hidden;
+      }
     }
 
     .current-date {

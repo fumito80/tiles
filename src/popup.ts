@@ -9,6 +9,7 @@ import {
   ClientState,
   initialState,
   BkgMessageTypes,
+  storedElements,
 } from './types';
 
 import {
@@ -38,7 +39,7 @@ import {
   setHTML, insertHTML,
   $$byClass, $byClass, $byTag,
   recoverMinPaneWidth,
-  setTabs,
+  // setTabs,
   toggleElement,
 } from './client';
 import { initStore } from './store';
@@ -112,7 +113,7 @@ function setHistory($target: HTMLElement, htmlHistory: string) {
   insertHTML('afterbegin', htmlHistory)($target);
 }
 
-function layoutPanes(options: Options) {
+function layoutPanes(options: Options): storedElements {
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
     [],
@@ -141,16 +142,15 @@ function layoutPanes(options: Options) {
       return acc;
     }
     return { ...acc, [name]: pane };
-  }, {});
+  }, {} as storedElements);
 }
 
 function init({
-  settings, htmlBookmarks, clientState, options, currentWindowId, htmlHistory,
+  settings, htmlBookmarks, clientState, options, htmlHistory,
 }: State) {
   const compos = layoutPanes(options);
   const store = initStore(compos, options);
   setOptions(settings, options);
-  setTabs(currentWindowId, options.collapseTabs);
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);

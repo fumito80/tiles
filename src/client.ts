@@ -42,7 +42,6 @@ import {
 
 import { getReFilter } from './search';
 import { makeLeaf, makeNode } from './html';
-import { OpenTab, Tabs, Window } from './tabs';
 
 // DOM operation
 
@@ -744,16 +743,6 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
       : `${rect.top + rect.height}px`;
     addStyle({ left, top })($menu);
   };
-}
-
-export function setTabs(currentWindowId: number, collapsed: boolean) {
-  const $tabs = $byClass('tabs') as Tabs;
-  const $template = $byTag<HTMLTemplateElement>('template').content;
-  const $tmplOpenTab = $('open-tab', $template) as OpenTab;
-  const $tmplWindow = $('open-window', $template) as Window;
-  chrome.windows.getAll({ populate: true }, (windows) => {
-    $tabs.init(windows, currentWindowId, collapsed, $tmplOpenTab, $tmplWindow);
-  });
 }
 
 export function setOpenPaths($folder: HTMLElement) {

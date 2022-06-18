@@ -139,19 +139,6 @@ function addHistory() {
   }, 2000);
 }
 
-function updateCurrentWindow(currentWindowId?: number) {
-  if (!currentWindowId || currentWindowId === chrome.windows.WINDOW_ID_NONE) {
-    return;
-  }
-  setLocal({ currentWindowId });
-}
-
-function regsterWindowEvent() {
-  const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-  chrome.windows.onFocusChanged.addListener(updateCurrentWindow, queryOptions);
-  chrome.windows.getCurrent(queryOptions, (win) => updateCurrentWindow(win.id));
-}
-
 type InitStateKeys = keyof Pick<State, 'settings' | 'clientState' | 'options'>;
 const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options'];
 
@@ -168,7 +155,6 @@ async function init(storage: Pick<State, InitStateKeys>) {
   setLocal({ settings, clientState, options });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
-  regsterWindowEvent();
   setPopupStyle(options);
 }
 
