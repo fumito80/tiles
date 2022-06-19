@@ -109,13 +109,22 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
     return {
       'data-initial': htmlEscape(tab.title!.substring(0, 1)),
       'data-file': 'yes',
+      style: '',
     };
   }
   if (tab.favIconUrl || !tab.url?.startsWith('http')) {
     const faviconUrl = makeStyleIcon(tab.url);
-    return { style: faviconUrl };
+    return {
+      style: faviconUrl,
+      // 'data-initial': '',
+      // 'data-file': '',
+    };
   }
-  return { 'data-initial': htmlEscape(tab.title!.substring(0, 1)) };
+  return {
+    'data-initial': htmlEscape(tab.title!.substring(0, 1)),
+    // 'data-file': '',
+    style: '',
+  };
 }
 
 function getTooltip(tab: chrome.tabs.Tab) {
@@ -128,14 +137,13 @@ function getTooltip(tab: chrome.tabs.Tab) {
 }
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
-  #windowId = -1;
   #tabId = -1;
   private $main = $byTag('main');
   private $tooltip = $byClass('tooltip', this);
   init(tab: chrome.tabs.Tab) {
-    this.updateTab(tab);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
+    this.setCurrentTab(tab);
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
@@ -144,15 +152,19 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     return this;
   }
-  updateTab(tab: chrome.tabs.Tab) {
-    this.#windowId = tab.windowId;
+  getParentWindow() {
+    // eslint-disable-next-line no-use-before-define
+    return this.parentElement as Window;
+  }
+  setCurrentTab(tab: chrome.tabs.Tab) {
     this.classList.toggle('current-tab', tab.active);
   }
   // moveWindow(windowId: number, index: number) {
   //   chrome.tabs.move(this.#tabId, { windowId, index }, this.updateTab.bind(this));
   // }
   gotoTab() {
-    chrome.windows.update(this.#windowId, { focused: true });
+    const { windowId } = this.getParentWindow();
+    chrome.windows.update(windowId, { focused: true });
     chrome.tabs.update(this.#tabId, { active: true }, window.close);
   }
   closeTab(store: Store) {
@@ -160,8 +172,9 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
       e.stopPropagation();
       this.addEventListener('animationend', () => {
         chrome.tabs.remove(this.#tabId, () => {
+          const { windowId } = this.getParentWindow();
+          store.dispatch('closeTab', windowId, true);
           this.remove();
-          store.dispatch('closeTab', this.#windowId, true);
         });
       }, { once: true });
       setAnimationClass('remove-hilite')(this);
@@ -193,21 +206,22 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   #windowId = -1;
   private $btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
   private $tabsMenu = $byClass('tabs-menu', this);
-  init(tab: chrome.tabs.Tab) {
-    this.#windowId = tab.windowId;
-    const [$iconIncognito, $tab] = [...this.children];
-    $tab.textContent = tab.title!;
-    const tooltip = getTooltip(tab);
-    $tab.setAttribute('title', tooltip);
-    if (!tab.incognito) {
-      $iconIncognito.remove();
-    }
-    Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
+  init(windowId: number, tab: chrome.tabs.Tab) {
+    this.#windowId = windowId;
+    this.update(tab);
     pipe(
       addListener('click', showMenu(this.$tabsMenu)),
       addListener('mousedown', () => addStyle({ top: '-1000px' })(this.$tabsMenu)),
     )($byClass('tabs-menu-button', this));
     return this;
+  }
+  update(tab: chrome.tabs.Tab) {
+    const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
+    $tab.textContent = tab.title!;
+    const tooltip = getTooltip(tab);
+    $tab.setAttribute('title', tooltip);
+    toggleClass('show', tab.incognito)($iconIncognito);
+    Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }
   connect(store: Store) {
     this.$btnCollapseTabs.addEventListener('click', () => {
@@ -235,8 +249,9 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId = -1;
-  private $header = this.firstElementChild as WindowHeader;
-  private $openTabs: OpenTab[] | null = null;
+  #store: Store | null = null;
+  private $tmplTab: OpenTab | null = null;
+  private readonly $header = this.firstElementChild as WindowHeader;
   init(
     windowId: number,
     isCurrent: boolean,
@@ -246,10 +261,11 @@ export class Window extends HTMLElement implements ISubscribeElement {
   ) {
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
+    this.$tmplTab = tmplTab;
     this.id = `win-${windowId}`;
     this.classList.toggle('current-window', isCurrent);
-    this.$header.init(firstTab);
-    this.$openTabs = this.addTabs([firstTab, ...rest], tmplTab);
+    this.$header.init(windowId, firstTab);
+    this.addTabs([firstTab, ...rest]);
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLElement;
       if (hasClass($target, 'tabs-header', 'collapse-tab')) {
@@ -259,29 +275,45 @@ export class Window extends HTMLElement implements ISubscribeElement {
     });
     return this;
   }
-  addTab(tab: chrome.tabs.Tab, tmplTab: OpenTab) {
-    const $openTab = this.appendChild(document.importNode(tmplTab, true));
+  get windowId() {
+    return this.#windowId;
+  }
+  addTab(tab: chrome.tabs.Tab) {
+    const $openTab = this.appendChild(document.importNode(this.$tmplTab!, true));
     return $openTab.init(tab);
   }
-  addTabs(tabs: chrome.tabs.Tab[], tmplTab: OpenTab) {
-    return tabs.map((tab) => this.addTab(tab, tmplTab));
+  addTabs(tabs: chrome.tabs.Tab[]) {
+    return tabs.map((tab) => this.addTab(tab));
+  }
+  connectTabs() {
+    this.getTabs().forEach(($tab) => $tab.connect(this.#store!));
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed', collapsed)(this);
   }
-  getTab(id: string) {
-    return this.$openTabs?.find(($tab) => $tab.id === id);
+  getTabs() {
+    return [...this.children].filter(($child) => $child instanceof OpenTab) as OpenTab[];
   }
-  refreshTabs() {
+  clearTabs() {
+    this.getTabs().forEach(($tab) => $tab.remove());
+  }
+  reloadTabs() {
     chrome.windows.get(this.#windowId, { populate: true }, (win) => {
-      win.tabs!.forEach((tab) => {
-        this.getTab(`tab-${tab.id}`)?.updateTab(tab);
-      });
+      if (chrome.runtime.lastError) {
+        this.remove();
+        return;
+      }
+      const [firstTab, ...rest] = win.tabs!;
+      this.$header.update(firstTab);
+      this.clearTabs();
+      this.addTabs([firstTab, ...rest]);
+      this.connectTabs();
     });
   }
   connect(store: Store) {
+    this.#store = store;
     this.$header.connect(store);
-    this.$openTabs?.forEach(($openTab) => $openTab.connect(store));
+    this.connectTabs();
     store.subscribe('collapseWindowsAll', (changes) => {
       this.switchCollapseIcon(changes.newValue);
     });

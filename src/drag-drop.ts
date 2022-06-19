@@ -21,9 +21,6 @@ import {
   $byClass,
   $byTag,
   hasClass,
-  addStyle,
-  setText,
-  addAttr,
   addBookmark,
   getBookmark,
   setHasChildren,
@@ -43,33 +40,13 @@ function getSubTree(id: string) {
   });
 }
 
-function renameTabsHeader($source: HTMLElement) {
-  const $header = $source.parentElement!.firstElementChild as HTMLElement;
-  const $first = $header.nextElementSibling as HTMLElement;
-  const $content = $byClass('tab', $first);
-  addStyle('background-image', $first.style.backgroundImage)($header);
-  pipe(
-    setText($content.textContent),
-    addAttr('title', $content.getAttribute('title')!),
-  )($byClass('tab', $header));
-}
-
-function moveTab(sourceId: string, dropAreaClass: string, $dropTarget: HTMLElement) {
-  const $source = $byId(sourceId);
-  const $sourceParent = $source.parentElement!;
-  const position = positions[dropAreaClass];
-  $dropTarget.insertAdjacentElement(position, $source);
-  renameTabsHeader($source);
-  if ($sourceParent.children.length <= 1) {
-    $sourceParent.remove();
-    return;
-  }
-  if ($sourceParent.id !== $dropTarget.parentElement?.id) {
-    renameTabsHeader($sourceParent.firstElementChild as HTMLElement);
-    if (hasClass($source, 'current-tab')) {
-      rmClass('current-tab')($source);
-      ($sourceParent as Window).refreshTabs();
-    }
+function moveTab(sourceId: string, $dropTarget: HTMLElement) {
+  const $sourceTab = $byId(sourceId);
+  const $sourceWindow = $sourceTab.parentElement as Window;
+  $sourceWindow.reloadTabs();
+  const $destWindow = $dropTarget.parentElement as Window;
+  if ($sourceWindow.id !== $destWindow?.id) {
+    $destWindow.reloadTabs();
   }
 }
 
@@ -116,7 +93,7 @@ async function dropWithTabs(
           return;
         }
         const ids = dropAreaClass === 'drop-top' ? tabIds : tabIds.reverse();
-        ids.forEach((id) => moveTab(String(`tab-${id}`), dropAreaClass, $dropTarget));
+        ids.forEach((id) => moveTab(String(`tab-${id}`), $dropTarget));
       });
     });
     return;
@@ -145,7 +122,7 @@ async function dropWithTabs(
       alert(chrome.runtime.lastError.message);
       return;
     }
-    moveTab(srcElementId, dropAreaClass, $dropTarget);
+    moveTab(srcElementId, $dropTarget);
   });
   $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
