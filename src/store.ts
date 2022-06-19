@@ -12,7 +12,7 @@ type Action<A extends keyof HTMLElementEventMap, R extends any> = {
 };
 
 // eslint-disable-next-line no-undef
-export function makeAction<U extends any, T extends keyof HTMLElementEventMap>(
+export function makeAction<U extends any, T extends keyof HTMLElementEventMap = never>(
   action: Action<T, U>,
 ) {
   return action;
@@ -82,6 +82,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
 }
 
 export function initStore(compos: storedElements, options: Options) {
+  // Initialize component (Custom element)
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const headerTabs = compos['header-tabs'];
   const tabs = compos['body-tabs'];
@@ -89,10 +90,12 @@ export function initStore(compos: storedElements, options: Options) {
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
   tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
+  // Register actions
   const headerTabsActions = headerTabs.provideActions();
   const tabsActions = tabs.provideActions();
-  const actions = { ...headerTabsActions, ...tabsActions };
+  const actions = { ...tabsActions, ...headerTabsActions };
   const store = registerActions(actions);
+  // Coonect store
   headerTabs.connect(store);
   tabs.connect(store);
   return store;
