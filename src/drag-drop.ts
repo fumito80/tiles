@@ -73,9 +73,7 @@ async function dropWithTabs(
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
     const { url } = await getBookmark(srcElementId);
-    chrome.tabs.create({ index, url, windowId }, () => {
-      chrome.windows.update(windowId, { focused: true });
-    });
+    chrome.tabs.create({ index, url, windowId });
     return;
   }
   // Merge window
@@ -92,8 +90,8 @@ async function dropWithTabs(
           alert(chrome.runtime.lastError.message);
           return;
         }
-        const ids = dropAreaClass === 'drop-top' ? tabIds : tabIds.reverse();
-        ids.forEach((id) => moveTab(String(`tab-${id}`), $dropTarget));
+        ($dropTarget.parentElement as Window).reloadTabs();
+        $byId(srcElementId).remove();
       });
     });
     return;
@@ -140,9 +138,7 @@ async function dropFromHistory(
   }
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-  chrome.tabs.create({ index, url, windowId }, () => {
-    chrome.windows.update(windowId, { focused: true });
-  });
+  chrome.tabs.create({ index, url, windowId });
 }
 
 function checkDroppable(e: DragEvent) {

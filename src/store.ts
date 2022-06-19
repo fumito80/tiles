@@ -12,7 +12,7 @@ type Action<A extends keyof HTMLElementEventMap, R extends any> = {
 };
 
 // eslint-disable-next-line no-undef
-export function makeAction<U extends any, T extends keyof HTMLElementEventMap = never>(
+export function makeAction<U extends any, T extends keyof HTMLElementEventMap = any>(
   action: Action<T, U>,
 ) {
   return action;

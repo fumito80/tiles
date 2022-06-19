@@ -116,13 +116,10 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
     const faviconUrl = makeStyleIcon(tab.url);
     return {
       style: faviconUrl,
-      // 'data-initial': '',
-      // 'data-file': '',
     };
   }
   return {
     'data-initial': htmlEscape(tab.title!.substring(0, 1)),
-    // 'data-file': '',
     style: '',
   };
 }
@@ -137,7 +134,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 }
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
-  #tabId = -1;
+  #tabId!: number;
   private $main = $byTag('main');
   private $tooltip = $byClass('tooltip', this);
   init(tab: chrome.tabs.Tab) {
@@ -159,9 +156,6 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
   setCurrentTab(tab: chrome.tabs.Tab) {
     this.classList.toggle('current-tab', tab.active);
   }
-  // moveWindow(windowId: number, index: number) {
-  //   chrome.tabs.move(this.#tabId, { windowId, index }, this.updateTab.bind(this));
-  // }
   gotoTab() {
     const { windowId } = this.getParentWindow();
     chrome.windows.update(windowId, { focused: true });
@@ -173,7 +167,7 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
       this.addEventListener('animationend', () => {
         chrome.tabs.remove(this.#tabId, () => {
           const { windowId } = this.getParentWindow();
-          store.dispatch('closeTab', windowId, true);
+          store.dispatch('windowAction', { type: 'closeTab', windowId }, true);
           this.remove();
         });
       }, { once: true });
@@ -203,7 +197,7 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
 }
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
-  #windowId = -1;
+  #windowId!: number;
   private $btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
   private $tabsMenu = $byClass('tabs-menu', this);
   init(windowId: number, tab: chrome.tabs.Tab) {
@@ -224,8 +218,9 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }
   connect(store: Store) {
+    const windowId = this.#windowId;
     this.$btnCollapseTabs.addEventListener('click', () => {
-      store.dispatch('collapseWindow', this.#windowId, true);
+      store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
     });
     pipe(
       addListener('click', (e) => {
@@ -237,7 +232,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
             break;
           }
           case 'close-window':
-            store.dispatch('closeWindow', this.#windowId, true);
+            store.dispatch('windowAction', { type: 'closeWindow', windowId }, true);
             break;
           default:
         }
@@ -248,9 +243,9 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 }
 
 export class Window extends HTMLElement implements ISubscribeElement {
-  #windowId = -1;
-  #store: Store | null = null;
-  private $tmplTab: OpenTab | null = null;
+  #windowId!: number;
+  #store!: Store;
+  private $tmplTab!: OpenTab;
   private readonly $header = this.firstElementChild as WindowHeader;
   init(
     windowId: number,
@@ -317,23 +312,23 @@ export class Window extends HTMLElement implements ISubscribeElement {
     store.subscribe('collapseWindowsAll', (changes) => {
       this.switchCollapseIcon(changes.newValue);
     });
-    store.subscribe('collapseWindow', (changes) => {
-      if (changes.newValue !== this.#windowId) {
+    store.subscribe('windowAction', (changes) => {
+      if (changes.newValue.windowId !== this.#windowId) {
         return;
       }
-      collapseTab(store, this);
-    });
-    store.subscribe('closeTab', (changes) => {
-      if (changes.newValue !== this.#windowId) {
-        return;
-      }
-      if (this.childElementCount <= 1) {
-        this.remove();
-      }
-    });
-    store.subscribe('closeWindow', (changes) => {
-      if (changes.newValue === this.#windowId) {
-        chrome.windows.remove(this.#windowId, () => this.remove());
+      switch (changes.newValue.type) {
+        case 'collapseWindow':
+          collapseTab(store, this);
+          break;
+        case 'closeTab':
+          if (this.childElementCount <= 1) {
+            this.remove();
+          }
+          break;
+        case 'closeWindow':
+          chrome.windows.remove(this.#windowId, () => this.remove());
+          break;
+        default:
       }
     });
   }
@@ -341,8 +336,8 @@ export class Window extends HTMLElement implements ISubscribeElement {
 
 export class Tabs extends HTMLDivElement implements IPubSubElement {
   #tabsWrap = this.firstElementChild!;
-  #initPromise: Promise<void> | null = null;
-  private $windows: Window[] | null = null;
+  #initPromise!: Promise<void>;
+  private $windows!: Window[];
   async init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -371,14 +366,17 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
   // eslint-disable-next-line class-methods-use-this
   provideActions() {
     return {
-      collapseWindow: makeAction({ initValue: -1 }),
-      closeTab: makeAction({ initValue: -1 }),
-      closeWindow: makeAction({ initValue: -1 }),
+      windowAction: makeAction({
+        initValue: {
+          type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow',
+          windowId: -1,
+        },
+      }),
     };
   }
   connect(store: Store) {
-    this.#initPromise?.then(() => {
-      this.$windows?.forEach(($window) => $window.connect(store));
+    this.#initPromise.then(() => {
+      this.$windows.forEach(($window) => $window.connect(store));
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
     });
@@ -397,7 +395,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
 }
 
 export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
-  #collapsed = true;
+  #collapsed!: boolean;
   private $buttonCollapse = $byClass('collapse-tabs', this);
   private $buttonPrevWin = $byClass('win-prev', this);
   private $buttonNextWin = $byClass('win-next', this);
