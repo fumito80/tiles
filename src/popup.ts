@@ -29,7 +29,7 @@ import {
 
 import setEventListners from './client-events';
 import { refreshVScroll, resetHistory } from './vscroll';
-import { resetQuery } from './search';
+import { FormSearch } from './search';
 import {
   $, $$,
   addStyle, addClass, toggleClass,
@@ -39,7 +39,6 @@ import {
   setHTML, insertHTML,
   $$byClass, $byClass, $byTag,
   recoverMinPaneWidth,
-  // setTabs,
   toggleElement,
 } from './client';
 import { initStore } from './store';
@@ -145,11 +144,11 @@ function layoutPanes(options: Options): storedElements {
   }, {} as storedElements);
 }
 
-function init({
+async function init({
   settings, htmlBookmarks, clientState, options, htmlHistory,
 }: State) {
   const compos = layoutPanes(options);
-  const store = initStore(compos, options);
+  const store = await initStore(compos, options, settings);
   setOptions(settings, options);
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
@@ -158,7 +157,7 @@ function init({
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setEventListners(store, options);
   setExternalUrl(options);
-  resetQuery(settings.includeUrl);
+  // resetQuery(settings.includeUrl);
   resetHistory({ initialize: true }).then(refreshVScroll);
 }
 
@@ -175,3 +174,4 @@ customElements.define('open-window', Window);
 customElements.define('window-header', WindowHeader);
 customElements.define('body-tabs', Tabs, { extends: 'div' });
 customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
+customElements.define('form-search', FormSearch, { extends: 'form' });

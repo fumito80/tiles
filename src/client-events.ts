@@ -60,7 +60,6 @@ import {
 
 import { resetVScrollData } from './vscroll';
 import dragAndDropEvents from './drag-drop';
-import { clearQuery, resetQuery } from './search';
 import { setZoomSetting } from './zoom';
 import { Store } from './store';
 
@@ -80,7 +79,9 @@ export default function setEventListners(store: Store, options: Options) {
     }
     return false;
   });
-  $('.form-query .icon-x')?.addEventListener('click', clearQuery);
+  $('.form-query .icon-x')?.addEventListener('click', () => {
+    store.dispatch('clearQuery', true, true);
+  });
   $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
 
   const $leafMenu = $byClass('leaf-menu');
@@ -219,7 +220,7 @@ export default function setEventListners(store: Store, options: Options) {
           }
           break;
         case 'title': {
-          clearQuery();
+          store.dispatch('clearQuery', false, true);
           const $foldersFolder = $target.parentElement?.parentElement!;
           const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
           const isOpen = hasClass($foldersFolder, 'open');
@@ -313,7 +314,7 @@ export default function setEventListners(store: Store, options: Options) {
               return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
             })
             .then(({ settings }) => {
-              resetQuery(settings.includeUrl);
+              store.dispatch('changeIncludeUrl', settings.includeUrl, true);
               resetVScrollData((data) => data);
             });
           break;
