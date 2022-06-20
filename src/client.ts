@@ -19,7 +19,6 @@ import {
   getLocal,
   setLocal,
   extractDomain,
-  getLocaleDate,
   htmlEscape,
   curry3,
   pipe,
@@ -35,12 +34,9 @@ import {
 import {
   rowSetterHistory,
   setVScroll,
-  resetHistory,
   getVScrollData,
-  setScrollTop,
 } from './vscroll';
 
-import { getReFilter } from './search';
 import { makeLeaf, makeNode } from './html';
 
 // DOM operation
@@ -518,37 +514,6 @@ export async function findInTabsBookmark(options: Options, $anchor: HTMLElement)
   chrome.tabs.update(tab.id, { active: true }, window.close);
 }
 
-async function restoreHistory(includeUrl: boolean) {
-  const value = ($byClass('query') as HTMLInputElement).value.trim();
-  const reFilter = getReFilter(value);
-  return resetHistory({ reFilter, includeUrl });
-}
-
-export async function collapseHistoryDate() {
-  const { vscrollProps, settings: { includeUrl } } = await getLocal('vscrollProps', 'settings');
-  const $main = $byTag('main');
-  if (hasClass($main, 'date-collapsed')) {
-    restoreHistory(includeUrl);
-    return;
-  }
-  addClass('date-collapsed')($main);
-  const histories = getVScrollData();
-  const data = histories.filter((item) => item.headerDate);
-  const $paneHistory = $byClass('histories') as HTMLDivElement;
-  setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
-  setScrollTop(0);
-}
-
-export async function jumpHistoryDate(localeDate: string) {
-  const { vscrollProps, settings: { includeUrl } } = await getLocal('vscrollProps', 'settings');
-  await restoreHistory(includeUrl);
-  const histories = getVScrollData();
-  const index = histories.findIndex(
-    (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === localeDate,
-  );
-  setScrollTop(vscrollProps.rowHeight * index);
-}
-
 export async function removeFolder($folder: HTMLElement) {
   await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
   addChild($byClass('folder-menu'))(document.body);
@@ -750,4 +715,27 @@ export function setOpenPaths($folder: HTMLElement) {
     addClass('path')($current);
   }
   saveStateAllPaths();
+}
+
+export function selectFolder(
+  $target: HTMLElement,
+  $leafs: HTMLElement,
+  exclusiveOpenBmFolderTree: boolean,
+) {
+  const $foldersFolder = $target.parentElement?.parentElement!;
+  const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
+  const isOpen = hasClass($foldersFolder, 'open');
+  if (isOpen) {
+    folders.forEach(addClass('path'));
+    if (!exclusiveOpenBmFolderTree) {
+      saveStateAllPaths($foldersFolder.id);
+    }
+    return;
+  }
+  // eslint-disable-next-line no-param-reassign
+  $leafs.scrollTop = 0;
+  $$byClass('open').forEach(rmClass('open'));
+  folders.forEach(addClass('open'));
+  saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
+  $$byClass('hilite').forEach(rmClass('hilite'));
 }

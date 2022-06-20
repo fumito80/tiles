@@ -28,7 +28,7 @@ import {
 } from './common';
 
 import setEventListners from './client-events';
-import { refreshVScroll, resetHistory } from './vscroll';
+import { refreshVScroll } from './vscroll';
 import { FormSearch } from './search';
 import {
   $, $$,
@@ -46,6 +46,7 @@ import {
   HeaderTabs,
   OpenTab, Tabs, Window, WindowHeader,
 } from './tabs';
+import { HeaderHistory, History } from './history';
 
 type Options = State['options'];
 
@@ -144,11 +145,13 @@ function layoutPanes(options: Options): storedElements {
   }, {} as storedElements);
 }
 
-async function init({
+let resetHistory: History['resetHistory'];
+
+function init({
   settings, htmlBookmarks, clientState, options, htmlHistory,
 }: State) {
   const compos = layoutPanes(options);
-  const store = await initStore(compos, options, settings);
+  const store = initStore(compos, options, settings);
   setOptions(settings, options);
   setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
@@ -157,14 +160,16 @@ async function init({
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setEventListners(store, options);
   setExternalUrl(options);
-  // resetQuery(settings.includeUrl);
+  const $history = compos['body-history'];
+  resetHistory = $history.resetHistory.bind($history);
   resetHistory({ initialize: true }).then(refreshVScroll);
+  return store;
 }
 
 bootstrap(...getKeys(initialState)).then(init);
 
 export const mapMessagesBtoP = {
-  [BkgMessageTypes.updateHistory]: resetHistory,
+  [BkgMessageTypes.updateHistory]: resetHistory!,
 };
 
 setMessageListener(mapMessagesBtoP, true);
@@ -175,3 +180,5 @@ customElements.define('window-header', WindowHeader);
 customElements.define('body-tabs', Tabs, { extends: 'div' });
 customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
 customElements.define('form-search', FormSearch, { extends: 'form' });
+customElements.define('body-history', History, { extends: 'div' });
+customElements.define('header-history', HeaderHistory, { extends: 'div' });

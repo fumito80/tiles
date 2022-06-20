@@ -20,7 +20,7 @@
     </main>
     <div class="resize-y"></div>
     <div class="components">
-        <div class="pane-header header-histories">
+        <div is="header-history" class="pane-header header-histories">
             <i class="icon-history" title="HISTORY"></i>
             <button class="collapse-history-date" type="button">
                 <i class="icon-calendar-plus-solid" title="Expand date"></i>
@@ -93,11 +93,11 @@
         <div class="pane-header header-folders"></div>
         <div class="pane-body leafs"></div>
         <div class="pane-body folders"></div>
-        <div class="pane-body histories v-scroll">
+        <div is="body-history" class="pane-body histories v-scroll">
             <div class="rows"></div>
             <div class="v-scroll-fake-bottom"></div>
         </div>
-        <div class="pane-body tabs" is="body-tabs">
+        <div is="body-tabs" class="pane-body tabs">
             <div class="tabs-wrap"></div>
         </div>
         <form is="form-search" class="form-query" autocomplete="off">

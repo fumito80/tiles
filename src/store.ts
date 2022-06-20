@@ -35,7 +35,7 @@ function makeActionValue<T>(value: T, forced = 0) {
 
 type ActionResult = ReturnType<typeof makeActionValue>;
 
-export async function registerActions<T extends Actions<any>>(actions: T) {
+export function registerActions<T extends Actions<any>>(actions: T) {
   const initPromises = Object.entries(actions).map(async ([name, {
     target, eventType, eventProcesser, initValue,
   }]) => {
@@ -59,18 +59,23 @@ export async function registerActions<T extends Actions<any>>(actions: T) {
     });
     return initPromise;
   });
-  const store = {
+  const initPromise = new Promise((resolve) => {
+    Promise.all(initPromises).then(resolve);
+  });
+  return {
     subscribe<U extends keyof T, V extends ActionValue<T[U]>>(
       name: U,
       cb: (changes: { oldValue: V, newValue: V }) => void,
     ) {
-      chrome.storage.onChanged.addListener(({ [prefixedAction(name)]: result }, areaName) => {
-        if (!result || areaName !== 'local') {
-          return;
-        }
-        const oldValue = (result.oldValue as ActionResult).value;
-        const newValue = (result.newValue as ActionResult).value;
-        cb({ oldValue, newValue } as { oldValue: V, newValue: V });
+      initPromise.then(() => {
+        chrome.storage.onChanged.addListener(({ [prefixedAction(name)]: result }, areaName) => {
+          if (!result || areaName !== 'local') {
+            return;
+          }
+          const oldValue = (result.oldValue as ActionResult).value;
+          const newValue = (result.newValue as ActionResult).value;
+          cb({ oldValue, newValue } as { oldValue: V, newValue: V });
+        });
       });
     },
     dispatch<U extends keyof T>(
@@ -85,12 +90,9 @@ export async function registerActions<T extends Actions<any>>(actions: T) {
       });
     },
   };
-  return new Promise<typeof store>((resolve) => {
-    Promise.all(initPromises).then(() => resolve(store));
-  });
 }
 
-export async function initStore(compos: storedElements, options: Options, settings: State['settings']) {
+export function initStore(compos: storedElements, options: Options, settings: State['settings']) {
   // Initialize component (Custom element)
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const $headerTabs = compos['header-tabs'];
@@ -99,22 +101,30 @@ export async function initStore(compos: storedElements, options: Options, settin
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
   $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
+  const $headerHistory = compos['header-history'];
+  const $history = compos['body-history'];
+  $history.init(options);
   const $formSearch = $byClass('form-query') as FormSearch;
-  $formSearch.init(settings.includeUrl);
+  $formSearch.init(settings.includeUrl, options.exclusiveOpenBmFolderTree);
   // Register actions
-  const headerTabsActions = $headerTabs.provideActions();
-  const tabsActions = $tabs.provideActions();
-  const searchActions = $formSearch.provideActions();
-  const actions = { ...tabsActions, ...headerTabsActions, ...searchActions };
-  const store = await registerActions(actions);
+  const actions = {
+    ...$headerTabs.provideActions(),
+    ...$tabs.provideActions(),
+    ...$formSearch.provideActions(),
+    ...$history.provideActions(),
+    ...$headerHistory.provideActions(),
+  };
+  const store = registerActions(actions);
   // Coonect store
   $headerTabs.connect(store);
   $tabs.connect(store);
+  $headerHistory.connect(store);
+  $history.connect(store);
   $formSearch.connect(store);
   return store;
 }
 
-export type Store = ReturnType<typeof initStore> extends Promise<infer S> ? S : never;
+export type Store = ReturnType<typeof initStore>;
 
 export interface IPublishElement {
   provideActions(): Actions<any>;

@@ -1,10 +1,13 @@
 import { mapMessagesPtoB } from './background';
+import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
 
 export type storedElements = {
   'header-tabs': HeaderTabs,
   'body-tabs': Tabs,
+  'header-history': HeaderHistory,
+  'body-history': History,
 }
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;

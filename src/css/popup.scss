@@ -1113,78 +1113,7 @@ main::-webkit-scrollbar {
   }
 }
 
-// History
-
-.histories {
-  position: relative;
-  border-radius: $pane-radius;
-  transition: var(--xen-mode-transition);
-
-  .rows {
-    display: grid;
-    grid-auto-rows: min-content;
-    // padding: 2px 0;
-    padding: 0.1em 0;
-
-    >.history {
-      margin: 0 2px;
-
-      &:hover>.icon-x {
-        display: var(--show-delete-history, none);
-      }
-    }
-
-    >div:empty {
-      display: none;
-    }
-
-    .header-date {
-      display: flex;
-      height: 1.6em;
-      margin: 0.1em 2px;
-      padding: 0;
-      justify-content: center;
-      align-items: center;
-      background-color: rgba(0, 0, 0, 0.4);
-      color: $dark-font-color;
-      border-radius: 2px;
-      -webkit-user-drag: none;
-      &:nth-child(2) {
-        margin-top: 0;
-        // visibility: hidden;
-      }
-    }
-
-    .current-date {
-      position: absolute;
-      width: -webkit-fill-available;
-      z-index: 1;
-
-      &::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-      }
-
-      &::after {
-        content: attr(data-value);
-        position: absolute;
-        display: flex;
-        width: 100%;
-        height: 100%;
-        justify-content: center;
-        align-items: center;
-        color: $dark-font-color;
-        background-color: rgba(0, 0, 0, 0.4);
-      }
-    }
-  }
-}
-
-.pane-body.end.histories {
-  margin-right: 4px;
-}
+// Tabs/History X button
 
 .tab-wrap,
 .history {
@@ -1204,21 +1133,6 @@ main::-webkit-scrollbar {
       color: $dark-font-color;
     }
   }
-}
-
-.v-scroll {
-  position: relative;
-  overflow-y: auto;
-}
-
-.v-scroll>.rows {
-  position: sticky;
-  top: 0;
-  width: 100%;
-}
-
-.v-scroll-fake-bottom {
-  width: 1px;
 }
 
 .pane-header {
@@ -1452,31 +1366,6 @@ main::-webkit-scrollbar {
   filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
 }
 
-// History date collapse mode
-
-.auto-zoom:not(.disable-zoom-history) {
-
-  .collapse-history-date {
-    display: none;
-  }
-
-  &.zoom-pane {
-
-    .collapse-history-date {
-      display: flex;
-      margin-left: auto;
-    }
-
-  }
-
-  &.zoom-fade-out {
-
-    .collapse-history-date {
-      display: none;
-    }
-  }
-}
-
 .auto-zoom:not(.disable-zoom-tabs) {
 
   .pane-header:not(.end) {
@@ -1503,26 +1392,6 @@ main::-webkit-scrollbar {
         display: none;
       }
     }
-  }
-}
-
-.date-collapsed {
-  .icon-calendar-plus-solid {
-    display: inline-block;
-  }
-
-  .icon-calendar-minus-solid {
-    display: none;
-  }
-}
-
-main:not(.date-collapsed) {
-  .icon-calendar-plus-solid {
-    display: none;
-  }
-
-  .icon-calendar-minus-solid {
-    display: inline-block;
   }
 }
 
@@ -1703,4 +1572,5 @@ main.zoom-pane {
 }
 
 @import './tabs';
+@import './history';
 @import './color-theme';

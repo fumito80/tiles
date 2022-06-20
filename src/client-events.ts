@@ -8,12 +8,9 @@ import {
   whichClass,
   cssid,
   getParentElement,
-  postMessage,
   curry,
   curry3,
   cbToResolve,
-  getHistoryById,
-  removeUrlHistory,
   getLocal,
   setLocal,
   pipe,
@@ -26,7 +23,6 @@ import {
   $,
   addChild,
   rmClass,
-  addClass,
   $byTag,
   $byClass,
   $$byClass,
@@ -38,7 +34,6 @@ import {
   openBookmark,
   addBookmark,
   onClickAngle,
-  saveStateOpenedPath,
   setResizeHandler,
   setSplitterHandler,
   resizeSplitHandler,
@@ -46,8 +41,6 @@ import {
   resizeHeightHandler,
   addFolder,
   findInTabsBookmark,
-  collapseHistoryDate,
-  jumpHistoryDate,
   editTitle,
   removeFolder,
   editBookmarkTitle,
@@ -56,6 +49,7 @@ import {
   openFolder,
   saveStateAllPaths,
   updateAnker,
+  selectFolder,
 } from './client';
 
 import { resetVScrollData } from './vscroll';
@@ -82,7 +76,6 @@ export default function setEventListners(store: Store, options: Options) {
   $('.form-query .icon-x')?.addEventListener('click', () => {
     store.dispatch('clearQuery', true, true);
   });
-  $byClass('collapse-history-date')!.addEventListener('click', collapseHistoryDate);
 
   const $leafMenu = $byClass('leaf-menu');
   setEvents([$main], {
@@ -220,22 +213,8 @@ export default function setEventListners(store: Store, options: Options) {
           }
           break;
         case 'title': {
-          store.dispatch('clearQuery', false, true);
-          const $foldersFolder = $target.parentElement?.parentElement!;
-          const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
-          const isOpen = hasClass($foldersFolder, 'open');
-          if (isOpen) {
-            folders.forEach(addClass('path'));
-            if (!options.exclusiveOpenBmFolderTree) {
-              saveStateAllPaths($foldersFolder.id);
-            }
-            return;
-          }
-          $leafs.scrollTop = 0;
-          $$byClass('open').forEach(rmClass('open'));
-          folders.forEach(addClass('open'));
-          saveStateOpenedPath($foldersFolder, options.exclusiveOpenBmFolderTree);
-          $$byClass('hilite').forEach(rmClass('hilite'));
+          store.dispatch('clearQuery', null, true);
+          selectFolder($target, $leafs, options.exclusiveOpenBmFolderTree);
           break;
         }
         case 'folder-menu-button': {
@@ -360,32 +339,9 @@ export default function setEventListners(store: Store, options: Options) {
     },
   });
 
-  const $paneTabs = $byClass('tabs')!;
-  const $paneHistory = addListener('click', async (e) => {
-    const $target = e.target as HTMLElement;
-    if (hasClass($target, 'header-date') && hasClass($main, 'date-collapsed')) {
-      jumpHistoryDate($target.textContent!);
-      return;
-    }
-    const $parent = $target.parentElement!;
-    const $url = $target.title ? $target : $parent;
-    const { url } = await getHistoryById($url.id);
-    if (!url) {
-      return;
-    }
-    if (hasClass($target, 'icon-x')) {
-      setAnimationClass('hilite')($parent);
-      const result = await postMessage({ type: 'cl-remove-history', payload: url });
-      if (result) {
-        resetVScrollData(removeUrlHistory(url));
-      }
-      return;
-    }
-    createNewTab(options, url);
-  })($byClass('histories')!);
   const panes = [
-    ...(options.zoomHistory ? [$paneHistory] : []),
-    ...(options.zoomTabs ? [$paneTabs] : []),
+    ...(options.zoomHistory ? [$byClass('histories')] : []),
+    ...(options.zoomTabs ? [$byClass('tabs')] : []),
   ];
   setEvents([...panes], { mouseenter: setZoomSetting($main, options) });
   toggleClass('disable-zoom-history', !options.zoomHistory)($main);

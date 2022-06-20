@@ -1,12 +1,13 @@
 /* eslint-disable max-classes-per-file */
 
 import {
-  $$byClass, $byClass, $byTag,
+  $$byClass, $$byTag, $byClass, $byTag,
   addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, showMenu, toggleClass,
 } from './client';
 import {
-  addListener, extractDomain, htmlEscape, makeStyleIcon, pipe,
+  addListener, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
+import { getReFilter, SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
@@ -147,6 +148,8 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
+    addListener('click', this.gotoTab)(this);
+    addListener('mouseover', this.setTooltipPosition)(this);
     return this;
   }
   getParentWindow() {
@@ -167,8 +170,8 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
       this.addEventListener('animationend', () => {
         chrome.tabs.remove(this.#tabId, () => {
           const { windowId } = this.getParentWindow();
-          store.dispatch('windowAction', { type: 'closeTab', windowId }, true);
           this.remove();
+          store.dispatch('windowAction', { type: 'closeTab', windowId }, true);
         });
       }, { once: true });
       setAnimationClass('remove-hilite')(this);
@@ -191,8 +194,6 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
   }
   connect(store: Store) {
     addListener('click', this.closeTab(store))($byClass('icon-x', this));
-    addListener('click', this.gotoTab)(this);
-    addListener('mouseover', this.setTooltipPosition)(this);
   }
 }
 
@@ -273,6 +274,9 @@ export class Window extends HTMLElement implements ISubscribeElement {
   get windowId() {
     return this.#windowId;
   }
+  searchDone() {
+    this.classList.toggle('empty', this.offsetHeight < 10);
+  }
   addTab(tab: chrome.tabs.Tab) {
     const $openTab = this.appendChild(document.importNode(this.$tmplTab!, true));
     return $openTab.init(tab);
@@ -337,7 +341,6 @@ export class Window extends HTMLElement implements ISubscribeElement {
 export class Tabs extends HTMLDivElement implements IPubSubElement {
   #tabsWrap = this.firstElementChild!;
   #initPromise!: Promise<void>;
-  private $windows!: Window[];
   async init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -347,7 +350,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
     this.#initPromise = new Promise<void>((resolve) => {
       chrome.windows.getCurrent(queryOptions, (currentWindow) => {
         chrome.windows.getAll({ ...queryOptions, populate: true }, (windows) => {
-          this.$windows = windows.map((win) => {
+          windows.forEach((win) => {
             const $window = this.#tabsWrap.appendChild(document.importNode($tmplWindow, true));
             return $window.init(
               win.id!,
@@ -363,6 +366,24 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
     });
     return this;
   }
+  getWindows() {
+    return [...this.#tabsWrap.children] as Window[];
+  }
+  search({ value, searchSelector, includeUrl }: SearchParams) {
+    const reFilter = getReFilter(value)!;
+    $$byClass(searchSelector, this).forEach((el) => {
+      const tab = el.firstElementChild as HTMLElement;
+      const isMatch = reFilter.test(tab.textContent!)
+        || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));
+      el.classList.toggle('match', isMatch);
+      el.classList.toggle('unmatch', !isMatch);
+    });
+    this.getWindows().forEach(($win) => $win.searchDone());
+  }
+  clearSearch() {
+    $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
+    $$byClass('empty', this).forEach(rmClass('empty'));
+  }
   // eslint-disable-next-line class-methods-use-this
   provideActions() {
     return {
@@ -376,22 +397,13 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
   }
   connect(store: Store) {
     this.#initPromise.then(() => {
-      this.$windows.forEach(($window) => $window.connect(store));
+      this.getWindows().forEach(($window) => $window.connect(store));
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
+      store.subscribe('search', (changes) => this.search(changes.newValue));
+      store.subscribe('clearSearch', this.clearSearch);
     });
   }
-  // search(selectorTabs: ) {
-  //   $$byClass(selectorTabs, $paneTabs).forEach((el) => {
-  //     const tab = el.firstElementChild as HTMLElement;
-  //     const isMatch = reFilter.test(tab.textContent!)
-  //       || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));
-  //     el.classList.toggle('match', isMatch);
-  //     el.classList.toggle('unmatch', !isMatch);
-  //   });
-  //   ([...$paneTabs.children] as HTMLElement[])
-  //     .forEach((win) => win.classList.toggle('empty', win.offsetHeight < 10));
-  // }
 }
 
 export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
@@ -402,6 +414,9 @@ export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
   init(collapsed: boolean) {
     this.#collapsed = collapsed;
     this.switchCollapseIcon(collapsed);
+  }
+  switchCollapseIcon(collapsed: boolean) {
+    toggleClass('tabs-collapsed-all', collapsed)(this);
   }
   provideActions() {
     return {
@@ -414,9 +429,6 @@ export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
       scrollPrevWindow: {},
       scrollNextWindow: {},
     };
-  }
-  switchCollapseIcon(collapsed: boolean) {
-    toggleClass('tabs-collapsed-all', collapsed)(this);
   }
   connect(store: Store) {
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));

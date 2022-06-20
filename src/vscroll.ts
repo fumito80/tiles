@@ -1,18 +1,13 @@
 import { State, Collection, MyHistoryItem } from './types';
-import {
-  pipe, pick,
-  getLocal, setLocal, getLocaleDate,
-  isDateEq, htmlEscape,
-} from './common';
+import { pipe, getLocaleDate, htmlEscape } from './common';
 import {
   $, $byClass, $byTag,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, addChild, hasClass,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, hasClass,
 } from './client';
-import { makeHistory } from './html';
 
 const invisible = { transform: 'translateY(-10000px)' };
 
-const searchCache = new Map<string, Array<MyHistoryItem>>();
+export const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
 let vScrollData: Collection;
 
@@ -76,20 +71,6 @@ export function rowSetterHistory() {
   };
 }
 
-function getRowHeight() {
-  const $tester = pipe(
-    addChild(document.createElement('div')),
-    addClass('history'),
-    setText('A'),
-  )(document.body);
-  const styles = getComputedStyle($tester);
-  const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'height')(styles);
-  const rowHeight = Object.values(props)
-    .reduce((acc, value) => acc + Number.parseFloat(String(value)), 0);
-  $tester.remove();
-  return { rowHeight };
-}
-
 export type VScrollRowSetter = typeof rowSetterHistory;
 
 export async function setVScroll(
@@ -146,68 +127,4 @@ export function setScrollTop(scrollTop: number) {
   const $paneHistory = $byClass('histories') as HTMLDivElement;
   $paneHistory.scrollTop = scrollTop;
   $paneHistory.dispatchEvent(new Event('scroll'));
-}
-
-function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
-  const [results] = source.reduce(([result, prevHeaderDate], el) => {
-    if (el.headerDate) {
-      return [result, el];
-    }
-    if (!reFilter!.test(el.title || el.url || '') && !(includeUrl && reFilter!.test(el.url || ''))) {
-      return [result, prevHeaderDate];
-    }
-    if (!prevHeaderDate) {
-      return [[...result, el], null];
-    }
-    return [[...result, prevHeaderDate, el], null];
-  }, [[], null] as [MyHistoryItem[], MyHistoryItem | null]);
-  return results;
-}
-
-type ResetParams = {
-  initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean, removedHistory?: boolean,
-};
-
-export async function resetHistory({
-  initialize,
-  reFilter,
-  includeUrl,
-}: ResetParams = {}) {
-  const $paneHistory = $byClass<HTMLDivElement>('histories')!;
-  rmClass('date-collapsed')($byTag('main'));
-  const $rows = $byClass('rows', $paneHistory)!;
-  if (initialize) {
-    const { rowHeight } = getRowHeight();
-    await setLocal({ vscrollProps: { rowHeight } });
-  }
-  const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
-  let histories = [init, ...tail];
-  if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
-    const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
-    histories = [headerDate, init, ...tail];
-    const headerDateHtml = makeHistory({ ...headerDate });
-    $rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-    await setLocal({ histories, htmlHistory: $rows.innerHTML });
-  }
-  const queryValue = reFilter?.source;
-  let data: MyHistoryItem[] | undefined = histories;
-  if (queryValue) {
-    data = searchCache.get(queryValue);
-    if (!data) {
-      data = searchHistory(histories, reFilter, includeUrl!);
-      searchCache.set(reFilter.source, data);
-    }
-  }
-  setVScroll($paneHistory, rowSetterHistory, data, vscrollProps);
-  if (reFilter || !initialize) {
-    [...$rows?.children || []].forEach(
-      pipe(
-        rmStyle('background-image'),
-        rmAttr('title'),
-        setHTML(''),
-      ),
-    );
-    $paneHistory.scrollTop = 0;
-    $paneHistory.dispatchEvent(new Event('scroll'));
-  }
 }
