@@ -454,7 +454,7 @@ export function resizeHeightHandler(e: MouseEvent) {
       .then(({ vscrollProps }) => {
         const $paneHistory = $byClass('histories') as HTMLDivElement;
         const vScrollData = getVScrollData();
-        setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps);
+        setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps.rowHeight);
       });
   }, 500);
   addStyle('height', `${height}px`)(document.body);

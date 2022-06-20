@@ -77,7 +77,7 @@ export async function setVScroll(
   $container: HTMLDivElement,
   rowSetter: VScrollRowSetter,
   data: Collection,
-  { rowHeight }: State['vscrollProps'],
+  rowHeight: State['vscrollProps']['rowHeight'],
 ) {
   const $rows = $byClass('rows', $container);
   const firstRow = $rows?.firstElementChild as HTMLElement;

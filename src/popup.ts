@@ -28,25 +28,18 @@ import {
 } from './common';
 
 import setEventListners from './client-events';
-import { refreshVScroll } from './vscroll';
-import { FormSearch } from './search';
 import {
   $, $$,
   addStyle, addClass, toggleClass,
   setSplitWidth,
   hasClass,
   addChild,
-  setHTML, insertHTML,
+  setHTML,
   $$byClass, $byClass, $byTag,
   recoverMinPaneWidth,
   toggleElement,
 } from './client';
-import { initStore } from './store';
-import {
-  HeaderTabs,
-  OpenTab, Tabs, Window, WindowHeader,
-} from './tabs';
-import { HeaderHistory, History } from './history';
+import { initComponents } from './store';
 
 type Options = State['options'];
 
@@ -109,10 +102,6 @@ function setBookmarksState(clState: ClientState) {
   }
 }
 
-function setHistory($target: HTMLElement, htmlHistory: string) {
-  insertHTML('afterbegin', htmlHistory)($target);
-}
-
 function layoutPanes(options: Options): storedElements {
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
@@ -145,40 +134,29 @@ function layoutPanes(options: Options): storedElements {
   }, {} as storedElements);
 }
 
-let resetHistory: History['resetHistory'];
-
 function init({
   settings, htmlBookmarks, clientState, options, htmlHistory,
 }: State) {
   const compos = layoutPanes(options);
-  const store = initStore(compos, options, settings);
+  const store = initComponents(compos, options, settings, htmlHistory);
   setOptions(settings, options);
-  setHistory($byClass('histories')!.firstElementChild as HTMLElement, htmlHistory);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
   toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setEventListners(store, options);
   setExternalUrl(options);
-  const $history = compos['body-history'];
-  resetHistory = $history.resetHistory.bind($history);
-  resetHistory({ initialize: true }).then(refreshVScroll);
   return store;
 }
 
-bootstrap(...getKeys(initialState)).then(init);
+const promiseStore = bootstrap(...getKeys(initialState)).then(init);
+
+function resetHistory() {
+  promiseStore.then((store) => store.dispatch('resetHistory', {}, true));
+}
 
 export const mapMessagesBtoP = {
-  [BkgMessageTypes.updateHistory]: resetHistory!,
+  [BkgMessageTypes.updateHistory]: resetHistory,
 };
 
 setMessageListener(mapMessagesBtoP, true);
-
-customElements.define('open-tab', OpenTab);
-customElements.define('open-window', Window);
-customElements.define('window-header', WindowHeader);
-customElements.define('body-tabs', Tabs, { extends: 'div' });
-customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
-customElements.define('form-search', FormSearch, { extends: 'form' });
-customElements.define('body-history', History, { extends: 'div' });
-customElements.define('header-history', HeaderHistory, { extends: 'div' });

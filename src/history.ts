@@ -5,9 +5,8 @@ import {
   IPubSubElement, makeAction, Store,
 } from './store';
 import {
-  $byClass, $byTag,
-  addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
-  createNewTab, setAnimationClass, toggleClass,
+  $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
+  createNewTab, setAnimationClass, toggleClass, insertHTML,
 } from './client';
 import {
   getHistoryById,
@@ -16,11 +15,19 @@ import {
 import { getReFilter, SearchParams } from './search';
 import { makeHistory } from './html';
 import {
-  getVScrollData, resetVScrollData, rowSetterHistory, searchCache, setScrollTop, setVScroll,
+  getVScrollData,
+  resetVScrollData,
+  rowSetterHistory,
+  searchCache,
+  setScrollTop,
+  setVScroll,
 } from './vscroll';
 
 type ResetParams = {
-  initialize?: boolean, reFilter?: RegExp, includeUrl?: boolean, removedHistory?: boolean,
+  initialize?: boolean,
+  reFilter?: RegExp,
+  includeUrl?: boolean,
+  removedHistory?: boolean,
 };
 
 function getRowHeight() {
@@ -34,7 +41,7 @@ function getRowHeight() {
   const rowHeight = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), 0);
   $tester.remove();
-  return { rowHeight };
+  return rowHeight;
 }
 
 function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
@@ -56,16 +63,25 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
 export class History extends HTMLDivElement implements IPubSubElement {
   #includeUrl!: boolean;
   #reFilter!: RegExp;
+  #jumpDate = '';
+  #rowHeight!: number;
   #store!: Store;
-  private $main = $byTag('main');
-  init(options: Options) {
+  init(options: Options, htmlHistory: string) {
+    insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
     this.setEvents(options);
+    const rowHeight = getRowHeight();
+    setLocal({ vscrollProps: { rowHeight } });
+    this.#rowHeight = rowHeight;
   }
   setEvents(options: Options) {
     this.addEventListener('click', async (e) => {
       const $target = e.target as HTMLElement;
-      if (hasClass($target, 'header-date') && hasClass(this.$main, 'date-collapsed')) {
-        this.jumpHistoryDate($target.textContent!);
+      if (hasClass($target, 'header-date')) {
+        this.#store.getState('historyCollapseDate', (collapsed) => {
+          if (collapsed) {
+            this.jumpHistoryDate($target.textContent!);
+          }
+        });
         return;
       }
       const $parent = $target.parentElement!;
@@ -88,20 +104,14 @@ export class History extends HTMLDivElement implements IPubSubElement {
   search({ value, includeUrl }: SearchParams) {
     const reFilter = getReFilter(value)!;
     this.#reFilter = reFilter;
-    this.#store.dispatch('historyCollapseDate', false);
-    this.resetHistory({ reFilter, includeUrl });
+    this.#includeUrl = includeUrl;
+    this.#store.dispatch('historyCollapseDate', false, true);
   }
   async resetHistory({
     initialize,
-    reFilter,
-    includeUrl,
   }: ResetParams = {}) {
     const $rows = $byClass('rows', this)!;
-    if (initialize) {
-      const { rowHeight } = getRowHeight();
-      await setLocal({ vscrollProps: { rowHeight } });
-    }
-    const { histories: [init, ...tail], vscrollProps } = await getLocal('histories', 'vscrollProps');
+    const { histories: [init, ...tail] } = await getLocal('histories');
     let histories = [init, ...tail];
     if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
       const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
@@ -110,17 +120,17 @@ export class History extends HTMLDivElement implements IPubSubElement {
       $rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
       await setLocal({ histories, htmlHistory: $rows.innerHTML });
     }
-    const queryValue = reFilter?.source;
+    const queryValue = this.#reFilter?.source;
     let data: MyHistoryItem[] | undefined = histories;
     if (queryValue) {
       data = searchCache.get(queryValue);
       if (!data) {
-        data = searchHistory(histories, reFilter, includeUrl!);
-        searchCache.set(reFilter.source, data);
+        data = searchHistory(histories, this.#reFilter, this.#includeUrl);
+        searchCache.set(this.#reFilter.source, data);
       }
     }
-    setVScroll(this, rowSetterHistory, data, vscrollProps);
-    if (reFilter || !initialize) {
+    setVScroll(this, rowSetterHistory, data, this.#rowHeight);
+    if (this.#reFilter || !initialize) {
       [...$rows?.children || []].forEach(
         pipe(
           rmStyle('background-image'),
@@ -132,28 +142,34 @@ export class History extends HTMLDivElement implements IPubSubElement {
       this.dispatchEvent(new Event('scroll'));
     }
   }
-  async restoreHistory() {
+  restoreHistory() {
     return this.resetHistory({ reFilter: this.#reFilter, includeUrl: this.#includeUrl });
   }
-  async collapseHistoryDate(collapsed: boolean) {
+  collapseHistoryDate(collapsed: boolean) {
     if (!collapsed) {
       this.restoreHistory();
+      if (this.#jumpDate) {
+        this.jumpDate();
+      }
       return;
     }
-    const { vscrollProps } = await getLocal('vscrollProps');
     const histories = getVScrollData();
     const data = histories.filter((item) => item.headerDate);
-    setVScroll(this, rowSetterHistory, data, vscrollProps);
+    setVScroll(this, rowSetterHistory, data, this.#rowHeight);
     setScrollTop(0);
   }
   async jumpHistoryDate(localeDate: string) {
-    const { vscrollProps } = await getLocal('vscrollProps');
+    this.#jumpDate = localeDate;
+    this.#store.dispatch('historyCollapseDate', false, true);
+  }
+  async jumpDate() {
     await this.restoreHistory();
     const histories = getVScrollData();
     const index = histories.findIndex(
-      (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === localeDate,
+      (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === this.#jumpDate,
     );
-    setScrollTop(vscrollProps.rowHeight * index);
+    setScrollTop(this.#rowHeight * index);
+    this.#jumpDate = '';
   }
   // eslint-disable-next-line class-methods-use-this
   provideActions() {

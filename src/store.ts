@@ -1,7 +1,11 @@
 import { Options, State, storedElements } from './types';
-import { OpenTab, Window } from './tabs';
+import {
+  HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
+} from './tabs';
 import { $, $byClass, $byTag } from './client';
 import { FormSearch } from './search';
+import { HeaderHistory, History } from './history';
+import { refreshVScroll } from './vscroll';
 
 // eslint-disable-next-line no-undef
 type Action<A extends keyof HTMLElementEventMap, R extends any> = {
@@ -83,16 +87,27 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       newValue: ActionValue<T[U]>,
       force = false,
     ) {
-      const actionName = prefixedAction(name);
-      chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-        const actionNewValue = makeActionValue(newValue, currentValue.forced + Number(force));
-        chrome.storage.local.set({ [actionName]: actionNewValue });
+      initPromise.then(() => {
+        const actionName = prefixedAction(name);
+        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+          const actionNewValue = makeActionValue(newValue, currentValue.forced + Number(force));
+          chrome.storage.local.set({ [actionName]: actionNewValue });
+        });
       });
+    },
+    getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb: (value: V) => void) {
+      const actionName = prefixedAction(name);
+      chrome.storage.local.get(actionName, ({ [actionName]: { value } }) => cb(value));
     },
   };
 }
 
-export function initStore(compos: storedElements, options: Options, settings: State['settings']) {
+export function initComponents(
+  compos: storedElements,
+  options: Options,
+  settings: State['settings'],
+  htmlHistory: string,
+) {
   // Initialize component (Custom element)
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const $headerTabs = compos['header-tabs'];
@@ -103,7 +118,8 @@ export function initStore(compos: storedElements, options: Options, settings: St
   $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
-  $history.init(options);
+  $history.init(options, htmlHistory);
+  $history.resetHistory({ initialize: true }).then(refreshVScroll);
   const $formSearch = $byClass('form-query') as FormSearch;
   $formSearch.init(settings.includeUrl, options.exclusiveOpenBmFolderTree);
   // Register actions
@@ -124,7 +140,7 @@ export function initStore(compos: storedElements, options: Options, settings: St
   return store;
 }
 
-export type Store = ReturnType<typeof initStore>;
+export type Store = ReturnType<typeof initComponents>;
 
 export interface IPublishElement {
   provideActions(): Actions<any>;
@@ -137,3 +153,12 @@ export interface ISubscribeElement {
 export interface IPubSubElement extends IPublishElement {
   connect(store: Store): void;
 }
+
+customElements.define('open-tab', OpenTab);
+customElements.define('open-window', Window);
+customElements.define('window-header', WindowHeader);
+customElements.define('body-tabs', Tabs, { extends: 'div' });
+customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
+customElements.define('form-search', FormSearch, { extends: 'form' });
+customElements.define('body-history', History, { extends: 'div' });
+customElements.define('header-history', HeaderHistory, { extends: 'div' });
