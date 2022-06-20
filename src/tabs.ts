@@ -7,7 +7,7 @@ import {
 import {
   addListener, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
-import { getReFilter, SearchParams } from './search';
+import { SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
@@ -369,8 +369,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
   getWindows() {
     return [...this.#tabsWrap.children] as Window[];
   }
-  search({ value, searchSelector, includeUrl }: SearchParams) {
-    const reFilter = getReFilter(value)!;
+  search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     $$byClass(searchSelector, this).forEach((el) => {
       const tab = el.firstElementChild as HTMLElement;
       const isMatch = reFilter.test(tab.textContent!)
@@ -400,8 +399,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
       this.getWindows().forEach(($window) => $window.connect(store));
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
-      store.subscribe('search', (changes) => this.search(changes.newValue));
-      store.subscribe('clearSearch', this.clearSearch);
+      store.subscribe('clearSearch', this.clearSearch.bind(this));
     });
   }
 }

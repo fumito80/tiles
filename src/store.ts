@@ -6,6 +6,7 @@ import { $, $byClass, $byTag } from './client';
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import { refreshVScroll } from './vscroll';
+import { Leafs } from './bookmarks';
 
 // eslint-disable-next-line no-undef
 type Action<A extends keyof HTMLElementEventMap, R extends any> = {
@@ -76,7 +77,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
           if (!result || areaName !== 'local') {
             return;
           }
-          const oldValue = (result.oldValue as ActionResult).value;
+          const oldValue = (result.oldValue as ActionResult)?.value;
           const newValue = (result.newValue as ActionResult).value;
           cb({ oldValue, newValue } as { oldValue: V, newValue: V });
         });
@@ -110,6 +111,7 @@ export function initComponents(
 ) {
   // Initialize component (Custom element)
   const $template = $byTag<HTMLTemplateElement>('template').content;
+  const $leafs = compos['body-leafs'];
   const $headerTabs = compos['header-tabs'];
   const $tabs = compos['body-tabs'];
   $headerTabs.init(options.collapseTabs);
@@ -121,7 +123,7 @@ export function initComponents(
   $history.init(options, htmlHistory);
   $history.resetHistory({ initialize: true }).then(refreshVScroll);
   const $formSearch = $byClass('form-query') as FormSearch;
-  $formSearch.init(settings.includeUrl, options.exclusiveOpenBmFolderTree);
+  $formSearch.init($leafs, $tabs, $history, settings.includeUrl, options.exclusiveOpenBmFolderTree);
   // Register actions
   const actions = {
     ...$headerTabs.provideActions(),
@@ -132,6 +134,7 @@ export function initComponents(
   };
   const store = registerActions(actions);
   // Coonect store
+  $leafs.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);
   $headerHistory.connect(store);
@@ -154,6 +157,7 @@ export interface IPubSubElement extends IPublishElement {
   connect(store: Store): void;
 }
 
+customElements.define('body-leafs', Leafs, { extends: 'div' });
 customElements.define('open-tab', OpenTab);
 customElements.define('open-window', Window);
 customElements.define('window-header', WindowHeader);

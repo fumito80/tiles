@@ -1,15 +1,13 @@
+import { IPubSubElement, makeAction, Store } from './store';
+import { when } from './common';
 import {
-  when,
-  switches,
-  extractUrl,
-} from './common';
-
-import {
-  $, $$, $byClass, $byTag,
+  $, $byClass, $byTag,
   rmClass, addAttr, addClass,
   selectFolder,
 } from './client';
-import { IPubSubElement, makeAction, Store } from './store';
+import { Leafs } from './bookmarks';
+import { Tabs } from './tabs';
+import { History } from './history';
 
 export function getReFilter(value: string) {
   if (!value) {
@@ -19,25 +17,42 @@ export function getReFilter(value: string) {
 }
 
 export type SearchParams = {
-  value: string, searchSelector: string, includeUrl: boolean,
+  value?: string, reFilter: RegExp, searchSelector: string, includeUrl: boolean,
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
+  #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
   #store!: Store;
   private $inputQuery = $byClass<HTMLInputElement>('query', this);
   private $main = $byTag('main');
-  private $leafs = $byClass('leafs') as HTMLElement;
-  init(includeUrl: boolean, exclusiveOpenBmFolderTree: boolean) {
+  private $leafs!: Leafs;
+  private $tabs!: Tabs;
+  private $history!: History;
+  init(
+    $leafs: Leafs,
+    $tabs: Tabs,
+    $history: History,
+    includeUrl: boolean,
+    exclusiveOpenBmFolderTree: boolean,
+  ) {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = exclusiveOpenBmFolderTree;
+    this.$leafs = $leafs;
+    this.$tabs = $tabs;
+    this.$history = $history;
+    this.$inputQuery.addEventListener('input', (e) => {
+      const { value } = (e.target as HTMLInputElement);
+      this.search(value);
+    });
   }
   clearQuery() {
     if (this.$inputQuery.value === '') {
       return;
     }
-    this.#store.dispatch('inputSearch', '');
+    this.search('');
+    this.#oldValue = '';
     this.#store.dispatch('search', { value: '', searchSelector: '', includeUrl: this.#includeUrl });
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
@@ -47,11 +62,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   }
   resetQuery(includeUrl: boolean) {
     this.#includeUrl = includeUrl;
-    this.search({ oldValue: '', newValue: this.$inputQuery.value });
+    this.#oldValue = '';
+    this.search(this.$inputQuery.value);
   }
   clearSearch() {
-    $$('.leafs .search-path').forEach(rmClass('search-path'));
-    $$('.leafs .path').forEach(rmClass('path'));
     this.#store.dispatch('clearSearch', null, true);
     const openFolder = $('.folders .open');
     if (openFolder) {
@@ -60,8 +74,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       selectFolder($target, $byClass('leafs'), this.#exclusiveOpenBmFolderTree);
     }
   }
-  search({ oldValue, newValue }: { oldValue: string, newValue: string }) {
+  search(newValue: string) {
+    const oldValue = this.#oldValue;
     if (oldValue.length <= 1 && newValue.length <= 1) {
+      this.#oldValue = newValue;
       return;
     }
     addClass('searching')(this.$main);
@@ -71,40 +87,20 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.clearSearch();
       rmClass('searching')(this.$main);
       this.$inputQuery.value = newValue;
+      this.#oldValue = newValue;
       return;
     }
-    const reFilter = getReFilter(newValue)!;
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
       .then('match' as const)
       .when(oldValue.startsWith(newValue))
       .then('unmatch' as const)
       .else('tab-wrap' as const);
-    const targetBookmarks = switches(searchSelector)
-      .case('match')
-      .then(() => {
-        const target = $$('.leafs .search-path');
-        target.forEach(rmClass('search-path'));
-        $$('.leafs .path').forEach(rmClass('path'));
-        return target;
-      })
-      .case('unmatch')
-      .then(() => $$('.leafs .leaf:not(.search-path)'))
-      .else(() => {
-        $$('.leafs .search-path').forEach(rmClass('search-path'));
-        $$('.leafs .path').forEach(rmClass('path'));
-        return $$('.leafs .leaf');
-      });
-    targetBookmarks.forEach((leaf) => {
-      const $anchor = leaf.firstElementChild as HTMLAnchorElement;
-      if (reFilter.test($anchor.textContent!)
-        || (this.#includeUrl && reFilter.test(extractUrl(leaf.style.backgroundImage)))) {
-        addClass('search-path')(leaf);
-        for (let folder = leaf.parentElement as HTMLElement | null; folder && folder?.classList.contains('folder'); folder = folder.parentElement) {
-          addClass('search-path', 'path')(folder);
-        }
-      }
-    });
-    this.#store.dispatch('search', { value: newValue, searchSelector, includeUrl: this.#includeUrl });
+    const reFilter = getReFilter(newValue)!;
+    const searchParams = { reFilter, searchSelector, includeUrl: this.#includeUrl };
+    this.$leafs.search(searchParams);
+    this.$tabs.search(searchParams);
+    this.$history.search(searchParams);
+    this.#oldValue = newValue;
   }
   provideActions() {
     return {
@@ -129,7 +125,6 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   connect(store: Store) {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
     store.subscribe('clearQuery', this.clearQuery.bind(this));
-    store.subscribe('inputSearch', this.search.bind(this));
     this.#store = store;
   }
 }
