@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file */
-
 import * as monaco from 'monaco-editor';
 
 export * as monaco from 'monaco-editor';

@@ -1,34 +1,21 @@
-import {
-  OpenBookmarkType,
-  Options,
-} from './types';
+import { Options } from './types';
 
 import {
   setEvents,
   whichClass,
-  cssid,
   getParentElement,
-  curry,
-  curry3,
-  cbToResolve,
-  pipe,
   addListener,
   last,
 } from './common';
 
 import {
-  setAnimationClass,
   $,
-  addChild,
-  rmClass,
   $byTag,
   $byClass,
   $$byClass,
   hasClass,
   toggleClass,
   addStyle,
-  createNewTab,
-  getBookmark,
   openBookmark,
   addBookmark,
   onClickAngle,
@@ -41,12 +28,10 @@ import {
   findInTabsBookmark,
   editTitle,
   removeFolder,
-  editBookmarkTitle,
   showMenu,
   getEndPaneMinWidth,
   openFolder,
   saveStateAllPaths,
-  updateAnker,
   selectFolder,
 } from './client';
 
@@ -57,23 +42,6 @@ import { Store } from './store';
 export default function setEventListners(store: Store, options: Options) {
   const $main = $byTag('main')!;
   const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
-  $byClass('form-query')!.addEventListener('submit', (e: Event) => {
-    e.preventDefault();
-    if (options.enableExternalUrl && options.externalUrl) {
-      const $inputQuery = (e.target as HTMLFormElement).query;
-      const value = $inputQuery.value.trim();
-      if (value.length <= 1) {
-        return false;
-      }
-      const url = options.externalUrl + encodeURIComponent(value);
-      createNewTab(options, url);
-    }
-    return false;
-  });
-  $('.form-query .icon-x')?.addEventListener('click', () => {
-    store.dispatch('clearQuery', true, true);
-  });
-
   const $leafMenu = $byClass('leaf-menu');
   setEvents([$main], {
     click(e) {
@@ -97,84 +65,6 @@ export default function setEventListners(store: Store, options: Options) {
     },
     ...dragAndDropEvents,
   });
-
-  setEvents($$byClass('leaf-menu'), {
-    async click(e) {
-      const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
-      const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
-      switch ((e.target as HTMLElement).dataset.value) {
-        case 'find-in-tabs': {
-          findInTabsBookmark(options, $anchor);
-          break;
-        }
-        case 'open-new-tab':
-          openBookmark(options, $anchor);
-          break;
-        case 'open-new-window':
-          openBookmark(options, $anchor, OpenBookmarkType.window);
-          break;
-        case 'open-incognito':
-          openBookmark(options, $anchor, OpenBookmarkType.incognito);
-          break;
-        case 'edit-title': {
-          editBookmarkTitle($leaf);
-          break;
-        }
-        case 'edit-url': {
-          const { url = '', title } = await getBookmark($leaf.id);
-          // eslint-disable-next-line no-alert
-          const value = prompt(`[Edit URL]\n${title}`, url);
-          if (value == null) {
-            break;
-          }
-          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
-          updateAnker($leaf.id, { title, url: value });
-          setAnimationClass('hilite')($leaf);
-          break;
-        }
-        case 'remove': {
-          await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($byClass('leaf-menu'))($byClass('components'));
-          pipe(
-            addListener('animationend', () => $leaf.remove(), { once: true }),
-            rmClass('hilite'),
-            setAnimationClass('remove-hilite'),
-          )($leaf);
-          break;
-        }
-        case 'show-in-folder': {
-          const id = $leaf.parentElement?.id;
-          const $target = $(`.folders ${cssid(id!)} > .marker > .title`);
-          if (!$target) {
-            break;
-          }
-          $target.click();
-          $target.focus();
-          ($leaf.firstElementChild as HTMLAnchorElement).focus();
-          ($leaf as any).scrollIntoViewIfNeeded();
-          setAnimationClass('hilite')($leaf);
-          break;
-        }
-        default:
-      }
-      ($anchor.nextElementSibling as HTMLElement).blur();
-    },
-    mousedown(e) {
-      e.preventDefault();
-    },
-  });
-
-  const $leafs = addListener('click', (e) => {
-    const $target = e.target as HTMLDivElement;
-    if ($target.hasAttribute('contenteditable')) {
-      return;
-    }
-    if (hasClass($target, 'anchor')) {
-      findTabsFirstOrNot(options, $target!);
-    } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
-      toggleClass('path')($target.parentElement?.parentElement);
-    }
-  })($byClass('leafs')!);
 
   const $foldersMenu = $byClass('folder-menu');
   setEvents([$byClass('folders')], {
@@ -211,7 +101,7 @@ export default function setEventListners(store: Store, options: Options) {
           break;
         case 'title': {
           store.dispatch('clearQuery', null, true);
-          selectFolder($target, $leafs, options.exclusiveOpenBmFolderTree);
+          selectFolder($target, $byClass('leafs'), options.exclusiveOpenBmFolderTree);
           break;
         }
         case 'folder-menu-button': {

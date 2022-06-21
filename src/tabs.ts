@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file */
-
 import { PaneHeader } from './bookmarks';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
@@ -287,14 +285,15 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.append(...$tabs);
     return $tabs;
   }
-  connectTabs() {
-    this.getTabs().forEach(($tab) => $tab.connect(this.#store!));
+  connectTabs($tabs: OpenTab[]) {
+    $tabs.forEach(($tab) => $tab.connect(this.#store!));
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed', collapsed)(this);
   }
   getTabs() {
-    return [...this.children].filter(($child) => $child instanceof OpenTab) as OpenTab[];
+    const [, ...$tabs] = [...this.children];
+    return $tabs as OpenTab[];
   }
   clearTabs() {
     this.getTabs().forEach(($tab) => $tab.remove());
@@ -308,14 +307,13 @@ export class Window extends HTMLElement implements ISubscribeElement {
       const [firstTab, ...rest] = win.tabs!;
       this.$header.update(firstTab);
       this.clearTabs();
-      this.addTabs([firstTab, ...rest]);
-      this.connectTabs();
+      pipe(this.addTabs, this.connectTabs)([firstTab, ...rest]);
     });
   }
   connect(store: Store) {
     this.#store = store;
     this.$header.connect(store);
-    this.connectTabs();
+    this.connectTabs(this.getTabs());
     store.subscribe('collapseWindowsAll', (changes) => {
       this.switchCollapseIcon(changes.newValue);
     });
@@ -344,7 +342,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
 export class Tabs extends HTMLDivElement implements IPubSubElement {
   #tabsWrap = this.firstElementChild!;
   #initPromise!: Promise<void>;
-  async init(
+  init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
     collapseTabs: boolean,

@@ -11,6 +11,7 @@ import {
   Options,
   ColorPalette,
   defaultColorPalette,
+  HTMLElementEventType,
 } from './types';
 
 import {
@@ -24,21 +25,17 @@ export const aDayMSec = 1000 * 60 * 60 * 24;
 
 type AnyFunction = (...p: any[]) => any;
 
-// eslint-disable-next-line no-undef
-type EventListener<K extends keyof HTMLElementEventMap, T extends HTMLElement> = (
+type EventListener<K extends keyof HTMLElementEventType, T extends HTMLElement> = (
   this: T,
-  // eslint-disable-next-line no-undef
-  ev: HTMLElementEventMap[K]
+  ev: HTMLElementEventType[K]
 ) => any;
 
 type EventListenerMap<T extends HTMLElement = HTMLElement> = {
-  // eslint-disable-next-line no-undef
-  [K in keyof Partial<HTMLElementEventMap>]: EventListener<K, T>
+  [K in keyof Partial<HTMLElementEventType>]: EventListener<K, T>
 }
 
 type EventListeners<
-  // eslint-disable-next-line no-undef
-  K extends keyof HTMLElementEventMap,
+  K extends keyof HTMLElementEventType,
   T extends HTMLElement
 > = [K, EventListener<K, T>];
 
@@ -57,11 +54,9 @@ export function setEvents<T extends HTMLElement>(
   });
 }
 
-// eslint-disable-next-line no-undef
-export function addListener<T extends keyof HTMLElementEventMap>(
+export function addListener<T extends keyof HTMLElementEventType>(
   type: T,
-  // eslint-disable-next-line no-undef
-  ev: (e: HTMLElementEventMap[T]) => any,
+  ev: (e: HTMLElementEventType[T]) => any,
   // eslint-disable-next-line no-undef
   options?: boolean | AddEventListenerOptions,
 ) {

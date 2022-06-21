@@ -1,17 +1,107 @@
-/* eslint-disable max-classes-per-file */
-
 import {
-  $$, $$byClass, $byClass, $byTag, addBookmark, addClass, addFolder, hasClass, rmClass, toggleClass,
+  $, $$, $$byClass, $byClass, $byTag,
+  addClass, rmClass, toggleClass, hasClass,
+  addBookmark, findInTabsBookmark, openBookmark, editBookmarkTitle, getBookmark,
+  updateAnker, addFolder,
+  setAnimationClass, addChild,
 } from './client';
 import {
   addListener,
-  extractUrl, getLocal, pipe, setLocal, switches,
+  cbToResolve,
+  cssid,
+  curry,
+  curry3,
+  extractUrl, getLocal, pipe, setEvents, setLocal, switches,
 } from './common';
 import { SearchParams } from './search';
 import { ISubscribeElement, Store } from './store';
+import { OpenBookmarkType, Options } from './types';
 import { resetVScrollData } from './vscroll';
 
+function setLeafMenu(options: Options) {
+  setEvents($$byClass('leaf-menu'), {
+    async click(e) {
+      const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
+      const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
+      switch ((e.target as HTMLElement).dataset.value) {
+        case 'find-in-tabs': {
+          findInTabsBookmark(options, $anchor);
+          break;
+        }
+        case 'open-new-tab':
+          openBookmark(options, $anchor);
+          break;
+        case 'open-new-window':
+          openBookmark(options, $anchor, OpenBookmarkType.window);
+          break;
+        case 'open-incognito':
+          openBookmark(options, $anchor, OpenBookmarkType.incognito);
+          break;
+        case 'edit-title': {
+          editBookmarkTitle($leaf);
+          break;
+        }
+        case 'edit-url': {
+          const { url = '', title } = await getBookmark($leaf.id);
+          // eslint-disable-next-line no-alert
+          const value = prompt(`[Edit URL]\n${title}`, url);
+          if (value == null) {
+            break;
+          }
+          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
+          updateAnker($leaf.id, { title, url: value });
+          setAnimationClass('hilite')($leaf);
+          break;
+        }
+        case 'remove': {
+          await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
+          addChild($byClass('leaf-menu'))($byClass('components'));
+          pipe(
+            addListener('animationend', () => $leaf.remove(), { once: true }),
+            rmClass('hilite'),
+            setAnimationClass('remove-hilite'),
+          )($leaf);
+          break;
+        }
+        case 'show-in-folder': {
+          const id = $leaf.parentElement?.id;
+          const $target = $(`.folders ${cssid(id!)} > .marker > .title`);
+          if (!$target) {
+            break;
+          }
+          $target.click();
+          $target.focus();
+          ($leaf.firstElementChild as HTMLAnchorElement).focus();
+          ($leaf as any).scrollIntoViewIfNeeded();
+          setAnimationClass('hilite')($leaf);
+          break;
+        }
+        default:
+      }
+      ($anchor.nextElementSibling as HTMLElement).blur();
+    },
+    mousedown(e) {
+      e.preventDefault();
+    },
+  });
+}
+
 export class Leafs extends HTMLDivElement implements ISubscribeElement {
+  init(options: Options) {
+    const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
+    this.addEventListener('click', (e) => {
+      const $target = e.target as HTMLDivElement;
+      if ($target.hasAttribute('contenteditable')) {
+        return;
+      }
+      if (hasClass($target, 'anchor')) {
+        findTabsFirstOrNot(options, $target!);
+      } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
+        toggleClass('path')($target.parentElement?.parentElement);
+      }
+    });
+    setLeafMenu(options);
+  }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     const targetBookmarks = switches(searchSelector)
       .case('match')
@@ -106,6 +196,6 @@ export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
 export class HeaderLeafs extends PaneHeader {
   private $pinBookmark = $byClass('pin-bookmark', this);
   init() {
-    addListener('click', () => addBookmark())(this.$pinBookmark);
+    this.$pinBookmark.addEventListener('click', () => addBookmark());
   }
 }

@@ -181,3 +181,6 @@ export type Model = { [key: string]: any };
 export type Collection = Array<Model>;
 
 export type Nil = undefined | null;
+
+// eslint-disable-next-line no-undef
+export type HTMLElementEventType = HTMLElementEventMap;

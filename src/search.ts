@@ -4,10 +4,12 @@ import {
   $, $byClass, $byTag,
   rmClass, addAttr, addClass,
   selectFolder,
+  createNewTab,
 } from './client';
 import { Leafs } from './bookmarks';
 import { Tabs } from './tabs';
 import { History } from './history';
+import { Options } from './types';
 
 export function getReFilter(value: string) {
   if (!value) {
@@ -25,8 +27,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
   #store!: Store;
-  private $inputQuery = $byClass<HTMLInputElement>('query', this);
-  private $main = $byTag('main');
+  readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
+  readonly $iconX = $byClass('icon-x', this);
+  readonly $main = $byTag('main');
   private $leafs!: Leafs;
   private $tabs!: Tabs;
   private $history!: History;
@@ -35,10 +38,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     $tabs: Tabs,
     $history: History,
     includeUrl: boolean,
-    exclusiveOpenBmFolderTree: boolean,
+    options: Options,
   ) {
     this.#includeUrl = includeUrl;
-    this.#exclusiveOpenBmFolderTree = exclusiveOpenBmFolderTree;
+    this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$leafs = $leafs;
     this.$tabs = $tabs;
     this.$history = $history;
@@ -46,6 +49,19 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       const { value } = (e.target as HTMLInputElement);
       this.search(value);
     });
+    this.addEventListener('submit', (e) => this.submitForm(e, options));
+  }
+  submitForm(e: Event, options: Options) {
+    e.preventDefault();
+    if (options.enableExternalUrl && options.externalUrl) {
+      const value = this.$inputQuery.value.trim();
+      if (value.length <= 1) {
+        return false;
+      }
+      const url = options.externalUrl + encodeURIComponent(value);
+      createNewTab(options, url);
+    }
+    return false;
   }
   clearQuery() {
     if (this.$inputQuery.value === '') {
@@ -104,7 +120,11 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   }
   provideActions() {
     return {
-      clearQuery: {},
+      clearQuery: makeAction({
+        target: this.$iconX,
+        eventType: 'click',
+        force: true,
+      }),
       clearSearch: {},
       changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
       search: makeAction({

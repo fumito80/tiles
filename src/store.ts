@@ -1,4 +1,6 @@
-import { Options, State, storedElements } from './types';
+import {
+  HTMLElementEventType, Options, State, storedElements,
+} from './types';
 import { $, $byClass, $byTag } from './client';
 import {
   HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
@@ -7,17 +9,15 @@ import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import { HeaderLeafs, Leafs } from './bookmarks';
 
-// eslint-disable-next-line no-undef
-type Action<A extends keyof HTMLElementEventMap, R extends any> = {
+type Action<A extends keyof HTMLElementEventType, R extends any> = {
   initValue?: R;
   target?: HTMLElement;
   eventType?: A;
-  // eslint-disable-next-line no-undef
-  eventProcesser?: (e: HTMLElementEventMap[A], value: R) => R;
+  eventProcesser?: (e: HTMLElementEventType[A], value: R) => R;
+  force?: boolean;
 };
 
-// eslint-disable-next-line no-undef
-export function makeAction<U extends any, T extends keyof HTMLElementEventMap = any>(
+export function makeAction<U extends any, T extends keyof HTMLElementEventType = any>(
   action: Action<T, U>,
 ) {
   return action;
@@ -41,7 +41,7 @@ type ActionResult = ReturnType<typeof makeActionValue>;
 
 export function registerActions<T extends Actions<any>>(actions: T) {
   const initPromises = Object.entries(actions).map(async ([name, {
-    target, eventType, eventProcesser, initValue,
+    target, eventType, eventProcesser, initValue, force,
   }]) => {
     const actionName = prefixedAction(name);
     const actionValue = makeActionValue(initValue);
@@ -57,7 +57,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
     target.addEventListener(eventType, (e: any) => {
       chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
         const newValue = valueProcesser(e, (currentValue as ActionResult).value);
-        const actionNewValue = makeActionValue(newValue, currentValue.forced);
+        const actionNewValue = makeActionValue(newValue, currentValue.forced + Number(force));
         chrome.storage.local.set({ [actionName]: actionNewValue });
       });
     });
@@ -108,23 +108,25 @@ export function initComponents(
   settings: State['settings'],
   htmlHistory: string,
 ) {
-  // Initialize component (Custom element)
+  // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
+  // Define component (Custom element)
+  const $formSearch = $byClass('form-query') as FormSearch;
   const $tabs = compos['body-tabs'];
-  $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
   const $leafs = compos['body-leafs'];
   const $headerLeafs = compos['header-leafs'];
-  $headerLeafs.init();
   const $headerTabs = compos['header-tabs'];
-  $headerTabs.init(options.collapseTabs);
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
+  // Initialize component
+  $leafs.init(options);
+  $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
+  $headerLeafs.init();
+  $headerTabs.init(options.collapseTabs);
   $history.init(options, htmlHistory);
-  // $history.resetHistory({ initialize: true });
-  const $formSearch = $byClass('form-query') as FormSearch;
-  $formSearch.init($leafs, $tabs, $history, settings.includeUrl, options.exclusiveOpenBmFolderTree);
+  $formSearch.init($leafs, $tabs, $history, settings.includeUrl, options);
   // Register actions
   const actions = {
     ...$headerTabs.provideActions(),
