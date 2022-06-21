@@ -107,16 +107,12 @@ export async function setVScroll(
   $container.addEventListener('scroll', vScrollHandler);
 }
 
-export function refreshVScroll() {
-  $byClass('v-scroll')!.dispatchEvent(new Event('scroll'));
-}
-
 export function resetVScrollData(
   cbVScrollData: (data: Collection) => Collection,
 ) {
   vScrollData = cbVScrollData(vScrollData);
   searchCache.clear();
-  refreshVScroll();
+  $byClass('v-scroll')!.dispatchEvent(new Event('scroll'));
 }
 
 export function getVScrollData() {

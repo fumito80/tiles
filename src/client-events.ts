@@ -11,8 +11,6 @@ import {
   curry,
   curry3,
   cbToResolve,
-  getLocal,
-  setLocal,
   pipe,
   addListener,
   last,
@@ -52,7 +50,6 @@ import {
   selectFolder,
 } from './client';
 
-import { resetVScrollData } from './vscroll';
 import dragAndDropEvents from './drag-drop';
 import { setZoomSetting } from './zoom';
 import { Store } from './store';
@@ -226,13 +223,6 @@ export default function setEventListners(store: Store, options: Options) {
     },
   });
 
-  addListener('click', () => addBookmark())($byClass('pin-bookmark'));
-
-  $byClass('main-menu-button')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    return false;
-  });
-
   const $paneBodies = $$byClass('pane-body');
   const $endHeaderPane = last($$byClass('pane-header'))!;
   const $endBodyPane = last($paneBodies)!;
@@ -263,47 +253,6 @@ export default function setEventListners(store: Store, options: Options) {
   });
 
   $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
-
-  setEvents($$byClass('main-menu'), {
-    async click(e) {
-      const $menu = e.target as HTMLElement;
-      switch ($menu.dataset.value) {
-        case 'add-bookmark': {
-          const id = $byClass('open')?.id;
-          addBookmark(id || '1');
-          break;
-        }
-        case 'add-folder':
-          addFolder();
-          break;
-        case 'settings':
-          chrome.runtime.openOptionsPage();
-          break;
-        case 'auto-zoom': {
-          const isChecked = hasClass($main, 'auto-zoom');
-          toggleClass('auto-zoom', !isChecked)($main);
-          getLocal('settings')
-            .then(({ settings }) => setLocal({ settings: { ...settings, autoZoom: !isChecked } }));
-          break;
-        }
-        case 'include-url':
-          getLocal('settings')
-            .then(({ settings }) => {
-              toggleClass('checked-include-url', !settings.includeUrl)($main);
-              return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
-            })
-            .then(({ settings }) => {
-              store.dispatch('changeIncludeUrl', settings.includeUrl, true);
-              resetVScrollData((data) => data);
-            });
-          break;
-        default:
-      }
-    },
-    mousedown(e) {
-      e.preventDefault();
-    },
-  });
 
   setEvents($$byClass('folder-menu'), {
     async click(e) {

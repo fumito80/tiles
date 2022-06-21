@@ -1,5 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
+import { PaneHeader } from './bookmarks';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
   addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, showMenu, toggleClass,
@@ -278,11 +279,13 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.classList.toggle('empty', this.offsetHeight < 10);
   }
   addTab(tab: chrome.tabs.Tab) {
-    const $openTab = this.appendChild(document.importNode(this.$tmplTab!, true));
+    const $openTab = document.importNode(this.$tmplTab!, true);
     return $openTab.init(tab);
   }
   addTabs(tabs: chrome.tabs.Tab[]) {
-    return tabs.map((tab) => this.addTab(tab));
+    const $tabs = tabs.map((tab) => this.addTab(tab));
+    this.append(...$tabs);
+    return $tabs;
   }
   connectTabs() {
     this.getTabs().forEach(($tab) => $tab.connect(this.#store!));
@@ -350,8 +353,8 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
     this.#initPromise = new Promise<void>((resolve) => {
       chrome.windows.getCurrent(queryOptions, (currentWindow) => {
         chrome.windows.getAll({ ...queryOptions, populate: true }, (windows) => {
-          windows.forEach((win) => {
-            const $window = this.#tabsWrap.appendChild(document.importNode($tmplWindow, true));
+          const $windows = windows.map((win) => {
+            const $window = document.importNode($tmplWindow, true);
             return $window.init(
               win.id!,
               currentWindow.id === win.id,
@@ -360,6 +363,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
               collapseTabs,
             );
           });
+          this.#tabsWrap.append(...$windows);
           resolve();
         });
       });
@@ -404,7 +408,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement {
   }
 }
 
-export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
+export class HeaderTabs extends PaneHeader implements IPubSubElement {
   #collapsed!: boolean;
   private $buttonCollapse = $byClass('collapse-tabs', this);
   private $buttonPrevWin = $byClass('win-prev', this);
@@ -428,7 +432,8 @@ export class HeaderTabs extends HTMLDivElement implements IPubSubElement {
       scrollNextWindow: {},
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
     this.$buttonPrevWin.addEventListener('click', () => store.dispatch('scrollPrevWindow', null, true));
     this.$buttonNextWin.addEventListener('click', () => store.dispatch('scrollNextWindow', null, true));

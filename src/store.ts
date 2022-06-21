@@ -1,12 +1,11 @@
 import { Options, State, storedElements } from './types';
+import { $, $byClass, $byTag } from './client';
 import {
   HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
 } from './tabs';
-import { $, $byClass, $byTag } from './client';
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
-import { refreshVScroll } from './vscroll';
-import { Leafs } from './bookmarks';
+import { HeaderLeafs, Leafs } from './bookmarks';
 
 // eslint-disable-next-line no-undef
 type Action<A extends keyof HTMLElementEventMap, R extends any> = {
@@ -111,17 +110,19 @@ export function initComponents(
 ) {
   // Initialize component (Custom element)
   const $template = $byTag<HTMLTemplateElement>('template').content;
-  const $leafs = compos['body-leafs'];
-  const $headerTabs = compos['header-tabs'];
-  const $tabs = compos['body-tabs'];
-  $headerTabs.init(options.collapseTabs);
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
+  const $tabs = compos['body-tabs'];
   $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
+  const $leafs = compos['body-leafs'];
+  const $headerLeafs = compos['header-leafs'];
+  $headerLeafs.init();
+  const $headerTabs = compos['header-tabs'];
+  $headerTabs.init(options.collapseTabs);
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
   $history.init(options, htmlHistory);
-  $history.resetHistory({ initialize: true }).then(refreshVScroll);
+  // $history.resetHistory({ initialize: true });
   const $formSearch = $byClass('form-query') as FormSearch;
   $formSearch.init($leafs, $tabs, $history, settings.includeUrl, options.exclusiveOpenBmFolderTree);
   // Register actions
@@ -134,12 +135,15 @@ export function initComponents(
   };
   const store = registerActions(actions);
   // Coonect store
+  $headerLeafs.connect(store);
   $leafs.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);
   $headerHistory.connect(store);
   $history.connect(store);
   $formSearch.connect(store);
+  // v-scroll initialize
+  store.dispatch('resetHistory', { initialize: true }, true);
   return store;
 }
 
@@ -157,6 +161,7 @@ export interface IPubSubElement extends IPublishElement {
   connect(store: Store): void;
 }
 
+customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
 customElements.define('body-leafs', Leafs, { extends: 'div' });
 customElements.define('open-tab', OpenTab);
 customElements.define('open-window', Window);

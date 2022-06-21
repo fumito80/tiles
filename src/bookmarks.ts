@@ -1,11 +1,15 @@
-/* eslint-disable import/prefer-default-export */
+/* eslint-disable max-classes-per-file */
 
 import {
-  $$, $$byClass, addClass, rmClass,
+  $$, $$byClass, $byClass, $byTag, addBookmark, addClass, addFolder, hasClass, rmClass, toggleClass,
 } from './client';
-import { extractUrl, switches } from './common';
+import {
+  addListener,
+  extractUrl, getLocal, pipe, setLocal, switches,
+} from './common';
 import { SearchParams } from './search';
 import { ISubscribeElement, Store } from './store';
+import { resetVScrollData } from './vscroll';
 
 export class Leafs extends HTMLDivElement implements ISubscribeElement {
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
@@ -46,5 +50,62 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement {
   }
   connect(store: Store) {
     store.subscribe('clearSearch', this.clearSearch.bind(this));
+  }
+}
+
+export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
+  private $mainMenu = $byClass('main-menu', this);
+  private $main = $byTag('main');
+  setEvents(store: Store) {
+    pipe(
+      addListener('click', (e) => {
+        const $menu = e.target as HTMLElement;
+        switch ($menu.dataset.value) {
+          case 'add-bookmark': {
+            const id = $byClass('open')?.id;
+            addBookmark(id || '1');
+            break;
+          }
+          case 'add-folder':
+            addFolder();
+            break;
+          case 'settings':
+            chrome.runtime.openOptionsPage();
+            break;
+          case 'auto-zoom': {
+            const isChecked = hasClass(this.$main, 'auto-zoom');
+            toggleClass('auto-zoom', !isChecked)(this.$main);
+            getLocal('settings')
+              .then(({ settings }) => {
+                setLocal({ settings: { ...settings, autoZoom: !isChecked } });
+              });
+            break;
+          }
+          case 'include-url':
+            getLocal('settings')
+              .then(({ settings }) => {
+                toggleClass('checked-include-url', !settings.includeUrl)(this.$main);
+                return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
+              })
+              .then(({ settings }) => {
+                store.dispatch('changeIncludeUrl', settings.includeUrl, true);
+                resetVScrollData((data) => data);
+              });
+            break;
+          default:
+        }
+      }),
+      addListener('mousedown', (e) => e.preventDefault()),
+    )(this.$mainMenu);
+  }
+  connect(store: Store) {
+    this.setEvents(store);
+  }
+}
+
+export class HeaderLeafs extends PaneHeader {
+  private $pinBookmark = $byClass('pin-bookmark', this);
+  init() {
+    addListener('click', () => addBookmark())(this.$pinBookmark);
   }
 }

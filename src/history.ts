@@ -138,8 +138,8 @@ export class History extends HTMLDivElement implements IPubSubElement {
         ),
       );
       this.scrollTop = 0;
-      this.dispatchEvent(new Event('scroll'));
     }
+    this.dispatchEvent(new Event('scroll'));
   }
   async restoreHistory() {
     return this.resetHistory({ reFilter: this.#reFilter!, includeUrl: this.#includeUrl });

@@ -1,10 +1,11 @@
 import { mapMessagesPtoB } from './background';
-import { Leafs } from './bookmarks';
+import { HeaderLeafs, Leafs } from './bookmarks';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
 
 export type storedElements = {
+  'header-leafs': HeaderLeafs,
   'body-leafs': Leafs,
   'header-tabs': HeaderTabs,
   'body-tabs': Tabs,
