@@ -9,24 +9,26 @@ import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import { HeaderLeafs, Leafs } from './bookmarks';
 
-type Action<A extends keyof HTMLElementEventType, R extends any> = {
+type Action<A extends keyof HTMLElementEventType, R extends any, S extends boolean> = {
   initValue?: R;
   target?: HTMLElement;
   eventType?: A;
   eventProcesser?: (e: HTMLElementEventType[A], value: R) => R;
-  force?: boolean;
+  force?: S,
 };
 
-export function makeAction<U extends any, T extends keyof HTMLElementEventType = any>(
-  action: Action<T, U>,
+export function makeAction<
+  U extends any, T extends keyof HTMLElementEventType = any, S extends boolean = false,
+>(
+  action: Action<T, U, S>,
 ) {
-  return action;
+  return { force: false, ...action };
 }
 
-type ActionValue<T> = T extends Action<any, infer R> ? R : never;
+type ActionValue<T> = T extends Action<any, infer R, any> ? R : never;
 
 type Actions<T> = {
-  [K in keyof T]: T[K] extends Action<any, any> ? T : never;
+  [K in keyof T]: T[K] extends Action<any, any, any> ? T : never;
 }
 
 function prefixedAction(name: string | number | symbol) {
@@ -41,7 +43,7 @@ type ActionResult = ReturnType<typeof makeActionValue>;
 
 export function registerActions<T extends Actions<any>>(actions: T) {
   const initPromises = Object.entries(actions).map(async ([name, {
-    target, eventType, eventProcesser, initValue, force,
+    target, eventType, eventProcesser, initValue,
   }]) => {
     const actionName = prefixedAction(name);
     const actionValue = makeActionValue(initValue);
@@ -57,7 +59,8 @@ export function registerActions<T extends Actions<any>>(actions: T) {
     target.addEventListener(eventType, (e: any) => {
       chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
         const newValue = valueProcesser(e, (currentValue as ActionResult).value);
-        const actionNewValue = makeActionValue(newValue, currentValue.forced + Number(force));
+        const forced = currentValue.forced + Number(actions[name].force);
+        const actionNewValue = makeActionValue(newValue, forced);
         chrome.storage.local.set({ [actionName]: actionNewValue });
       });
     });
@@ -71,8 +74,9 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       name: U,
       cb: (changes: { oldValue: V, newValue: V }) => void,
     ) {
+      const actionName = prefixedAction(name);
       initPromise.then(() => {
-        chrome.storage.onChanged.addListener(({ [prefixedAction(name)]: result }, areaName) => {
+        chrome.storage.onChanged.addListener(({ [actionName]: result }, areaName) => {
           if (!result || areaName !== 'local') {
             return;
           }
@@ -84,13 +88,14 @@ export function registerActions<T extends Actions<any>>(actions: T) {
     },
     dispatch<U extends keyof T>(
       name: U,
-      newValue: ActionValue<T[U]>,
+      newValue?: ActionValue<T[U]>,
       force = false,
     ) {
+      const actionName = prefixedAction(name);
       initPromise.then(() => {
-        const actionName = prefixedAction(name);
         chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-          const actionNewValue = makeActionValue(newValue, currentValue.forced + Number(force));
+          const forced = currentValue.forced + Number(force || newValue === undefined);
+          const actionNewValue = makeActionValue(newValue, forced);
           chrome.storage.local.set({ [actionName]: actionNewValue });
         });
       });

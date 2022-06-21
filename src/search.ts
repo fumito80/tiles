@@ -82,7 +82,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.search(this.$inputQuery.value);
   }
   clearSearch() {
-    this.#store.dispatch('clearSearch', null, true);
+    this.#store.dispatch('clearSearch');
     const openFolder = $('.folders .open');
     if (openFolder) {
       rmClass('open')(openFolder);
@@ -134,12 +134,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
           includeUrl: this.#includeUrl,
         },
       }),
-      inputSearch: makeAction({
-        initValue: '',
-        target: this.$inputQuery,
-        eventType: 'input',
-        eventProcesser: (e) => (e.target as HTMLInputElement).value,
-      }),
+      // inputSearch: makeAction({
+      //   initValue: '',
+      //   target: this.$inputQuery,
+      //   eventType: 'input',
+      //   eventProcesser: (e) => (e.target as HTMLInputElement).value,
+      // }),
     };
   }
   connect(store: Store) {

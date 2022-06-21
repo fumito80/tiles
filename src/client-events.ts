@@ -100,7 +100,7 @@ export default function setEventListners(store: Store, options: Options) {
           }
           break;
         case 'title': {
-          store.dispatch('clearQuery', null, true);
+          store.dispatch('clearQuery');
           selectFolder($target, $byClass('leafs'), options.exclusiveOpenBmFolderTree);
           break;
         }
