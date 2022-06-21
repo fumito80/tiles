@@ -1,48 +1,21 @@
 import { Options } from './types';
-
+import { setEvents, addListener, last } from './common';
+import dragAndDropEvents from './drag-drop';
+import { setZoomSetting } from './zoom';
 import {
-  setEvents,
-  whichClass,
-  getParentElement,
-  addListener,
-  last,
-} from './common';
-
-import {
-  $,
-  $byTag,
-  $byClass,
-  $$byClass,
-  hasClass,
-  toggleClass,
-  addStyle,
-  openBookmark,
-  addBookmark,
-  onClickAngle,
+  $byTag, $byClass, $$byClass,
+  hasClass, toggleClass,
   setResizeHandler,
   setSplitterHandler,
   resizeSplitHandler,
   resizeWidthHandler,
   resizeHeightHandler,
-  addFolder,
-  findInTabsBookmark,
-  editTitle,
-  removeFolder,
-  showMenu,
   getEndPaneMinWidth,
-  openFolder,
-  saveStateAllPaths,
-  selectFolder,
+  showMenu,
 } from './client';
 
-import dragAndDropEvents from './drag-drop';
-import { setZoomSetting } from './zoom';
-import { Store } from './store';
-
-export default function setEventListners(store: Store, options: Options) {
+export default function setEventListners(options: Options) {
   const $main = $byTag('main')!;
-  const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
-  const $leafMenu = $byClass('leaf-menu');
   setEvents([$main], {
     click(e) {
       const $target = e.target as HTMLElement;
@@ -58,59 +31,7 @@ export default function setEventListners(store: Store, options: Options) {
       }
       $byClass('query')!.focus();
     },
-    mousedown(e) {
-      if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
-        addStyle({ top: '-1000px' })($leafMenu);
-      }
-    },
     ...dragAndDropEvents,
-  });
-
-  const $foldersMenu = $byClass('folder-menu');
-  setEvents([$byClass('folders')], {
-    mousedown(e) {
-      if (hasClass(e.target as HTMLElement, 'folder-menu-button')) {
-        addStyle({ top: '-1000px' })($foldersMenu);
-      }
-    },
-    click(e) {
-      const $target = e.target as HTMLDivElement;
-      const targetClasses = [
-        'anchor',
-        'marker',
-        'title',
-        'folder-menu-button',
-        'icon-fa-angle-right',
-      ] as const;
-      const targetClass = whichClass(targetClasses, $target);
-      switch (targetClass) {
-        case 'anchor':
-          if ($target.hasAttribute('contenteditable')) {
-            return;
-          }
-          findTabsFirstOrNot(options, $target!);
-          break;
-        case 'marker':
-          $byClass('title', $target)!.click();
-          break;
-        case 'icon-fa-angle-right':
-          onClickAngle($target);
-          if (!options.exclusiveOpenBmFolderTree) {
-            saveStateAllPaths();
-          }
-          break;
-        case 'title': {
-          store.dispatch('clearQuery');
-          selectFolder($target, $byClass('leafs'), options.exclusiveOpenBmFolderTree);
-          break;
-        }
-        case 'folder-menu-button': {
-          showMenu('folder-menu')(e);
-          break;
-        }
-        default:
-      }
-    },
   });
 
   const $paneBodies = $$byClass('pane-body');
@@ -143,40 +64,6 @@ export default function setEventListners(store: Store, options: Options) {
   });
 
   $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
-
-  setEvents($$byClass('folder-menu'), {
-    async click(e) {
-      const $folder = getParentElement(e.target as HTMLElement, 4)!;
-      const { value } = (e.target as HTMLElement).dataset;
-      switch (value) {
-        case 'add-bookmark': {
-          addBookmark($folder.id);
-          break;
-        }
-        case 'add-folder': {
-          addFolder($folder.id);
-          break;
-        }
-        case 'edit': {
-          const $title = $('.title > div', $folder)!;
-          editTitle($title, $folder.id);
-          break;
-        }
-        case 'open-all':
-        case 'open-all-incognito':
-          openFolder($folder.id, value === 'open-all-incognito');
-          break;
-        case 'remove': {
-          removeFolder($folder);
-          break;
-        }
-        default:
-      }
-    },
-    mousedown(e) {
-      e.preventDefault();
-    },
-  });
 
   const panes = [
     ...(options.zoomHistory ? [$byClass('histories')] : []),

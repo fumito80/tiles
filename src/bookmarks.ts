@@ -1,9 +1,8 @@
 import {
   $, $$, $$byClass, $byClass, $byTag,
-  addClass, rmClass, toggleClass, hasClass,
+  addClass, rmClass, toggleClass, hasClass, addChild, addStyle,
   addBookmark, findInTabsBookmark, openBookmark, editBookmarkTitle, getBookmark,
-  updateAnker, addFolder,
-  setAnimationClass, addChild,
+  updateAnker, addFolder, setAnimationClass,
 } from './client';
 import {
   addListener,
@@ -18,8 +17,12 @@ import { ISubscribeElement, Store } from './store';
 import { OpenBookmarkType, Options } from './types';
 import { resetVScrollData } from './vscroll';
 
-function setLeafMenu(options: Options) {
-  setEvents($$byClass('leaf-menu'), {
+export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
+  return (options.findTabsFirst ? findInTabsBookmark : openBookmark)(options, $target);
+}
+
+function setLeafMenu($leafMenu: HTMLElement, options: Options) {
+  setEvents([$leafMenu], {
     async click(e) {
       const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
@@ -88,19 +91,24 @@ function setLeafMenu(options: Options) {
 
 export class Leafs extends HTMLDivElement implements ISubscribeElement {
   init(options: Options) {
-    const findTabsFirstOrNot = options.findTabsFirst ? findInTabsBookmark : openBookmark;
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLDivElement;
       if ($target.hasAttribute('contenteditable')) {
         return;
       }
       if (hasClass($target, 'anchor')) {
-        findTabsFirstOrNot(options, $target!);
+        openOrFindBookmarks(options, $target!);
       } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
         toggleClass('path')($target.parentElement?.parentElement);
       }
     });
-    setLeafMenu(options);
+    const $leafMenu = $byClass('leaf-menu');
+    this.addEventListener('mousedown', (e) => {
+      if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
+        addStyle({ top: '-1000px' })($leafMenu);
+      }
+    });
+    setLeafMenu($leafMenu, options);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     const targetBookmarks = switches(searchSelector)

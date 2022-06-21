@@ -1,3 +1,5 @@
+/* eslint-disable max-classes-per-file */
+
 import { MyHistoryItem, Options } from './types';
 import {
   IPubSubElement, makeAction, Store,

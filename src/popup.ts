@@ -144,7 +144,7 @@ function init({
   setBookmarksState(clientState);
   toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
-  setEventListners(store, options);
+  setEventListners(options);
   setExternalUrl(options);
   return store;
 }

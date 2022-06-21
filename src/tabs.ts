@@ -228,7 +228,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
         switch ($target.dataset.value) {
           case 'add-new-tab': {
             chrome.tabs.create({ windowId: this.#windowId });
-            chrome.windows.update(this.#windowId, { focused: true });
+            chrome.windows.update(this.#windowId, { focused: true }, window.close);
             break;
           }
           case 'close-window':
@@ -266,7 +266,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
       if (hasClass($target, 'tabs-header', 'collapse-tab')) {
         return;
       }
-      chrome.windows.update(this.#windowId, { focused: true });
+      chrome.windows.update(this.#windowId, { focused: true }, window.close);
     });
     return this;
   }
@@ -318,7 +318,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
       this.switchCollapseIcon(changes.newValue);
     });
     store.subscribe('windowAction', (changes) => {
-      if (changes.newValue.windowId !== this.#windowId) {
+      if (changes?.newValue?.windowId !== this.#windowId) {
         return;
       }
       switch (changes.newValue.type) {

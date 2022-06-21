@@ -8,6 +8,7 @@ import {
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import { HeaderLeafs, Leafs } from './bookmarks';
+import { Folders } from './folders';
 
 type Action<A extends keyof HTMLElementEventType, R extends any, S extends boolean> = {
   initValue?: R;
@@ -81,7 +82,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
             return;
           }
           const oldValue = (result.oldValue as ActionResult)?.value;
-          const newValue = (result.newValue as ActionResult).value;
+          const newValue = (result.newValue as ActionResult)?.value;
           cb({ oldValue, newValue } as { oldValue: V, newValue: V });
         });
       });
@@ -94,7 +95,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       const actionName = prefixedAction(name);
       initPromise.then(() => {
         chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-          const forced = currentValue.forced + Number(force || newValue === undefined);
+          const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
           const actionNewValue = makeActionValue(newValue, forced);
           chrome.storage.local.set({ [actionName]: actionNewValue });
         });
@@ -121,12 +122,14 @@ export function initComponents(
   const $formSearch = $byClass('form-query') as FormSearch;
   const $tabs = compos['body-tabs'];
   const $leafs = compos['body-leafs'];
+  const $folders = compos['body-folders'];
   const $headerLeafs = compos['header-leafs'];
   const $headerTabs = compos['header-tabs'];
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
   // Initialize component
   $leafs.init(options);
+  $folders.init(options);
   $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
   $headerLeafs.init();
   $headerTabs.init(options.collapseTabs);
@@ -144,13 +147,14 @@ export function initComponents(
   // Coonect store
   $headerLeafs.connect(store);
   $leafs.connect(store);
+  $folders.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);
   $headerHistory.connect(store);
   $history.connect(store);
   $formSearch.connect(store);
   // v-scroll initialize
-  store.dispatch('resetHistory', { initialize: true }, true);
+  store.dispatch('resetHistory', { initialize: true });
   return store;
 }
 
@@ -170,6 +174,7 @@ export interface IPubSubElement extends IPublishElement {
 
 customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
 customElements.define('body-leafs', Leafs, { extends: 'div' });
+customElements.define('body-folders', Folders, { extends: 'div' });
 customElements.define('open-tab', OpenTab);
 customElements.define('open-window', Window);
 customElements.define('window-header', WindowHeader);
