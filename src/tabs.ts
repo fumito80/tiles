@@ -263,7 +263,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.addTabs([firstTab, ...rest]);
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLElement;
-      if (hasClass($target, 'tabs-header', 'collapse-tab')) {
+      if (hasClass($target, 'tabs-header', 'collapse-tab', 'close-window')) {
         return;
       }
       chrome.windows.update(this.#windowId, { focused: true }, window.close);
@@ -330,9 +330,10 @@ export class Window extends HTMLElement implements ISubscribeElement {
             this.remove();
           }
           break;
-        case 'closeWindow':
+        case 'closeWindow': {
           chrome.windows.remove(this.#windowId, () => this.remove());
           break;
+        }
         default:
       }
     });
