@@ -73,7 +73,7 @@ async function dropWithTabs(
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
     const { url } = await getBookmark(srcElementId);
-    chrome.tabs.create({ index, url, windowId });
+    chrome.tabs.create({ index, url, windowId }, window.close);
     return;
   }
   // Merge window
@@ -138,7 +138,7 @@ async function dropFromHistory(
   }
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-  chrome.tabs.create({ index, url, windowId });
+  chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
 function checkDroppable(e: DragEvent) {

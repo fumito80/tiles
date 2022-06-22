@@ -6,9 +6,6 @@ import {
   selectFolder,
   createNewTab,
 } from './client';
-import { Leafs } from './bookmarks';
-import { Tabs } from './tabs';
-import { History } from './history';
 import { Options } from './types';
 
 export function getReFilter(value: string) {
@@ -19,7 +16,12 @@ export function getReFilter(value: string) {
 }
 
 export type SearchParams = {
-  value?: string, reFilter: RegExp, searchSelector: string, includeUrl: boolean,
+  reFilter: RegExp, searchSelector: string, includeUrl: boolean,
+}
+
+export interface ISearchable {
+  search(params: SearchParams): void;
+  clearSearch(): void;
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
@@ -30,21 +32,16 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
   readonly $iconX = $byClass('icon-x', this);
   readonly $main = $byTag('main');
-  private $leafs!: Leafs;
-  private $tabs!: Tabs;
-  private $history!: History;
+  readonly $leafs = $byClass('leafs');
+  private $searchTargets!: ISearchable[];
   init(
-    $leafs: Leafs,
-    $tabs: Tabs,
-    $history: History,
+    $searchTargets: ISearchable[],
     includeUrl: boolean,
     options: Options,
   ) {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
-    this.$leafs = $leafs;
-    this.$tabs = $tabs;
-    this.$history = $history;
+    this.$searchTargets = $searchTargets;
     this.$inputQuery.addEventListener('input', (e) => {
       const { value } = (e.target as HTMLInputElement);
       this.search(value);
@@ -69,7 +66,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     this.search('');
     this.#oldValue = '';
-    this.#store.dispatch('search', { value: '', searchSelector: '', includeUrl: this.#includeUrl });
+    this.$searchTargets.forEach((target) => target.clearSearch());
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
     rmClass('searching')(this.$main);
@@ -113,9 +110,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       .else('tab-wrap' as const);
     const reFilter = getReFilter(newValue)!;
     const searchParams = { reFilter, searchSelector, includeUrl: this.#includeUrl };
-    this.$leafs.search(searchParams);
-    this.$tabs.search(searchParams);
-    this.$history.search(searchParams);
+    this.$searchTargets.forEach((target) => target.search(searchParams));
     this.#oldValue = newValue;
   }
   provideActions() {
@@ -127,13 +122,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       }),
       clearSearch: {},
       changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
-      search: makeAction({
-        initValue: {
-          value: '',
-          searchSelector: '',
-          includeUrl: this.#includeUrl,
-        },
-      }),
+      // search: makeAction({
+      //   initValue: {
+      //     value: '',
+      //     searchSelector: '',
+      //     includeUrl: this.#includeUrl,
+      //   },
+      // }),
       // inputSearch: makeAction({
       //   initValue: '',
       //   target: this.$inputQuery,

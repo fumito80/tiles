@@ -9,7 +9,7 @@ import {
   ClientState,
   initialState,
   BkgMessageTypes,
-  storedElements,
+  StoredElements,
 } from './types';
 
 import {
@@ -102,7 +102,7 @@ function setBookmarksState(clState: ClientState) {
   }
 }
 
-function layoutPanes(options: Options): storedElements {
+function layoutPanes(options: Options) {
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
     [],
@@ -131,7 +131,7 @@ function layoutPanes(options: Options): storedElements {
       return acc;
     }
     return { ...acc, [name]: pane };
-  }, {} as storedElements);
+  }, {} as StoredElements);
 }
 
 function init({

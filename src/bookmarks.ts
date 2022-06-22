@@ -12,7 +12,7 @@ import {
   curry3,
   extractUrl, getLocal, pipe, setEvents, setLocal, switches,
 } from './common';
-import { SearchParams } from './search';
+import { ISearchable, SearchParams } from './search';
 import { ISubscribeElement, Store } from './store';
 import { OpenBookmarkType, Options } from './types';
 import { resetVScrollData } from './vscroll';
@@ -89,7 +89,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   });
 }
 
-export class Leafs extends HTMLDivElement implements ISubscribeElement {
+export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearchable {
   init(options: Options) {
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLDivElement;

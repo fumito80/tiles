@@ -429,7 +429,10 @@ export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R
 ): (...a: T) => R12;
 
 export function pipe(fn: any, ...fns: Array<any>) {
-  return (...values: any) => fns.reduce((prevValue, nextFn) => nextFn(prevValue), fn(...values));
+  return (...values: any) => fns.reduce(
+    (prevValue, nextFn) => nextFn(prevValue),
+    fn(...values),
+  );
 }
 
 export function maybePipe<T extends Array<any>, R1, R2, R3>(

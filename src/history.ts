@@ -12,7 +12,7 @@ import {
   getHistoryById,
   getLocal, getLocaleDate, isDateEq, pick, pipe, postMessage, removeUrlHistory, setLocal,
 } from './common';
-import { SearchParams } from './search';
+import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
 import {
   getVScrollData,
@@ -60,7 +60,7 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
-export class History extends HTMLDivElement implements IPubSubElement {
+export class History extends HTMLDivElement implements IPubSubElement, ISearchable {
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
   #jumpDate = '';

@@ -315,7 +315,7 @@ export async function createNewTab(options: Options, url: string) {
     ['rs', rest.index + 1],
     ['ls', rest.index],
   );
-  chrome.tabs.create({ index, url, windowId });
+  chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
 export function getBookmark(id: string) {

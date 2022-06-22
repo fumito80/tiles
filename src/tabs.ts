@@ -6,7 +6,7 @@ import {
 import {
   addListener, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
-import { SearchParams } from './search';
+import { ISearchable, SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
@@ -307,7 +307,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
       const [firstTab, ...rest] = win.tabs!;
       this.$header.update(firstTab);
       this.clearTabs();
-      pipe(this.addTabs, this.connectTabs)([firstTab, ...rest]);
+      this.connectTabs(this.addTabs([firstTab, ...rest]));
     });
   }
   connect(store: Store) {
@@ -339,7 +339,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
 }
 
-export class Tabs extends HTMLDivElement implements IPubSubElement {
+export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
   #tabsWrap = this.firstElementChild!;
   #initPromise!: Promise<void>;
   init(

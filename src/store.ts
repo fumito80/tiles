@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Options, State, storedElements,
+  HTMLElementEventType, Options, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -109,7 +109,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
 }
 
 export function initComponents(
-  compos: storedElements,
+  compos: StoredElements,
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
@@ -134,7 +134,7 @@ export function initComponents(
   $headerLeafs.init();
   $headerTabs.init(options.collapseTabs);
   $history.init(options, htmlHistory);
-  $formSearch.init($leafs, $tabs, $history, settings.includeUrl, options);
+  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options);
   // Register actions
   const actions = {
     ...$headerTabs.provideActions(),

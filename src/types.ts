@@ -5,7 +5,7 @@ import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
 
-export type storedElements = {
+export type StoredElements = {
   'header-leafs': HeaderLeafs,
   'body-leafs': Leafs,
   'body-folders': Folders,
