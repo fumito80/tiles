@@ -3,11 +3,19 @@
 import { openOrFindBookmarks } from './bookmarks';
 import {
   $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
-  onClickAngle, openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu,
+  openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
 import { ISubscribeElement, Store } from './store';
 import { Options } from './types';
+
+function onClickAngle($target: HTMLElement) {
+  const $folder = $target.parentElement?.parentElement!;
+  if ($byClass('open', $folder)) {
+    ($target.nextElementSibling as HTMLDivElement)?.click();
+  }
+  toggleClass('path')($folder);
+}
 
 setEvents($$byClass('folder-menu'), {
   async click(e) {

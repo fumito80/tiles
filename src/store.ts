@@ -7,7 +7,7 @@ import {
 } from './tabs';
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
-import { HeaderLeafs, Leafs } from './bookmarks';
+import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
 
 type Action<A extends keyof HTMLElementEventType, R extends any, S extends boolean> = {
@@ -183,3 +183,4 @@ customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
 customElements.define('form-search', FormSearch, { extends: 'form' });
 customElements.define('body-history', History, { extends: 'div' });
 customElements.define('header-history', HeaderHistory, { extends: 'div' });
+customElements.define('bm-leaf', Leaf, { extends: 'div' });

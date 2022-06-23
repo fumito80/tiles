@@ -588,6 +588,10 @@ export function makeStyleIcon(url?: string) {
   return url ? `background-image: url('${preFaviconUrl}${url}');` : '';
 }
 
+export function setFavicon(url?: string) {
+  return ($el: HTMLElement | null) => $el?.style.setProperty('background-image', `url('${preFaviconUrl}${url}')`);
+}
+
 export function regsterChromeEvents(listener: Function) {
   return (events: chrome.events.Event<any>[]) => events.forEach((e) => e.addListener(listener));
 }

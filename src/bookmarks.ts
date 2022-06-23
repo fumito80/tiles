@@ -1,8 +1,8 @@
 import {
   $, $$, $$byClass, $byClass, $byTag,
   addClass, rmClass, toggleClass, hasClass, addChild, addStyle,
-  addBookmark, findInTabsBookmark, openBookmark, editBookmarkTitle, getBookmark,
-  updateAnker, addFolder, setAnimationClass,
+  addBookmark, findInTabsBookmark, openBookmark, getBookmark,
+  addFolder, setAnimationClass, editTitle,
 } from './client';
 import {
   addListener,
@@ -10,7 +10,7 @@ import {
   cssid,
   curry,
   curry3,
-  extractUrl, getLocal, pipe, setEvents, setLocal, switches,
+  extractUrl, getLocal, pipe, setEvents, setFavicon, setLocal, switches,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { ISubscribeElement, Store } from './store';
@@ -21,10 +21,89 @@ export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
   return (options.findTabsFirst ? findInTabsBookmark : openBookmark)(options, $target);
 }
 
+export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
+  private $mainMenu = $byClass('main-menu', this);
+  private $main = $byTag('main');
+  setEvents(store: Store) {
+    pipe(
+      addListener('click', (e) => {
+        const $menu = e.target as HTMLElement;
+        switch ($menu.dataset.value) {
+          case 'add-bookmark': {
+            const id = $byClass('open')?.id;
+            addBookmark(id || '1');
+            break;
+          }
+          case 'add-folder':
+            addFolder();
+            break;
+          case 'settings':
+            chrome.runtime.openOptionsPage();
+            break;
+          case 'auto-zoom': {
+            const isChecked = hasClass(this.$main, 'auto-zoom');
+            toggleClass('auto-zoom', !isChecked)(this.$main);
+            getLocal('settings')
+              .then(({ settings }) => {
+                setLocal({ settings: { ...settings, autoZoom: !isChecked } });
+              });
+            break;
+          }
+          case 'include-url':
+            getLocal('settings')
+              .then(({ settings }) => {
+                toggleClass('checked-include-url', !settings.includeUrl)(this.$main);
+                return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
+              })
+              .then(({ settings }) => {
+                store.dispatch('changeIncludeUrl', settings.includeUrl, true);
+                resetVScrollData((data) => data);
+              });
+            break;
+          default:
+        }
+      }),
+      addListener('mousedown', (e) => e.preventDefault()),
+    )(this.$mainMenu);
+  }
+  connect(store: Store) {
+    this.setEvents(store);
+  }
+}
+
+export class HeaderLeafs extends PaneHeader {
+  private $pinBookmark = $byClass('pin-bookmark', this);
+  init() {
+    this.$pinBookmark.addEventListener('click', () => addBookmark());
+  }
+}
+
+export class Leaf extends HTMLDivElement {
+  updateTitle(title: string) {
+    const $anchor = this.firstElementChild as HTMLAnchorElement;
+    $anchor.setAttribute('title', title);
+    $anchor.textContent = title;
+  }
+  updateAnker({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
+    setFavicon(url!)(this);
+    this.updateTitle(title);
+  }
+  async editBookmarkTitle() {
+    const $anchor = this.firstElementChild as HTMLAnchorElement;
+    const title = await editTitle($anchor, this.id).catch(() => null);
+    if (!title) {
+      return;
+    }
+    this.updateTitle(title);
+    setAnimationClass('hilite')(this);
+  }
+}
+
 function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   setEvents([$leafMenu], {
     async click(e) {
-      const $leaf = (e.target as HTMLElement).parentElement!.previousElementSibling!.parentElement!;
+      const $leaf = (e.target as HTMLElement)
+        .parentElement!.previousElementSibling!.parentElement! as Leaf;
       const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
@@ -41,7 +120,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
           openBookmark(options, $anchor, OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
-          editBookmarkTitle($leaf);
+          $leaf.editBookmarkTitle();
           break;
         }
         case 'edit-url': {
@@ -52,7 +131,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
             break;
           }
           await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
-          updateAnker($leaf.id, { title, url: value });
+          $leaf.updateAnker({ title, url: value });
           setAnimationClass('hilite')($leaf);
           break;
         }
@@ -148,62 +227,5 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   }
   connect(store: Store) {
     store.subscribe('clearSearch', this.clearSearch.bind(this));
-  }
-}
-
-export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
-  private $mainMenu = $byClass('main-menu', this);
-  private $main = $byTag('main');
-  setEvents(store: Store) {
-    pipe(
-      addListener('click', (e) => {
-        const $menu = e.target as HTMLElement;
-        switch ($menu.dataset.value) {
-          case 'add-bookmark': {
-            const id = $byClass('open')?.id;
-            addBookmark(id || '1');
-            break;
-          }
-          case 'add-folder':
-            addFolder();
-            break;
-          case 'settings':
-            chrome.runtime.openOptionsPage();
-            break;
-          case 'auto-zoom': {
-            const isChecked = hasClass(this.$main, 'auto-zoom');
-            toggleClass('auto-zoom', !isChecked)(this.$main);
-            getLocal('settings')
-              .then(({ settings }) => {
-                setLocal({ settings: { ...settings, autoZoom: !isChecked } });
-              });
-            break;
-          }
-          case 'include-url':
-            getLocal('settings')
-              .then(({ settings }) => {
-                toggleClass('checked-include-url', !settings.includeUrl)(this.$main);
-                return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
-              })
-              .then(({ settings }) => {
-                store.dispatch('changeIncludeUrl', settings.includeUrl, true);
-                resetVScrollData((data) => data);
-              });
-            break;
-          default:
-        }
-      }),
-      addListener('mousedown', (e) => e.preventDefault()),
-    )(this.$mainMenu);
-  }
-  connect(store: Store) {
-    this.setEvents(store);
-  }
-}
-
-export class HeaderLeafs extends PaneHeader {
-  private $pinBookmark = $byClass('pin-bookmark', this);
-  init() {
-    this.$pinBookmark.addEventListener('click', () => addBookmark());
   }
 }

@@ -27,7 +27,6 @@ import {
   prop,
   last,
   addListener,
-  makeStyleIcon,
   getChromeId,
 } from './common';
 
@@ -38,6 +37,7 @@ import {
 } from './vscroll';
 
 import { makeLeaf, makeNode } from './html';
+import { Leaf } from './bookmarks';
 
 // DOM operation
 
@@ -350,7 +350,7 @@ export function setHasChildren($target: HTMLElement) {
   $target.setAttribute('data-children', String($target.children.length - 1));
 }
 
-export function saveStateOpenedPath(foldersFolder: HTMLElement, exclusiveOpenBmFolderTree: Options['exclusiveOpenBmFolderTree']) {
+function saveStateOpenedPath(foldersFolder: HTMLElement, exclusiveOpenBmFolderTree: Options['exclusiveOpenBmFolderTree']) {
   let paths: Array<string> = [];
   if (exclusiveOpenBmFolderTree) {
     $$byClass('path').forEach(rmClass('path'));
@@ -372,14 +372,6 @@ export function saveStateAllPaths(id?: string) {
   const open = id ?? $byClass('open')?.id;
   const paths = $$('.folders .path').map(prop('id'));
   setLocal({ clientState: { open, paths } });
-}
-
-export function onClickAngle($target: HTMLElement) {
-  const $folder = $target.parentElement?.parentElement!;
-  if ($byClass('open', $folder)) {
-    ($target.nextElementSibling as HTMLDivElement)?.click();
-  }
-  toggleClass('path')($folder);
 }
 
 function setMouseEventListener(
@@ -470,16 +462,6 @@ export function setAnimationFolder(className: string) {
       addClass(className),
     )(el);
   };
-}
-
-export function updateAnker(id: string, { title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
-  const style = makeStyleIcon(url);
-  $$(cssid(id)).forEach((el) => {
-    el.setAttribute('style', style);
-    const $anchor = el.firstElementChild as HTMLAnchorElement;
-    $anchor.setAttribute('title', title);
-    $anchor.textContent = title;
-  });
 }
 
 export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
@@ -573,17 +555,6 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
   });
 }
 
-export async function editBookmarkTitle($leaf: HTMLElement) {
-  const $title = $leaf.firstElementChild as HTMLElement;
-  const title = await editTitle($title, $leaf.id).catch(() => null);
-  if (!title) {
-    return;
-  }
-  const { url = '' } = await getBookmark($leaf.id);
-  updateAnker($leaf.id, { url, title });
-  setAnimationClass('hilite')($leaf);
-}
-
 export async function addBookmark(
   parentId = '1',
   paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
@@ -610,11 +581,11 @@ export async function addBookmark(
       insertHTML('afterend', htmlAnchor)($targetFolder.children[index]);
     }
   }
-  const $target = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)!;
-  if ($target && !silent) {
-    ($target as any).scrollIntoViewIfNeeded();
-    setAnimationClass('hilite')($target);
-    editBookmarkTitle($target);
+  const $Leaf = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)! as Leaf;
+  if ($Leaf && !silent) {
+    ($Leaf as any).scrollIntoViewIfNeeded();
+    setAnimationClass('hilite')($Leaf);
+    $Leaf.editBookmarkTitle();
   }
 }
 
