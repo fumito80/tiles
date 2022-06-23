@@ -11,6 +11,8 @@ import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
 
+export const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
   const $parent = $tabsWrap.parentElement! as HTMLElement;
@@ -263,7 +265,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.addTabs([firstTab, ...rest]);
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLElement;
-      if (hasClass($target, 'tabs-header', 'collapse-tab', 'close-window')) {
+      if (hasClass($target, 'tabs-header', 'collapse-tab') || $target.closest('.tabs-menu')) {
         return;
       }
       chrome.windows.update(this.#windowId, { focused: true }, window.close);
@@ -348,7 +350,6 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $tmplWindow: Window,
     collapseTabs: boolean,
   ) {
-    const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
     this.#initPromise = new Promise<void>((resolve) => {
       chrome.windows.getCurrent(queryOptions, (currentWindow) => {
         chrome.windows.getAll({ ...queryOptions, populate: true }, (windows) => {

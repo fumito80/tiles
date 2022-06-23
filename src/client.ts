@@ -497,9 +497,8 @@ export async function findInTabsBookmark(options: Options, $anchor: HTMLElement)
       chrome.windows.getCurrent((win) => {
         const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
         const sorted = [
-          ...tabs.slice(0, findIndex),
           ...tabs.slice(findIndex + 1),
-          tabs[findIndex],
+          ...tabs.slice(0, findIndex + 1),
         ];
         const firstTab = sorted.find(finder);
         resolve(firstTab);
