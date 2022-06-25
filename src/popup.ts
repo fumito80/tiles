@@ -40,7 +40,7 @@ import {
   toggleElement,
 } from './client';
 import { initComponents } from './store';
-import { queryOptions } from './tabs';
+// import { queryOptions } from './tabs';
 
 type Options = State['options'];
 
@@ -147,7 +147,7 @@ function init({
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setEventListners(options);
   setExternalUrl(options);
-  chrome.windows.onFocusChanged.addListener(() => window.close(), queryOptions);
+  // chrome.windows.onFocusChanged.addListener(() => window.close(), queryOptions);
   return store;
 }
 

@@ -4,10 +4,10 @@ export * as monaco from 'monaco-editor';
 
 export class InputMonacoEditor extends HTMLInputElement {
   #editor?: monaco.editor.IStandaloneCodeEditor;
-  get value() {
+  override get value() {
     return this.#editor?.getValue() ?? '';
   }
-  set value(value: string) {
+  override set value(value: string) {
     super.value = value;
     this.#editor?.setValue(super.value);
   }
@@ -25,10 +25,10 @@ customElements.define('monaco-editor', InputMonacoEditor, { extends: 'input' });
 
 export class SelectEditorTheme extends HTMLSelectElement {
   #editor?: typeof monaco.editor;
-  get value() {
+  override get value() {
     return super.value;
   }
-  set value(value: string) {
+  override set value(value: string) {
     super.value = value;
     this.#setTheme();
   }

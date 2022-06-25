@@ -22,6 +22,7 @@ import {
   setScrollTop,
   setVScroll,
 } from './vscroll';
+import { PaneHeader } from './bookmarks';
 
 type ResetParams = {
   initialize?: boolean,
@@ -192,7 +193,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   }
 }
 
-export class HeaderHistory extends HTMLDivElement implements IPubSubElement {
+export class HeaderHistory extends PaneHeader implements IPubSubElement {
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
@@ -206,7 +207,8 @@ export class HeaderHistory extends HTMLDivElement implements IPubSubElement {
       }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('historyCollapseDate', (changes) => this.toggleCollapseIcon(changes.newValue));
   }
 }
