@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="popup.css">
+    <script src="popup.js" defer></script>
+    <script nonce="popup">
+        const params = new URLSearchParams(document.location.search);
+        const sheet = document.head.appendChild(document.createElement('style'));
+        sheet.textContent = params.get('css');
+    </script>
 </head>
 
 <body>
@@ -149,7 +155,7 @@
                 <i class="icon-incognito"></i>
                 <div class="tab" title=""></div>
                 <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid"
-                        title="Show grid view"></i></button>
+                        title="Show icon view"></i></button>
                 <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
                 <div class="tabs-menu" role="menu">
                     <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
@@ -168,12 +174,6 @@
     <div class="draggable-clone">
         <div class="leaf"></div>
     </div>
-    <script nonce="popup">
-        const params = new URLSearchParams(document.location.search);
-        const sheet = document.head.appendChild(document.createElement('style'));
-        sheet.textContent = params.get('css');
-    </script>
-    <script src="popup.js"></script>
 </body>
 
 </html>

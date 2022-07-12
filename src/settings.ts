@@ -31,11 +31,9 @@ class ColorPaletteClass extends HTMLDivElement {
   constructor() {
     super();
     this.#inputs = [...this.children] as HTMLInputElement[];
-    this.#inputs.forEach(
-      addListener('change', () => {
-        this.#value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
-      }),
-    );
+    this.#inputs.forEach(addListener('change', () => {
+      this.value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
+    }));
   }
   get value() {
     return this.#value!;

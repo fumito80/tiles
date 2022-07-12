@@ -8,10 +8,13 @@ type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
   length: number,
 }
 
-export function makeLeaf({ title, url, id }: chrome.bookmarks.BookmarkTreeNode) {
+export function makeLeaf(
+  { title, url, id }: chrome.bookmarks.BookmarkTreeNode,
+  isSearching = false,
+) {
   const style = makeStyleIcon(url);
   return `
-    <div is="bm-leaf" class="leaf" id="${id}" draggable="true" style="${style}">
+    <div is="bm-leaf" class="leaf${isSearching ? ' search-path' : ''}" id="${id}" draggable="true" style="${style}">
       <div class="anchor" title="${htmlEscape(title)}">${htmlEscape(title)}</div><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </div>

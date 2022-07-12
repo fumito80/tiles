@@ -208,7 +208,7 @@ open-tab {
 
 window-header {
   background-position-x: 3px;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.3);
   color: $dark-font-color;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
@@ -412,7 +412,7 @@ main {
     margin-left: 24px;
 
     +.tab {
-      text-indent: 2px;
+      text-indent: 18px;
     }
   }
 }

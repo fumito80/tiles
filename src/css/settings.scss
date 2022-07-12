@@ -53,13 +53,12 @@ form label {
 }
 
 [type="checkbox"] {
-  margin-right: 3px;
+  margin-right: 5px;
 }
 
 .item {
   display: flex;
   position: relative;
-  align-items: baseline;
   margin-top: 0.8rem;
   width: fit-content;
 
@@ -188,11 +187,9 @@ label.theme {
 
 #color-palettes {
   .tab-content {
-
     >div {
       height: 300px;
       overflow: auto;
-      // display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-column-gap: 20px;
       grid-row-gap: 15px;
@@ -202,6 +199,7 @@ label.theme {
 
       &.active {
         display: grid;
+        overscroll-behavior: contain;
       }
 
       >div:not(.desc) {

@@ -265,7 +265,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.addTabs([firstTab, ...rest]);
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLElement;
-      if (hasClass($target, 'tabs-header', 'collapse-tab') || $target.closest('.tabs-menu')) {
+      if (!hasClass($target, 'window', 'tab', 'icon-incognito')) {
         return;
       }
       chrome.windows.update(this.#windowId, { focused: true }, window.close);

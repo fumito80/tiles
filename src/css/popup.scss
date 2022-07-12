@@ -136,7 +136,6 @@ button:not(.submit) {
   >i {
     color: rgba(0, 0, 0, .5);
     width: 1.2em;
-    pointer-events: none;
   }
 
   &:hover>i,
@@ -470,7 +469,7 @@ window-header,
   }
 
   >.folder {
-    padding: 2px;
+    margin: 2px;
   }
 
   >.folder.search-path[id='1']>.marker {
@@ -482,18 +481,9 @@ window-header,
     margin-left: 0;
   }
 
-  .folder.search-path.path>.marker>.title::before {
-    content: '\f07c';
-  }
-
   .folder.search-path.path>.leaf.search-path,
   .folder.open>.leaf {
     display: flex;
-  }
-
-  .folder.search-path.path,
-  .folder.open {
-    animation: fade-in 0.15s ease-in-out;
   }
 
   .search-path>.leaf-menu>.searched-menu {
@@ -508,6 +498,12 @@ window-header,
     margin-left: 0;
   }
 
+}
+
+main:not(.searching) .leafs {
+  .folder.open {
+    animation: fade-in 0.15s ease-in-out;
+  }
 }
 
 // Bookmarks
@@ -554,7 +550,6 @@ window-header,
   }
 
   .marker {
-    position: relative;
 
     &::before {
       content: '';
@@ -588,8 +583,6 @@ window-header,
     }
 
     >.title {
-      z-index: 1;
-
       &::after {
         content: '';
         position: absolute;
@@ -647,9 +640,14 @@ window-header,
 
 .leafs .folder.search-path>.marker,
 .folders .marker {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 2px 0 2px 2px;
+
+  >.title {
+    z-index: 1;
+  }
 }
 
 .leafs .folder.search-path.path>.folder,
@@ -865,7 +863,10 @@ main::-webkit-scrollbar {
         top: calc(50% - 9px);
       }
     }
+  }
 
+  .folders,
+  .leafs {
     .marker>.drop-folder {
       position: absolute;
       z-index: 1;
@@ -901,18 +902,17 @@ main::-webkit-scrollbar {
   }
 }
 
-.drag-start-leaf .folders>.folder .folder>.marker>.drop-folder {
+.drag-start-leaf .folder>.marker>.drop-folder {
   position: absolute;
   left: -2px;
   width: calc(100% - 3px);
 }
 
 .drag-start-leaf .folders>.folder>.marker,
-.drag-start-folder .marker {
+.drag-start-folder .folders .marker {
 
   >.drop-top,
-  >.drop-bottom,
-  >.drop-folder {
+  >.drop-bottom {
     position: absolute;
     width: calc(100% - 3px);
   }
@@ -945,6 +945,13 @@ main::-webkit-scrollbar {
     &.drag-enter::after {
       top: 0.5px;
     }
+  }
+}
+
+.drag-start-folder .marker {
+  >.drop-folder {
+    position: absolute;
+    width: calc(100% - 3px);
   }
 }
 

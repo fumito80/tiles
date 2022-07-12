@@ -585,7 +585,7 @@ const preFaviconUrl = 'chrome://favicon/';
 // const preFaviconUrl = chrome.runtime.getURL('_favicon/?pageUrl=');
 
 export function makeStyleIcon(url?: string) {
-  return url ? `background-image: url('${preFaviconUrl}${url}');` : '';
+  return url ? `background-image: url(${preFaviconUrl}${url.replace(/'/g, "\\'")});` : '';
 }
 
 export function setFavicon(url?: string) {
@@ -644,7 +644,7 @@ export function getKeys<T>(object: T) {
 
 export function extractUrl(faviconUrl?: string) {
   const [, url = ''] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(faviconUrl || '') || [];
-  return url;
+  return decodeURIComponent(url);
 }
 
 export function extractDomain(url?: string) {

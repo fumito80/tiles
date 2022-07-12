@@ -560,17 +560,18 @@ export async function addBookmark(
   paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
   silent = false,
 ) {
+  const isSearching = hasClass($byTag('main'), 'searching');
   const { title, url } = paramsIn ?? await getCurrentTab();
   const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
     title: title!, url: url!, parentId, index,
   };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlAnchor = makeLeaf({ id, ...params });
+  const htmlAnchor = makeLeaf({ id, ...params }, isSearching);
   if (parentId === '1') {
     insertHTML('beforebegin', htmlAnchor)($byClass('folders')!.children[index!]);
   } else {
-    if (parentId !== $byClass('open')?.id) {
+    if (parentId !== $byClass('open')?.id && !isSearching) {
       $$byClass('open').forEach(rmClass('open'));
       $$(cssid(parentId)).forEach(addClass('open'));
     }
