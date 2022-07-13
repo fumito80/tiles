@@ -139,7 +139,10 @@ function addHistory() {
   }, 2000);
 }
 
-type InitStateKeys = keyof Pick<State, 'settings' | 'clientState' | 'options'>;
+type InitStateKeys = keyof Pick<
+  State,
+  'settings' | 'clientState' | 'options' | 'searchHistory'
+>;
 const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options'];
 
 async function init(storage: Pick<State, InitStateKeys>) {
@@ -147,12 +150,15 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const theme = await makeColorPalette();
   const settings = { ...initialSettings, ...storage.settings, theme };
   const clientState = storage.clientState || {};
+  const searchHistory = storage.searchHistory || [];
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
   // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
   makeHistory();
-  setLocal({ settings, clientState, options });
+  setLocal({
+    settings, clientState, options, searchHistory,
+  });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
   setPopupStyle(options);

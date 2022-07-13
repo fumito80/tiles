@@ -30,18 +30,18 @@ body {
   color: var(--key-bg) !important;
 }
 
-main.searching .form-query {
+app-main.searching .form-query {
   background-color: var(--searching-bg);
 }
 
 .leaf:hover,
 .folders .marker:not(.hilite):hover::before,
-main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+app-main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
 .searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window>.tab-wrap:hover,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
-main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover window-header,
+app-main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover window-header,
 window-header:hover,
 .tooltip,
 .draggable-clone,
@@ -58,7 +58,7 @@ window-header:hover,
   color: var(--item-hover-bg);
 }
 
-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
+app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
   border-color: var(--item-hover-bg);
 }
 
@@ -280,7 +280,7 @@ main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.t
   }
 }
 
-main:not(.theme-dark-hover) {
+app-main:not(.theme-dark-hover) {
 
   .window.tabs-collapsed:hover .tabs-header>button>i,
   &.theme-dark-pane .tabs-header:hover>button>i {
@@ -336,7 +336,7 @@ main:not(.theme-dark-hover) {
   }
 }
 
-main:not(.theme-dark-search).searching .form-query {
+app-main:not(.theme-dark-search).searching .form-query {
   button>.icon-fa-search {
     color: rgba(0, 0, 0, 0.5);
   }

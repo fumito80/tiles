@@ -1,12 +1,13 @@
 import { IPubSubElement, makeAction, Store } from './store';
-import { when } from './common';
+import { addListener, pipe, when } from './common';
 import {
   $, $byClass, $byTag,
   rmClass, addAttr, addClass,
   selectFolder,
   createNewTab,
+  toggleClass,
 } from './client';
-import { Options } from './types';
+import { Options, SearchHistory } from './types';
 
 export function getReFilter(value: string) {
   if (!value) {
@@ -28,25 +29,46 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
+  #searchHistory!: SearchHistory;
   #store!: Store;
   readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
   readonly $iconX = $byClass('icon-x', this);
   readonly $main = $byTag('main');
   readonly $leafs = $byClass('leafs');
+  readonly $searchHistory = $byClass('search-history', this);
   private $searchTargets!: ISearchable[];
   init(
     $searchTargets: ISearchable[],
     includeUrl: boolean,
     options: Options,
+    searchHistory: SearchHistory,
   ) {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$searchTargets = $searchTargets;
-    this.$inputQuery.addEventListener('input', (e) => {
-      const { value } = (e.target as HTMLInputElement);
-      this.search(value);
-    });
+    this.#searchHistory = ['AAA', 'BBB', ...searchHistory]; // searchHistory;
+    this.#searchHistory.forEach(this.addHistory.bind(this));
+    pipe(
+      addListener('input', (e) => {
+        const { value } = (e.target as HTMLInputElement);
+        this.search(value);
+      }),
+      addListener('click', () => this.toggleHistory()),
+      addListener('keydown', (e) => {
+        if (e.key !== 'ArrowDown') {
+          return;
+        }
+        this.toggleHistory();
+      }),
+    )(this.$inputQuery);
     this.addEventListener('submit', (e) => this.submitForm(e, options));
+  }
+  addHistory(history: string) {
+    const $history = this.$searchHistory.appendChild(document.createElement('div'));
+    $history.textContent = history;
+  }
+  toggleHistory(force?: boolean) {
+    toggleClass('show-history', force)(this);
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
@@ -59,6 +81,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       createNewTab(options, url);
     }
     return false;
+  }
+  focusQuery() {
+    this.$inputQuery.focus();
+    this.toggleHistory(false);
   }
   clearQuery() {
     if (this.$inputQuery.value === '') {
@@ -113,7 +139,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$searchTargets.forEach((target) => target.search(searchParams));
     this.#oldValue = newValue;
   }
-  provideActions() {
+  actions() {
     return {
       clearQuery: makeAction({
         target: this.$iconX,
@@ -122,24 +148,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       }),
       clearSearch: {},
       changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
-      // search: makeAction({
-      //   initValue: {
-      //     value: '',
-      //     searchSelector: '',
-      //     includeUrl: this.#includeUrl,
-      //   },
-      // }),
-      // inputSearch: makeAction({
-      //   initValue: '',
-      //   target: this.$inputQuery,
-      //   eventType: 'input',
-      //   eventProcesser: (e) => (e.target as HTMLInputElement).value,
-      // }),
+      focusQuery: {},
     };
   }
   connect(store: Store) {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
     store.subscribe('clearQuery', this.clearQuery.bind(this));
+    store.subscribe('focusQuery', this.focusQuery.bind(this));
     this.#store = store;
   }
 }

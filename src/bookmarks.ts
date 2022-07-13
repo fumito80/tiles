@@ -1,5 +1,5 @@
 import {
-  $, $$, $$byClass, $byClass, $byTag,
+  $, $$, $$byClass, $byClass,
   addClass, rmClass, toggleClass, hasClass, addChild, addStyle,
   addBookmark, findInTabsBookmark, openBookmark, getBookmark,
   addFolder, setAnimationClass, editTitle,
@@ -10,21 +10,26 @@ import {
   cssid,
   curry,
   curry3,
-  extractUrl, getLocal, pipe, setEvents, setFavicon, setLocal, switches,
+  extractUrl, pipe, setEvents, setFavicon, switches,
 } from './common';
 import { ISearchable, SearchParams } from './search';
-import { ISubscribeElement, Store } from './store';
-import { OpenBookmarkType, Options } from './types';
-import { resetVScrollData } from './vscroll';
+import {
+  IPublishElement, ISubscribeElement, makeAction, Store,
+} from './store';
+import { OpenBookmarkType, Options, State } from './types';
 
 export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
   return (options.findTabsFirst ? findInTabsBookmark : openBookmark)(options, $target);
 }
 
-export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
+export class PaneHeader extends HTMLDivElement implements IPublishElement {
+  #autoZoom!: boolean;
+  #includeUrl!: boolean;
   private $mainMenu = $byClass('main-menu', this);
-  private $main = $byTag('main');
-  setEvents(store: Store) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  init(settings: State['settings'], _?: boolean) {
+    this.#autoZoom = settings.autoZoom;
+    this.#includeUrl = settings.includeUrl;
     pipe(
       addListener('click', (e) => {
         const $menu = e.target as HTMLElement;
@@ -40,40 +45,37 @@ export class PaneHeader extends HTMLDivElement implements ISubscribeElement {
           case 'settings':
             chrome.runtime.openOptionsPage();
             break;
-          case 'auto-zoom': {
-            const isChecked = hasClass(this.$main, 'auto-zoom');
-            toggleClass('auto-zoom', !isChecked)(this.$main);
-            getLocal('settings')
-              .then(({ settings }) => {
-                setLocal({ settings: { ...settings, autoZoom: !isChecked } });
-              });
-            break;
-          }
-          case 'include-url':
-            getLocal('settings')
-              .then(({ settings }) => {
-                toggleClass('checked-include-url', !settings.includeUrl)(this.$main);
-                return setLocal({ settings: { ...settings, includeUrl: !settings.includeUrl } });
-              })
-              .then(({ settings }) => {
-                store.dispatch('changeIncludeUrl', settings.includeUrl, true);
-                resetVScrollData((data) => data);
-              });
-            break;
           default:
         }
       }),
       addListener('mousedown', (e) => e.preventDefault()),
     )(this.$mainMenu);
   }
-  connect(store: Store) {
-    this.setEvents(store);
+  actions() {
+    if (!hasClass(this, 'end')) {
+      return {};
+    }
+    return {
+      setAutoZoom: makeAction({
+        initValue: this.#autoZoom,
+        target: $byClass('auto-zoom', this.$mainMenu),
+        eventType: 'click',
+        eventProcesser: (_, currentValue) => !currentValue,
+      }),
+      setIncludeUrl: makeAction({
+        initValue: this.#includeUrl,
+        target: $byClass('include-url', this.$mainMenu),
+        eventType: 'click',
+        eventProcesser: (_, currentValue) => !currentValue,
+      }),
+    };
   }
 }
 
 export class HeaderLeafs extends PaneHeader {
   private $pinBookmark = $byClass('pin-bookmark', this);
-  init() {
+  override init(settings: State['settings']) {
+    super.init(settings);
     this.$pinBookmark.addEventListener('click', () => addBookmark());
   }
 }

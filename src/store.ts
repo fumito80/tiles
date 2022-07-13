@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Options, State, StoredElements,
+  HTMLElementEventType, Model, Options, SearchHistory, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -9,6 +9,7 @@ import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
+import { AppMain } from './app-main';
 
 type Action<A extends keyof HTMLElementEventType, R extends any, S extends boolean> = {
   initValue?: R;
@@ -42,19 +43,18 @@ function makeActionValue<T>(value: T, forced = 0) {
 
 type ActionResult = ReturnType<typeof makeActionValue>;
 
-export function registerActions<T extends Actions<any>>(actions: T) {
-  const initPromises = Object.entries(actions).map(async ([name, {
+export function registerActions<T extends Actions<any>>(actions: T, savedActions: Model) {
+  Object.entries(actions).map(async ([name, {
     target, eventType, eventProcesser, initValue,
   }]) => {
     const actionName = prefixedAction(name);
-    const actionValue = makeActionValue(initValue);
-    const initPromise = new Promise<void>((resolve) => {
-      chrome.storage.local.remove(actionName, () => {
-        chrome.storage.local.set({ [actionName]: actionValue }, resolve);
-      });
+    const savedValue = savedActions[actionName];
+    const actionValue = savedValue ?? makeActionValue(initValue);
+    chrome.storage.local.remove(actionName, () => {
+      chrome.storage.local.set({ [actionName]: actionValue });
     });
     if (!target) {
-      return initPromise;
+      return;
     }
     const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
     target.addEventListener(eventType, (e: any) => {
@@ -65,10 +65,6 @@ export function registerActions<T extends Actions<any>>(actions: T) {
         chrome.storage.local.set({ [actionName]: actionNewValue });
       });
     });
-    return initPromise;
-  });
-  const initPromise = new Promise((resolve) => {
-    Promise.all(initPromises).then(resolve);
   });
   return {
     subscribe<U extends keyof T, V extends ActionValue<T[U]>>(
@@ -76,15 +72,13 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       cb: (changes: { oldValue: V, newValue: V }) => void,
     ) {
       const actionName = prefixedAction(name);
-      initPromise.then(() => {
-        chrome.storage.onChanged.addListener(({ [actionName]: result }, areaName) => {
-          if (!result || areaName !== 'local') {
-            return;
-          }
-          const oldValue = (result.oldValue as ActionResult)?.value;
-          const newValue = (result.newValue as ActionResult)?.value;
-          cb({ oldValue, newValue } as { oldValue: V, newValue: V });
-        });
+      chrome.storage.onChanged.addListener(({ [actionName]: result }, areaName) => {
+        if (!result || areaName !== 'local') {
+          return;
+        }
+        const oldValue = (result.oldValue as ActionResult)?.value;
+        const newValue = (result.newValue as ActionResult)?.value;
+        cb({ oldValue, newValue } as { oldValue: V, newValue: V });
       });
     },
     dispatch<U extends keyof T>(
@@ -93,12 +87,10 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       force = false,
     ) {
       const actionName = prefixedAction(name);
-      initPromise.then(() => {
-        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-          const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
-          const actionNewValue = makeActionValue(newValue, forced);
-          chrome.storage.local.set({ [actionName]: actionNewValue });
-        });
+      chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+        const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
+        const actionNewValue = makeActionValue(newValue, forced);
+        chrome.storage.local.set({ [actionName]: actionNewValue });
       });
     },
     getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb: (value: V) => void) {
@@ -113,6 +105,8 @@ export function initComponents(
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
+  searchHistory: SearchHistory,
+  savedActionValues: Model,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -120,6 +114,7 @@ export function initComponents(
   const $tmplWindow = $('open-window', $template) as Window;
   // Define component (Custom element)
   const $formSearch = $byClass('form-query') as FormSearch;
+  const $appMain = compos['app-main'];
   const $tabs = compos['body-tabs'];
   const $leafs = compos['body-leafs'];
   const $folders = compos['body-folders'];
@@ -131,21 +126,23 @@ export function initComponents(
   $leafs.init(options);
   $folders.init(options);
   $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
-  $headerLeafs.init();
-  $headerTabs.init(options.collapseTabs);
+  $headerLeafs.init(settings);
+  $headerTabs.init(settings, options.collapseTabs);
+  $headerHistory.init(settings);
   $history.init(options, htmlHistory);
-  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options);
+  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, searchHistory);
   // Register actions
   const actions = {
-    ...$headerTabs.provideActions(),
-    ...$tabs.provideActions(),
-    ...$formSearch.provideActions(),
-    ...$history.provideActions(),
-    ...$headerHistory.provideActions(),
+    ...$headerLeafs.actions(),
+    ...$headerTabs.actions(),
+    ...$tabs.actions(),
+    ...$formSearch.actions(),
+    ...$history.actions(),
+    ...$headerHistory.actions(),
   };
-  const store = registerActions(actions);
+  const store = registerActions(actions, savedActionValues);
   // Coonect store
-  $headerLeafs.connect(store);
+  $appMain.connect(store);
   $leafs.connect(store);
   $folders.connect(store);
   $headerTabs.connect(store);
@@ -161,7 +158,7 @@ export function initComponents(
 export type Store = ReturnType<typeof initComponents>;
 
 export interface IPublishElement {
-  provideActions(): Actions<any>;
+  actions(): Actions<any>;
 }
 
 export interface ISubscribeElement {
@@ -172,6 +169,7 @@ export interface IPubSubElement extends IPublishElement {
   connect(store: Store): void;
 }
 
+customElements.define('app-main', AppMain);
 customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
 customElements.define('body-leafs', Leafs, { extends: 'div' });
 customElements.define('body-folders', Folders, { extends: 'div' });

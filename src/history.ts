@@ -175,7 +175,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     this.#jumpDate = '';
   }
   // eslint-disable-next-line class-methods-use-this
-  provideActions() {
+  actions() {
     return {
       resetHistory: makeAction({
         initValue: {} as ResetParams,
@@ -197,8 +197,9 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
-  provideActions() {
+  override actions() {
     return {
+      ...super.actions(),
       historyCollapseDate: makeAction({
         initValue: false,
         target: $byClass('collapse-history-date', this),
@@ -207,8 +208,7 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
       }),
     };
   }
-  override connect(store: Store) {
-    super.connect(store);
+  connect(store: Store) {
     store.subscribe('historyCollapseDate', (changes) => this.toggleCollapseIcon(changes.newValue));
   }
 }
