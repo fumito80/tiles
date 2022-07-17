@@ -104,6 +104,7 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
   connect(store: Store) {
     store.subscribe('setAutoZoom', (changes) => this.setAutoZoom(changes.newValue));
     store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(store, changes.newValue));
+    store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
     this.setEvents(store);
   }
 }

@@ -11,26 +11,32 @@ import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
 import { AppMain } from './app-main';
 
-type Action<A extends keyof HTMLElementEventType, R extends any, S extends boolean> = {
+type Action<
+  A extends keyof HTMLElementEventType, R extends any, S extends boolean, T extends boolean,
+> = {
   initValue?: R;
   target?: HTMLElement;
   eventType?: A;
   eventProcesser?: (e: HTMLElementEventType[A], value: R) => R;
   force?: S,
+  persistent?: T,
 };
 
 export function makeAction<
-  U extends any, T extends keyof HTMLElementEventType = any, S extends boolean = false,
+  U extends any,
+  T extends keyof HTMLElementEventType = any,
+  S extends boolean = false,
+  V extends boolean = false,
 >(
-  action: Action<T, U, S>,
+  action: Action<T, U, S, V>,
 ) {
-  return { force: false, ...action };
+  return { force: false, persistent: false, ...action };
 }
 
-type ActionValue<T> = T extends Action<any, infer R, any> ? R : never;
+type ActionValue<T> = T extends Action<any, infer R, any, any> ? R : never;
 
 type Actions<T> = {
-  [K in keyof T]: T[K] extends Action<any, any, any> ? T : never;
+  [K in keyof T]: T[K] extends Action<any, any, any, any> ? T : never;
 }
 
 function prefixedAction(name: string | number | symbol) {
@@ -45,10 +51,10 @@ type ActionResult = ReturnType<typeof makeActionValue>;
 
 export function registerActions<T extends Actions<any>>(actions: T, savedActions: Model) {
   Object.entries(actions).map(async ([name, {
-    target, eventType, eventProcesser, initValue,
+    target, eventType, eventProcesser, initValue, persistent,
   }]) => {
     const actionName = prefixedAction(name);
-    const savedValue = savedActions[actionName];
+    const savedValue = persistent ? savedActions[actionName] : null;
     const actionValue = savedValue ?? makeActionValue(initValue);
     chrome.storage.local.remove(actionName, () => {
       chrome.storage.local.set({ [actionName]: actionValue });

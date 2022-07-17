@@ -159,7 +159,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     }
     const histories = getVScrollData();
     const data = histories.filter((item) => item.headerDate);
-    setVScroll(this, rowSetterHistory, data, this.#rowHeight);
+    setVScroll(this, rowSetterHistory, data, this.#rowHeight, false);
     setScrollTop(0);
   }
   async jumpHistoryDate(localeDate: string) {

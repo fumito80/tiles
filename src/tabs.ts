@@ -138,7 +138,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
   #tabId!: number;
-  private $main = $byTag('main');
+  private $main = $byTag('app-main');
   private $tooltip = $byClass('tooltip', this);
   init(tab: chrome.tabs.Tab) {
     this.#tabId = tab.id!;

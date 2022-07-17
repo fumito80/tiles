@@ -1,8 +1,8 @@
 import { IPubSubElement, makeAction, Store } from './store';
 import { addListener, pipe, when } from './common';
 import {
-  $, $byClass, $byTag,
-  rmClass, addAttr, addClass,
+  $, $byClass,
+  rmClass, addAttr,
   selectFolder,
   createNewTab,
   toggleClass,
@@ -33,7 +33,6 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #store!: Store;
   readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
   readonly $iconX = $byClass('icon-x', this);
-  readonly $main = $byTag('main');
   readonly $leafs = $byClass('leafs');
   readonly $searchHistory = $byClass('search-history', this);
   private $searchTargets!: ISearchable[];
@@ -95,7 +94,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$searchTargets.forEach((target) => target.clearSearch());
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
-    rmClass('searching')(this.$main);
+    this.#store.dispatch('searching', false);
     this.clearSearch();
     this.$inputQuery.focus();
   }
@@ -119,12 +118,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.#oldValue = newValue;
       return;
     }
-    addClass('searching')(this.$main);
+    this.#store.dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
     if (newValue.length <= 1) {
       this.clearSearch();
-      rmClass('searching')(this.$main);
+      this.#store.dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
       return;
@@ -146,9 +145,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
         eventType: 'click',
         force: true,
       }),
+      focusQuery: {},
       clearSearch: {},
       changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
-      focusQuery: {},
+      searching: {
+        initValue: false,
+      },
     };
   }
   connect(store: Store) {

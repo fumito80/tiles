@@ -58,12 +58,14 @@ export class PaneHeader extends HTMLDivElement implements IPublishElement {
     return {
       setAutoZoom: makeAction({
         initValue: this.#autoZoom,
+        persistent: true,
         target: $byClass('auto-zoom', this.$mainMenu),
         eventType: 'click',
         eventProcesser: (_, currentValue) => !currentValue,
       }),
       setIncludeUrl: makeAction({
         initValue: this.#includeUrl,
+        persistent: true,
         target: $byClass('include-url', this.$mainMenu),
         eventType: 'click',
         eventProcesser: (_, currentValue) => !currentValue,
