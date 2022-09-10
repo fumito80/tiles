@@ -302,41 +302,6 @@ window-header,
     visibility: hidden;
   }
 
-  .search-history {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: white;
-    z-index: 1;
-    width: 100%;
-    background-color: var(--frame-bg);
-    border-radius: 3px;
-    &::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 1px;
-      background-color: rgba(0, 0, 0, 0.1);
-      border-radius: 3px;
-    }
-
-    >div {
-      padding: 4px;
-      padding-bottom: 0;
-      &:last-child {
-        padding-bottom: 4px;
-      }
-    }
-  }
-
-  &.show-history {
-    .search-history {
-      display: flex;
-    }
-  }
 }
 
 .split-h {

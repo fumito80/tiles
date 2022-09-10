@@ -50,27 +50,53 @@ function makeActionValue<T>(value: T, forced = 0) {
 type ActionResult = ReturnType<typeof makeActionValue>;
 
 export function registerActions<T extends Actions<any>>(actions: T, savedActions: Model) {
-  Object.entries(actions).map(async ([name, {
+  const subscribers = {} as { [actionName: string]: Function[] };
+  const initPromises = Object.entries(actions).map(async ([name, {
     target, eventType, eventProcesser, initValue, persistent,
   }]) => {
     const actionName = prefixedAction(name);
-    const savedValue = persistent ? savedActions[actionName] : null;
-    const actionValue = savedValue ?? makeActionValue(initValue);
-    chrome.storage.local.remove(actionName, () => {
-      chrome.storage.local.set({ [actionName]: actionValue });
-    });
-    if (!target) {
-      return;
+    if (target) {
+      const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
+      target.addEventListener(eventType, (e: any) => {
+        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+          const newValue = valueProcesser(e, (currentValue as ActionResult).value);
+          const forced = currentValue.forced + Number(actions[name].force);
+          const actionNewValue = makeActionValue(newValue, forced);
+          chrome.storage.local.set({ [actionName]: actionNewValue });
+        });
+      });
     }
-    const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
-    target.addEventListener(eventType, (e: any) => {
-      chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-        const newValue = valueProcesser(e, (currentValue as ActionResult).value);
-        const forced = currentValue.forced + Number(actions[name].force);
-        const actionNewValue = makeActionValue(newValue, forced);
-        chrome.storage.local.set({ [actionName]: actionNewValue });
+    return new Promise<void>((resolve) => {
+      chrome.storage.local.remove(actionName, () => {
+        if (persistent) {
+          resolve();
+          return;
+        }
+        const actionValue = makeActionValue(initValue);
+        chrome.storage.local.set({ [actionName]: actionValue }, resolve);
       });
     });
+  });
+  const initPromise = Promise.all(initPromises).then(() => {
+    chrome.storage.onChanged.addListener((storage, areaName) => {
+      if (areaName !== 'local') {
+        return;
+      }
+      Object.entries(storage).forEach(([key, changes]) => {
+        subscribers[key]?.forEach((cb) => {
+          const oldValue = (changes.oldValue as ActionResult)?.value;
+          const newValue = (changes.newValue as ActionResult)?.value;
+          cb({ oldValue, newValue });
+        });
+      });
+    });
+    Object.entries(actions)
+      .filter(([, { persistent }]) => persistent)
+      .map(async ([name, { initValue }]) => {
+        const actionName = prefixedAction(name);
+        const actionValue = savedActions[actionName] ?? makeActionValue(initValue);
+        chrome.storage.local.set({ [actionName]: actionValue });
+      });
   });
   return {
     subscribe<U extends keyof T, V extends ActionValue<T[U]>>(
@@ -78,14 +104,7 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
       cb: (changes: { oldValue: V, newValue: V }) => void,
     ) {
       const actionName = prefixedAction(name);
-      chrome.storage.onChanged.addListener(({ [actionName]: result }, areaName) => {
-        if (!result || areaName !== 'local') {
-          return;
-        }
-        const oldValue = (result.oldValue as ActionResult)?.value;
-        const newValue = (result.newValue as ActionResult)?.value;
-        cb({ oldValue, newValue } as { oldValue: V, newValue: V });
-      });
+      subscribers[actionName] = [...(subscribers[actionName] || []), cb];
     },
     dispatch<U extends keyof T>(
       name: U,
@@ -93,10 +112,12 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
       force = false,
     ) {
       const actionName = prefixedAction(name);
-      chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
-        const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
-        const actionNewValue = makeActionValue(newValue, forced);
-        chrome.storage.local.set({ [actionName]: actionNewValue });
+      initPromise.then(() => {
+        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+          const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
+          const actionNewValue = makeActionValue(newValue, forced);
+          chrome.storage.local.set({ [actionName]: actionNewValue });
+        });
       });
     },
     getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb: (value: V) => void) {

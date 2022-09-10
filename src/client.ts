@@ -560,7 +560,7 @@ export async function addBookmark(
   paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
   silent = false,
 ) {
-  const isSearching = hasClass($byTag('main'), 'searching');
+  const isSearching = hasClass($byTag('app-main'), 'searching');
   const { title, url } = paramsIn ?? await getCurrentTab();
   const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {

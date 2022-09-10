@@ -173,7 +173,7 @@ const dragAndDropEvents = {
       .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
       .when(className === 'window').then(['drag-start-folder', $target.firstElementChild!, $target.id] as const)
       .else(['drag-start-leaf', $target, $target.id] as const);
-    const $main = $byTag('main')!;
+    const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
       const $zoomPane = $target.closest('.histories, .tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
@@ -193,7 +193,7 @@ const dragAndDropEvents = {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    setTimeout(() => addClass(targetClass)($byTag('main')), 0);
+    setTimeout(() => addClass(targetClass)($main), 0);
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -208,7 +208,7 @@ const dragAndDropEvents = {
   },
   dragend(e: DragEvent) {
     rmClass('drag-source')($byClass('drag-source'));
-    rmClass('drag-start-leaf', 'drag-start-folder')($byTag('main'));
+    rmClass('drag-start-leaf', 'drag-start-folder')($byTag('app-main'));
     setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
