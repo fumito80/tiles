@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Model, Options, SearchHistory, State, StoredElements,
+  HTMLElementEventType, Model, Options, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -58,28 +58,28 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
     if (target) {
       const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
       target.addEventListener(eventType, (e: any) => {
-        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+        chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
           const newValue = valueProcesser(e, (currentValue as ActionResult).value);
           const forced = currentValue.forced + Number(actions[name].force);
           const actionNewValue = makeActionValue(newValue, forced);
-          chrome.storage.local.set({ [actionName]: actionNewValue });
+          chrome.storage.session.set({ [actionName]: actionNewValue });
         });
       });
     }
     return new Promise<void>((resolve) => {
-      chrome.storage.local.remove(actionName, () => {
+      chrome.storage.session.remove(actionName, () => {
         if (persistent) {
           resolve();
           return;
         }
         const actionValue = makeActionValue(initValue);
-        chrome.storage.local.set({ [actionName]: actionValue }, resolve);
+        chrome.storage.session.set({ [actionName]: actionValue }, resolve);
       });
     });
   });
   const initPromise = Promise.all(initPromises).then(() => {
     chrome.storage.onChanged.addListener((storage, areaName) => {
-      if (areaName !== 'local') {
+      if (areaName !== 'session') {
         return;
       }
       Object.entries(storage).forEach(([key, changes]) => {
@@ -95,7 +95,7 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
       .map(async ([name, { initValue }]) => {
         const actionName = prefixedAction(name);
         const actionValue = savedActions[actionName] ?? makeActionValue(initValue);
-        chrome.storage.local.set({ [actionName]: actionValue });
+        chrome.storage.session.set({ [actionName]: actionValue });
       });
   });
   return {
@@ -113,16 +113,16 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
     ) {
       const actionName = prefixedAction(name);
       initPromise.then(() => {
-        chrome.storage.local.get(actionName, ({ [actionName]: currentValue }) => {
+        chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
           const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
           const actionNewValue = makeActionValue(newValue, forced);
-          chrome.storage.local.set({ [actionName]: actionNewValue });
+          chrome.storage.session.set({ [actionName]: actionNewValue });
         });
       });
     },
     getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb: (value: V) => void) {
       const actionName = prefixedAction(name);
-      chrome.storage.local.get(actionName, ({ [actionName]: { value } }) => cb(value));
+      chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => cb(value));
     },
   };
 }
@@ -132,7 +132,7 @@ export function initComponents(
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
-  searchHistory: SearchHistory,
+  lastSearchWord: string,
   savedActionValues: Model,
 ) {
   // Template
@@ -157,7 +157,7 @@ export function initComponents(
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);
   $history.init(options, htmlHistory);
-  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, searchHistory);
+  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   // Register actions
   const actions = {
     ...$headerLeafs.actions(),

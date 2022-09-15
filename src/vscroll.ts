@@ -1,5 +1,7 @@
 import { State, Collection, MyHistoryItem } from './types';
-import { pipe, getLocaleDate, htmlEscape } from './common';
+import {
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl,
+} from './common';
 import {
   $, $byClass,
   addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr,
@@ -60,10 +62,11 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
+    const backgroundImage = `url(${preFaviconUrl}${encodeURIComponent(url!)})`;
     pipe(
       rmClass('hilite', 'header-date'),
       setHTML(`<div>${htmlEscape(text!)}</div><i class="icon-x"></i>`),
-      addStyle('background-image', `url('chrome://favicon/${url}')`),
+      addStyle('background-image', backgroundImage),
       addAttr('title', tooltip),
       addAttr('id', `hst-${id}`),
     )($row);

@@ -19,6 +19,8 @@ import {
   last,
   filter,
   curry,
+  preFaviconUrl,
+  extractDomain,
 } from './common';
 
 import {
@@ -63,8 +65,9 @@ function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
+  const [schema, domain] = extractDomain(options.externalUrl);
   pipe(
-    addStyle('--external-url-image', `url("chrome://favicon/${options.externalUrl}")`),
+    addStyle('--external-url-image', `url(${preFaviconUrl}${schema}${domain})`),
     addStyle('--external-url', 'hidden'),
   )($byClass('form-query')!);
 }
@@ -126,10 +129,10 @@ function setCloseApp() {
 }
 
 function init({
-  settings, htmlBookmarks, clientState, options, htmlHistory, searchHistory, ...rest
+  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord, ...rest
 }: State) {
   const compos = layoutPanes(options);
-  const store = initComponents(compos, options, settings, htmlHistory, searchHistory, rest);
+  const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord, rest);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);

@@ -4,12 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="popup.css">
+    <script src="popup-init.js" async></script>
     <script src="popup.js" defer></script>
-    <script nonce="popup">
-        const params = new URLSearchParams(document.location.search);
-        const sheet = document.head.appendChild(document.createElement('style'));
-        sheet.textContent = params.get('css');
-    </script>
 </head>
 
 <body>

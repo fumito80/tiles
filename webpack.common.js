@@ -23,9 +23,6 @@ module.exports = {
         use: [
           {
             loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-            },
           },
         ],
       },
@@ -54,6 +51,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: '*.*', context: 'src/assets/' },
+        { from: '*.js', context: 'src/' },
         { from: '*.html', context: 'src/view/' },
         { from: '*.png', context: 'src/images/' },
         { from: '*.json', context: 'src/_locales/en/', to: '_locales/en' },

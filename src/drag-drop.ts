@@ -256,23 +256,23 @@ const dragAndDropEvents = {
     const position = positions[dropAreaClass];
     const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
     const [$destLeafs, $destFolders] = $$(cssid(destId));
-    const isRootTo = $destLeafs.parentElement.id === '1' && dropAreaClass !== 'drop-folder';
-    const isRootFrom = $sourceLeafs.parentElement.id === '1';
+    const isRootTo = $destLeafs.parentElement?.id === '1' && dropAreaClass !== 'drop-folder';
+    const isRootFrom = $sourceLeafs.parentElement?.id === '1';
     const isLeafFrom = hasClass($sourceLeafs, 'leaf');
     if (isLeafFrom && isRootFrom && !isRootTo) {
       $sourceFolders.remove();
     } else if (isLeafFrom && isRootTo) {
-      const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true);
+      const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
       $destFolders.insertAdjacentElement(position, $source);
       pipe(
         rmClass('search-path'),
         setAnimationClass('hilite'),
       )($source);
     } else if (!isLeafFrom) {
-      const $lastParantElement = $sourceFolders.parentElement;
+      const $lastParantElement = $sourceFolders.parentElement!;
       $destFolders.insertAdjacentElement(position, $sourceFolders);
       setHasChildren($lastParantElement);
-      setHasChildren($sourceFolders.parentElement);
+      setHasChildren($sourceFolders.parentElement!);
       setOpenPaths($sourceFolders);
       setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
     }

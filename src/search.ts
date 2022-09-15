@@ -37,6 +37,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     $searchTargets: ISearchable[],
     includeUrl: boolean,
     options: Options,
+    lastSearchWord: string,
   ) {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
@@ -46,6 +47,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.search(value);
     });
     this.addEventListener('submit', (e) => this.submitForm(e, options));
+    if (lastSearchWord !== '') {
+      this.$inputQuery.value = lastSearchWord;
+    }
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();

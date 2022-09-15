@@ -1,0 +1,35 @@
+{
+  "manifest_version": 2,
+  "name": "Popup'n My Resources",
+  "version": "0.16.4",
+  "default_locale": "en",
+  "description": "Search/view across bookmarks, tabs, and history for a one-stop access to your browsing resources.",
+  "permissions": [
+    "storage",
+    "bookmarks",
+    "tabs",
+    "history",
+    "chrome://favicon/"
+  ],
+  "options_page": "settings.html",
+  "browser_action": {
+    "default_title": "Popup'n My Resources",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "p48.png",
+      "128": "p128.png"
+    }
+  },
+  "commands": {
+    "_execute_browser_action": {
+       "suggested_key": {
+          "mac": "Command+Shift+P",
+          "default": "Alt+Shift+P"
+       }
+    }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_security_policy": "script-src 'sha256-6OtO+cZf9J7vn2eHSc6m3YQVSKBSY564x7JetWgbgHE='; script-src-elem 'nonce-popup' 'self'; object-src 'self'"
+}

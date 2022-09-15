@@ -103,12 +103,11 @@ export const initialState = {
     rowHeight: 0,
   },
   options: initialOptions,
-  searchHistory: [] as string[],
+  lastSearchWord: '',
 };
 
 export type State = typeof initialState;
 export type Options = State['options'];
-export type SearchHistory = State['searchHistory'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
