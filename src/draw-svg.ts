@@ -1,3 +1,5 @@
+import { Canvg } from 'canvg';
+import { DOMParser } from 'xmldom';
 import { Options } from './types';
 import {
   base64Encode, getColorWhiteness, getColorChroma,
@@ -5,17 +7,12 @@ import {
 
 async function getImageData(svg: string) {
   return new Promise<ImageData>((resolve) => {
-    base64Encode(svg).then((base64) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = new OffscreenCanvas(28, 28);
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, 28, 28);
-        const imageData = ctx.getImageData(0, 0, 28, 28);
-        resolve(imageData);
-      };
-      img.src = `data:image/svg+xml;charset=utf-8;base64,${base64}`;
-    });
+    const canvas = new OffscreenCanvas(19, 19);
+    const ctx = canvas.getContext('2d')!;
+    const canvg = Canvg.fromString(ctx, svg, { DOMParser });
+    canvg.render({ enableRedraw: true })
+      .then(() => ctx.getImageData(0, 0, 19, 19))
+      .then(resolve);
   });
 }
 
@@ -65,5 +62,5 @@ export function setSvg(el: HTMLImageElement, svg: string) {
 export function setBrowserIcon(colorPalette: Options['colorPalette']) {
   getSvgBrowserIcon(colorPalette)
     .then(getImageData)
-    .then((imageData) => chrome.browserAction.setIcon({ imageData }));
+    .then((imageData) => chrome.action.setIcon({ imageData }));
 }

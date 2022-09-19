@@ -238,7 +238,7 @@ window-header {
   }
 }
 
-main {
+app-main {
 
   &.searching {
     window-header {
@@ -449,7 +449,7 @@ main {
   }
 }
 
-main:not(.searching) .tabs-collapsed {
+app-main:not(.searching) .tabs-collapsed {
   .current-tab::after {
     width: 100%;
     height: 4px;

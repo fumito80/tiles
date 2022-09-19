@@ -580,16 +580,14 @@ export function propNe(name: string, value: any) {
   return (target: any) => target[name] !== value;
 }
 
-const preFaviconUrl = 'chrome://favicon/';
-// for V3
-// const preFaviconUrl = chrome.runtime.getURL('_favicon/?pageUrl=');
+export const preFaviconUrl = chrome.runtime.getURL('_favicon/?pageUrl=');
 
 export function makeStyleIcon(url?: string) {
-  return url ? `background-image: url(${preFaviconUrl}${url.replace(/'/g, "\\'")});` : '';
+  return url ? `background-image: url(${preFaviconUrl}${encodeURIComponent(url)});` : '';
 }
 
 export function setFavicon(url?: string) {
-  return ($el: HTMLElement | null) => $el?.style.setProperty('background-image', `url('${preFaviconUrl}${url}')`);
+  return ($el: HTMLElement | null) => $el?.style.setProperty('background-image', `url(${preFaviconUrl}${encodeURIComponent(url!)})`);
 }
 
 export function regsterChromeEvents(listener: Function) {
@@ -638,12 +636,12 @@ export async function bootstrap<T extends Array<keyof State>>(...storageKeys: T)
   return result;
 }
 
-export function getKeys<T>(object: T) {
+export function getKeys<T extends Object>(object: T) {
   return Object.keys(object) as unknown as Array<keyof T>;
 }
 
 export function extractUrl(faviconUrl?: string) {
-  const [, url = ''] = /^url\("chrome:\/\/favicon\/(.*)"\)$/.exec(faviconUrl || '') || [];
+  const [, url = ''] = /\?pageUrl=(.*)"\)$/.exec(faviconUrl || '') || [];
   return decodeURIComponent(url);
 }
 
@@ -826,7 +824,7 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     .map(([key, value]) => `    --${camelToSnake(key)}: ${value};`)
     .join('\n');
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
-  chrome.browserAction.setPopup({ popup: `popup.html?css=${encoded}` });
+  chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
 }
 
 export async function makeColorPalette() {

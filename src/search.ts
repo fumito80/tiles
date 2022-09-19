@@ -1,8 +1,8 @@
 import { IPubSubElement, makeAction, Store } from './store';
 import { when } from './common';
 import {
-  $, $byClass, $byTag,
-  rmClass, addAttr, addClass,
+  $, $byClass,
+  rmClass, addAttr,
   selectFolder,
   createNewTab,
 } from './client';
@@ -31,13 +31,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #store!: Store;
   readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
   readonly $iconX = $byClass('icon-x', this);
-  readonly $main = $byTag('main');
   readonly $leafs = $byClass('leafs');
   private $searchTargets!: ISearchable[];
   init(
     $searchTargets: ISearchable[],
     includeUrl: boolean,
     options: Options,
+    lastSearchWord: string,
   ) {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
@@ -47,6 +47,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.search(value);
     });
     this.addEventListener('submit', (e) => this.submitForm(e, options));
+    this.$inputQuery.value = lastSearchWord;
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
@@ -60,6 +61,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     return false;
   }
+  focusQuery() {
+    this.$inputQuery.focus();
+  }
   clearQuery() {
     if (this.$inputQuery.value === '') {
       return;
@@ -69,7 +73,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$searchTargets.forEach((target) => target.clearSearch());
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
-    rmClass('searching')(this.$main);
+    this.#store.dispatch('searching', false);
     this.clearSearch();
     this.$inputQuery.focus();
   }
@@ -91,16 +95,18 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const oldValue = this.#oldValue;
     if (oldValue.length <= 1 && newValue.length <= 1) {
       this.#oldValue = newValue;
+      chrome.storage.local.set({ lastSearchWord: newValue });
       return;
     }
-    addClass('searching')(this.$main);
+    this.#store.dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
     if (newValue.length <= 1) {
       this.clearSearch();
-      rmClass('searching')(this.$main);
+      this.#store.dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
+      chrome.storage.local.set({ lastSearchWord: newValue });
       return;
     }
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
@@ -112,34 +118,28 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const searchParams = { reFilter, searchSelector, includeUrl: this.#includeUrl };
     this.$searchTargets.forEach((target) => target.search(searchParams));
     this.#oldValue = newValue;
+    chrome.storage.local.set({ lastSearchWord: newValue });
   }
-  provideActions() {
+  actions() {
     return {
       clearQuery: makeAction({
         target: this.$iconX,
         eventType: 'click',
         force: true,
       }),
+      focusQuery: {},
       clearSearch: {},
       changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
-      // search: makeAction({
-      //   initValue: {
-      //     value: '',
-      //     searchSelector: '',
-      //     includeUrl: this.#includeUrl,
-      //   },
-      // }),
-      // inputSearch: makeAction({
-      //   initValue: '',
-      //   target: this.$inputQuery,
-      //   eventType: 'input',
-      //   eventProcesser: (e) => (e.target as HTMLInputElement).value,
-      // }),
+      searching: {
+        initValue: false,
+      },
     };
   }
   connect(store: Store) {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
     store.subscribe('clearQuery', this.clearQuery.bind(this));
+    store.subscribe('focusQuery', this.focusQuery.bind(this));
+    store.subscribe('search', () => this.search.bind(this)(this.$inputQuery.value));
     this.#store = store;
   }
 }

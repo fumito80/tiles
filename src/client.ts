@@ -8,6 +8,7 @@ import {
   Settings,
   SplitterClasses,
   Model,
+  InsertPosition,
 } from './types';
 
 import {
@@ -508,6 +509,7 @@ export async function removeFolder($folder: HTMLElement) {
     rmClass('hilite'),
     setAnimationFolder('remove-hilite'),
   )($byClass('marker', $folder));
+  $byId($folder.id).remove();
 }
 
 export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
@@ -551,7 +553,7 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
         setAnimationFolder('hilite')($title.parentElement?.parentElement);
         return resolve(title);
       }, { once: true });
-    }, 0);
+    }, 100);
   });
 }
 
@@ -560,7 +562,7 @@ export async function addBookmark(
   paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
   silent = false,
 ) {
-  const isSearching = hasClass($byTag('main'), 'searching');
+  const isSearching = hasClass($byTag('app-main'), 'searching');
   const { title, url } = paramsIn ?? await getCurrentTab();
   const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
@@ -597,7 +599,36 @@ export function showModalInput(desc: string) {
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
-export async function addFolder(parentId = '1', title = '', indexIn: number | undefined = undefined) {
+export function selectFolder(
+  $target: HTMLElement,
+  $leafs: HTMLElement,
+  exclusiveOpenBmFolderTree: boolean,
+) {
+  const $foldersFolder = $target.parentElement?.parentElement!;
+  const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
+  const isOpen = hasClass($foldersFolder, 'open');
+  if (isOpen) {
+    folders.forEach(addClass('path'));
+    if (!exclusiveOpenBmFolderTree) {
+      saveStateAllPaths($foldersFolder.id);
+    }
+    return;
+  }
+  // eslint-disable-next-line no-param-reassign
+  $leafs.scrollTop = 0;
+  $$byClass('open').forEach(rmClass('open'));
+  folders.forEach(addClass('open'));
+  saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
+  $$byClass('hilite').forEach(rmClass('hilite'));
+}
+
+export async function addFolder(
+  parentId = '1',
+  title = '',
+  indexIn: number | undefined = undefined,
+  destId: string = '',
+  position: InsertPosition = 'afterbegin',
+) {
   const index = indexIn ?? (parentId === '1' ? 0 : undefined);
   const params = { title: title || 'Enter title', parentId, index };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
@@ -607,6 +638,12 @@ export async function addFolder(parentId = '1', title = '', indexIn: number | un
   if (parentId === '1') {
     insertHTML('beforebegin', htmlNode)($byClass('folders')!.children[index!]);
     insertHTML('beforebegin', htmlNode)($(`.leafs ${cssid(1)}`)!.children[index!]);
+  } else if (destId) {
+    $$(cssid(destId)).forEach(($destFolder) => {
+      insertHTML(position, htmlNode)($destFolder);
+      const $parent = $destFolder.parentElement!;
+      addAttr('data-children', String($parent.children.length))($parent);
+    });
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
       const $title = pipe(
@@ -638,13 +675,15 @@ export async function addFolderFromTabs(
   parentFolderId: string,
   index: number,
   elementId: string,
+  destId: string,
+  position: InsertPosition,
 ) {
   const windowId = getChromeId(elementId);
   chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
     if (!tabs) {
       return;
     }
-    const parentId = await addFolder(parentFolderId, tabs[0].title, index);
+    const parentId = await addFolder(parentFolderId, tabs[0].title, index, destId, position);
     if (!parentId) {
       return;
     }
@@ -686,27 +725,4 @@ export function setOpenPaths($folder: HTMLElement) {
     addClass('path')($current);
   }
   saveStateAllPaths();
-}
-
-export function selectFolder(
-  $target: HTMLElement,
-  $leafs: HTMLElement,
-  exclusiveOpenBmFolderTree: boolean,
-) {
-  const $foldersFolder = $target.parentElement?.parentElement!;
-  const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
-  const isOpen = hasClass($foldersFolder, 'open');
-  if (isOpen) {
-    folders.forEach(addClass('path'));
-    if (!exclusiveOpenBmFolderTree) {
-      saveStateAllPaths($foldersFolder.id);
-    }
-    return;
-  }
-  // eslint-disable-next-line no-param-reassign
-  $leafs.scrollTop = 0;
-  $$byClass('open').forEach(rmClass('open'));
-  folders.forEach(addClass('open'));
-  saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
-  $$byClass('hilite').forEach(rmClass('hilite'));
 }

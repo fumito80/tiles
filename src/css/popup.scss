@@ -103,7 +103,7 @@ body {
   font-size: 0.9em;
 }
 
-main {
+app-main {
   position: relative;
   display: grid;
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
@@ -220,6 +220,8 @@ window-header,
       margin-right: 2px;
       margin-left: 20px;
       text-indent: 0;
+      background-color: white;
+      cursor: text;
     }
   }
 
@@ -260,6 +262,7 @@ window-header,
 // Search
 
 .form-query {
+  position: relative;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -300,6 +303,7 @@ window-header,
     cursor: pointer;
     visibility: hidden;
   }
+
 }
 
 .split-h {
@@ -500,7 +504,7 @@ window-header,
 
 }
 
-main:not(.searching) .leafs {
+app-main:not(.searching) .leafs {
   .folder.open {
     animation: fade-in 0.15s ease-in-out;
   }
@@ -737,7 +741,7 @@ main:not(.searching) .leafs {
   width: 8px;
 }
 
-main::-webkit-scrollbar {
+app-main::-webkit-scrollbar {
   height: 8px;
 }
 
@@ -1352,8 +1356,8 @@ main::-webkit-scrollbar {
   }
 }
 
-.checked-include-url .main-menu>[data-value="include-url"],
-.auto-zoom .main-menu>[data-value="auto-zoom"] {
+.checked-include-url .main-menu>.include-url,
+.auto-zoom .main-menu>.auto-zoom {
 
   >.icon-check-solid {
     display: inline-block;
@@ -1413,7 +1417,7 @@ main::-webkit-scrollbar {
 
 }
 
-main.zoom-pane {
+app-main.zoom-pane {
 
   .pane-header {
 

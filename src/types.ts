@@ -1,11 +1,13 @@
 import { mapMessagesPtoB } from './background';
 import { HeaderLeafs, Leafs } from './bookmarks';
+import { AppMain } from './app-main';
 import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
 
 export type StoredElements = {
+  'app-main': AppMain,
   'header-leafs': HeaderLeafs,
   'body-leafs': Leafs,
   'body-folders': Folders,
@@ -101,6 +103,7 @@ export const initialState = {
     rowHeight: 0,
   },
   options: initialOptions,
+  lastSearchWord: '',
 };
 
 export type State = typeof initialState;

@@ -10,6 +10,7 @@ import { ISearchable, SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
+import { State } from './types';
 
 export const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
 
@@ -137,7 +138,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
   #tabId!: number;
-  private $main = $byTag('main');
+  private $main = $byTag('app-main');
   private $tooltip = $byClass('tooltip', this);
   init(tab: chrome.tabs.Tab) {
     this.#tabId = tab.id!;
@@ -388,7 +389,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
   // eslint-disable-next-line class-methods-use-this
-  provideActions() {
+  actions() {
     return {
       windowAction: makeAction({
         initValue: {
@@ -396,6 +397,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
           windowId: -1,
         },
       }),
+      search: {},
     };
   }
   connect(store: Store) {
@@ -404,6 +406,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
       store.subscribe('clearSearch', this.clearSearch.bind(this));
+      store.dispatch('search');
     });
   }
 }
@@ -413,15 +416,17 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   private $buttonCollapse = $byClass('collapse-tabs', this);
   private $buttonPrevWin = $byClass('win-prev', this);
   private $buttonNextWin = $byClass('win-next', this);
-  init(collapsed: boolean) {
+  override init(settings: State['settings'], collapsed: boolean) {
+    super.init(settings);
     this.#collapsed = collapsed;
     this.switchCollapseIcon(collapsed);
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
   }
-  provideActions() {
+  override actions() {
     return {
+      ...super.actions(),
       collapseWindowsAll: makeAction<boolean, 'click'>({
         initValue: this.#collapsed,
         target: this.$buttonCollapse,
@@ -432,8 +437,7 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
       scrollNextWindow: {},
     };
   }
-  override connect(store: Store) {
-    super.connect(store);
+  connect(store: Store) {
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
     this.$buttonPrevWin.addEventListener('click', () => store.dispatch('scrollPrevWindow', null, true));
     this.$buttonNextWin.addEventListener('click', () => store.dispatch('scrollNextWindow', null, true));

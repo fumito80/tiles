@@ -1,8 +1,10 @@
 import { State, Collection, MyHistoryItem } from './types';
-import { pipe, getLocaleDate, htmlEscape } from './common';
 import {
-  $, $byClass, $byTag,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, hasClass,
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl,
+} from './common';
+import {
+  $, $byClass,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr,
 } from './client';
 
 const invisible = { transform: 'translateY(-10000px)' };
@@ -11,10 +13,9 @@ export const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
 let vScrollData: Collection;
 
-export function rowSetterHistory() {
+export function rowSetterHistory(isShowFixedHeader: boolean) {
   const today = getLocaleDate();
   const $currentDate = $('.histories .current-date')!;
-  const isShowFixedHeader = !hasClass($byTag('main'), 'date-collapsed');
   addStyle(invisible)($currentDate);
   return (
     data: MyHistoryItem[],
@@ -61,10 +62,11 @@ export function rowSetterHistory() {
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
+    const backgroundImage = `url(${preFaviconUrl}${encodeURIComponent(url!)})`;
     pipe(
       rmClass('hilite', 'header-date'),
       setHTML(`<div>${htmlEscape(text!)}</div><i class="icon-x"></i>`),
-      addStyle('background-image', `url('chrome://favicon/${url}')`),
+      addStyle('background-image', backgroundImage),
       addAttr('title', tooltip),
       addAttr('id', `hst-${id}`),
     )($row);
@@ -78,6 +80,7 @@ export async function setVScroll(
   rowSetter: VScrollRowSetter,
   data: Collection,
   rowHeight: State['vscrollProps']['rowHeight'],
+  isShowFixedHeader = true,
 ) {
   const $rows = $byClass('rows', $container);
   const firstRow = $rows?.firstElementChild as HTMLElement;
@@ -96,7 +99,7 @@ export async function setVScroll(
   });
   const vScrollHeight = rowHeight * data.length;
   addStyle('height', `${vScrollHeight - $container.offsetHeight + padding}px`)($fakeBottom);
-  const setter = rowSetter();
+  const setter = rowSetter(isShowFixedHeader);
   const children = [...$rows.children] as HTMLElement[];
   vScrollData = data;
   vScrollHandler = () => {

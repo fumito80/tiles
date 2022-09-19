@@ -7,7 +7,6 @@ import {
   Settings,
   State,
   ClientState,
-  initialState,
   BkgMessageTypes,
   StoredElements,
 } from './types';
@@ -15,32 +14,30 @@ import {
 import {
   pipe,
   cssid,
-  bootstrap,
-  getKeys,
-  getColorWhiteness,
-  lightColorWhiteness,
   setMessageListener,
   getGridColStart,
-  camelToSnake,
   last,
   filter,
   curry,
+  preFaviconUrl,
+  extractDomain,
 } from './common';
 
-import setEventListners from './client-events';
 import {
   $, $$,
-  addStyle, addClass, toggleClass,
+  addStyle, addClass,
   setSplitWidth,
   hasClass,
   addChild,
   setHTML,
-  $$byClass, $byClass, $byTag,
+  $$byClass, $byClass,
   recoverMinPaneWidth,
   toggleElement,
+  $byTag,
 } from './client';
 import { initComponents } from './store';
 import { queryOptions } from './tabs';
+import { AppMain } from './app-main';
 
 type Options = State['options'];
 
@@ -49,22 +46,6 @@ function setOptions(settings: Settings, options: Options) {
     addStyle('width', `${settings.width}px`),
     addStyle('height', `${settings.height}px`),
   )(document.body);
-
-  const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
-    .colorPalette
-    .map((code) => getColorWhiteness(code))
-    .map((whiteness) => whiteness <= lightColorWhiteness);
-
-  const $main = $byTag('main');
-  Object.entries({
-    themeDarkPane,
-    themeDarkFrame,
-    themeDarkHover,
-    themeDarkSearch,
-    themeDarkKey,
-    autoZoom: settings.autoZoom,
-    checkedIncludeUrl: settings.includeUrl,
-  }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($main));
 
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
 
@@ -84,8 +65,9 @@ function setExternalUrl(options: Options) {
   if (!options.enableExternalUrl || !options.externalUrl) {
     return;
   }
+  const [schema, domain] = extractDomain(options.externalUrl);
   pipe(
-    addStyle('--external-url-image', `url("chrome://favicon/${options.externalUrl}")`),
+    addStyle('--external-url-image', `url(${preFaviconUrl}${schema}${domain})`),
     addStyle('--external-url', 'hidden'),
   )($byClass('form-query')!);
 }
@@ -104,13 +86,14 @@ function setBookmarksState(clState: ClientState) {
 }
 
 function layoutPanes(options: Options) {
+  const $appMain = $byTag('app-main') as AppMain;
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
     [],
   );
   const $headers = panes.map((name) => $byClass(`header-${name}`));
   const $bodies = panes.map((name) => $byClass(name));
-  $byTag('main').prepend(...$headers, ...$bodies);
+  $appMain.prepend(...$headers, ...$bodies);
   pipe(
     filter((el) => !hasClass(el, 'header-folders')),
     last,
@@ -126,13 +109,14 @@ function layoutPanes(options: Options) {
     const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
+  $appMain.init(options);
   return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane.getAttribute('is');
     if (!name) {
       return acc;
     }
     return { ...acc, [name]: pane };
-  }, {} as StoredElements);
+  }, { 'app-main': $appMain } as StoredElements);
 }
 
 function setCloseApp() {
@@ -145,22 +129,27 @@ function setCloseApp() {
 }
 
 function init({
-  settings, htmlBookmarks, clientState, options, htmlHistory,
+  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }: State) {
   const compos = layoutPanes(options);
-  const store = initComponents(compos, options, settings, htmlHistory);
+  const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
   toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
-  setEventListners(options);
   setExternalUrl(options);
   setCloseApp();
   return store;
 }
 
-const promiseStore = bootstrap(...getKeys(initialState)).then(init);
+async function bootstrap() {
+  return new Promise<State>((resolve) => {
+    chrome.storage.local.get(resolve);
+  });
+}
+
+const promiseStore = bootstrap().then(init);
 
 function resetHistory() {
   promiseStore.then((store) => store.dispatch('resetHistory', {}, true));

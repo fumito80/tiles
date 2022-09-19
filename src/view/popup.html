@@ -4,16 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="popup.css">
+    <script src="popup-init.js" async></script>
     <script src="popup.js" defer></script>
-    <script nonce="popup">
-        const params = new URLSearchParams(document.location.search);
-        const sheet = document.head.appendChild(document.createElement('style'));
-        sheet.textContent = params.get('css');
-    </script>
 </head>
 
 <body>
-    <main>
+    <app-main>
         <div class="resize-x"></div>
         <div class="split-h pane3"></div>
         <div class="split-h pane2"></div>
@@ -23,7 +19,7 @@
         <i class="zoom-out icon-fa-angle-right left"></i>
         <i class="zoom-out icon-fa-angle-right right"></i>
         <div class="safety-zone-right"></div>
-    </main>
+    </app-main>
     <div class="resize-y"></div>
     <div class="components">
         <div is="header-history" class="pane-header header-histories">
@@ -38,10 +34,10 @@
                     <i class="icon-fa-ellipsis-v"></i>
                 </button>
                 <div class="main-menu" role="menu">
-                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                    <div role="menuitem" class="include-url"><i class="icon-url"></i>Include URL in search<i
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
+                    <div role="menuitem" class="auto-zoom" title="Pane resizable when disabled">
                         <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
@@ -62,10 +58,10 @@
                     <i class="icon-fa-ellipsis-v"></i>
                 </button>
                 <div class="main-menu" role="menu">
-                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                    <div role="menuitem" class="include-url"><i class="icon-url"></i>Include URL in search<i
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled">
+                    <div role="menuitem" class="auto-zoom" title="Pane resizable when disabled">
                         <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">
@@ -85,10 +81,10 @@
                     <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add new bookmark</div>
                     <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="include-url"><i class="icon-url"></i>Include URL in search<i
+                    <div role="menuitem" class="include-url"><i class="icon-url"></i>Include URL in search<i
                             class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
-                    <div role="menuitem" data-value="auto-zoom" title="Pane resizable when disabled"></i>
+                    <div role="menuitem" class="auto-zoom" title="Pane resizable when disabled">
                         <div class="icon-zoom"></div>Auto xen mode<i class="icon-check-solid"></i>
                     </div>
                     <hr aria-hidden="true">

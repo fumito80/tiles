@@ -1,11 +1,11 @@
 const path = require('path');
-const { merge } = require('webpack-merge');
-const common = require('./webpack.common.js');
+const common = require('./webpack.common');
 
-module.exports = merge(common, {
+module.exports = {
+  ...common,
   mode: 'development',
   output: {
     path: path.resolve(__dirname, 'dist'),
   },
   devtool: 'inline-source-map',
-});
+};
