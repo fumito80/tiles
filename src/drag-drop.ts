@@ -247,13 +247,12 @@ const dragAndDropEvents = {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
       return;
     }
+    const position = positions[dropAreaClass];
     if (sourceClass === 'window') {
-      // eslint-disable-next-line no-console
-      addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId);
+      addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId, destId, position);
       return;
     }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
-    const position = positions[dropAreaClass];
     const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
     const [$destLeafs, $destFolders] = $$(cssid(destId));
     const isRootTo = $destLeafs.parentElement?.id === '1' && dropAreaClass !== 'drop-folder';
