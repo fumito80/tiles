@@ -13,7 +13,15 @@
   ],
   "action": {
     "default_title": "Popup'n My Resources",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "p48.png",
+      "128": "p128.png"
+    }
+  },
+  "icons": {
+    "48": "p48.png",
+    "128": "p128.png"
   },
   "commands": {
     "_execute_action": {

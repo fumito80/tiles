@@ -49,9 +49,9 @@ function makeActionValue<T>(value: T, forced = 0) {
 
 type ActionResult = ReturnType<typeof makeActionValue>;
 
-export function registerActions<T extends Actions<any>>(actions: T, savedActions: Model) {
+export function registerActions<T extends Actions<any>>(actions: T) {
   const subscribers = {} as { [actionName: string]: Function[] };
-  const initPromises = Object.entries(actions).map(async ([name, {
+  const initPromises = Object.entries(actions).map(([name, {
     target, eventType, eventProcesser, initValue, persistent,
   }]) => {
     const actionName = prefixedAction(name);
@@ -66,42 +66,53 @@ export function registerActions<T extends Actions<any>>(actions: T, savedActions
         });
       });
     }
-    return new Promise<void>((resolve) => {
+    return new Promise<Model>((resolve) => {
       chrome.storage.session.remove(actionName, () => {
         if (persistent) {
-          resolve();
+          chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
+            const actionValue = makeActionValue(value ?? initValue);
+            chrome.storage.session.set({ [actionName]: actionValue }, () => {
+              setTimeout(() => resolve({ [actionName]: persistent }), 0);
+            });
+          });
           return;
         }
         const actionValue = makeActionValue(initValue);
-        chrome.storage.session.set({ [actionName]: actionValue }, resolve);
+        chrome.storage.session.set({ [actionName]: actionValue }, () => {
+          resolve({ [actionName]: persistent });
+        });
       });
     });
   });
-  const initPromise = Promise.all(initPromises).then(() => {
+  const initPromise = Promise.all(initPromises).then((persistents) => {
+    const persistentsAction = persistents
+      .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
     chrome.storage.onChanged.addListener((storage, areaName) => {
       if (areaName !== 'session') {
         return;
       }
-      Object.entries(storage).forEach(([key, changes]) => {
-        subscribers[key]?.forEach((cb) => {
-          const oldValue = (changes.oldValue as ActionResult)?.value;
-          const newValue = (changes.newValue as ActionResult)?.value;
-          cb({ oldValue, newValue });
-        });
+      Object.entries(storage).forEach(([actionName, changes]) => {
+        const oldValue = (changes.oldValue as ActionResult)?.value;
+        const newValue = (changes.newValue as ActionResult)?.value;
+        if (persistentsAction[actionName]) {
+          chrome.storage.local.set({ [actionName]: newValue });
+        }
+        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue }));
       });
     });
     Object.entries(actions)
       .filter(([, { persistent }]) => persistent)
-      .map(async ([name, { initValue }]) => {
+      .map(async ([name]) => {
         const actionName = prefixedAction(name);
-        const actionValue = savedActions[actionName] ?? makeActionValue(initValue);
-        chrome.storage.session.set({ [actionName]: actionValue });
+        chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => {
+          subscribers[actionName]?.forEach((cb) => cb({ oldValue: null, newValue: value }, true));
+        });
       });
   });
   return {
     subscribe<U extends keyof T, V extends ActionValue<T[U]>>(
       name: U,
-      cb: (changes: { oldValue: V, newValue: V }) => void,
+      cb: (changes: { oldValue: V, newValue: V }, isInit: boolean) => void,
     ) {
       const actionName = prefixedAction(name);
       subscribers[actionName] = [...(subscribers[actionName] || []), cb];
@@ -133,7 +144,6 @@ export function initComponents(
   settings: State['settings'],
   htmlHistory: string,
   lastSearchWord: string,
-  savedActionValues: Model,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -167,7 +177,7 @@ export function initComponents(
     ...$history.actions(),
     ...$headerHistory.actions(),
   };
-  const store = registerActions(actions, savedActionValues);
+  const store = registerActions(actions);
   // Coonect store
   $appMain.connect(store);
   $leafs.connect(store);

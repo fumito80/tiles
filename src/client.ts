@@ -551,7 +551,7 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
         setAnimationFolder('hilite')($title.parentElement?.parentElement);
         return resolve(title);
       }, { once: true });
-    }, 0);
+    }, 100);
   });
 }
 

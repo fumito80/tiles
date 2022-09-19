@@ -150,14 +150,13 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const theme = await makeColorPalette();
   const settings = { ...initialSettings, ...storage.settings, theme };
   const clientState = storage.clientState || {};
-  const lastSearchWord = storage.lastSearchWord || '';
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
   // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
   makeHistory();
   setLocal({
-    settings, clientState, options, lastSearchWord,
+    settings, clientState, options,
   });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);

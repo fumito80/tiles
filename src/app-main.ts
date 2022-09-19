@@ -96,14 +96,17 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
   setAutoZoom(autoZoom: boolean) {
     toggleClass('auto-zoom', autoZoom)(this);
   }
-  setIncludeUrl(store: Store, includeUrl: boolean) {
+  setIncludeUrl(store: Store, includeUrl: boolean, isInit: boolean) {
     toggleClass('checked-include-url', includeUrl)(this);
+    if (isInit) {
+      return;
+    }
     store.dispatch('changeIncludeUrl', includeUrl, true);
     resetVScrollData((data) => data);
   }
   connect(store: Store) {
     store.subscribe('setAutoZoom', (changes) => this.setAutoZoom(changes.newValue));
-    store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(store, changes.newValue));
+    store.subscribe('setIncludeUrl', (changes, isInit) => this.setIncludeUrl(store, changes.newValue, isInit));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
     this.setEvents(store);
   }

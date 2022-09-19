@@ -129,10 +129,10 @@ function setCloseApp() {
 }
 
 function init({
-  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord, ...rest
+  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }: State) {
   const compos = layoutPanes(options);
-  const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord, rest);
+  const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
