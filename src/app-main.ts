@@ -98,10 +98,10 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
   }
   setIncludeUrl(store: Store, includeUrl: boolean, isInit: boolean) {
     toggleClass('checked-include-url', includeUrl)(this);
+    store.dispatch('changeIncludeUrl', includeUrl, true);
     if (isInit) {
       return;
     }
-    store.dispatch('changeIncludeUrl', includeUrl, true);
     resetVScrollData((data) => data);
   }
   connect(store: Store) {

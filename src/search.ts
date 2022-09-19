@@ -47,9 +47,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.search(value);
     });
     this.addEventListener('submit', (e) => this.submitForm(e, options));
-    if (lastSearchWord !== '') {
-      this.$inputQuery.value = lastSearchWord;
-    }
+    this.$inputQuery.value = lastSearchWord;
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
@@ -97,6 +95,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const oldValue = this.#oldValue;
     if (oldValue.length <= 1 && newValue.length <= 1) {
       this.#oldValue = newValue;
+      chrome.storage.local.set({ lastSearchWord: newValue });
       return;
     }
     this.#store.dispatch('searching', true);
@@ -107,6 +106,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.#store.dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
+      chrome.storage.local.set({ lastSearchWord: newValue });
       return;
     }
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
@@ -118,6 +118,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const searchParams = { reFilter, searchSelector, includeUrl: this.#includeUrl };
     this.$searchTargets.forEach((target) => target.search(searchParams));
     this.#oldValue = newValue;
+    chrome.storage.local.set({ lastSearchWord: newValue });
   }
   actions() {
     return {
@@ -138,6 +139,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
     store.subscribe('clearQuery', this.clearQuery.bind(this));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
+    store.subscribe('search', () => this.search.bind(this)(this.$inputQuery.value));
     this.#store = store;
   }
 }
