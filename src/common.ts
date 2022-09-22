@@ -776,6 +776,7 @@ export function setMessageListener<T extends Model>(messageMap: T, once = false)
     if (once) {
       chrome.runtime.onMessage.removeListener(onMessage);
     }
+    return true;
   }
   chrome.runtime.onMessage.addListener(onMessage);
 }

@@ -162,7 +162,7 @@ export function initComponents(
   // Initialize component
   $leafs.init(options);
   $folders.init(options);
-  $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs);
+  $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs, lastSearchWord);
   $headerLeafs.init(settings);
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);

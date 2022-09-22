@@ -22,7 +22,8 @@ import { ISubscribeElement, Store } from './store';
 import { resetVScrollData } from './vscroll';
 
 export class AppMain extends HTMLElement implements ISubscribeElement {
-  init(options: Options) {
+  init(options: Options, lastSearchWord: string) {
+    this.classList.toggle('searching', lastSearchWord.length > 1);
     const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
       .colorPalette
       .map((code) => getColorWhiteness(code))

@@ -512,13 +512,21 @@ export async function removeFolder($folder: HTMLElement) {
   $byId($folder.id).remove();
 }
 
-export async function editTitle($title: HTMLElement, folderId: string, newFolder = false) {
+export async function editTitle(
+  $title: HTMLElement,
+  folderId: string,
+  newFolder = false,
+  isBookmark = false,
+) {
   addStyle('text-overflow', 'unset')($title);
   const currentTitle = $title.textContent!;
   pipe(
     addAttr('contenteditable', 'true'),
     addAttr('data-current-title', htmlEscape(currentTitle!)),
   )($title);
+  if (!isBookmark) {
+    addStyle({ width: '100%' })($title.parentElement);
+  }
   return new Promise<string | null>((resolve) => {
     setTimeout(() => {
       $title.focus();
@@ -537,6 +545,9 @@ export async function editTitle($title: HTMLElement, folderId: string, newFolder
       });
       $title.addEventListener('blur', async () => {
         rmAttr('contenteditable')($title);
+        if (!isBookmark) {
+          rmStyle('width')($title.parentElement);
+        }
         $byClass('query')!.focus();
         // eslint-disable-next-line no-param-reassign
         $title.scrollLeft = 0;
@@ -644,6 +655,7 @@ export async function addFolder(
       const $parent = $destFolder.parentElement!;
       addAttr('data-children', String($parent.children.length))($parent);
     });
+    return id;
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {
       const $title = pipe(
@@ -688,6 +700,9 @@ export async function addFolderFromTabs(
       return;
     }
     tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }, true));
+    const $target = $(`.folders ${cssid(parentId)} > .marker > .title`)!;
+    setAnimationFolder('hilite')($target.parentElement);
+    editTitle($target.firstElementChild as HTMLElement, parentId, false);
   });
 }
 

@@ -94,7 +94,7 @@ export class Leaf extends HTMLDivElement {
   }
   async editBookmarkTitle() {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
-    const title = await editTitle($anchor, this.id).catch(() => null);
+    const title = await editTitle($anchor, this.id, false, true).catch(() => null);
     if (!title) {
       return;
     }
@@ -157,9 +157,11 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
           }
           $target.click();
           $target.focus();
-          ($leaf.firstElementChild as HTMLAnchorElement).focus();
-          ($leaf as any).scrollIntoViewIfNeeded();
-          setAnimationClass('hilite')($leaf);
+          setTimeout(() => {
+            ($leaf.firstElementChild as HTMLAnchorElement).focus();
+            ($leaf as any).scrollIntoViewIfNeeded();
+            setAnimationClass('hilite')($leaf);
+          }, 100);
           break;
         }
         default:

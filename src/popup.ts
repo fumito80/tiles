@@ -85,7 +85,7 @@ function setBookmarksState(clState: ClientState) {
   }
 }
 
-function layoutPanes(options: Options) {
+function layoutPanes(options: Options, lastSearchWord: string) {
   const $appMain = $byTag('app-main') as AppMain;
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
@@ -109,7 +109,7 @@ function layoutPanes(options: Options) {
     const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
-  $appMain.init(options);
+  $appMain.init(options, lastSearchWord);
   return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane.getAttribute('is');
     if (!name) {
@@ -131,7 +131,7 @@ function setCloseApp() {
 function init({
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }: State) {
-  const compos = layoutPanes(options);
+  const compos = layoutPanes(options, lastSearchWord);
   const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);

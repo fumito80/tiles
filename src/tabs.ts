@@ -129,18 +129,19 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
 
 function getTooltip(tab: chrome.tabs.Tab) {
   if (tab.url?.startsWith('file:///')) {
-    return htmlEscape(`${tab.title}\n${tab.url}`);
+    return `${tab.title}\n${tab.url}`;
   }
   const [scheme, domain] = extractDomain(tab.url);
   const schemeAdd = scheme.startsWith('https') ? '' : scheme;
-  return htmlEscape(`${tab.title}\n${schemeAdd}${domain}`);
+  return `${tab.title}\n${schemeAdd}${domain}`;
 }
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
   #tabId!: number;
   private $main = $byTag('app-main');
   private $tooltip = $byClass('tooltip', this);
-  init(tab: chrome.tabs.Tab) {
+  init(tab: chrome.tabs.Tab, lastSearchWord: string) {
+    this.classList.toggle('unmatch', lastSearchWord.length > 1);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
     this.setCurrentTab(tab);
@@ -248,6 +249,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
   #store!: Store;
+  #lastSearchWord: string = '';
   private $tmplTab!: OpenTab;
   private readonly $header = this.firstElementChild as WindowHeader;
   init(
@@ -256,10 +258,12 @@ export class Window extends HTMLElement implements ISubscribeElement {
     tmplTab: OpenTab,
     [firstTab, ...rest]: chrome.tabs.Tab[],
     collapseTabs: boolean,
+    lastSearchWord: string,
   ) {
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
     this.$tmplTab = tmplTab;
+    this.#lastSearchWord = lastSearchWord;
     this.id = `win-${windowId}`;
     this.classList.toggle('current-window', isCurrent);
     this.$header.init(windowId, firstTab);
@@ -281,7 +285,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   addTab(tab: chrome.tabs.Tab) {
     const $openTab = document.importNode(this.$tmplTab!, true);
-    return $openTab.init(tab);
+    return $openTab.init(tab, this.#lastSearchWord);
   }
   addTabs(tabs: chrome.tabs.Tab[]) {
     const $tabs = tabs.map((tab) => this.addTab(tab));
@@ -350,6 +354,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
     collapseTabs: boolean,
+    lastSearchWord: string,
   ) {
     this.#initPromise = new Promise<void>((resolve) => {
       chrome.windows.getCurrent(queryOptions, (currentWindow) => {
@@ -362,6 +367,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
               $tmplOpenTab,
               win.tabs!,
               collapseTabs,
+              lastSearchWord,
             );
           });
           this.#tabsWrap.append(...$windows);
