@@ -649,6 +649,9 @@ export async function addFolder(
   if (parentId === '1') {
     insertHTML('beforebegin', htmlNode)($byClass('folders')!.children[index!]);
     insertHTML('beforebegin', htmlNode)($(`.leafs ${cssid(1)}`)!.children[index!]);
+    if (destId) {
+      return id;
+    }
   } else if (destId) {
     $$(cssid(destId)).forEach(($destFolder) => {
       insertHTML(position, htmlNode)($destFolder);
@@ -663,10 +666,8 @@ export async function addFolder(
         addAttr('data-children', String($targetFolder.children.length)),
         curry($)(':scope > .marker > .title'),
       )($targetFolder);
-      if ($title) {
-        $title.click();
-        ($targetFolder as any).scrollIntoViewIfNeeded();
-      }
+      $title?.click();
+      ($targetFolder as any).scrollIntoViewIfNeeded();
     });
   }
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;

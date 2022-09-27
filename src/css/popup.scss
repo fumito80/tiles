@@ -220,6 +220,8 @@ window-header,
       margin-left: 20px;
       text-indent: 0;
       background-color: white;
+      scroll-padding-left: 3px;
+      scroll-padding-right: 3px;
       cursor: text;
     }
   }
@@ -588,8 +590,9 @@ app-main:not(.searching) .leafs {
       }
 
       >[contenteditable] {
-        width: 100%;
         max-width: 200px;
+        scroll-padding-left: 3px;
+        scroll-padding-right: 3px;
         background-color: white;
       }
     }
@@ -694,7 +697,7 @@ app-main:not(.searching) .leafs {
       padding-right: 0.3em;
       background-color: $dark-font-color;
       color: $font-color;
-      min-width: 80px;
+      min-width: 50px;
     }
 
     &:empty::before {
