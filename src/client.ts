@@ -653,11 +653,15 @@ export async function addFolder(
       return id;
     }
   } else if (destId) {
-    $$(cssid(destId)).forEach(($destFolder) => {
+    const [, $dest] = $$(cssid(destId)).map(($destFolder) => {
       insertHTML(position, htmlNode)($destFolder);
       const $parent = $destFolder.parentElement!;
       addAttr('data-children', String($parent.children.length))($parent);
+      return $destFolder;
     });
+    if (!index) {
+      $(':scope > .marker > .title', $dest)?.click();
+    }
     return id;
   } else {
     $$(cssid(parentId)).forEach(($targetFolder) => {

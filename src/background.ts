@@ -186,7 +186,9 @@ export const mapMessagesPtoB = {
     });
     return seriesRemoveHistory;
   },
-  [CliMessageTypes.initialize]: ({ payload }: PayloadAction<number>) => payload.toString(),
+  [CliMessageTypes.initialize]: ({ payload }: PayloadAction<number>) => (
+    Promise.resolve(payload.toString())
+  ),
 };
 
 setMessageListener(mapMessagesPtoB);

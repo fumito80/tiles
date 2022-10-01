@@ -7,7 +7,6 @@ import {
   MessageTypePayloadAction,
   State,
   MyHistoryItem,
-  Model,
   Options,
   ColorPalette,
   defaultColorPalette,
@@ -763,19 +762,22 @@ export function isDateEq(dateOrSerial1?: Date | number, dateOrSerial2?: Date | n
   return date1 === date2;
 }
 
-export function setMessageListener<T extends Model>(messageMap: T, once = false) {
-  async function onMessage(
+type Messages = {
+  [key: string]: (message: any) => Promise<any>;
+}
+
+export function setMessageListener<T extends Messages>(messageMap: T, once = false) {
+  function onMessage(
     message: { type: keyof T } & PayloadAction<any>,
     _: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void,
   ) {
-    // eslint-disable-next-line no-console
-    // console.log(message);
-    const responseState = await messageMap[message.type](message);
-    sendResponse(responseState);
-    if (once) {
-      chrome.runtime.onMessage.removeListener(onMessage);
-    }
+    messageMap[message.type](message).then((responseState: any) => {
+      sendResponse(responseState);
+      if (once) {
+        chrome.runtime.onMessage.removeListener(onMessage);
+      }
+    });
     return true;
   }
   chrome.runtime.onMessage.addListener(onMessage);

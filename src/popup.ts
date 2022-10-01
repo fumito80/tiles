@@ -152,7 +152,7 @@ async function bootstrap() {
 const promiseStore = bootstrap().then(init);
 
 function resetHistory() {
-  promiseStore.then((store) => store.dispatch('resetHistory', {}, true));
+  return promiseStore.then((store) => store.dispatch('resetHistory', {}, true));
 }
 
 export const mapMessagesBtoP = {
