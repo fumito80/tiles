@@ -25,9 +25,10 @@ export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
 export class PaneHeader extends HTMLDivElement implements IPublishElement {
   #autoZoom!: boolean;
   #includeUrl!: boolean;
-  private $mainMenu = $byClass('main-menu', this);
+  private $mainMenu!: HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], _?: boolean) {
+    this.$mainMenu = $byClass('main-menu', this);
     this.#autoZoom = settings.autoZoom;
     this.#includeUrl = settings.includeUrl;
     pipe(
@@ -75,9 +76,10 @@ export class PaneHeader extends HTMLDivElement implements IPublishElement {
 }
 
 export class HeaderLeafs extends PaneHeader {
-  private $pinBookmark = $byClass('pin-bookmark', this);
+  private $pinBookmark!: HTMLElement;
   override init(settings: State['settings']) {
     super.init(settings);
+    this.$pinBookmark = $byClass('pin-bookmark', this);
     this.$pinBookmark.addEventListener('click', () => addBookmark());
   }
 }

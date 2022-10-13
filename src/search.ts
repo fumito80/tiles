@@ -29,9 +29,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
   #store!: Store;
-  readonly $inputQuery = $byClass<HTMLInputElement>('query', this);
-  readonly $iconX = $byClass('icon-x', this);
-  readonly $leafs = $byClass('leafs');
+  private $inputQuery!: HTMLInputElement;
+  private $iconX!: HTMLElement;
+  private $leafs!: HTMLElement;
   private $searchTargets!: ISearchable[];
   init(
     $searchTargets: ISearchable[],
@@ -42,6 +42,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$searchTargets = $searchTargets;
+    this.$inputQuery = $byClass<HTMLInputElement>('query', this);
+    this.$iconX = $byClass('icon-x', this);
+    this.$leafs = $byClass('leafs');
     this.$inputQuery.addEventListener('input', (e) => {
       const { value } = (e.target as HTMLInputElement);
       this.search(value);

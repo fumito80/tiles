@@ -33,6 +33,7 @@
       color: $dark-font-color;
       border-radius: 2px;
       -webkit-user-drag: none;
+
       &:nth-child(2) {
         margin-top: 0;
       }
@@ -62,6 +63,10 @@
         background-color: rgba(0, 0, 0, 0.3);
       }
     }
+  }
+
+  &.init::-webkit-scrollbar-thumb {
+    background-color: transparent !important;
   }
 }
 
@@ -107,6 +112,10 @@
 }
 
 // History date collapse mode
+
+.collapse-history-date.init {
+  display: none;
+}
 
 .auto-zoom:not(.disable-zoom-history) {
 

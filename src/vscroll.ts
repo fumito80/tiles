@@ -1,6 +1,6 @@
 import { State, Collection, MyHistoryItem } from './types';
 import {
-  pipe, getLocaleDate, htmlEscape, preFaviconUrl,
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape,
 } from './common';
 import {
   $, $byClass,
@@ -62,7 +62,8 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}`;
-    const backgroundImage = `url(${preFaviconUrl}${encodeURIComponent(url!)})`;
+    const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
+    const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
     pipe(
       rmClass('hilite', 'header-date'),
       setHTML(`<div>${htmlEscape(text!)}</div><i class="icon-x"></i>`),

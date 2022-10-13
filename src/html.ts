@@ -42,7 +42,7 @@ export function makeHistory({
     return `<div class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</div>`;
   }
   const dt = `\n${(new Date(lastVisitTime!)).toLocaleString()}`;
-  const style = makeStyleIcon(url!);
+  const style = makeStyleIcon(url);
   const text = title || url;
   if (!text) {
     return '';

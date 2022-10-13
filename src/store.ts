@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Model, Options, State, StoredElements,
+  HTMLElementEventType, Model, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -144,6 +144,7 @@ export function initComponents(
   settings: State['settings'],
   htmlHistory: string,
   lastSearchWord: string,
+  promiseInitTabs: PromiseInitTabs,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -160,9 +161,15 @@ export function initComponents(
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
   // Initialize component
+  $tabs.init(
+    $tmplOpenTab,
+    $tmplWindow,
+    options.collapseTabs,
+    lastSearchWord,
+    promiseInitTabs,
+  );
   $leafs.init(options);
   $folders.init(options);
-  $tabs.init($tmplOpenTab, $tmplWindow, options.collapseTabs, lastSearchWord);
   $headerLeafs.init(settings);
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);

@@ -158,9 +158,8 @@ export type PayloadMoveItem = {
   dropClass: DropClasses;
 }
 
-export type PayloadAction<P = void, T extends string = string, M = never, E = never> = {
+export type PayloadAction<P = void, M = never, E = never> = {
   payload: P;
-  type: T;
 } & ([M] extends [never] ? {} : {
   meta: M;
 }) & ([E] extends [never] ? {} : {
@@ -189,3 +188,10 @@ export type Nil = undefined | null;
 
 // eslint-disable-next-line no-undef
 export type HTMLElementEventType = HTMLElementEventMap;
+
+export type InitailTabs = {
+  windowId: number,
+  tabs: chrome.tabs.Tab[];
+}[];
+
+export type PromiseInitTabs = Promise<[InitailTabs, number]>;

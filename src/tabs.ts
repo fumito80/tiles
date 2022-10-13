@@ -10,9 +10,7 @@ import { ISearchable, SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
-import { State } from './types';
-
-export const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+import { PromiseInitTabs, State } from './types';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
@@ -108,6 +106,10 @@ async function switchTabWindow($tabs: HTMLElement, isNext: boolean) {
 }
 
 export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
+  if (tab.favIconUrl) {
+    const style = makeStyleIcon(tab.url!);
+    return { style };
+  }
   if (tab.url?.startsWith('file://')) {
     return {
       'data-initial': htmlEscape(tab.title!.substring(0, 1)),
@@ -115,11 +117,9 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
       style: '',
     };
   }
-  if (tab.favIconUrl || !tab.url?.startsWith('http')) {
-    const faviconUrl = makeStyleIcon(tab.url);
-    return {
-      style: faviconUrl,
-    };
+  if (!tab.url?.startsWith('http')) {
+    const style = makeStyleIcon(tab.url);
+    return { style };
   }
   return {
     'data-initial': htmlEscape(tab.title!.substring(0, 1)),
@@ -138,9 +138,11 @@ function getTooltip(tab: chrome.tabs.Tab) {
 
 export class OpenTab extends HTMLElement implements ISubscribeElement {
   #tabId!: number;
-  private $main = $byTag('app-main');
-  private $tooltip = $byClass('tooltip', this);
+  private $main!: HTMLElement;
+  private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, lastSearchWord: string) {
+    this.$main = $byTag('app-main');
+    this.$tooltip = $byClass('tooltip', this);
     this.classList.toggle('unmatch', lastSearchWord.length > 1);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
@@ -202,9 +204,11 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
-  private $btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
-  private $tabsMenu = $byClass('tabs-menu', this);
+  private $btnCollapseTabs!: HTMLElement;
+  private $tabsMenu!: HTMLElement;
   init(windowId: number, tab: chrome.tabs.Tab) {
+    this.$btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
+    this.$tabsMenu = $byClass('tabs-menu', this);
     this.#windowId = windowId;
     this.update(tab);
     pipe(
@@ -254,11 +258,11 @@ export class Window extends HTMLElement implements ISubscribeElement {
   private readonly $header = this.firstElementChild as WindowHeader;
   init(
     windowId: number,
-    isCurrent: boolean,
     tmplTab: OpenTab,
     [firstTab, ...rest]: chrome.tabs.Tab[],
     collapseTabs: boolean,
     lastSearchWord: string,
+    isCurrent: boolean,
   ) {
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
@@ -355,25 +359,21 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $tmplWindow: Window,
     collapseTabs: boolean,
     lastSearchWord: string,
+    promiseInitTabs: PromiseInitTabs,
   ) {
-    this.#initPromise = new Promise<void>((resolve) => {
-      chrome.windows.getCurrent(queryOptions, (currentWindow) => {
-        chrome.windows.getAll({ ...queryOptions, populate: true }, (windows) => {
-          const $windows = windows.map((win) => {
-            const $window = document.importNode($tmplWindow, true);
-            return $window.init(
-              win.id!,
-              currentWindow.id === win.id,
-              $tmplOpenTab,
-              win.tabs!,
-              collapseTabs,
-              lastSearchWord,
-            );
-          });
-          this.#tabsWrap.append(...$windows);
-          resolve();
-        });
+    this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
+      const $windows = initTabs.map((win) => {
+        const $window = document.importNode($tmplWindow, true);
+        return $window.init(
+          win.windowId,
+          $tmplOpenTab,
+          win.tabs!,
+          collapseTabs,
+          lastSearchWord,
+          win.windowId === currentWindowId,
+        );
       });
+      this.#tabsWrap.append(...$windows);
     });
     return this;
   }
@@ -419,11 +419,14 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
 
 export class HeaderTabs extends PaneHeader implements IPubSubElement {
   #collapsed!: boolean;
-  private $buttonCollapse = $byClass('collapse-tabs', this);
-  private $buttonPrevWin = $byClass('win-prev', this);
-  private $buttonNextWin = $byClass('win-next', this);
+  private $buttonCollapse!: HTMLElement;
+  private $buttonPrevWin!: HTMLElement;
+  private $buttonNextWin!: HTMLElement;
   override init(settings: State['settings'], collapsed: boolean) {
     super.init(settings);
+    this.$buttonCollapse = $byClass('collapse-tabs', this);
+    this.$buttonPrevWin = $byClass('win-prev', this);
+    this.$buttonNextWin = $byClass('win-next', this);
     this.#collapsed = collapsed;
     this.switchCollapseIcon(collapsed);
   }

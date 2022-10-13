@@ -6,7 +6,7 @@ import {
 } from './store';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
-  createNewTab, setAnimationClass, toggleClass, insertHTML,
+  createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass,
 } from './client';
 import {
   getHistoryById,
@@ -67,8 +67,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   #jumpDate = '';
   #rowHeight!: number;
   #store!: Store;
-  private $rows = $byClass('rows', this)!;
+  private $rows!: HTMLElement;
   init(options: Options, htmlHistory: string) {
+    this.$rows = $byClass('rows', this)!;
     insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
     this.setEvents(options);
     const rowHeight = getRowHeight();
@@ -130,6 +131,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       }
     }
     setVScroll(this, rowSetterHistory, data, this.#rowHeight);
+    if (initialize) {
+      $$byClass('init').forEach(rmClass('init'));
+    }
     if (this.#reFilter || !initialize) {
       [...this.$rows?.children || []].forEach(
         pipe(

@@ -9,6 +9,8 @@ import {
   ClientState,
   BkgMessageTypes,
   StoredElements,
+  PromiseInitTabs,
+  InitailTabs,
 } from './types';
 
 import {
@@ -21,6 +23,7 @@ import {
   curry,
   preFaviconUrl,
   extractDomain,
+  postMessage,
 } from './common';
 
 import {
@@ -36,7 +39,6 @@ import {
   $byTag,
 } from './client';
 import { initComponents } from './store';
-import { queryOptions } from './tabs';
 import { AppMain } from './app-main';
 
 type Options = State['options'];
@@ -119,6 +121,8 @@ function layoutPanes(options: Options, lastSearchWord: string) {
   }, { 'app-main': $appMain } as StoredElements);
 }
 
+const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+
 function setCloseApp() {
   chrome.windows.onFocusChanged.addListener((windowId) => {
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
@@ -128,11 +132,32 @@ function setCloseApp() {
   }, queryOptions);
 }
 
-function init({
+function getInitialTabs() {
+  const promiseCurrentWindowId = chrome.windows.getCurrent(queryOptions).then((win) => win.id!);
+  const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
+    chrome.windows.getAll({ ...queryOptions, populate: true }, (wins) => {
+      const windows = wins.map((win) => ({
+        windowId: win.id!,
+        tabs: win.tabs!,
+      }));
+      resolve(windows);
+    });
+  });
+  return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
+}
+
+function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
-}: State) {
+}, promiseInitTabs]: [State, PromiseInitTabs]) {
   const compos = layoutPanes(options, lastSearchWord);
-  const store = initComponents(compos, options, settings, htmlHistory, lastSearchWord);
+  const store = initComponents(
+    compos,
+    options,
+    settings,
+    htmlHistory,
+    lastSearchWord,
+    promiseInitTabs,
+  );
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState);
@@ -144,8 +169,17 @@ function init({
 }
 
 async function bootstrap() {
-  return new Promise<State>((resolve) => {
-    chrome.storage.local.get(resolve);
+  const promiseInitTabs = getInitialTabs();
+  return new Promise<[State, PromiseInitTabs]>((resolve) => {
+    chrome.storage.local.get((state) => {
+      if (document.readyState !== 'loading') {
+        resolve([state as State, promiseInitTabs]);
+        return;
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        resolve([state as State, promiseInitTabs]);
+      });
+    });
   });
 }
 
@@ -160,3 +194,6 @@ export const mapMessagesBtoP = {
 };
 
 setMessageListener(mapMessagesBtoP, true);
+
+// eslint-disable-next-line no-console
+postMessage({ type: 'cl-initialize', payload: '(^^♪' }).then(console.info);

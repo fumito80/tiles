@@ -579,14 +579,23 @@ export function propNe(name: string, value: any) {
   return (target: any) => target[name] !== value;
 }
 
+export function cssEscape(text: string) {
+  return encodeURIComponent(text).replace(/[()']/g, (e) => `\\${e}`);
+}
+
 export const preFaviconUrl = chrome.runtime.getURL('_favicon/?pageUrl=');
+const chromeSvg = 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48IS0tISBGb250IEF3ZXNvbWUgUHJvIDYuMi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlIChDb21tZXJjaWFsIExpY2Vuc2UpIENvcHlyaWdodCAyMDIyIEZvbnRpY29ucywgSW5jLiAtLT48cGF0aCBmaWxsPSIjNDA0NDQ3IiBkPSJNMCAyNTZDMCAyMDkuNCAxMi40NyAxNjUuNiAzNC4yNyAxMjcuMUwxNDQuMSAzMTguM0MxNjYgMzU3LjUgMjA3LjkgMzg0IDI1NiAzODRDMjcwLjMgMzg0IDI4My4xIDM4MS43IDI5Ni44IDM3Ny40TDIyMC41IDUwOS42Qzk1LjkgNDkyLjMgMCAzODUuMyAwIDI1NnpNMzY1LjEgMzIxLjZDMzc3LjQgMzAyLjQgMzg0IDI3OS4xIDM4NCAyNTZDMzg0IDIxNy44IDM2Ny4yIDE4My41IDM0MC43IDE2MEg0OTMuNEM1MDUuNCAxODkuNiA1MTIgMjIyLjEgNTEyIDI1NkM1MTIgMzk3LjQgMzk3LjQgNTExLjEgMjU2IDUxMkwzNjUuMSAzMjEuNnpNNDc3LjggMTI4SDI1NkMxOTMuMSAxMjggMTQyLjMgMTcyLjEgMTMwLjUgMjMwLjdMNTQuMTkgOTguNDdDMTAxIDM4LjUzIDE3NCAwIDI1NiAwQzM1MC44IDAgNDMzLjUgNTEuNDggNDc3LjggMTI4VjEyOHpNMTY4IDI1NkMxNjggMjA3LjQgMjA3LjQgMTY4IDI1NiAxNjhDMzA0LjYgMTY4IDM0NCAyMDcuNCAzNDQgMjU2QzM0NCAzMDQuNiAzMDQuNiAzNDQgMjU2IDM0NEMyMDcuNCAzNDQgMTY4IDMwNC42IDE2OCAyNTZ6Ii8+PC9zdmc+';
 
 export function makeStyleIcon(url?: string) {
-  return url ? `background-image: url(${preFaviconUrl}${encodeURIComponent(url)});` : '';
+  if (url === 'chrome://newtab/') {
+    return `background-image: url(data:image/svg+xml;base64,${chromeSvg}); background-size: 15px;`;
+  }
+  const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
+  return `background-image: url(${preFaviconUrl}${pageUrl});`;
 }
 
 export function setFavicon(url?: string) {
-  return ($el: HTMLElement | null) => $el?.style.setProperty('background-image', `url(${preFaviconUrl}${encodeURIComponent(url!)})`);
+  return ($el: HTMLElement) => $el.setAttribute('style', makeStyleIcon(url));
 }
 
 export function regsterChromeEvents(listener: Function) {

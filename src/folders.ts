@@ -53,9 +53,10 @@ setEvents($$byClass('folder-menu'), {
 
 export class Folders extends HTMLDivElement implements ISubscribeElement {
   #options!: Options;
-  readonly $foldersMenu = $byClass('folder-menu');
+  private $foldersMenu!: HTMLElement;
   init(options: Options) {
     this.#options = options;
+    this.$foldersMenu = $byClass('folder-menu');
   }
   setEvents(store: Store) {
     this.addEventListener('mousedown', (e) => {
