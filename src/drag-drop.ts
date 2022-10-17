@@ -51,8 +51,20 @@ function moveTab(sourceId: string, $dropTarget: HTMLElement) {
 }
 
 async function getTabInfo(preId: number | string) {
-  return new Promise<chrome.tabs.Tab>((resolve) => {
-    chrome.tabs.get(getChromeId(preId), resolve);
+  return new Promise<chrome.tabs.Tab & {
+    isCurrentWindow: boolean, incognito: boolean
+  }>((resolve) => {
+    chrome.windows.getCurrent((currentWindow) => {
+      chrome.tabs.get(getChromeId(preId), (tab) => {
+        chrome.windows.get(tab.windowId, (win) => {
+          resolve({
+            ...tab,
+            isCurrentWindow: tab.windowId === currentWindow.id,
+            incognito: win.incognito,
+          });
+        });
+      });
+    });
   });
 }
 
@@ -73,7 +85,9 @@ async function dropWithTabs(
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
     const { url } = await getBookmark(srcElementId);
-    chrome.tabs.create({ index, url, windowId }, window.close);
+    chrome.tabs.create({ index, url, windowId }, () => {
+      chrome.windows.update(windowId, { focused: true }).then(window.close);
+    });
     return;
   }
   // Merge window
@@ -122,6 +136,15 @@ async function dropWithTabs(
     }
     moveTab(srcElementId, $dropTarget);
   });
+  if (
+    sourceTab.active
+    && sourceTab.isCurrentWindow
+    && sourceTab.windowId !== windowId
+    && sourceTab.incognito === rest.incognito
+  ) {
+    chrome.windows.update(windowId, { focused: true });
+    chrome.tabs.update(sourceTab.id!, { active: true });
+  }
   $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
 

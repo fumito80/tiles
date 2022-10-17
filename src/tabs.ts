@@ -255,7 +255,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   #store!: Store;
   #lastSearchWord: string = '';
   private $tmplTab!: OpenTab;
-  private readonly $header = this.firstElementChild as WindowHeader;
+  private $header!: WindowHeader;
   init(
     windowId: number,
     tmplTab: OpenTab,
@@ -264,6 +264,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     lastSearchWord: string,
     isCurrent: boolean,
   ) {
+    this.$header = this.firstElementChild as WindowHeader;
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
     this.$tmplTab = tmplTab;
@@ -352,7 +353,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
 }
 
 export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
-  #tabsWrap = this.firstElementChild!;
+  #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
   init(
     $tmplOpenTab: OpenTab,
@@ -361,6 +362,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     lastSearchWord: string,
     promiseInitTabs: PromiseInitTabs,
   ) {
+    this.#tabsWrap = this.firstElementChild as HTMLElement;
     this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
       const $windows = initTabs.map((win) => {
         const $window = document.importNode($tmplWindow, true);
