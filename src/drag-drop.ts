@@ -27,6 +27,7 @@ import {
   setAnimationClass,
   addFolderFromTabs,
   setOpenPaths,
+  $$byClass,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -171,6 +172,9 @@ function checkDroppable(e: DragEvent) {
     return false;
   }
   const $dragSource = $byClass('drag-source')!;
+  if (dropAreaClass === 'leafs') {
+    return !hasClass($dragSource, 'marker', 'tabs-header');
+  }
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
   if ($dropTarget.id === sourceId) {
@@ -250,7 +254,10 @@ const dragAndDropEvents = {
     const destId = $dropTarget.id;
     const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
     let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
-    if (!isDroppedTab && dropAreaClass !== 'drop-folder') {
+    if (dropAreaClass === 'leafs') {
+      const parentId = $byClass('open')?.id || '1';
+      bookmarkDest = { parentId };
+    } else if (!isDroppedTab && dropAreaClass !== 'drop-folder') {
       const parentId = $dropTarget.parentElement?.id! || '1';
       const subTree = await getSubTree(parentId);
       const findIndex = subTree.children?.findIndex(propEq('id', $dropTarget.id));
@@ -275,9 +282,12 @@ const dragAndDropEvents = {
       addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId, destId, position);
       return;
     }
-    await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
     const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
-    const [$destLeafs, $destFolders] = $$(cssid(destId));
+    const [$destLeafs, $destFolders] = dropAreaClass === 'leafs' ? $$byClass('open') : $$(cssid(destId));
+    if (!$destLeafs) {
+      return;
+    }
+    await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
     const isRootTo = $destLeafs.parentElement?.id === '1' && dropAreaClass !== 'drop-folder';
     const isRootFrom = $sourceLeafs.parentElement?.id === '1';
     const isLeafFrom = hasClass($sourceLeafs, 'leaf');

@@ -14,10 +14,10 @@ export function makeLeaf(
 ) {
   const style = makeStyleIcon(url);
   return `
-    <div is="bm-leaf" class="leaf${isSearching ? ' search-path' : ''}" id="${id}" draggable="true" style="${style}">
+    <bm-leaf class="leaf${isSearching ? ' search-path' : ''}" id="${id}" draggable="true" style="${style}">
       <div class="anchor" title="${htmlEscape(title)}">${htmlEscape(title)}</div><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
-    </div>
+    </bm-leaf>
   `;
 }
 

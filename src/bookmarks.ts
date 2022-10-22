@@ -84,7 +84,7 @@ export class HeaderLeafs extends PaneHeader {
   }
 }
 
-export class Leaf extends HTMLDivElement {
+export class Leaf extends HTMLElement {
   updateTitle(title: string) {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
     $anchor.setAttribute('title', title);
@@ -109,8 +109,8 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   setEvents([$leafMenu], {
     async click(e) {
       const $leaf = (e.target as HTMLElement)
-        .parentElement!.previousElementSibling!.parentElement! as Leaf;
-      const $anchor = $leaf!.firstElementChild as HTMLAnchorElement;
+        ?.parentElement?.previousElementSibling?.parentElement as Leaf;
+      const $anchor = $leaf?.firstElementChild as HTMLAnchorElement;
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
           findInTabsBookmark(options, $anchor);

@@ -1,4 +1,4 @@
-import './css/settings.scss';
+import './view/settings.scss';
 import * as bootstrap from 'bootstrap';
 import { State, ColorPalette } from './types';
 import './settings-layout';

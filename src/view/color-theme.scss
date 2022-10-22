@@ -148,6 +148,26 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     }
   }
 
+  &.drag-start-leaf .leafs.drag-enter .leaf {
+    >.drop-bottom {
+      border-bottom-color: lightgray;
+
+      &::before {
+        border-color: lightgray !important;
+      }
+
+      &::after {
+        border-left-color: lightgray !important;
+      }
+    }
+  }
+
+  .leafs.drag-enter {
+    &:not(:has(.folder.open > .leaf))::after {
+      background-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+
   open-window window-header {
 
     button>i {
@@ -244,7 +264,7 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
           color: $font-color;
 
           &::before {
-            color: $light-folder-color  !important;
+            color: $light-folder-color !important;
           }
         }
       }

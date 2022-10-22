@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'glyphs';
-  src: url('./glyphs.woff') format('woff');
+  src: url('./glyphs.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -25,114 +25,151 @@ i {
 .icon-history:before {
   content: "\e90d";
 }
+
 .icon-tabs:before {
   content: "\e90c";
 }
+
 .icon-url:before {
   content: "\e909";
 }
+
 .icon-calendar-plus-solid:before {
   content: "\e907";
 }
+
 .icon-calendar-minus-solid:before {
   content: "\e908";
 }
+
 .icon-check-solid:before {
   content: "\e906";
 }
+
 .icon-x:before {
   content: "\e901";
 }
+
 .icon-bookmarks:before {
   content: "\e905";
 }
+
 .icon-cloud-arrow-up:before {
   content: "\e902";
 }
+
 .icon-cloud-arrow-down:before {
   content: "\e904";
 }
+
 .icon-tab:before {
   content: "\e903";
 }
+
 .icon-fa-search:before {
   content: "\e90e";
 }
+
 .icon-fa-star:before {
   content: "\f005";
 }
+
 .icon-fa-star-o:before {
   content: "\f006";
 }
+
 .icon-fa-cog:before {
   content: "\f013";
 }
+
 .icon-fa-edit:before {
   content: "\f044";
 }
+
 .icon-uniF07B:before {
   content: "\f07b";
 }
+
 .icon-uniF07C:before {
   content: "\f07c";
 }
+
 .icon-fa-sign-in-alt:before {
   content: "\f090";
 }
+
 .icon-fa-link:before {
   content: "\f0c1";
 }
+
 .icon-fa-angle-right:before {
   content: "\f105";
 }
+
 .icon-fa-folder-plus:before {
   content: "\f114";
 }
+
 .icon-fa-ellipsis-v:before {
   content: "\f142";
 }
+
 .icon-fa-trash-alt:before {
   content: "\f1f8";
 }
+
 .icon-fa-window-restore:before {
   content: "\f2d2";
 }
+
 .icon-folder::before {
   content: "\e90a";
 }
+
 .icon-square-up::before {
   content: "\e910";
 }
+
 .icon-square-down::before {
   content: "\e912";
 }
+
 .icon-fa-window::before {
   content: "\e90f";
 }
+
 .icon-collapse-tabs::before {
   content: "\e911";
 }
+
 .icon-expand-tabs::before {
   content: "\e916";
 }
+
 .icon-list::before {
   content: "\e903";
 }
+
 .icon-grid::before {
   content: "\e913";
 }
+
 .icon-tab-plus::before {
   content: "\e919";
 }
+
 .icon-close::before {
   content: "\e915";
 }
+
 .icon-closes::before {
   content: "\e917";
 }
+
 .icon-incognito::before {
   content: '\e90a';
 }
+
 .icon-tab-find::before {
   content: '\e918';
 }

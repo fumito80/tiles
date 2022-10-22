@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import './css/popup.scss';
+import './view/popup.scss';
 
 import {
   HtmlBookmarks,
@@ -42,6 +42,10 @@ import { initComponents } from './store';
 import { AppMain } from './app-main';
 
 type Options = State['options'];
+
+const params = new URLSearchParams(document.location.search);
+const sheet = document.head.appendChild(document.createElement('style'));
+sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
   pipe(

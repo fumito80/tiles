@@ -441,6 +441,7 @@ window-header,
 // Leafs pane
 
 .leafs {
+  position: relative;
   overflow-y: auto;
   border-radius: $pane-radius;
   transition: var(--xen-mode-transition);
@@ -793,7 +794,7 @@ app-main::-webkit-scrollbar {
     >.drop-top,
     >.drop-bottom {
       position: absolute;
-      width: calc(100% - 5px);
+      width: calc(100% - 1px);
       left: 1px;
     }
 
@@ -825,6 +826,38 @@ app-main::-webkit-scrollbar {
     >.drop-bottom.drag-enter::after {
       top: calc(50% - 4px);
       left: -1px;
+    }
+  }
+
+  .leafs.drag-enter {
+    &:not(:has(.folder.open > .leaf))::after {
+      background-color: rgba(0, 0, 0, 0.2);
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+    }
+
+    .folder.open>.leaf:not(.search-path):last-of-type>.drop-bottom {
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        border-top: 2px solid $common-marker;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        width: 10px;
+        border-left: 7px solid $common-marker;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        top: calc(50% - 4px);
+        left: -1px;
+      }
     }
   }
 }
@@ -884,7 +917,7 @@ app-main::-webkit-scrollbar {
           background-color: transparent;
 
           &::before {
-            color: $dark-folder-color  !important;
+            color: $dark-folder-color !important;
           }
         }
       }

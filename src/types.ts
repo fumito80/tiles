@@ -144,6 +144,7 @@ export const dropAreaClasses = [
   'drop-top',
   'drop-bottom',
   'drop-folder',
+  'leafs',
 ] as const;
 
 export type DropClasses = typeof dropAreaClasses[number];
@@ -179,6 +180,7 @@ export const positions: { [key: string]: InsertPosition } = {
   'drop-top': 'beforebegin',
   'drop-bottom': 'afterend',
   'drop-folder': 'beforeend',
+  leafs: 'beforeend',
 };
 
 export type Model = { [key: string]: any };
