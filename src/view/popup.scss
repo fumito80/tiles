@@ -109,7 +109,7 @@ app-main {
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
-  transition: var(--xen-mode-transition);
+  // animation: fade-in 0.15s ease-in-out;
 
   .leaf,
   .marker,
