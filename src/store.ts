@@ -143,8 +143,9 @@ export function initComponents(
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
-  lastSearchWord: string,
   promiseInitTabs: PromiseInitTabs,
+  lastSearchWord: string,
+  isSearching: boolean,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -165,7 +166,7 @@ export function initComponents(
     $tmplOpenTab,
     $tmplWindow,
     options.collapseTabs,
-    lastSearchWord,
+    isSearching,
     promiseInitTabs,
   );
   $leafs.init(options);
@@ -173,7 +174,7 @@ export function initComponents(
   $headerLeafs.init(settings);
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);
-  $history.init(options, htmlHistory);
+  $history.init(options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   // Register actions
   const actions = {

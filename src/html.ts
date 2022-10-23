@@ -44,13 +44,10 @@ export function makeHistory({
   const dt = `\n${(new Date(lastVisitTime!)).toLocaleString()}`;
   const style = makeStyleIcon(url);
   const text = title || url;
-  if (!text) {
-    return '';
-  }
   const tooltip = htmlEscape(`${title}${dt}`);
   return `
     <div class="history" draggable="true" id="hst-${id}" title="${tooltip}" style="${style}">
-      <div>${htmlEscape(text)}</div><i class="icon-x"></i>
+      <div>${htmlEscape(text!)}</div><i class="icon-x"></i>
     </div>
   `;
 }

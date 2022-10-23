@@ -109,7 +109,6 @@ app-main {
   grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
   grid-template-rows: min-content minmax(0, 100%);
   height: 100%;
-  // animation: fade-in 0.15s ease-in-out;
 
   .leaf,
   .marker,
@@ -527,6 +526,7 @@ app-main:not(.searching) .leafs {
   padding-top: 2px;
   overflow-y: auto;
   overflow-x: hidden;
+  animation: fade-in 0.15s ease-in-out;
 
   .leaf-menu-button:focus+.leaf-menu {
     display: block;

@@ -21,6 +21,7 @@ open-tab {
     padding: 1px;
     padding-bottom: 2px;
     transition: border 0.1s;
+    animation: fade-in 0.15s ease-in-out;
 
     &:last-child {
       margin-bottom: 0;

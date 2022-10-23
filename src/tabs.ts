@@ -140,10 +140,10 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
   #tabId!: number;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
-  init(tab: chrome.tabs.Tab, lastSearchWord: string) {
+  init(tab: chrome.tabs.Tab, isSearching: boolean) {
     this.$main = $byTag('app-main');
     this.$tooltip = $byClass('tooltip', this);
-    this.classList.toggle('unmatch', lastSearchWord.length > 1);
+    this.classList.toggle('unmatch', isSearching);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
     this.setCurrentTab(tab);
@@ -253,7 +253,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
   #store!: Store;
-  #lastSearchWord: string = '';
+  #isSearching = false;
   private $tmplTab!: OpenTab;
   private $header!: WindowHeader;
   init(
@@ -261,14 +261,14 @@ export class Window extends HTMLElement implements ISubscribeElement {
     tmplTab: OpenTab,
     [firstTab, ...rest]: chrome.tabs.Tab[],
     collapseTabs: boolean,
-    lastSearchWord: string,
+    isSearching: boolean,
     isCurrent: boolean,
   ) {
     this.$header = this.firstElementChild as WindowHeader;
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
     this.$tmplTab = tmplTab;
-    this.#lastSearchWord = lastSearchWord;
+    this.#isSearching = isSearching;
     this.id = `win-${windowId}`;
     this.classList.toggle('current-window', isCurrent);
     this.$header.init(windowId, firstTab);
@@ -290,7 +290,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   addTab(tab: chrome.tabs.Tab) {
     const $openTab = document.importNode(this.$tmplTab!, true);
-    return $openTab.init(tab, this.#lastSearchWord);
+    return $openTab.init(tab, this.#isSearching);
   }
   addTabs(tabs: chrome.tabs.Tab[]) {
     const $tabs = tabs.map((tab) => this.addTab(tab));
@@ -359,7 +359,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
     collapseTabs: boolean,
-    lastSearchWord: string,
+    isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
   ) {
     this.#tabsWrap = this.firstElementChild as HTMLElement;
@@ -371,7 +371,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
           $tmplOpenTab,
           win.tabs!,
           collapseTabs,
-          lastSearchWord,
+          isSearching,
           win.windowId === currentWindowId,
         );
       });

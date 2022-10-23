@@ -84,14 +84,18 @@ function setBookmarks(html: HtmlBookmarks) {
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
-function setBookmarksState(clState: ClientState) {
+function setBookmarksState(clState: ClientState, isSearching: boolean) {
   clState.paths?.map((id) => $(`.folders ${cssid(id)}`)).forEach(addClass('path'));
   if (clState.open) {
-    $$(cssid(clState.open))?.forEach(addClass('open'));
+    if (isSearching) {
+      $(`.folders ${cssid(clState.open)}`)?.classList.add('open');
+    } else {
+      $$(cssid(clState.open)).forEach(addClass('open'));
+    }
   }
 }
 
-function layoutPanes(options: Options, lastSearchWord: string) {
+function layoutPanes(options: Options, isSearching: boolean) {
   const $appMain = $byTag('app-main') as AppMain;
   const panes = options.panes.reduce<string[]>(
     (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
@@ -115,7 +119,7 @@ function layoutPanes(options: Options, lastSearchWord: string) {
     const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
-  $appMain.init(options, lastSearchWord);
+  $appMain.init(options, isSearching);
   return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane.getAttribute('is');
     if (!name) {
@@ -153,18 +157,20 @@ function getInitialTabs() {
 function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
-  const compos = layoutPanes(options, lastSearchWord);
+  const isSearching = lastSearchWord.length > 1;
+  const compos = layoutPanes(options, isSearching);
   const store = initComponents(
     compos,
     options,
     settings,
     htmlHistory,
-    lastSearchWord,
     promiseInitTabs,
+    lastSearchWord,
+    isSearching,
   );
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
-  setBookmarksState(clientState);
+  setBookmarksState(clientState, isSearching);
   toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setExternalUrl(options);
@@ -189,7 +195,7 @@ async function bootstrap() {
 
 const promiseStore = bootstrap().then(init);
 
-function resetHistory() {
+async function resetHistory() {
   return promiseStore.then((store) => store.dispatch('resetHistory', {}, true));
 }
 

@@ -4,6 +4,7 @@
   position: relative;
   border-radius: $pane-radius;
   transition: var(--xen-mode-transition);
+  animation: fade-in 0.15s ease-in-out;
 
   .rows {
     display: grid;
