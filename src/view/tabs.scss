@@ -76,10 +76,6 @@ open-tab {
   button {
     display: flex;
     margin-top: 1px;
-
-    >i {
-      cursor: default;
-    }
   }
 
   .win-prev,
@@ -233,6 +229,7 @@ window-header {
     padding: 3px 2px;
     border-radius: 5px;
     display: none;
+
     &.show {
       display: block;
     }
@@ -394,6 +391,10 @@ app-main {
       width: 1000px;
     }
   }
+
+  .new-window-plus>i {
+    pointer-events: none;
+  }
 }
 
 .draggable-clone window-header {
@@ -463,5 +464,21 @@ app-main:not(.searching) .tabs-collapsed {
 
   .tab-wrap[data-file]::before {
     margin-left: 4px;
+  }
+}
+
+.new-window {
+  margin-left: auto;
+  margin-right: 10px;
+  width: fit-content;
+
+  .new-window-plus {
+    margin-top: 5px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
   }
 }

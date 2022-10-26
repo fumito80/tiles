@@ -362,6 +362,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
   ) {
+    this.setEvent();
     this.#tabsWrap = this.firstElementChild as HTMLElement;
     this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
       const $windows = initTabs.map((win) => {
@@ -378,6 +379,11 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       this.#tabsWrap.append(...$windows);
     });
     return this;
+  }
+  setEvent() {
+    $byClass('new-window-plus', this).addEventListener('click', () => {
+      chrome.windows.create();
+    });
   }
   getWindows() {
     return [...this.#tabsWrap.children] as Window[];
