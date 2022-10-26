@@ -200,7 +200,8 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
   }
 
   .title::before,
-  .form-query .submit>i {
+  .form-query .submit>i,
+  .tabs .new-window-plus>i {
     color: $dark-icon-color;
   }
 
@@ -230,7 +231,8 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
   }
 
   .form-query,
-  .pane-header {
+  .pane-header,
+  .new-window {
     button:active::after {
       background-color: $dark-icon-color;
     }
@@ -252,6 +254,10 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
 
   &.drag-start-leaf,
   &.drag-start-folder {
+    .new-window-plus.drag-enter {
+      background-color: $drop-folder-bgcolor;
+    }
+
     .folders .marker>.drop-folder {
       position: absolute;
       z-index: 1;

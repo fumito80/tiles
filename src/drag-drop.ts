@@ -25,7 +25,7 @@ import {
   getBookmark,
   setHasChildren,
   setAnimationClass,
-  addFolderFromTabs,
+  addFromTabs,
   setOpenPaths,
   $$byClass,
 } from './client';
@@ -76,6 +76,11 @@ async function dropWithTabs(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
+  if (dropAreaClass === 'new-window-plus') {
+    const { id: tabId } = await getTabInfo(srcElementId);
+    chrome.windows.create({ tabId });
+    return;
+  }
   if (!hasClass($dropTarget, 'tab-wrap')) {
     const { url, title } = await getTabInfo(srcElementId);
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
@@ -156,6 +161,10 @@ async function dropFromHistory(
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
   const { url, title } = await getHistoryById(sourceId);
+  if (dropAreaClass === 'new-window-plus') {
+    chrome.windows.create({ url });
+    return;
+  }
   if (!hasClass($dropTarget, 'tab-wrap')) {
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
@@ -163,6 +172,18 @@ async function dropFromHistory(
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   chrome.tabs.create({ index, url, windowId }, window.close);
+}
+
+function dropBmInNewWindow(sourceId: string, sourceClass: Extract<typeof sourceClasses[number], 'leaf' | 'marker'>) {
+  if (sourceClass === 'leaf') {
+    getBookmark(sourceId).then(({ url }) => chrome.windows.create({ url }));
+    return;
+  }
+  chrome.bookmarks.getChildren(sourceId, ([bm, ...rest]) => {
+    chrome.windows.create({ url: bm.url }, (win) => {
+      rest.forEach(({ url }) => chrome.tabs.create({ url, windowId: win!.id! }));
+    });
+  });
 }
 
 function checkDroppable(e: DragEvent) {
@@ -177,7 +198,7 @@ function checkDroppable(e: DragEvent) {
   }
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
-  if ($dropTarget.id === sourceId) {
+  if ($dropTarget?.id === sourceId) {
     return false;
   }
   if (dropAreaClass === 'drop-bottom' && $dropTarget.nextElementSibling?.id === sourceId) {
@@ -279,7 +300,11 @@ const dragAndDropEvents = {
     }
     const position = positions[dropAreaClass];
     if (sourceClass === 'window') {
-      addFolderFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId, destId, position);
+      addFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId, destId, position, dropAreaClass === 'new-window-plus');
+      return;
+    }
+    if (dropAreaClass === 'new-window-plus') {
+      dropBmInNewWindow(sourceId, sourceClass);
       return;
     }
     const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));

@@ -688,16 +688,24 @@ export async function addFolder(
   });
 }
 
-export async function addFolderFromTabs(
+export async function addFromTabs(
   parentFolderId: string,
   index: number,
   elementId: string,
   destId: string,
   position: InsertPosition,
+  isNewWindow = false,
 ) {
   const windowId = getChromeId(elementId);
   chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
     if (!tabs) {
+      return;
+    }
+    if (isNewWindow) {
+      const [firstTab, ...rest] = tabs;
+      chrome.windows.create({ tabId: firstTab.id }, (win) => {
+        chrome.tabs.move(rest.map((tab) => tab.id!), { windowId: win!.id, index: 1 });
+      });
       return;
     }
     const parentId = await addFolder(parentFolderId, tabs[0].title, index, destId, position);
