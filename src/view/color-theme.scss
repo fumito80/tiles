@@ -137,7 +137,7 @@ app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap:h
 
   &.drag-start .leaf,
   &.drag-start .marker,
-  &.drag-start .tab-wrap,
+  &.drag-start window-header:not(.drag-source)~.tab-wrap,
   &.drag-start .folders>.folder>.marker {
 
     >.drop-top.drag-enter::after,

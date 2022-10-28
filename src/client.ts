@@ -688,15 +688,18 @@ export async function addFolder(
   });
 }
 
+export const panes = ['folders', 'leafs', 'tabs'] as const;
+
 export async function addFromTabs(
-  parentFolderId: string,
+  parentId: string,
   index: number,
-  elementId: string,
+  sourceId: string,
   destId: string,
   position: InsertPosition,
+  dropPane?: typeof panes[number],
   isNewWindow = false,
 ) {
-  const windowId = getChromeId(elementId);
+  const windowId = getChromeId(sourceId);
   chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
     if (!tabs) {
       return;
@@ -708,8 +711,15 @@ export async function addFromTabs(
       });
       return;
     }
-    const parentId = await addFolder(parentFolderId, tabs[0].title, index, destId, position);
-    if (!parentId) {
+    if (dropPane === 'leafs') {
+      const sourceList = index == null ? tabs : tabs.reverse();
+      sourceList.forEach(({ title, url }) => addBookmark(parentId, {
+        title, url, index, parentId,
+      }, true));
+      return;
+    }
+    const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
+    if (!parentFolderId) {
       return;
     }
     tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }, true));

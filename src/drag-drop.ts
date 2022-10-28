@@ -28,6 +28,7 @@ import {
   addFromTabs,
   setOpenPaths,
   $$byClass,
+  panes,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -114,7 +115,7 @@ async function dropWithTabs(
     chrome.windows.create({ tabId });
     return;
   }
-  if (!hasClass($dropTarget, 'tab-wrap')) {
+  if ($dropTarget.closest('.folders')) {
     const { url, title } = await getTabInfo(srcElementId);
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
@@ -131,22 +132,24 @@ async function dropWithTabs(
   }
   // Merge window
   if (sourceClass === 'window') {
-    const sourceWindowId = getChromeId(srcElementId);
-    chrome.windows.get(sourceWindowId, { populate: true }, ({ tabs }) => {
-      if (!tabs) {
-        return;
-      }
-      const tabIds = tabs.map((tab) => tab.id!);
-      chrome.tabs.move(tabIds, { windowId, index }, () => {
-        if (chrome.runtime.lastError) {
-          // eslint-disable-next-line no-alert
-          alert(chrome.runtime.lastError.message);
+    if ($dropTarget.closest('.tabs')) {
+      const sourceWindowId = getChromeId(srcElementId);
+      chrome.windows.get(sourceWindowId, { populate: true }, ({ tabs }) => {
+        if (!tabs) {
           return;
         }
-        ($dropTarget.parentElement as Window).reloadTabs();
-        $byId(srcElementId).remove();
+        const tabIds = tabs.map((tab) => tab.id!);
+        chrome.tabs.move(tabIds, { windowId, index }, () => {
+          if (chrome.runtime.lastError) {
+            // eslint-disable-next-line no-alert
+            alert(chrome.runtime.lastError.message);
+            return;
+          }
+          ($dropTarget.parentElement as Window).reloadTabs();
+          $byId(srcElementId).remove();
+        });
       });
-    });
+    }
     return;
   }
   // Move folder to tab
@@ -214,30 +217,14 @@ function dropBmInNewWindow(sourceId: string, sourceClass: Extract<typeof sourceC
 }
 
 function checkDroppable(e: DragEvent) {
-  const $target = e.target as HTMLElement;
-  const dropAreaClass = whichClass(dropAreaClasses, $target);
+  const $dropArea = e.target as HTMLElement;
+  const dropAreaClass = whichClass(dropAreaClasses, $dropArea);
   if (dropAreaClass == null) {
     return false;
   }
-  const $dragSource = $byClass('drag-source')!;
-  const isFolderLike = hasClass($dragSource, 'marker', 'tabs-header');
-  if (dropAreaClass === 'leafs') {
-    if ($dragSource.closest('.leafs') && $(`.leafs ${cssid($dragSource.id)}:last-of-type`)) {
-      return false;
-    }
-    return !isFolderLike;
-  }
-  if (isFolderLike) {
-    if ($target.closest('.leafs')) {
-      return false;
-    }
-  } else if (['drop-bottom', 'drop-top'].includes(dropAreaClass)) {
-    if ($target.closest('.folders') && hasClass($target.parentElement?.parentElement?.parentElement || null, 'folder')) {
-      return false;
-    }
-  }
+  const $dragSource = $byClass('drag-source');
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
-  const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
+  const $dropTarget = $dropArea.closest('.leaf, .folder, .tab-wrap')!;
   if ($dropTarget?.id === sourceId) {
     return false;
   }
@@ -245,6 +232,23 @@ function checkDroppable(e: DragEvent) {
     return false;
   }
   if (dropAreaClass === 'drop-top' && $dropTarget.previousElementSibling?.id === sourceId) {
+    return false;
+  }
+  const dragSource = whichClass(sourceClasses, $dragSource);
+  const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
+  if (dragSource === 'marker' && dropPane === 'leafs') {
+    return false;
+  }
+  const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);
+  if (dropAreaClass === 'leafs') {
+    return !(dragPanes === 'leafs' && $(`.leafs ${cssid($dragSource.id)}:last-of-type`));
+  }
+  if (
+    dropPane === 'folders'
+    && ['leaf', 'tab-wrap', 'history'].includes(dragSource!)
+    && ['drop-bottom', 'drop-top'].includes(dropAreaClass)
+    && hasClass($dropArea.parentElement?.parentElement?.parentElement || null, 'folder')
+  ) {
     return false;
   }
   return true;
@@ -340,7 +344,16 @@ const dragAndDropEvents = {
     }
     const position = positions[dropAreaClass];
     if (sourceClass === 'window') {
-      addFromTabs(bookmarkDest.parentId!, bookmarkDest.index!, sourceId, destId, position, dropAreaClass === 'new-window-plus');
+      const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
+      addFromTabs(
+        bookmarkDest.parentId!,
+        bookmarkDest.index!,
+        sourceId,
+        destId,
+        position,
+        dropPane,
+        dropAreaClass === 'new-window-plus',
+      );
       return;
     }
     if (dropAreaClass === 'new-window-plus') {
