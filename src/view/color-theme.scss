@@ -36,12 +36,12 @@ app-main.searching .form-query {
 
 .leaf:hover,
 .folders .marker:not(.hilite):hover::before,
-app-main:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
-.searching:not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>open-window>.tab-wrap:hover,
+app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+.searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap:hover,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
-app-main:not(.drag-start-leaf):not(.drag-start-folder) .window.tabs-collapsed:hover window-header,
+app-main:not(.drag-start) .window.tabs-collapsed:hover window-header,
 window-header:hover,
 .tooltip,
 .draggable-clone,
@@ -58,7 +58,7 @@ window-header:hover,
   color: var(--item-hover-bg);
 }
 
-app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
+app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
   border-color: var(--item-hover-bg);
 }
 
@@ -95,9 +95,9 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     background-color: $dark-shade-bg-color;
   }
 
-  &.drag-start-leaf,
-  &.drag-start-folder .folders,
-  &.drag-start-folder .tabs {
+  &.drag-start,
+  &.drag-start .folders,
+  &.drag-start .tabs {
 
     .leaf:not(.search-path),
     .tab-wrap:not(.match):not(.unmatch) {
@@ -117,8 +117,8 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     }
   }
 
-  &.drag-start-leaf .folders>.folder>.marker,
-  &.drag-start-folder .marker {
+  &.drag-start .folders>.folder>.marker,
+  &.drag-start .marker {
 
     >.drop-top {
 
@@ -135,12 +135,10 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     }
   }
 
-  &.drag-start-leaf .leaf,
-  &.drag-start-leaf .tab-wrap,
-  &.drag-start-leaf .folders>.folder>.marker,
-  &.drag-start-folder .leaf,
-  &.drag-start-folder .marker,
-  &.drag-start-folder .tab-wrap {
+  &.drag-start .leaf,
+  &.drag-start .marker,
+  &.drag-start .tab-wrap,
+  &.drag-start .folders>.folder>.marker {
 
     >.drop-top.drag-enter::after,
     >.drop-bottom.drag-enter::after {
@@ -148,7 +146,7 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     }
   }
 
-  &.drag-start-leaf .leafs.drag-enter .leaf {
+  &.drag-start .leafs.drag-enter .leaf {
     >.drop-bottom {
       border-bottom-color: lightgray;
 
@@ -252,10 +250,13 @@ app-main:not(.searching):not(.drag-start-leaf):not(.drag-start-folder) .tabs-wra
     animation-duration: 1.0s !important;
   }
 
-  &.drag-start-leaf,
-  &.drag-start-folder {
-    .new-window-plus.drag-enter {
-      background-color: $drop-folder-bgcolor;
+  &.drag-start {
+    .new-window-plus {
+      background-color: rgba(255, 255, 255, 0.3);
+
+      &.drag-enter {
+        background-color: $drop-folder-bgcolor;
+      }
     }
 
     .folders .marker>.drop-folder {
