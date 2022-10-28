@@ -8,8 +8,8 @@ import {
   propEq,
   getHistoryById,
   decode,
-  when,
   getChromeId,
+  when,
 } from './common';
 import {
   $, $$,
@@ -57,7 +57,7 @@ async function getTabInfo(preId: number | string) {
   }>((resolve) => {
     chrome.windows.getCurrent((currentWindow) => {
       chrome.tabs.get(getChromeId(preId), (tab) => {
-        chrome.windows.get(tab.windowId, (win) => {
+        chrome.windows.get(tab.windowId, { populate: true }, (win) => {
           resolve({
             ...tab,
             isCurrentWindow: tab.windowId === currentWindow.id,
@@ -67,6 +67,39 @@ async function getTabInfo(preId: number | string) {
       });
     });
   });
+}
+
+async function getBookmarks(parentId: string, nodes: chrome.bookmarks.BookmarkTreeNode[]) {
+  return new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+    chrome.bookmarks.getChildren(parentId, (btn) => {
+      const children = btn.flatMap((bm) => {
+        if (bm.url) {
+          return bm;
+        }
+        return getBookmarks(bm.id, []);
+      });
+      Promise.all(children).then((treeNodes) => resolve([...nodes, ...treeNodes.flat()]));
+    });
+  });
+}
+
+function createTabs(windowId: number, nodes: chrome.bookmarks.BookmarkTreeNode[], startIndex = 0) {
+  nodes.forEach(async (next, i) => {
+    await chrome.tabs.create({ url: next.url, windowId, index: i + startIndex });
+  });
+}
+
+async function createTabsFromFolder(parentId: string, windowId?: number) {
+  const [bm, ...rest] = await getBookmarks(parentId, []);
+  if (windowId == null) {
+    chrome.windows.create({ url: bm.url }, (win) => createTabs(win!.id!, rest, 1));
+    return;
+  }
+  chrome.windows.get(
+    windowId,
+    { populate: true },
+    (win) => createTabs(windowId, [bm, ...rest], win.tabs?.length!),
+  );
 }
 
 async function dropWithTabs(
@@ -118,9 +151,7 @@ async function dropWithTabs(
   }
   // Move folder to tab
   if (sourceClass === 'marker') {
-    chrome.bookmarks.getChildren(srcElementId, (bms) => {
-      bms.forEach(({ url }, i) => chrome.tabs.create({ url, index: index + i, windowId }));
-    });
+    createTabsFromFolder(srcElementId, windowId);
     return;
   }
   // Move tab
@@ -179,11 +210,7 @@ function dropBmInNewWindow(sourceId: string, sourceClass: Extract<typeof sourceC
     getBookmark(sourceId).then(({ url }) => chrome.windows.create({ url }));
     return;
   }
-  chrome.bookmarks.getChildren(sourceId, ([bm, ...rest]) => {
-    chrome.windows.create({ url: bm.url }, (win) => {
-      rest.forEach(({ url }) => chrome.tabs.create({ url, windowId: win!.id! }));
-    });
-  });
+  createTabsFromFolder(sourceId);
 }
 
 function checkDroppable(e: DragEvent) {
@@ -193,8 +220,21 @@ function checkDroppable(e: DragEvent) {
     return false;
   }
   const $dragSource = $byClass('drag-source')!;
+  const isFolderLike = hasClass($dragSource, 'marker', 'tabs-header');
   if (dropAreaClass === 'leafs') {
-    return !hasClass($dragSource, 'marker', 'tabs-header');
+    if ($dragSource.closest('.leafs') && $(`.leafs ${cssid($dragSource.id)}:last-of-type`)) {
+      return false;
+    }
+    return !isFolderLike;
+  }
+  if (isFolderLike) {
+    if ($target.closest('.leafs')) {
+      return false;
+    }
+  } else if (['drop-bottom', 'drop-top'].includes(dropAreaClass)) {
+    if ($target.closest('.folders') && hasClass($target.parentElement?.parentElement?.parentElement || null, 'folder')) {
+      return false;
+    }
   }
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $target.closest('.leaf, .folder, .tab-wrap')!;
@@ -217,13 +257,13 @@ const dragAndDropEvents = {
     if (!className) {
       return;
     }
-    const [targetClass, $dragTarget, id] = when(className === 'marker')
-      .then(['drag-start-folder', $target, $target.parentElement!.id] as const)
-      .when(className === 'window').then(['drag-start-folder', $target.firstElementChild!, $target.id] as const)
-      .else(['drag-start-leaf', $target, $target.id] as const);
+    const [$dragTarget, id] = when(className === 'marker')
+      .then([$target, $target.parentElement!.id] as const)
+      .when(className === 'window').then([$target.firstElementChild!, $target.id] as const)
+      .else([$target, $target.id] as const);
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
-      const $zoomPane = $target.closest('.histories, .tabs') as HTMLElement;
+      const $zoomPane = $dragTarget.closest('.histories, .tabs') as HTMLElement;
       zoomOut($zoomPane, { $main })();
     } else {
       clearTimeoutZoom();
@@ -232,7 +272,7 @@ const dragAndDropEvents = {
       rmClass('hilite'),
       addClass('drag-source'),
     )($dragTarget);
-    const $menu = $('[role="menu"]', $target);
+    const $menu = $('[role="menu"]', $dragTarget);
     if ($menu) {
       document.body.append($menu);
     }
@@ -241,7 +281,7 @@ const dragAndDropEvents = {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    setTimeout(() => addClass(targetClass)($main), 0);
+    setTimeout(() => addClass('drag-start')($main), 0);
   },
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -256,7 +296,7 @@ const dragAndDropEvents = {
   },
   dragend(e: DragEvent) {
     rmClass('drag-source')($byClass('drag-source'));
-    rmClass('drag-start-leaf', 'drag-start-folder')($byTag('app-main'));
+    rmClass('drag-start')($byTag('app-main'));
     setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));

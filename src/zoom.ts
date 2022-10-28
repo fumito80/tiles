@@ -145,7 +145,7 @@ async function enterZoom(
   }
   addStyle('left', `calc(${zoomRatio * 100}% + ${shiftSafetyZone}px)`)($safetyZoneRight);
   async function mouseenter(ev: MouseEvent) {
-    if (hasClass($main, 'drag-start-leaf')) {
+    if (hasClass($main, 'drag-start')) {
       return;
     }
     clearTimeoutZoom();
@@ -173,7 +173,7 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
       return;
     }
     clearTimeoutZoom();
-    const isBreak = hasClass($main, 'zoom-pane', 'drag-start-leaf', 'drag-start-folder');
+    const isBreak = hasClass($main, 'zoom-pane', 'drag-start');
     if (isBreak) {
       return;
     }
