@@ -700,15 +700,17 @@ export async function addFromTabs(
   isNewWindow = false,
 ) {
   const windowId = getChromeId(sourceId);
-  chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
+  chrome.windows.get(windowId, { populate: true }, async ({ tabs, incognito }) => {
     if (!tabs) {
       return;
     }
     if (isNewWindow) {
-      const [firstTab, ...rest] = tabs;
-      chrome.windows.create({ tabId: firstTab.id }, (win) => {
-        chrome.tabs.move(rest.map((tab) => tab.id!), { windowId: win!.id, index: 1 });
-      });
+      const activeTab = tabs.find((tab) => tab.active)!;
+      const rest = tabs.filter((tab) => tab.id !== activeTab.id);
+      chrome.windows.create({ tabId: activeTab.id, incognito })
+        .then((win) => rest.forEach(async (tab) => {
+          await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+        }));
       return;
     }
     if (dropPane === 'leafs') {

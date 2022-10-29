@@ -110,12 +110,14 @@ async function dropWithTabs(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
+  // Tab to new window
   if (dropAreaClass === 'new-window-plus') {
-    const { id: tabId } = await getTabInfo(srcElementId);
-    chrome.windows.create({ tabId });
+    const { id: tabId, incognito } = await getTabInfo(srcElementId);
+    chrome.windows.create({ tabId, incognito });
     return;
   }
-  if ($dropTarget.closest('.folders')) {
+  // Tab to bookmark
+  if (!hasClass($dropTarget, 'tab-wrap')) {
     const { url, title } = await getTabInfo(srcElementId);
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
