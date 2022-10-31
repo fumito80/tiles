@@ -47,6 +47,9 @@ export function setEvents<T extends HTMLElement>(
   const itrEventListeners = Object.entries(eventListeners) as
     EventListeners<keyof typeof eventListeners, T>[];
   itrEventListeners.forEach(([eventType, listener]) => {
+    if (!listener) {
+      return;
+    }
     htmlElements.forEach((htmlElement) => {
       htmlElement.addEventListener(eventType, listener, options);
     });

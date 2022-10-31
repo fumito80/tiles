@@ -386,7 +386,6 @@ window-header,
     border: 1px solid transparent;
     letter-spacing: 0.01428571em;
     font-family: Roboto, Arial, sans-serif;
-    // font-size: 0.875em;
     font-size: 0.74rem;
     font-weight: 400;
     line-height: 1.25rem;
@@ -431,14 +430,7 @@ window-header,
   .icon-tab-plus,
   .icon-tab-find {
     font-size: 1.1rem;
-    // width: 1.9em;
   }
-
-  // .icon-tabs,
-  // .icon-close {
-  //   font-size: 1.1rem;
-  //   // width: 2.2rem;
-  // }
 }
 
 // Leafs pane
@@ -514,14 +506,12 @@ app-main:not(.searching) .leafs {
 
 // Bookmarks
 
-.leaf {
-  &:hover>div:not([contenteditable])+button {
-    display: flex;
-  }
+.leaf.search-path {
+  margin-left: 30px;
+}
 
-  &.search-path {
-    margin-left: 30px;
-  }
+app-main:not(.drag-start) .leaf:hover>div:not([contenteditable])+button {
+  display: flex;
 }
 
 // Folders pane
@@ -563,14 +553,6 @@ app-main:not(.searching) .leafs {
     }
 
     &:hover {
-      >.button-wrapper {
-        display: flex;
-        margin-left: auto;
-        margin-right: 0;
-        pointer-events: all;
-        z-index: 2;
-      }
-
       >.title:has(div:not([contenteditable]))+.button-wrapper {
         >button {
           display: flex;
@@ -579,10 +561,6 @@ app-main:not(.searching) .leafs {
 
       >.icon-fa-angle-right {
         z-index: 2;
-      }
-
-      >.title::before {
-        color: rgba(0, 0, 0, 0.5);
       }
     }
 
@@ -633,6 +611,20 @@ app-main:not(.searching) .leafs {
       animation-duration: 0.3s !important;
       animation-timing-function: ease-out;
     }
+  }
+}
+
+app-main:not(.drag-start) .folders .marker:hover {
+  >.title::before {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  >.button-wrapper {
+    display: flex;
+    margin-left: auto;
+    margin-right: 0;
+    pointer-events: all;
+    z-index: 2;
   }
 }
 
@@ -1053,9 +1045,14 @@ app-main::-webkit-scrollbar {
     .drag-source {
 
       &.leaf,
+      &.marker>.title,
       &.history>div,
       .tab {
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+
+      &.marker>.title::before {
+        color: rgba(255, 255, 255, 0.3) !important;
       }
     }
 

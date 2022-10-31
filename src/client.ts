@@ -724,10 +724,10 @@ export async function addFromTabs(
     if (!parentFolderId) {
       return;
     }
-    tabs.forEach(({ title, url }) => addBookmark(parentId, { parentId, title, url }, true));
-    const $target = $(`.folders ${cssid(parentId)} > .marker > .title`)!;
+    tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
+    const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
     setAnimationFolder('hilite')($target.parentElement);
-    editTitle($target.firstElementChild as HTMLElement, parentId, false);
+    editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
   });
 }
 
