@@ -84,23 +84,26 @@ async function getBookmarks(parentId: string, nodes: chrome.bookmarks.BookmarkTr
   });
 }
 
-function createTabs(windowId: number, nodes: chrome.bookmarks.BookmarkTreeNode[], startIndex = 0) {
-  nodes.forEach(async (next, i) => {
-    await chrome.tabs.create({ url: next.url, windowId, index: i + startIndex });
+async function createTabs(
+  windowId: number,
+  nodes: chrome.bookmarks.BookmarkTreeNode[],
+  startIndex = 0,
+) {
+  return nodes.map(async (next, i) => {
+    await chrome.tabs.create({
+      url: next.url, windowId, index: i + startIndex, active: false,
+    });
   });
 }
 
-async function createTabsFromFolder(parentId: string, windowId?: number) {
+async function createTabsFromFolder(parentId: string, windowId?: number, index?: number) {
   const [bm, ...rest] = await getBookmarks(parentId, []);
   if (windowId == null) {
     chrome.windows.create({ url: bm.url }, (win) => createTabs(win!.id!, rest, 1));
     return;
   }
-  chrome.windows.get(
-    windowId,
-    { populate: true },
-    (win) => createTabs(windowId, [bm, ...rest], win.tabs?.length!),
-  );
+  const createds = createTabs(windowId, [bm, ...rest], index);
+  Promise.all(await createds).then(() => chrome.windows.update(windowId, { focused: true }));
 }
 
 async function dropWithTabs(
@@ -156,7 +159,8 @@ async function dropWithTabs(
   }
   // Move folder to tab
   if (sourceClass === 'marker') {
-    createTabsFromFolder(srcElementId, windowId);
+    index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+    createTabsFromFolder(srcElementId, windowId, index);
     return;
   }
   // Move tab
@@ -222,24 +226,24 @@ function checkDroppable(e: DragEvent) {
   const $dropArea = e.target as HTMLElement;
   const dropAreaClass = whichClass(dropAreaClasses, $dropArea);
   if (dropAreaClass == null) {
-    return false;
+    return undefined;
   }
   const $dragSource = $byClass('drag-source');
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $dropArea.closest('.leaf, .folder, .tab-wrap')!;
   if ($dropTarget?.id === sourceId) {
-    return false;
+    return undefined;
   }
   if (dropAreaClass === 'drop-bottom' && $dropTarget.nextElementSibling?.id === sourceId) {
-    return false;
+    return undefined;
   }
   if (dropAreaClass === 'drop-top' && $dropTarget.previousElementSibling?.id === sourceId) {
-    return false;
+    return undefined;
   }
   const dragSource = whichClass(sourceClasses, $dragSource);
   const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dragSource === 'marker' && dropPane === 'leafs') {
-    return false;
+    return undefined;
   }
   const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dropAreaClass === 'leafs') {
@@ -251,12 +255,13 @@ function checkDroppable(e: DragEvent) {
     && ['drop-bottom', 'drop-top'].includes(dropAreaClass)
     && hasClass($dropArea.parentElement?.parentElement?.parentElement || null, 'folder')
   ) {
-    return false;
+    return undefined;
   }
-  return true;
+  return dropAreaClass;
 }
 
 const dragAndDropEvents = {
+  timerDragEnterFolder: 0,
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
@@ -296,8 +301,19 @@ const dragAndDropEvents = {
   },
   dragenter(e: DragEvent) {
     rmClass('drag-enter')($byClass('drag-enter'));
-    if (checkDroppable(e)) {
+    const dropAreaClass = checkDroppable(e);
+    if (dropAreaClass) {
       addClass('drag-enter')(e.target as HTMLElement);
+      clearTimeout(this.timerDragEnterFolder);
+      if (dropAreaClass === 'drop-folder') {
+        const $folder = (e.target as HTMLElement).parentElement?.parentElement!;
+        if (hasClass($folder, 'path') || ($folder.dataset.children ?? '0') === '0') {
+          return;
+        }
+        this.timerDragEnterFolder = setTimeout(() => {
+          $folder.classList.add('path');
+        }, 1500);
+      }
     }
   },
   dragend(e: DragEvent) {
