@@ -34,7 +34,7 @@ export function makeNode({
   `;
 }
 
-export function makeHistory({
+export function makeHtmlHistory({
   url, title, lastVisitTime, headerDate, id, headerStyle = '',
 }: MyHistoryItem & { headerStyle?: string }) {
   if (headerDate) {

@@ -9,11 +9,7 @@
     "bookmarks",
     "tabs",
     "history",
-    "favicon",
-    "unlimitedStorage"
-  ],
-  "optional_permissions": [
-    "unlimitedStorage"
+    "favicon"
   ],
   "action": {
     "default_title": "Popup'n My Resources",

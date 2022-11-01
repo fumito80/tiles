@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
-import { MyHistoryItem, Options } from './types';
+import { CliMessageTypes, MyHistoryItem, Options } from './types';
 import {
   IPubSubElement, makeAction, Store,
 } from './store';
@@ -10,10 +10,13 @@ import {
 } from './client';
 import {
   getHistoryById,
-  getLocal, getLocaleDate, isDateEq, pick, pipe, postMessage, removeUrlHistory, setLocal,
+  getLocaleDate,
+  isDateEq, pick, pipe, postMessage,
+  removeUrlHistory,
+  setLocal,
 } from './common';
 import { ISearchable, SearchParams } from './search';
-import { makeHistory } from './html';
+import { makeHtmlHistory } from './html';
 import {
   getVScrollData,
   resetVScrollData,
@@ -68,7 +71,14 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   #rowHeight!: number;
   #store!: Store;
   private $rows!: HTMLElement;
-  init(options: Options, htmlHistory: string, isSearching: boolean) {
+  private promiseHistories!: Promise<MyHistoryItem[]>;
+  init(
+    promiseHistories: Promise<MyHistoryItem[]>,
+    options: Options,
+    htmlHistory: string,
+    isSearching: boolean,
+  ) {
+    this.promiseHistories = promiseHistories;
     this.$rows = $byClass('rows', this)!;
     if (isSearching) {
       const header = '<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>';
@@ -96,14 +106,14 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       }
       const $parent = $target.parentElement!;
       const $url = $target.title ? $target : $parent;
-      const { url } = await getHistoryById($url.id);
+      const { url } = getHistoryById($url.id) || {};
       if (!url) {
         return;
       }
       if (hasClass($target, 'icon-x')) {
         setAnimationClass('hilite')($parent);
-        const result = await postMessage({ type: 'cl-remove-history', payload: url });
-        if (result) {
+        const removed = await postMessage({ type: CliMessageTypes.removeHistory, payload: url });
+        if (removed) {
           resetVScrollData(removeUrlHistory(url));
         }
         return;
@@ -119,14 +129,14 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   async resetHistory({
     initialize,
   }: ResetParams = {}) {
-    const { histories: [init, ...tail] } = await getLocal('histories');
+    const [init, ...tail] = await this.promiseHistories;
     let histories = [init, ...tail];
-    if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
+    if (initialize && !isDateEq(init.lastVisitTime, new Date())) {
       const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
       histories = [headerDate, init, ...tail];
-      const headerDateHtml = makeHistory({ ...headerDate });
+      const headerDateHtml = makeHtmlHistory({ ...headerDate });
       this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-      await setLocal({ histories, htmlHistory: this.$rows.innerHTML });
+      await setLocal({ htmlHistory: this.$rows.innerHTML });
     }
     const queryValue = this.#reFilter?.source;
     let data: MyHistoryItem[] | undefined = histories;

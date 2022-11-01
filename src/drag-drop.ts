@@ -200,7 +200,7 @@ async function dropFromHistory(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const { url, title } = await getHistoryById(sourceId);
+  const { url, title } = getHistoryById(sourceId) || {};
   if (dropAreaClass === 'new-window-plus') {
     chrome.windows.create({ url });
     return;

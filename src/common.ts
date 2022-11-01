@@ -11,6 +11,7 @@ import {
   ColorPalette,
   defaultColorPalette,
   HTMLElementEventType,
+  pastMSec,
 } from './types';
 
 import {
@@ -19,6 +20,8 @@ import {
   addColorSpec,
   recombiPaletteDark,
 } from './settings-colors';
+
+import { getVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
@@ -661,10 +664,9 @@ export function extractDomain(url?: string) {
   return [scheme, domain];
 }
 
-export async function getHistoryById(historyId: string): Promise<MyHistoryItem> {
+export function getHistoryById(historyId: string): MyHistoryItem | undefined {
   const [, id] = historyId.split('-');
-  const { histories } = await getLocal('histories');
-  return histories.find(propEq('id', id))!;
+  return getVScrollData().find((item) => item.id === id);
 }
 
 export function base64Encode(...parts: string[]) {
@@ -717,7 +719,7 @@ export function htmlEscape(text: string) {
 }
 
 export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
-  return (data: Pick<State, 'histories'> | State['histories']) => {
+  return (data: MyHistoryItem[]) => {
     const { histories } = Array.isArray(data) ? { histories: data } : data;
     const findIndex = histories.findIndex(
       (history) => history.url === url || history.lastVisitTime === lastVisitTime,
@@ -899,4 +901,10 @@ export async function makeColorPalette() {
 export function getChromeId(preId: number | string) {
   const [id] = /\d+/.exec(preId as string) || [];
   return Number(id);
+}
+
+export function getHistoryData() {
+  const startTime = Date.now() - pastMSec;
+  return chrome.history.search({ text: '', startTime, maxResults: 99999 })
+    .then((histories) => histories.sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!)));
 }

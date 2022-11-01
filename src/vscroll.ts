@@ -11,7 +11,9 @@ const invisible = { transform: 'translateY(-10000px)' };
 
 export const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
-let vScrollData: Collection;
+let vScrollData: MyHistoryItem[];
+
+type RowSetReduceAcc = [prevLastVisitDate: string, rowIndex: number];
 
 export function rowSetterHistory(isShowFixedHeader: boolean) {
   const today = getLocaleDate();
@@ -21,29 +23,34 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     data: MyHistoryItem[],
     rowTop: number,
     dataTop: number,
-  ) => ($row: HTMLElement, index: number) => {
+  ) => (
+    [prevLastVisitDate, rowIndex]: RowSetReduceAcc,
+    $row: HTMLElement,
+    index: number,
+  ): RowSetReduceAcc => {
     if (index === 0) {
       if (isShowFixedHeader) {
         rmStyle('transform')($currentDate);
       }
-      return;
+      return ['', rowIndex];
     }
-    const item = data[dataTop + index - 1];
+    const item = data[dataTop + rowIndex];
     if (!item) {
       addStyle(invisible)($row);
-      return;
+      return ['', rowIndex];
     }
     const {
-      url, title, lastVisitTime, headerDate, id,
+      url, title, lastVisitTime, id,
     } = item;
+    const lastVisitDate = getLocaleDate(lastVisitTime);
+    const headerDate = lastVisitDate === prevLastVisitDate ? undefined : lastVisitDate;
     if (index === 1) {
-      const lastVisitDate = getLocaleDate(lastVisitTime);
       const currentDate = today === lastVisitDate ? '' : lastVisitDate!;
       setText(currentDate)($currentDate);
       addAttr('data-value', currentDate)($currentDate);
       if (headerDate && rowTop !== 0 && isShowFixedHeader) {
         addStyle(invisible)($row);
-        return;
+        return ['', rowIndex];
       }
     }
     const transform = `translateY(${rowTop}px)`;
@@ -58,7 +65,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addClass('header-date'),
         rmAttr('title'),
       )($row);
-      return;
+      return [lastVisitDate, rowIndex];
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
@@ -71,6 +78,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       addAttr('title', htmlEscape(tooltip)),
       addAttr('id', `hst-${id}`),
     )($row);
+    return [lastVisitDate, rowIndex + 1];
   };
 }
 
@@ -106,7 +114,7 @@ export async function setVScroll(
   vScrollHandler = () => {
     const rowTop = -($container.scrollTop % rowHeight);
     const dataTop = Math.floor($container.scrollTop / rowHeight);
-    children.forEach(setter(vScrollData, rowTop, dataTop));
+    children.reduce(setter(vScrollData, rowTop, dataTop), ['', 0]);
   };
   $container.addEventListener('scroll', vScrollHandler);
 }

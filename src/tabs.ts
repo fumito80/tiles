@@ -358,9 +358,9 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
+    promiseInitTabs: PromiseInitTabs,
     collapseTabs: boolean,
     isSearching: boolean,
-    promiseInitTabs: PromiseInitTabs,
   ) {
     this.setEvent();
     this.#tabsWrap = this.firstElementChild as HTMLElement;

@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Model, Options, PromiseInitTabs, State, StoredElements,
+  HTMLElementEventType, Model, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -143,6 +143,7 @@ export function initComponents(
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
+  promiseHistories: Promise<MyHistoryItem[]>,
   promiseInitTabs: PromiseInitTabs,
   lastSearchWord: string,
   isSearching: boolean,
@@ -165,16 +166,16 @@ export function initComponents(
   $tabs.init(
     $tmplOpenTab,
     $tmplWindow,
+    promiseInitTabs,
     options.collapseTabs,
     isSearching,
-    promiseInitTabs,
   );
   $leafs.init(options);
   $folders.init(options);
   $headerLeafs.init(settings);
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);
-  $history.init(options, htmlHistory, isSearching);
+  $history.init(promiseHistories, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   // Register actions
   const actions = {

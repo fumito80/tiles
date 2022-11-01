@@ -96,7 +96,6 @@ export const initialState = {
   htmlBookmarks: {} as HtmlBookmarks,
   htmlTabs: '',
   htmlHistory: '',
-  histories: [] as Array<MyHistoryItem>,
   clientState: {} as ClientState,
   settings: initialSettings,
   vscrollProps: {
