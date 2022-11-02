@@ -1,4 +1,4 @@
-import { MyHistoryItem } from './types';
+import { HistoryItem } from './types';
 import {
   makeStyleIcon, htmlEscape, getLocaleDate,
 } from './common';
@@ -35,8 +35,8 @@ export function makeNode({
 }
 
 export function makeHtmlHistory({
-  url, title, lastVisitTime, headerDate, id, headerStyle = '',
-}: MyHistoryItem & { headerStyle?: string }) {
+  url, title, lastVisitTime, id, headerStyle = '', headerDate,
+}: HistoryItem & Partial<{ headerDate: boolean, headerStyle?: string }>) {
   if (headerDate) {
     const lastVisitDate = getLocaleDate(lastVisitTime);
     return `<div class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</div>`;

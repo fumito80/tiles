@@ -12,6 +12,8 @@ import {
   PromiseInitTabs,
   InitailTabs,
   CliMessageTypes,
+  pastMSec,
+  HistoryItem,
 } from './types';
 
 import {
@@ -25,7 +27,7 @@ import {
   preFaviconUrl,
   extractDomain,
   postMessage,
-  getHistoryData,
+  // getHistoryData,
 } from './common';
 
 import {
@@ -156,11 +158,23 @@ function getInitialTabs() {
   return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }
 
+export function getHistoryData() {
+  const startTime = Date.now() - pastMSec;
+  const worker = new Worker('./worker-history.js');
+  chrome.history.search({ text: '', startTime, maxResults: 99999 }).then((histories) => {
+    worker.postMessage(histories);
+  });
+  return new Promise<HistoryItem[]>((resolve) => {
+    worker.onmessage = (event) => resolve(event.data);
+  });
+}
+
 function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }, promiseInitTabs,
 ]: [State, PromiseInitTabs]) {
-  const promiseInitHistories = getHistoryData();
+  // const promiseInitHistories = getHistoryData();
+  const promiseInitHistories = postMessage({ type: CliMessageTypes.initHistory });
   const isSearching = lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
   const store = initComponents(
@@ -168,7 +182,7 @@ function init([{
     options,
     settings,
     htmlHistory,
-    promiseInitHistories,
+    promiseInitHistories as unknown as Promise<HistoryItem[]>,
     promiseInitTabs,
     lastSearchWord,
     isSearching,

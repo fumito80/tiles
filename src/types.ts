@@ -59,7 +59,7 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
-export type MyHistoryItem = Partial<chrome.history.HistoryItem & { headerDate: boolean }>;
+export type HistoryItem = Partial<chrome.history.HistoryItem>;
 
 export type ColorPalette = [
   paneBg: string,
@@ -110,6 +110,7 @@ export type Options = State['options'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
+  initHistory: 'cl-initialize-history',
   removeHistory: 'cl-remove-history',
 } as const;
 

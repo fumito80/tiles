@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
-import { CliMessageTypes, MyHistoryItem, Options } from './types';
+import { CliMessageTypes, HistoryItem, Options } from './types';
 import {
   IPubSubElement, makeAction, Store,
 } from './store';
@@ -11,12 +11,13 @@ import {
 import {
   getHistoryById,
   getLocaleDate,
-  isDateEq, pick, pipe, postMessage,
+  // isDateEq,
+  pick, pipe, postMessage,
   removeUrlHistory,
   setLocal,
 } from './common';
 import { ISearchable, SearchParams } from './search';
-import { makeHtmlHistory } from './html';
+// import { makeHtmlHistory } from './html';
 import {
   getVScrollData,
   resetVScrollData,
@@ -26,6 +27,7 @@ import {
   setVScroll,
 } from './vscroll';
 import { PaneHeader } from './bookmarks';
+// import { makeHtmlHistory } from './html';
 
 type ResetParams = {
   initialize?: boolean,
@@ -48,11 +50,8 @@ function getRowHeight() {
   return rowHeight;
 }
 
-function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
+function searchHistory(source: HistoryItem[], reFilter: RegExp, includeUrl: boolean) {
   const [results] = source.reduce(([result, prevHeaderDate], el) => {
-    if (el.headerDate) {
-      return [result, el];
-    }
     if (!reFilter.test(el.title || el.url || '') && !(includeUrl && reFilter.test(el.url || ''))) {
       return [result, prevHeaderDate];
     }
@@ -60,7 +59,7 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
       return [[...result, el], null];
     }
     return [[...result, prevHeaderDate, el], null];
-  }, [[], null] as [MyHistoryItem[], MyHistoryItem | null]);
+  }, [[], null] as [HistoryItem[], HistoryItem | null]);
   return results;
 }
 
@@ -71,9 +70,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   #rowHeight!: number;
   #store!: Store;
   private $rows!: HTMLElement;
-  private promiseHistories!: Promise<MyHistoryItem[]>;
+  private promiseHistories!: Promise<HistoryItem[]>;
   init(
-    promiseHistories: Promise<MyHistoryItem[]>,
+    promiseHistories: Promise<HistoryItem[]>,
     options: Options,
     htmlHistory: string,
     isSearching: boolean,
@@ -129,17 +128,18 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   async resetHistory({
     initialize,
   }: ResetParams = {}) {
-    const [init, ...tail] = await this.promiseHistories;
-    let histories = [init, ...tail];
-    if (initialize && !isDateEq(init.lastVisitTime, new Date())) {
-      const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
-      histories = [headerDate, init, ...tail];
-      const headerDateHtml = makeHtmlHistory({ ...headerDate });
-      this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-      await setLocal({ htmlHistory: this.$rows.innerHTML });
-    }
+    const histories = await this.promiseHistories;
+    // const [init, ...tail] = await this.promiseHistories;
+    // const histories = [init, ...tail];
+    // if (initialize && !isDateEq(init.lastVisitTime, new Date())) {
+    //   const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
+    //   // histories = [headerDate, init, ...tail];
+    //   const headerDateHtml = makeHtmlHistory({ ...headerDate });
+    //   this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
+    //   await setLocal({ htmlHistory: this.$rows.innerHTML });
+    // }
     const queryValue = this.#reFilter?.source;
-    let data: MyHistoryItem[] | undefined = histories;
+    let data: HistoryItem[] | undefined = histories;
     if (queryValue) {
       data = searchCache.get(queryValue);
       if (!data) {
@@ -179,7 +179,10 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       return;
     }
     const histories = getVScrollData();
-    const data = histories.filter((item) => item.headerDate);
+    // const data = histories.filter((item) => item.headerDate);
+    const dates = histories.map((item) => getLocaleDate(item.lastVisitTime));
+    const uniqueDates = new Set(dates);
+    const data = Array.from(uniqueDates.keys()).map((headerDate) => ({ headerDate }));
     setVScroll(this, rowSetterHistory, data, this.#rowHeight, false);
     setScrollTop(0);
   }
@@ -190,7 +193,8 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   async jumpDate() {
     const histories = getVScrollData();
     const index = histories.findIndex(
-      (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === this.#jumpDate,
+      // (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === this.#jumpDate,
+      (item) => getLocaleDate(item.lastVisitTime) === this.#jumpDate,
     );
     setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';

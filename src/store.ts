@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Model, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
+  HTMLElementEventType, Model, HistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -143,7 +143,7 @@ export function initComponents(
   options: Options,
   settings: State['settings'],
   htmlHistory: string,
-  promiseHistories: Promise<MyHistoryItem[]>,
+  promiseHistories: Promise<HistoryItem[]>,
   promiseInitTabs: PromiseInitTabs,
   lastSearchWord: string,
   isSearching: boolean,

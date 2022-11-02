@@ -1,17 +1,17 @@
-import { State, Collection, MyHistoryItem } from './types';
+import { State, Collection, HistoryItem } from './types';
 import {
   pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape,
 } from './common';
 import {
   $, $byClass,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr,
+  addStyle, addAttr, setHTML, rmClass, rmStyle, addClass, rmAttr, setText,
 } from './client';
 
 const invisible = { transform: 'translateY(-10000px)' };
 
-export const searchCache = new Map<string, Array<MyHistoryItem>>();
+export const searchCache = new Map<string, Array<HistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
-let vScrollData: MyHistoryItem[];
+let vScrollData: HistoryItem[];
 
 type RowSetReduceAcc = [prevLastVisitDate: string, rowIndex: number];
 
@@ -20,7 +20,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
   const $currentDate = $('.histories .current-date')!;
   addStyle(invisible)($currentDate);
   return (
-    data: MyHistoryItem[],
+    data: HistoryItem[],
     rowTop: number,
     dataTop: number,
   ) => (
@@ -43,14 +43,14 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       url, title, lastVisitTime, id,
     } = item;
     const lastVisitDate = getLocaleDate(lastVisitTime);
-    const headerDate = lastVisitDate === prevLastVisitDate ? undefined : lastVisitDate;
+    const headerDate = lastVisitDate !== prevLastVisitDate && lastVisitDate !== today && prevLastVisitDate !== '';
     if (index === 1) {
       const currentDate = today === lastVisitDate ? '' : lastVisitDate!;
       setText(currentDate)($currentDate);
       addAttr('data-value', currentDate)($currentDate);
       if (headerDate && rowTop !== 0 && isShowFixedHeader) {
         addStyle(invisible)($row);
-        return ['', rowIndex];
+        return [lastVisitDate, rowIndex];
       }
     }
     const transform = `translateY(${rowTop}px)`;
@@ -60,7 +60,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addStyle({ transform })($currentDate);
       }
       pipe(
-        setHTML(getLocaleDate(lastVisitTime)!),
+        setHTML(lastVisitDate),
         rmStyle('background-image'),
         addClass('header-date'),
         rmAttr('title'),

@@ -6,7 +6,7 @@ import {
   MapMessagesBtoP,
   MessageTypePayloadAction,
   State,
-  MyHistoryItem,
+  HistoryItem,
   Options,
   ColorPalette,
   defaultColorPalette,
@@ -664,7 +664,7 @@ export function extractDomain(url?: string) {
   return [scheme, domain];
 }
 
-export function getHistoryById(historyId: string): MyHistoryItem | undefined {
+export function getHistoryById(historyId: string): HistoryItem | undefined {
   const [, id] = historyId.split('-');
   return getVScrollData().find((item) => item.id === id);
 }
@@ -719,7 +719,7 @@ export function htmlEscape(text: string) {
 }
 
 export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
-  return (data: MyHistoryItem[]) => {
+  return (data: HistoryItem[]) => {
     const { histories } = Array.isArray(data) ? { histories: data } : data;
     const findIndex = histories.findIndex(
       (history) => history.url === url || history.lastVisitTime === lastVisitTime,
@@ -734,25 +734,25 @@ export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
     if (findIndex2 >= 0) {
       tails = [...tails.slice(0, findIndex2), ...tails.slice(findIndex2 + 1)];
     }
-    if (histories[findIndex - 1]?.headerDate) {
-      const nextItem = histories[findIndex + 1];
-      if (!nextItem || nextItem.headerDate) {
-        return [
-          ...histories.slice(0, findIndex - 1),
-          ...tails,
-        ];
-      }
-    }
-    if (tails[findIndex2 - 1]?.headerDate) {
-      const nextItem = tails[findIndex2];
-      if (!nextItem || nextItem.headerDate) {
-        return [
-          ...histories.slice(0, findIndex),
-          ...tails.slice(0, findIndex2),
-          ...tails.slice(findIndex2),
-        ];
-      }
-    }
+    // if (histories[findIndex - 1]?.headerDate) {
+    //   const nextItem = histories[findIndex + 1];
+    //   if (!nextItem || nextItem.headerDate) {
+    //     return [
+    //       ...histories.slice(0, findIndex - 1),
+    //       ...tails,
+    //     ];
+    //   }
+    // }
+    // if (tails[findIndex2 - 1]?.headerDate) {
+    //   const nextItem = tails[findIndex2];
+    //   if (!nextItem || nextItem.headerDate) {
+    //     return [
+    //       ...histories.slice(0, findIndex),
+    //       ...tails.slice(0, findIndex2),
+    //       ...tails.slice(findIndex2),
+    //     ];
+    //   }
+    // }
     return [
       ...histories.slice(0, findIndex),
       ...tails,
@@ -903,7 +903,29 @@ export function getChromeId(preId: number | string) {
   return Number(id);
 }
 
-export function getHistoryData() {
+// type MyHistoryItem = HistoryItem & { headerDate?: boolean };
+
+// export async function getHistoryData() {
+//   const startTime = Date.now() - pastMSec;
+//   return chrome.history.search({ text: '', startTime, maxResults: 99999 })
+//     .then((histories) => {
+//       const [result] = histories
+//         .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
+//         .reduce<[MyHistoryItem[], string | undefined]>(([items, prevLastVisitDate], item) => {
+//           const lastVisitDate = getLocaleDate(item.lastVisitTime);
+//           if (!prevLastVisitDate || prevLastVisitDate === lastVisitDate) {
+//             return [[...items, item], lastVisitDate];
+//           }
+//           return [
+//             [...items, { headerDate: true, lastVisitTime: item.lastVisitTime }, item],
+//             prevLastVisitDate,
+//           ];
+//         }, [[], undefined]);
+//       return result;
+//     });
+// }
+
+export async function getHistoryData() {
   const startTime = Date.now() - pastMSec;
   return chrome.history.search({ text: '', startTime, maxResults: 99999 })
     .then((histories) => histories.sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!)));

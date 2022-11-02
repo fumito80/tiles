@@ -7,6 +7,8 @@ import {
   HtmlBookmarks,
   CliMessageTypes,
   PayloadAction,
+  HistoryItem,
+  pastMSec,
 } from './types';
 
 import {
@@ -19,7 +21,8 @@ import {
   setMessageListener,
   setPopupStyle,
   makeColorPalette,
-  getHistoryData,
+  // getHistoryData,
+  getLocaleDate,
 } from './common';
 
 import { makeLeaf, makeNode, makeHtmlHistory } from './html';
@@ -61,9 +64,45 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
+type MyHistoryItem = HistoryItem & { headerDate?: boolean };
+
+async function getHistoryData() {
+  const startTime = Date.now() - pastMSec;
+  return chrome.history.search({ text: '', startTime, maxResults: 99999 })
+    .then((histories) => {
+      const [result] = histories
+        .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
+        .reduce<[MyHistoryItem[], string | undefined]>(([items, prevLastVisitDate], item) => {
+          const lastVisitDate = getLocaleDate(item.lastVisitTime);
+          if (!prevLastVisitDate || prevLastVisitDate === lastVisitDate) {
+            return [[...items, item], lastVisitDate];
+          }
+          return [
+            [...items, { headerDate: true, lastVisitTime: item.lastVisitTime }, item],
+            prevLastVisitDate,
+          ];
+        }, [[], undefined]);
+      return result;
+    });
+}
+
 async function setHtmlHistory() {
   const histories = await getHistoryData();
   const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
+  // const [headeredData] = histories.slice(0, 30).reduce(([data, prevLastVisitDate], item) => {
+  //   const lastVisitDate = getLocaleDate(item.lastVisitTime!);
+  //   if (prevLastVisitDate && lastVisitDate !== prevLastVisitDate) {
+  //     return [
+  //       [
+  //         ...data,
+  //         makeHtmlHistory({ headerDate: true, lastVisitTime: item.lastVisitTime }),
+  //         makeHtmlHistory(item),
+  //       ],
+  //       lastVisitDate,
+  //     ];
+  //   }
+  //   return [[...data, makeHtmlHistory(item)], lastVisitDate];
+  // }, [[], ''] as [string[], string]);
   const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
   return setLocal({ htmlHistory }).then(() => histories);
 }
@@ -129,6 +168,9 @@ export const mapMessagesPtoB = {
   },
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
+  ),
+  [CliMessageTypes.initHistory]: () => (
+    getHistoryData()
   ),
 };
 
