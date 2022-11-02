@@ -11,7 +11,7 @@ const invisible = { transform: 'translateY(-10000px)' };
 
 export const searchCache = new Map<string, Array<MyHistoryItem>>();
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
-let vScrollData: Collection;
+let vScrollData: MyHistoryItem[];
 
 export function rowSetterHistory(isShowFixedHeader: boolean) {
   const today = getLocaleDate();
@@ -112,7 +112,7 @@ export async function setVScroll(
 }
 
 export function resetVScrollData(
-  cbVScrollData: (data: Collection) => Collection,
+  cbVScrollData: (data: MyHistoryItem[]) => MyHistoryItem[],
 ) {
   vScrollData = cbVScrollData(vScrollData);
   searchCache.clear();
@@ -121,6 +121,10 @@ export function resetVScrollData(
 
 export function getVScrollData() {
   return vScrollData;
+}
+
+export function applyVScrollData<T>(fnSometing: (data: MyHistoryItem[]) => T) {
+  return fnSometing(vScrollData);
 }
 
 export function setScrollTop(scrollTop: number) {

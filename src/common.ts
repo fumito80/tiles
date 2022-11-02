@@ -11,6 +11,7 @@ import {
   ColorPalette,
   defaultColorPalette,
   HTMLElementEventType,
+  pastMSec,
 } from './types';
 
 import {
@@ -19,6 +20,7 @@ import {
   addColorSpec,
   recombiPaletteDark,
 } from './settings-colors';
+import { applyVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
@@ -661,10 +663,9 @@ export function extractDomain(url?: string) {
   return [scheme, domain];
 }
 
-export async function getHistoryById(historyId: string): Promise<MyHistoryItem> {
+export async function getHistoryById(historyId: string) {
   const [, id] = historyId.split('-');
-  const { histories } = await getLocal('histories');
-  return histories.find(propEq('id', id))!;
+  return applyVScrollData(find(propEq('id', id)));
 }
 
 export function base64Encode(...parts: string[]) {
@@ -717,8 +718,7 @@ export function htmlEscape(text: string) {
 }
 
 export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
-  return (data: Pick<State, 'histories'> | State['histories']) => {
-    const { histories } = Array.isArray(data) ? { histories: data } : data;
+  return (histories: MyHistoryItem[]) => {
     const findIndex = histories.findIndex(
       (history) => history.url === url || history.lastVisitTime === lastVisitTime,
     );
@@ -899,4 +899,22 @@ export async function makeColorPalette() {
 export function getChromeId(preId: number | string) {
   const [id] = /\d+/.exec(preId as string) || [];
   return Number(id);
+}
+
+export function getHistoryData() {
+  const startTime = Date.now() - pastMSec;
+  return chrome.history.search({ text: '', startTime, maxResults: 99999 });
+}
+
+export function getHistoryDataByWorker() {
+  const worker = new Worker('./worker-history.js');
+  getHistoryData().then((histories) => {
+    worker.postMessage(histories);
+  });
+  return new Promise<MyHistoryItem[]>((resolve) => {
+    worker.onmessage = (event) => {
+      resolve(event.data);
+      worker.terminate();
+    };
+  });
 }

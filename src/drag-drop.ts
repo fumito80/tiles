@@ -98,6 +98,9 @@ async function createTabs(
 
 async function createTabsFromFolder(parentId: string, windowId?: number, index?: number) {
   const [bm, ...rest] = await getBookmarks(parentId, []);
+  if (!bm?.url) {
+    return;
+  }
   if (windowId == null) {
     chrome.windows.create({ url: bm.url }, (win) => createTabs(win!.id!, rest, 1));
     return;
