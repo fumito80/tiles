@@ -11,6 +11,7 @@ import {
   StoredElements,
   PromiseInitTabs,
   InitailTabs,
+  CliMessageTypes,
 } from './types';
 
 import {
@@ -24,6 +25,7 @@ import {
   preFaviconUrl,
   extractDomain,
   postMessage,
+  getHistoryDataByWorker,
 } from './common';
 
 import {
@@ -157,6 +159,7 @@ function getInitialTabs() {
 function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
+  const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
   const store = initComponents(
@@ -165,6 +168,7 @@ function init([{
     settings,
     htmlHistory,
     promiseInitTabs,
+    promiseInitHistory,
     lastSearchWord,
     isSearching,
   );
@@ -206,4 +210,4 @@ export const mapMessagesBtoP = {
 setMessageListener(mapMessagesBtoP, true);
 
 // eslint-disable-next-line no-console
-postMessage({ type: 'cl-initialize', payload: '(^^♪' }).then(console.info);
+postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' }).then(console.info);

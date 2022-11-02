@@ -655,8 +655,7 @@ export async function addFolder(
   } else if (destId) {
     const [, $dest] = $$(cssid(destId)).map(($destFolder) => {
       insertHTML(position, htmlNode)($destFolder);
-      const $parent = $destFolder.parentElement!;
-      addAttr('data-children', String($parent.children.length))($parent);
+      addAttr('data-children', String($destFolder.children.length))($destFolder);
       return $destFolder;
     });
     if (!index) {

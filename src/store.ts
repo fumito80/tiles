@@ -1,5 +1,5 @@
 import {
-  HTMLElementEventType, Model, Options, PromiseInitTabs, State, StoredElements,
+  HTMLElementEventType, Model, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import {
@@ -144,6 +144,7 @@ export function initComponents(
   settings: State['settings'],
   htmlHistory: string,
   promiseInitTabs: PromiseInitTabs,
+  promiseInitHistory: Promise<MyHistoryItem[]>,
   lastSearchWord: string,
   isSearching: boolean,
 ) {
@@ -174,7 +175,7 @@ export function initComponents(
   $headerLeafs.init(settings);
   $headerTabs.init(settings, options.collapseTabs);
   $headerHistory.init(settings);
-  $history.init(options, htmlHistory, isSearching);
+  $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   // Register actions
   const actions = {

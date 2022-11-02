@@ -1,16 +1,13 @@
 /* eslint-disable max-classes-per-file */
 
 import { MyHistoryItem, Options } from './types';
-import {
-  IPubSubElement, makeAction, Store,
-} from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass,
 } from './client';
 import {
-  getHistoryById,
-  getLocal, getLocaleDate, isDateEq, pick, pipe, postMessage, removeUrlHistory, setLocal,
+  getHistoryById, getLocaleDate, isDateEq, pick, pipe, removeUrlHistory, setLocal,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
@@ -68,7 +65,14 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   #rowHeight!: number;
   #store!: Store;
   private $rows!: HTMLElement;
-  init(options: Options, htmlHistory: string, isSearching: boolean) {
+  private promiseInitHistory!: Promise<MyHistoryItem[]>;
+  init(
+    promiseInitHistory: Promise<MyHistoryItem[]>,
+    options: Options,
+    htmlHistory: string,
+    isSearching: boolean,
+  ) {
+    this.promiseInitHistory = promiseInitHistory;
     this.$rows = $byClass('rows', this)!;
     if (isSearching) {
       const header = '<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>';
@@ -102,10 +106,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       }
       if (hasClass($target, 'icon-x')) {
         setAnimationClass('hilite')($parent);
-        const result = await postMessage({ type: 'cl-remove-history', payload: url });
-        if (result) {
-          resetVScrollData(removeUrlHistory(url));
-        }
+        chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
         return;
       }
       createNewTab(options, url);
@@ -119,14 +120,13 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   async resetHistory({
     initialize,
   }: ResetParams = {}) {
-    const { histories: [init, ...tail] } = await getLocal('histories');
+    const [init, ...tail] = await this.promiseInitHistory;
     let histories = [init, ...tail];
     if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
       const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
       histories = [headerDate, init, ...tail];
       const headerDateHtml = makeHistory({ ...headerDate });
       this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
-      await setLocal({ histories, htmlHistory: this.$rows.innerHTML });
     }
     const queryValue = this.#reFilter?.source;
     let data: MyHistoryItem[] | undefined = histories;

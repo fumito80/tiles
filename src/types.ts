@@ -80,7 +80,7 @@ export const initialOptions = {
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',
-  findTabsMatches: 'domain' as 'domain' | 'prefix',
+  findTabsMatches: 'prefix' as 'domain' | 'prefix',
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,
@@ -96,7 +96,6 @@ export const initialState = {
   htmlBookmarks: {} as HtmlBookmarks,
   htmlTabs: '',
   htmlHistory: '',
-  histories: [] as Array<MyHistoryItem>,
   clientState: {} as ClientState,
   settings: initialSettings,
   vscrollProps: {
@@ -111,7 +110,6 @@ export type Options = State['options'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
-  removeHistory: 'cl-remove-history',
 } as const;
 
 export const BkgMessageTypes = {

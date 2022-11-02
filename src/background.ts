@@ -2,37 +2,29 @@
 
 import {
   State,
-  pastMSec,
   initialSettings,
   initialOptions,
   HtmlBookmarks,
-  MyHistoryItem,
   CliMessageTypes,
   PayloadAction,
 } from './types';
 
 import {
-  aDayMSec,
   pipe,
   propEq,
   propNe,
   regsterChromeEvents,
   setLocal,
   getLocal,
-  cbToResolve,
-  curry,
-  removeUrlHistory,
   setMessageListener,
-  postMessage,
-  isDateEq,
   setPopupStyle,
   makeColorPalette,
+  getHistoryData,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import { setBrowserIcon } from './draw-svg';
-
-type Histories = State['histories'];
+import miningHistoryData from './worker-history';
 
 function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {
@@ -70,73 +62,25 @@ const bookmarksEvents = [
 
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
-function setHtmlHistory(histories: Histories) {
+async function setHtmlHistory() {
+  const histories = await getHistoryData().then(miningHistoryData);
   const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
   const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
-  return setLocal({ htmlHistory, histories }).then(() => histories);
-}
-
-function makeHistory() {
-  const startTime = Date.now() - pastMSec;
-  return new Promise<Histories>((resolve) => {
-    chrome.history.search({ text: '', startTime, maxResults: 99999 }, (results) => {
-      const histories = results
-        .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
-        .reduce<MyHistoryItem[]>((acc, item) => {
-          const prevLastVisitTime = acc.at(-1)?.lastVisitTime;
-          if (!prevLastVisitTime || isDateEq(prevLastVisitTime, item.lastVisitTime)) {
-            return [...acc, item];
-          }
-          return [
-            ...acc,
-            { headerDate: true, lastVisitTime: item.lastVisitTime },
-            item,
-          ];
-        }, []);
-      setHtmlHistory(histories);
-      resolve(histories);
-    });
-  });
+  return setLocal({ htmlHistory }).then(() => histories);
 }
 
 let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
 
 async function onVisitRemoved() {
   clearTimeout(timeoutRemoveHistory);
-  timeoutRemoveHistory = setTimeout(makeHistory, 200);
-}
-
-const timezoneOffset = (new Date()).getTimezoneOffset() * 60 * 1000;
-
-async function mergeHistoryLatest(currents: Array<MyHistoryItem>) {
-  const now = Date.now();
-  const startTime = now - (now % aDayMSec) + (aDayMSec + timezoneOffset);
-  const [topItem] = currents;
-  if (topItem.lastVisitTime! < startTime) {
-    return makeHistory();
-  }
-  const query = {
-    startTime,
-    text: '',
-    maxResults: 99999,
-  };
-  const todays = await cbToResolve(curry(chrome.history.search)(query))
-    .then((histories) => histories.sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!)));
-  const { id } = todays.at(-1)!;
-  const findIndex = currents.findIndex((el) => el.id === id);
-  return [...todays, ...currents.slice(findIndex + 1)];
+  timeoutRemoveHistory = setTimeout(setHtmlHistory, 200);
 }
 
 let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
 
 function addHistory() {
   clearTimeout(timeoutRefreshHistoryTitle);
-  timeoutRefreshHistoryTitle = setTimeout(() => {
-    getLocal('histories')
-      .then(({ histories }) => mergeHistoryLatest(histories))
-      .then(setHtmlHistory)
-      .then(() => postMessage({ type: 'bkg-update-history' }));
-  }, 2000);
+  timeoutRefreshHistoryTitle = setTimeout(setHtmlHistory, 2000);
 }
 
 type InitStateKeys = keyof Pick<
@@ -155,7 +99,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
-  makeHistory();
+  setHtmlHistory();
   setLocal({
     settings, clientState, options, lastSearchWord,
   });
@@ -168,27 +112,14 @@ getLocal(...initStateKeys).then(init);
 
 // Messagings popup to background
 
-let seriesRemoveHistory = Promise.resolve(false);
-
 export const mapMessagesPtoB = {
-  [CliMessageTypes.removeHistory]: ({ payload }: PayloadAction<string>) => {
-    seriesRemoveHistory = seriesRemoveHistory.then(() => {
-      chrome.history.onVisitRemoved.removeListener(onVisitRemoved);
-      return new Promise<boolean>((resolve) => {
-        chrome.history.deleteUrl({ url: payload }, async () => {
-          await getLocal('histories')
-            .then(removeUrlHistory(payload))
-            .then(setHtmlHistory);
-          chrome.history.onVisitRemoved.addListener(onVisitRemoved);
-        });
-        resolve(true);
-      });
-    });
-    return seriesRemoveHistory;
-  },
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
 };
 
 setMessageListener(mapMessagesPtoB);
+
+// No longer in use
+
+chrome.storage.local.remove('histories');

@@ -47,6 +47,7 @@ window-header:hover,
 .draggable-clone,
 .draggable-clone>div,
 .draggable-clone .title::before,
+.draggable-clone window-header::before,
 .drag-source,
 .drag-source::before {
   background-color: var(--item-hover-bg);
@@ -376,7 +377,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
 
 .theme-dark-key {
   .folders .open>.marker>.title::before {
-    color: $dark-folder-color;
+    color: $dark-folder-color !important;
   }
 }
 
