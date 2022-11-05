@@ -9,6 +9,7 @@ import {
   SplitterClasses,
   Model,
   InsertPosition,
+  CliMessageTypes,
 } from './types';
 
 import {
@@ -29,6 +30,7 @@ import {
   last,
   addListener,
   getChromeId,
+  postMessage,
 } from './common';
 
 import {
@@ -699,17 +701,12 @@ export async function addFromTabs(
   isNewWindow = false,
 ) {
   const windowId = getChromeId(sourceId);
-  chrome.windows.get(windowId, { populate: true }, async ({ tabs, incognito }) => {
+  if (isNewWindow) {
+    postMessage({ type: CliMessageTypes.moveWindowNew, payload: { windowId } });
+    return;
+  }
+  chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
     if (!tabs) {
-      return;
-    }
-    if (isNewWindow) {
-      const activeTab = tabs.find((tab) => tab.active)!;
-      const rest = tabs.filter((tab) => tab.id !== activeTab.id);
-      chrome.windows.create({ tabId: activeTab.id, incognito })
-        .then((win) => rest.forEach(async (tab) => {
-          await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
-        }));
       return;
     }
     if (dropPane === 'leafs') {

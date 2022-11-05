@@ -4,7 +4,7 @@ import {
 } from './common';
 import {
   $, $byClass,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr,
+  addStyle, addAttr, setHTML, rmClass, rmStyle, addClass, rmAttr,
 } from './client';
 
 const invisible = { transform: 'translateY(-10000px)' };
@@ -21,44 +21,64 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     data: MyHistoryItem[],
     rowTop: number,
     dataTop: number,
-  ) => ($row: HTMLElement, index: number) => {
+  ) => (
+    [prevLastVisitDate, rowIndex]: [string, number],
+    $row: HTMLElement,
+    index: number,
+  ): [string, number] => {
     if (index === 0) {
       if (isShowFixedHeader) {
         rmStyle('transform')($currentDate);
       }
-      return;
+      return ['', 0];
     }
-    const item = data[dataTop + index - 1];
+    const item = data[dataTop + rowIndex];
     if (!item) {
       addStyle(invisible)($row);
-      return;
+      return ['', rowIndex];
     }
     const {
-      url, title, lastVisitTime, headerDate, id,
+      url, title, lastVisitTime, id,
     } = item;
+    const lastVisitDate = getLocaleDate(lastVisitTime);
+    const headerDate = lastVisitDate !== prevLastVisitDate && lastVisitDate !== today;
+    const transform = `translateY(${rowTop}px)`;
+    // let prevItem = false;
     if (index === 1) {
-      const lastVisitDate = getLocaleDate(lastVisitTime);
-      const currentDate = today === lastVisitDate ? '' : lastVisitDate!;
-      setText(currentDate)($currentDate);
-      addAttr('data-value', currentDate)($currentDate);
-      if (headerDate && rowTop !== 0 && isShowFixedHeader) {
-        addStyle(invisible)($row);
-        return;
+    //   const currentDate = today === lastVisitDate ? '' : lastVisitDate!;
+    //   setText(currentDate)($currentDate);
+    //   addAttr('data-value', currentDate)($currentDate);
+    //   // if (headerDate && rowTop !== 0 && isShowFixedHeader) {
+    //   //   // addStyle(invisible)($row);
+    //   //   addStyle({ transform })($row);
+    //   //   return [lastVisitDate, rowIndex];
+    //   // }
+      const nextItem = data[dataTop + rowIndex - 1];
+      const nextVisitDate = getLocaleDate(nextItem.lastVisitTime);
+      if (lastVisitDate !== nextVisitDate) {
+        // url = nextItem.url;
+        // title = nextItem.title;
+        // lastVisitTime = nextItem.lastVisitTime;
+        // id = nextItem.id;
+        // prevItem = true;
+        // addStyle({ transform })($row);
+        // // addStyle(invisible)($row);
+        return [lastVisitDate, rowIndex - 1];
+        // headerDate = false;
       }
     }
-    const transform = `translateY(${rowTop}px)`;
     addStyle({ transform })($row);
     if (headerDate) {
-      if (index === 2 && isShowFixedHeader) {
-        addStyle({ transform })($currentDate);
-      }
+      // if (index === 2 && isShowFixedHeader) {
+      //   addStyle({ transform })($currentDate);
+      // }
       pipe(
-        setHTML(getLocaleDate(lastVisitTime)!),
+        setHTML(lastVisitDate),
         rmStyle('background-image'),
         addClass('header-date'),
         rmAttr('title'),
       )($row);
-      return;
+      return [lastVisitDate, rowIndex];
     }
     const text = title || url;
     const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
@@ -71,6 +91,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       addAttr('title', htmlEscape(tooltip)),
       addAttr('id', `hst-${id}`),
     )($row);
+    return [lastVisitDate, rowIndex + 1];
   };
 }
 
@@ -106,7 +127,7 @@ export async function setVScroll(
   vScrollHandler = () => {
     const rowTop = -($container.scrollTop % rowHeight);
     const dataTop = Math.floor($container.scrollTop / rowHeight);
-    children.forEach(setter(vScrollData, rowTop, dataTop));
+    children.reduce<[string, number]>(setter(vScrollData, rowTop, dataTop), ['', 0]);
   };
   $container.addEventListener('scroll', vScrollHandler);
 }

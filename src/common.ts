@@ -906,15 +906,7 @@ export function getHistoryData() {
   return chrome.history.search({ text: '', startTime, maxResults: 99999 });
 }
 
-export function getHistoryDataByWorker() {
-  const worker = new Worker('./worker-history.js');
-  getHistoryData().then((histories) => {
-    worker.postMessage(histories);
-  });
-  return new Promise<MyHistoryItem[]>((resolve) => {
-    worker.onmessage = (event) => {
-      resolve(event.data);
-      worker.terminate();
-    };
-  });
+export function getSortedHistoryData() {
+  return getHistoryData()
+    .then((histories) => histories.sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!)));
 }

@@ -110,6 +110,8 @@ export type Options = State['options'];
 
 export const CliMessageTypes = {
   initialize: 'cl-initialize',
+  moveWindow: 'cl-move-window',
+  moveWindowNew: 'cl-move-window-new',
 } as const;
 
 export const BkgMessageTypes = {

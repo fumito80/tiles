@@ -25,7 +25,7 @@ import {
   preFaviconUrl,
   extractDomain,
   postMessage,
-  getHistoryDataByWorker,
+  getSortedHistoryData,
 } from './common';
 
 import {
@@ -159,7 +159,7 @@ function getInitialTabs() {
 function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
-  const promiseInitHistory = getHistoryDataByWorker();
+  const promiseInitHistory = getSortedHistoryData();
   const isSearching = lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
   const store = initComponents(
