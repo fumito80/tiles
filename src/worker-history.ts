@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 
-export default function miningHistoryData(HistoryItems: chrome.history.HistoryItem[]) {
+export default function addHeadersHistory(HistoryItems: chrome.history.HistoryItem[]) {
   const [histories] = HistoryItems
     .sort((a, b) => Math.sign(b.lastVisitTime! - a.lastVisitTime!))
     .reduce<[MyHistoryItem[], string | undefined]>(([data, prevLastVisitDate], item) => {
@@ -17,6 +17,6 @@ export default function miningHistoryData(HistoryItems: chrome.history.HistoryIt
 }
 
 onmessage = async (e) => {
-  const histories = miningHistoryData(e.data);
+  const histories = addHeadersHistory(e.data);
   postMessage(histories);
 };

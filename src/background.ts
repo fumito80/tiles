@@ -24,7 +24,7 @@ import {
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import { setBrowserIcon } from './draw-svg';
-import miningHistoryData from './worker-history';
+import addHeadersHistory from './worker-history';
 
 function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {
@@ -63,7 +63,7 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData().then(miningHistoryData);
+  const histories = await getHistoryData().then(addHeadersHistory);
   const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
   const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
   return setLocal({ htmlHistory }).then(() => histories);
@@ -112,14 +112,47 @@ getLocal(...initStateKeys).then(init);
 
 // Messagings popup to background
 
+type PayloadMoveWindow = PayloadAction<{ sourceWindowId: number, windowId: number, index: number }>;
+
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
+  ),
+  [CliMessageTypes.moveWindow]:
+    ({ payload: { sourceWindowId, windowId, index } }: PayloadMoveWindow) => (
+      new Promise<string | undefined>((resolve) => {
+        chrome.windows.get(sourceWindowId, { populate: true }).then(async ({ tabs }) => {
+          if (!tabs) {
+            resolve(`Error: ${CliMessageTypes.moveWindow}`);
+            return;
+          }
+          const tabIds = tabs.map((tab) => tab.id!);
+          chrome.tabs.move(tabIds, { windowId, index }, () => {
+            if (chrome.runtime.lastError) {
+              return resolve(chrome.runtime.lastError.message);
+            }
+            return resolve(undefined);
+          });
+        });
+      })
+    ),
+  [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
+    chrome.windows.get(payload.windowId, { populate: true }).then(({ tabs, incognito }) => {
+      if (!tabs) {
+        return;
+      }
+      const activeTabIndex = tabs.findIndex((tab) => tab.active);
+      const [activeTab] = tabs.splice(activeTabIndex, 1);
+      chrome.windows.create({ tabId: activeTab.id, incognito }, (win) => {
+        tabs.forEach(async (tab) => {
+          await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+        });
+      });
+    })
   ),
 };
 
 setMessageListener(mapMessagesPtoB);
 
 // No longer in use
-
 chrome.storage.local.remove('histories');

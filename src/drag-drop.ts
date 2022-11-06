@@ -1,4 +1,4 @@
-import { dropAreaClasses, positions } from './types';
+import { CliMessageTypes, dropAreaClasses, positions } from './types';
 import {
   pipe,
   cbToResolve,
@@ -10,6 +10,7 @@ import {
   decode,
   getChromeId,
   when,
+  postMessage,
 } from './common';
 import {
   $, $$,
@@ -142,21 +143,17 @@ async function dropWithTabs(
   if (sourceClass === 'window') {
     if ($dropTarget.closest('.tabs')) {
       const sourceWindowId = getChromeId(srcElementId);
-      chrome.windows.get(sourceWindowId, { populate: true }, ({ tabs }) => {
-        if (!tabs) {
-          return;
-        }
-        const tabIds = tabs.map((tab) => tab.id!);
-        chrome.tabs.move(tabIds, { windowId, index }, () => {
-          if (chrome.runtime.lastError) {
-            // eslint-disable-next-line no-alert
-            alert(chrome.runtime.lastError.message);
-            return;
-          }
-          ($dropTarget.parentElement as Window).reloadTabs();
-          $byId(srcElementId).remove();
-        });
+      const errorMessage = await postMessage({
+        type: CliMessageTypes.moveWindow,
+        payload: { sourceWindowId, windowId, index },
       });
+      if (errorMessage) {
+        // eslint-disable-next-line no-alert
+        alert(errorMessage);
+        return;
+      }
+      ($dropTarget.parentElement as Window).reloadTabs();
+      $byId(srcElementId).remove();
     }
     return;
   }
