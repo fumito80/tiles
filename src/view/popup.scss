@@ -496,6 +496,15 @@ window-header,
   .folder[id="1"]>.search-path {
     margin-left: 0;
   }
+
+  .search-path.path>.marker {
+    >.title {
+      &::before {
+        // color: $light-folder-color;
+        content: "\f07c";
+      }
+    }
+  }
 }
 
 app-main:not(.searching) .leafs {

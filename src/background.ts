@@ -24,7 +24,7 @@ import {
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
 import { setBrowserIcon } from './draw-svg';
-import addHeadersHistory from './worker-history';
+import addHeadersHistory from './add-headers-history';
 
 function digBookmarks(isNode = true) {
   return (node: chrome.bookmarks.BookmarkTreeNode): string => {

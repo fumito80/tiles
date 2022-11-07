@@ -101,6 +101,9 @@ export class Leaf extends HTMLElement {
       return;
     }
     this.updateTitle(title);
+    if (this.closest('.folders')) {
+      ($(`.leafs ${cssid(this.id)}`) as Leaf).updateTitle(title);
+    }
     setAnimationClass('hilite')(this);
   }
 }
@@ -145,7 +148,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
           await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
           addChild($byClass('leaf-menu'))($byClass('components'));
           pipe(
-            addListener('animationend', () => $leaf.remove(), { once: true }),
+            addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
             rmClass('hilite'),
             setAnimationClass('remove-hilite'),
           )($leaf);

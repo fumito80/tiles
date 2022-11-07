@@ -582,8 +582,9 @@ export async function addBookmark(
     title: title!, url: url!, parentId, index,
   };
   const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlAnchor = makeLeaf({ id, ...params }, isSearching);
+  const htmlAnchor = makeLeaf({ id, ...params });
   if (parentId === '1') {
+    insertHTML('beforebegin', htmlAnchor)($byId('1')!.children[index! + 1]);
     insertHTML('beforebegin', htmlAnchor)($byClass('folders')!.children[index!]);
   } else {
     if (parentId !== $byClass('open')?.id && !isSearching) {
@@ -597,8 +598,8 @@ export async function addBookmark(
       insertHTML('afterend', htmlAnchor)($targetFolder.children[index]);
     }
   }
-  const $Leaf = $(`.folders ${cssid(id)}, .leafs ${cssid(id)}`)! as Leaf;
-  if ($Leaf && !silent) {
+  const $Leaf = $(`.folders ${cssid(id)}`) as Leaf || $(`.leafs ${cssid(id)}`) as Leaf;
+  if ($Leaf && !silent && (!isSearching || parentId === '1')) {
     ($Leaf as any).scrollIntoViewIfNeeded();
     setAnimationClass('hilite')($Leaf);
     $Leaf.editBookmarkTitle();
