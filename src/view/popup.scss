@@ -279,9 +279,8 @@ window-header,
     align-items: center;
     background-color: transparent;
     border: 0;
-    padding: 1px 6px;
+    padding: 1px 4px 1px 6px;
     outline: 0;
-    font-size: 0.9em;
     color: rgba(0, 0, 0, 0.4);
 
     &::after {
@@ -1206,7 +1205,6 @@ app-main::-webkit-scrollbar {
   .icon-history {
     +.collapse-history-date {
       margin: 0 10px;
-      margin-left: auto;
 
       +.query-wrap {
         margin-left: 0;
@@ -1562,8 +1560,8 @@ app-main.zoom-pane {
   }
 
   >i {
-    margin-right: 10px;
     margin-left: 6px;
+    margin-right: auto;
   }
 }
 
