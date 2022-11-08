@@ -220,30 +220,30 @@ export function getGridTemplateColumns() {
   };
 }
 
-async function checkSplitWidth(pane1: number, pane2: number, pane3: number) {
-  if (document.body.offsetWidth >= (pane1 + pane2 + pane3 + 120)) {
-    return true;
-  }
-  const width = 800;
-  const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
-  addStyle('width', `${width}px`)(document.body);
-  // eslint-disable-next-line no-use-before-define
-  setSplitWidth(paneWidth);
-  const saved = await getLocal('settings');
-  const settings = {
-    ...saved.settings,
-    width,
-    paneWidth,
-  };
-  setLocal({ settings });
-  return false;
-}
+// async function checkSplitWidth(pane1: number, pane2: number, pane3: number, bodyWidth: number) {
+//   if (bodyWidth >= (pane1 + pane2 + pane3 + 100)) {
+//     return true;
+//   }
+//   const width = 800;
+//   const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
+//   addStyle('width', `${width}px`)(document.body);
+//   // eslint-disable-next-line no-use-before-define
+//   setSplitWidth(paneWidth, width);
+//   const saved = await getLocal('settings');
+//   const settings = {
+//     ...saved.settings,
+//     width,
+//     paneWidth,
+//   };
+//   setLocal({ settings });
+//   return false;
+// }
 
 export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  if (!await checkSplitWidth(pane1, pane2, pane3)) {
-    return;
-  }
+  // if (!await checkSplitWidth(pane1, pane2, pane3, bodyWidth)) {
+  //   return;
+  // }
   const $bodies = $$byClass('pane-body');
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }

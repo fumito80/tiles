@@ -69,10 +69,11 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-export const defaultColorPalette: ColorPalette = ['FFFFFF', 'e8e8e9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
+export const defaultColorPalette: ColorPalette = ['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
 export const initialOptions = {
   panes: ['histories', 'tabs', 'bookmarks'] as const,
+  bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
   showSwitchTabsWin: true,

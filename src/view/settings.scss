@@ -356,7 +356,8 @@ label.theme {
 
   .icon-bookmarks {
     transform: scale(1.2, 1);
-    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   >.drag-source {
@@ -389,4 +390,71 @@ label.theme {
       }
     }
   }
+}
+
+[data-value="bookmarks"] {
+  width: 200px !important;
+}
+
+.bm-panes {
+  display: flex;
+  margin: 10px;
+
+  >div {
+    pointer-events: none;
+    border: 2px solid #222;
+    padding: 3px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    background-color: rgba(255, 255, 255, .9);
+  }
+}
+
+.btn-flip-bm {
+  margin: 5px;
+}
+
+.btn-flip-bm {
+  display: flex;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  outline: none;
+  background-color: transparent;
+  border-radius: 3px;
+  font-size: 1.2em;
+  transition: all 0.3s;
+
+  >i {
+    color: rgba(0, 0, 0, 0.5);
+    width: 1.2em;
+  }
+
+  &:hover>i,
+  &:focus>i {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  &::after {
+    border-radius: 50%;
+    background-color: transparent;
+    transition: all 0.1s;
+    pointer-events: none;
+  }
+
+  &:hover::after,
+  &:focus::after {
+    content: "";
+    background-color: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    width: 1.3em;
+    height: 1.3em;
+    transition: all 0.1s;
+  }
+
+  &:active::after {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
 }

@@ -23,6 +23,7 @@ export default class LayoutPanes extends HTMLDivElement {
     this.addEventListener('dragleave', this.dragleave);
     this.addEventListener('dragend', this.dragend);
     this.addEventListener('drop', this.drop);
+    this.querySelector('.btn-flip-bm')?.addEventListener('click', this.flipBmPanes);
   }
   get value() {
     return this.#value;
@@ -40,6 +41,12 @@ export default class LayoutPanes extends HTMLDivElement {
       this.insertBefore(el, this.children[index]);
     });
     this.#value = value;
+  }
+  // eslint-disable-next-line class-methods-use-this
+  flipBmPanes(e: Event) {
+    const button = (e.currentTarget as HTMLButtonElement);
+    button.previousElementSibling!.insertAdjacentElement('beforebegin', button.nextElementSibling!);
+    button.insertAdjacentElement('afterend', button.previousElementSibling!);
   }
   dragover(e: DragEvent) {
     if (!hasClass(e.target as HTMLElement, 'droppable')) {

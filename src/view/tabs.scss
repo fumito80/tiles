@@ -60,19 +60,19 @@ open-tab {
 
 .pane-header.header-tabs {
 
-  .icon-tabs {
-    +.win-prev {
-      margin-left: auto;
-    }
+  // .icon-tabs {
+  //   +.win-prev {
+  //     margin-left: auto;
+  //   }
 
-    +.collapse-tabs {
-      margin-left: auto;
-    }
+  //   +.collapse-tabs {
+  //     margin-left: auto;
+  //   }
 
-    +.query-wrap {
-      margin-left: auto;
-    }
-  }
+  //   +.query-wrap {
+  //     margin-left: auto;
+  //   }
+  // }
 
   &.end {
     .collapse-tabs {
@@ -93,6 +93,7 @@ open-tab {
   }
 
   .collapse-tabs {
+    margin-left: 10px;
     margin-right: 10px;
   }
 
