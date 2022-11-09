@@ -77,7 +77,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     if (isSearching) {
       const header = '<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>';
       const line = '<div class="history" draggable="true" style="transform: translateY(-10000px);"></div>';
-      const lines = Array(30).fill(line).join('');
+      const lines = Array(32).fill(line).join('');
       insertHTML('afterbegin', header + lines)(this.firstElementChild);
     } else {
       insertHTML('afterbegin', htmlHistory)(this.firstElementChild);

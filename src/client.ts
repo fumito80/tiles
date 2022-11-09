@@ -33,12 +33,6 @@ import {
   postMessage,
 } from './common';
 
-import {
-  rowSetterHistory,
-  setVScroll,
-  getVScrollData,
-} from './vscroll';
-
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 
@@ -437,22 +431,11 @@ export function resizeWidthHandler($ref: HTMLElement, startWidth: number, endPan
   };
 }
 
-let timerResizeY: ReturnType<typeof setTimeout>;
-
 export function resizeHeightHandler(e: MouseEvent) {
   const height = Math.min(e.clientY - 6, 570);
   if (height < 200) {
     return;
   }
-  clearTimeout(timerResizeY);
-  timerResizeY = setTimeout(() => {
-    getLocal('vscrollProps')
-      .then(({ vscrollProps }) => {
-        const $paneHistory = $byClass('histories') as HTMLDivElement;
-        const vScrollData = getVScrollData();
-        setVScroll($paneHistory, rowSetterHistory, vScrollData, vscrollProps.rowHeight);
-      });
-  }, 500);
   addStyle('height', `${height}px`)(document.body);
 }
 
