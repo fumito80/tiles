@@ -387,6 +387,7 @@ function setMouseEventListener(
   };
   document.addEventListener('mousemove', mouseMoveHandlerWrapper, false);
   document.addEventListener('mouseup', async () => {
+    $byClass('mousedown')?.classList.remove('mousedown');
     document.removeEventListener('mousemove', mouseMoveHandlerWrapper);
     const saved = await getLocal('settings');
     const settings = getSettings(saved);

@@ -306,6 +306,14 @@ app-main:not(.drag-start) {
       }
     }
   }
+
+  .split-h {
+
+    &.mousedown,
+    &:hover {
+      background-color: lightgray;
+    }
+  }
 }
 
 .theme-dark-hover:not(.drag-start) {

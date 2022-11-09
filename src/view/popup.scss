@@ -307,6 +307,12 @@ window-header,
 
 .split-h {
   cursor: col-resize;
+
+  &.mousedown,
+  &:hover {
+    background-color: $common-marker;
+    transition: background-color .4s ease-in;
+  }
 }
 
 .menu-button {
@@ -1273,9 +1279,16 @@ app-main::-webkit-scrollbar {
     }
   }
 
-  .resize-x,
-  .split-h {
-    cursor: default;
+  &.zoom-pane {
+
+    .resize-x,
+    .split-h {
+      cursor: default;
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
   }
 }
 
