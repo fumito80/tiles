@@ -43,9 +43,7 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
     $$byClass('split-h', this).forEach(($splitter, i) => {
       const $targetPane = $paneBodies[i];
       addListener('mousedown', (e: MouseEvent) => {
-        if (hasClass(this, 'auto-zoom')) {
-          return;
-        }
+        (e.currentTarget as HTMLElement).classList.add('mousedown');
         const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
         const subWidth = $paneBodies
           .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
