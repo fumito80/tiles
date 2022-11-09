@@ -64,7 +64,7 @@ regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
   const histories = await getHistoryData().then(addHeadersHistory);
-  const html = histories.slice(0, 30).map(makeHtmlHistory).join('');
+  const html = histories.slice(0, 32).map(makeHtmlHistory).join('');
   const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
   return setLocal({ htmlHistory }).then(() => histories);
 }

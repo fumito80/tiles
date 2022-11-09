@@ -94,10 +94,6 @@ export async function setVScroll(
   $container.removeEventListener('scroll', vScrollHandler);
   const $fakeBottom = $byClass('v-scroll-fake-bottom', $container)!;
   rmStyle('height')($fakeBottom);
-  const bottomIndex = Math.ceil(($rows.parentElement!.offsetHeight - padding) / rowHeight) + 1;
-  [...$rows.children].forEach((el, i) => {
-    addStyle('display', i > bottomIndex ? 'none' : '')(el);
-  });
   const vScrollHeight = rowHeight * data.length;
   addStyle('height', `${vScrollHeight - $container.offsetHeight + padding}px`)($fakeBottom);
   const setter = rowSetter(isShowFixedHeader);
