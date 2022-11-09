@@ -97,14 +97,16 @@ function setBookmarksState(clState: ClientState, isSearching: boolean) {
   }
 }
 
+function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes'], prefix = '') {
+  return panes
+    .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name), [])
+    .map((name) => $byClass(prefix + name));
+}
+
 function layoutPanes(options: Options, isSearching: boolean) {
   const $appMain = $byTag('app-main') as AppMain;
-  const panes = options.panes.reduce<string[]>(
-    (acc, name) => (name === 'bookmarks' ? [...acc, 'leafs', 'folders'] : [...acc, name]),
-    [],
-  );
-  const $headers = panes.map((name) => $byClass(`header-${name}`));
-  const $bodies = panes.map((name) => $byClass(name));
+  const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
+  const $bodies = getPanes(options.panes, options.bookmarksPanes);
   $appMain.prepend(...$headers, ...$bodies);
   pipe(
     filter((el) => !hasClass(el, 'header-folders')),

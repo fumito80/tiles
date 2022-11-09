@@ -1,7 +1,7 @@
 import './view/settings.scss';
 import * as bootstrap from 'bootstrap';
 import { State, ColorPalette } from './types';
-import './settings-layout';
+import { CustomInputElement } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 import { setBrowserIcon } from './draw-svg';
 import {
@@ -25,7 +25,7 @@ type Options = State['options'];
 type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
 
-class ColorPaletteClass extends HTMLDivElement {
+class ColorPaletteClass extends CustomInputElement {
   #value?: ColorPalette;
   #inputs: HTMLInputElement[];
   constructor() {
@@ -47,13 +47,9 @@ class ColorPaletteClass extends HTMLDivElement {
     this.dispatchEvent(new Event('change', { bubbles: true }));
     setBrowserIcon(value);
   }
-  // eslint-disable-next-line class-methods-use-this
-  get validity() {
-    return { valid: true };
-  }
 }
 
-customElements.define('color-palette', ColorPaletteClass, { extends: 'div' });
+customElements.define('color-palette', ColorPaletteClass);
 
 // @ts-ignore
 // eslint-disable-next-line no-restricted-globals
@@ -245,7 +241,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
     }
     const palette = ([...$target.children] as HTMLElement[])
       .map((el) => el.dataset.color as string) as ColorPalette;
-    $<ColorPaletteClass>('[is="color-palette"]')!.value = palette;
+    $byTag<ColorPaletteClass>('color-palette')!.value = palette;
     rmClass('selected')($byClass('selected'));
     addClass('selected')($target);
   })($byClass('tab-content'));
