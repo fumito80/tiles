@@ -3,6 +3,16 @@ import {
   $, $byClass, addClass, hasClass, rmClass,
 } from './client';
 
+export class CustomInputElement extends HTMLElement {
+  fireEvent() {
+    this.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  // eslint-disable-next-line class-methods-use-this
+  get validity() {
+    return { valid: true };
+  }
+}
+
 type Panes = State['options']['panes'][number];
 
 function dragstart(e: DragEvent) {
@@ -12,7 +22,7 @@ function dragstart(e: DragEvent) {
   e.dataTransfer!.effectAllowed = 'move';
 }
 
-export default class LayoutPanes extends HTMLDivElement {
+export class LayoutPanes extends CustomInputElement {
   #value: Panes[] = [];
   #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
   constructor() {
@@ -23,7 +33,6 @@ export default class LayoutPanes extends HTMLDivElement {
     this.addEventListener('dragleave', this.dragleave);
     this.addEventListener('dragend', this.dragend);
     this.addEventListener('drop', this.drop);
-    this.querySelector('.btn-flip-bm')?.addEventListener('click', this.flipBmPanes);
   }
   get value() {
     return this.#value;
@@ -41,12 +50,6 @@ export default class LayoutPanes extends HTMLDivElement {
       this.insertBefore(el, this.children[index]);
     });
     this.#value = value;
-  }
-  // eslint-disable-next-line class-methods-use-this
-  flipBmPanes(e: Event) {
-    const button = (e.currentTarget as HTMLButtonElement);
-    button.previousElementSibling!.insertAdjacentElement('beforebegin', button.nextElementSibling!);
-    button.insertAdjacentElement('afterend', button.previousElementSibling!);
   }
   dragover(e: DragEvent) {
     if (!hasClass(e.target as HTMLElement, 'droppable')) {
@@ -89,12 +92,36 @@ export default class LayoutPanes extends HTMLDivElement {
       return;
     }
     this.value = newValue;
-    this.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-  // eslint-disable-next-line class-methods-use-this
-  get validity() {
-    return { valid: true };
+    this.fireEvent();
   }
 }
 
-customElements.define('layout-panes', LayoutPanes, { extends: 'div' });
+type BookmarksPanes = State['options']['bookmarksPanes'][number];
+export class LayoutBookmarksPanes extends CustomInputElement {
+  #btnFlip!: HTMLButtonElement;
+  constructor() {
+    super();
+    this.#btnFlip = this.querySelector('.btn-flip-bm')!;
+    this.#btnFlip.addEventListener('click', this.flipBmPanes.bind(this));
+  }
+  get value() {
+    return [...this.children]
+      .map((el) => (el as HTMLElement).dataset.value as BookmarksPanes)
+      .filter(Boolean);
+  }
+  set value(value: BookmarksPanes[]) {
+    const leftEl = this.firstElementChild as HTMLElement;
+    const [leftValue] = value;
+    if (leftEl.dataset.value !== leftValue) {
+      this.flipBmPanes();
+    }
+  }
+  flipBmPanes() {
+    this.#btnFlip.previousElementSibling!.insertAdjacentElement('beforebegin', this.#btnFlip.nextElementSibling!);
+    this.#btnFlip.insertAdjacentElement('afterend', this.#btnFlip.previousElementSibling!);
+    this.fireEvent();
+  }
+}
+
+customElements.define('layout-panes', LayoutPanes);
+customElements.define('layout-bm-panes', LayoutBookmarksPanes);

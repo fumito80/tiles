@@ -32,7 +32,7 @@
           <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
             <div>Color palette</div><i class="icon-fa-angle-right ms-1"></i>
           </a>
-          <div is="color-palette" name="color-palette" class="ms-4">
+          <color-palette name="color-palette" class="ms-4">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
               title="Background color of history, tabs, and bookmarks panes">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -43,7 +43,7 @@
               title="Background color of search box while typing">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
               title="Background color of selected folder and tab">
-          </div>
+          </color-palette>
         </div>
         <div id="color-palettes" class="collapse mt-2">
           <ul class="nav nav-tabs" role="tablist">
@@ -69,7 +69,7 @@
         </div>
 
         <div class="heading">Layout</div>
-        <div is="layout-panes" name="panes">
+        <layout-panes name="panes">
           <div draggable="true" data-value="histories">
             <i class="icon-history"></i>
             <div class="title">HISTORY</div>
@@ -91,15 +91,15 @@
           <div draggable="true" data-value="bookmarks">
             <i class="icon-bookmarks"></i>
             <div class="title">BOOKMARKS</div>
-            <div class="bm-panes">
-              <div class="leafs">Bookmarks</div>
+            <layout-bm-panes name="bookmarks-panes">
+              <div data-value="leafs">Bookmarks</div>
               <button type="button" class="btn-flip-bm"><i class="icon-sync-arrows"></i></button>
-              <div class="folders">Folders</div>
-            </div>
+              <div data-value="folders">Folders</div>
+            </layout-bm-panes>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
-        </div>
+        </layout-panes>
         <div class="notice-layout">NOTICE: To resize a pane width, disable "Xen mode" from app menu and then drag
           a pane border.
         </div>
@@ -130,7 +130,8 @@
           <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
           <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
         </div>
-        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search box
+        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search
+            box
             press enter
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
