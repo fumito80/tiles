@@ -1407,14 +1407,14 @@ app-main::-webkit-scrollbar {
 }
 
 .auto-zoom:not(.disable-zoom-tabs) {
-  .pane-header:not(.end) {
+  .header-tabs:not(.end) {
     button {
       display: none;
     }
   }
 
   &.zoom-pane {
-    .pane-header {
+    .header-tabs {
       button {
         display: flex;
       }
@@ -1422,7 +1422,31 @@ app-main::-webkit-scrollbar {
   }
 
   &.zoom-fade-out {
-    .pane-header {
+    .header-tabs {
+      button {
+        display: none;
+      }
+    }
+  }
+}
+
+.auto-zoom:not(.disable-zoom-history) {
+  .header-histories:not(.end) {
+    button {
+      display: none;
+    }
+  }
+
+  &.zoom-pane {
+    .header-histories {
+      button {
+        display: flex;
+      }
+    }
+  }
+
+  &.zoom-fade-out {
+    .header-histories {
       button {
         display: none;
       }

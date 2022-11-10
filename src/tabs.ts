@@ -420,7 +420,6 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
       store.subscribe('clearSearch', this.clearSearch.bind(this));
-      store.dispatch('search');
     });
   }
 }

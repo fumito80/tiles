@@ -57,6 +57,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         rmStyle('background-image'),
         addClass('header-date'),
         rmAttr('title'),
+        rmAttr('id'),
       )($row);
       return;
     }

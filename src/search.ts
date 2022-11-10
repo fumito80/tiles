@@ -101,6 +101,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       chrome.storage.local.set({ lastSearchWord: newValue });
       return;
     }
+    if (this.$inputQuery.value !== newValue) {
+      this.$inputQuery.setAttribute('value', newValue);
+      this.$inputQuery.value = newValue;
+    }
     this.#store.dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
@@ -136,13 +140,16 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       searching: {
         initValue: false,
       },
+      search: {
+        initValue: '',
+      },
     };
   }
   connect(store: Store) {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
     store.subscribe('clearQuery', this.clearQuery.bind(this));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('search', () => this.search.bind(this)(this.$inputQuery.value));
+    store.subscribe('search', (changes) => this.search.bind(this)(changes.newValue || this.$inputQuery.value));
     this.#store = store;
   }
 }

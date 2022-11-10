@@ -45,6 +45,7 @@ export function setEvents<T extends HTMLElement>(
   eventListeners: EventListenerMap<T>,
   // eslint-disable-next-line no-undef
   options?: boolean | AddEventListenerOptions,
+  thisArg?: any,
 ) {
   const itrEventListeners = Object.entries(eventListeners) as
     EventListeners<keyof typeof eventListeners, T>[];
@@ -53,7 +54,7 @@ export function setEvents<T extends HTMLElement>(
       return;
     }
     htmlElements.forEach((htmlElement) => {
-      htmlElement.addEventListener(eventType, listener, options);
+      htmlElement.addEventListener(eventType, listener.bind(thisArg ?? htmlElement), options);
     });
   });
 }

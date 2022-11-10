@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import { CliMessageTypes, dropAreaClasses, positions } from './types';
 import {
   pipe,
@@ -11,6 +12,7 @@ import {
   getChromeId,
   when,
   postMessage,
+  extractUrl,
 } from './common';
 import {
   $, $$,
@@ -33,6 +35,7 @@ import {
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
+import { Store } from './store';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -240,18 +243,23 @@ function checkDroppable(e: DragEvent) {
   if (dropAreaClass === 'drop-top' && $dropTarget.previousElementSibling?.id === sourceId) {
     return undefined;
   }
-  const dragSource = whichClass(sourceClasses, $dragSource);
+  const dragSource = whichClass(sourceClasses, $dragSource) || '';
+  if (dropAreaClass === 'query' && !['leaf', 'tab-wrap', 'history'].includes(dragSource)) {
+    return undefined;
+  }
   const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dragSource === 'marker' && dropPane === 'leafs') {
     return undefined;
   }
   const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dropAreaClass === 'leafs') {
-    return !(dragPanes === 'leafs' && $(`.leafs ${cssid($dragSource.id)}:last-of-type`));
+    return ['leaf', 'tab-wrap', 'history'].includes(dragSource)
+      && !hasClass($byTag('app-main'), 'searching')
+      && !(dragPanes === 'leafs' && $(`.leafs ${cssid($dragSource.id)}:last-of-type`));
   }
   if (
     dropPane === 'folders'
-    && ['leaf', 'tab-wrap', 'history'].includes(dragSource!)
+    && ['leaf', 'tab-wrap', 'history'].includes(dragSource)
     && ['drop-bottom', 'drop-top'].includes(dropAreaClass)
     && hasClass($dropArea.parentElement?.parentElement?.parentElement || null, 'folder')
   ) {
@@ -260,8 +268,22 @@ function checkDroppable(e: DragEvent) {
   return dropAreaClass;
 }
 
-const dragAndDropEvents = {
-  timerDragEnterFolder: 0,
+function search(sourceId: string, store: Store) {
+  store.getState('setIncludeUrl', (includeUrl) => {
+    const $source = $byId(sourceId);
+    const value = includeUrl
+      ? extractUrl($source.style.backgroundImage)
+      : $source.firstElementChild?.textContent!;
+    store.dispatch('search', value, true);
+  });
+}
+
+export default class DragAndDropEvents {
+  timerDragEnterFolder = 0;
+  store: Store;
+  constructor(store: Store) {
+    this.store = store;
+  }
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
@@ -293,12 +315,12 @@ const dragAndDropEvents = {
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
     setTimeout(() => addClass('drag-start')($main), 0);
-  },
+  }
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
       e.preventDefault();
     }
-  },
+  }
   dragenter(e: DragEvent) {
     rmClass('drag-enter')($byClass('drag-enter'));
     const dropAreaClass = checkDroppable(e);
@@ -315,7 +337,7 @@ const dragAndDropEvents = {
         }, 1500);
       }
     }
-  },
+  }
   dragend(e: DragEvent) {
     rmClass('drag-source')($byClass('drag-source'));
     rmClass('drag-start')($byTag('app-main'));
@@ -325,12 +347,16 @@ const dragAndDropEvents = {
       const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
       $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
-  },
+  }
   async drop(e: DragEvent) {
     const $dropArea = e.target as HTMLElement;
     const sourceId = e.dataTransfer?.getData('application/source-id')!;
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
+    if (dropAreaClass === 'query') {
+      search(sourceId, this.store);
+      return;
+    }
     const $dropTarget = $dropArea.parentElement?.id
       ? $dropArea.parentElement!
       : $dropArea.parentElement!.parentElement!;
@@ -406,7 +432,5 @@ const dragAndDropEvents = {
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
     setAnimationClass('hilite')($sourceLeafs);
-  },
-};
-
-export default dragAndDropEvents;
+  }
+}

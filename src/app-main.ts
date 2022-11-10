@@ -5,7 +5,7 @@ import {
   setEvents, addListener,
   last, getColorWhiteness, lightColorWhiteness, camelToSnake,
 } from './common';
-import dragAndDropEvents from './drag-drop';
+import DragAndDropEvents from './drag-drop';
 import { setZoomSetting } from './zoom';
 import {
   $byClass, $$byClass,
@@ -74,23 +74,25 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
   setEvents(store: Store) {
-    setEvents([this], {
-      click(e) {
-        const $target = e.target as HTMLElement;
-        if (hasClass($target, 'main-menu-button', 'query')) {
-          return;
-        }
-        if (hasClass($target, 'leaf-menu-button')) {
-          showMenu('leaf-menu')(e);
-          return;
-        }
-        if ($target.hasAttribute('contenteditable')) {
-          return;
-        }
-        store.dispatch('focusQuery');
-      },
-      ...dragAndDropEvents,
+    this.addEventListener('click', (e) => {
+      const $target = e.target as HTMLElement;
+      if (hasClass($target, 'main-menu-button', 'query')) {
+        return;
+      }
+      if (hasClass($target, 'leaf-menu-button')) {
+        showMenu('leaf-menu')(e);
+        return;
+      }
+      if ($target.hasAttribute('contenteditable')) {
+        return;
+      }
+      store.dispatch('focusQuery');
     });
+    const ddEvents = new DragAndDropEvents(store);
+    const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(ddEvents))
+      .filter((name) => name !== 'constructor')
+      .reduce((acc, name) => ({ ...acc, [name]: (ddEvents as any)[name] }), {});
+    setEvents([this], dragAndDropEvents, undefined, ddEvents);
   }
   setAutoZoom(autoZoom: boolean) {
     toggleClass('auto-zoom', autoZoom)(this);

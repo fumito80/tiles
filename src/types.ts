@@ -147,6 +147,7 @@ export const dropAreaClasses = [
   'drop-folder',
   'leafs',
   'new-window-plus',
+  'query',
 ] as const;
 
 export type DropClasses = typeof dropAreaClasses[number];
