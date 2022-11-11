@@ -169,7 +169,7 @@ export function setZoomSetting($main: HTMLElement, options: Options) {
   const elements = getZoomingElements({ $main });
   const zoomRatio = Number.parseFloat(options.zoomRatio);
   return (e: MouseEvent) => {
-    if (e.buttons !== 0 || !hasClass($main, 'auto-zoom')) {
+    if (e.buttons !== 0) {
       return;
     }
     clearTimeoutZoom();

@@ -38,7 +38,6 @@ export const initialSettings = {
     rows: 30,
     days: null,
   },
-  autoZoom: true,
   includeUrl: false,
   theme: {
     light: '',

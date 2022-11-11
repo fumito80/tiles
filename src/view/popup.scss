@@ -1270,24 +1270,22 @@ app-main::-webkit-scrollbar {
 
 // Zoom
 
-.auto-zoom {
-  .pane-header {
+.pane-header {
 
-    .form-query,
-    .query {
-      transition: var(--xen-mode-transition);
-    }
+  .form-query,
+  .query {
+    transition: var(--xen-mode-transition);
   }
+}
 
-  &.zoom-pane {
+.zoom-pane {
 
-    .resize-x,
-    .split-h {
-      cursor: default;
+  .resize-x,
+  .split-h {
+    cursor: default;
 
-      &:hover {
-        background-color: transparent;
-      }
+    &:hover {
+      background-color: transparent;
     }
   }
 }
@@ -1297,7 +1295,7 @@ app-main::-webkit-scrollbar {
   transition: var(--xen-mode-transition);
 }
 
-.auto-zoom.zoom-pane {
+app-main.zoom-pane {
 
   .shade-left,
   .shade-right {
@@ -1379,15 +1377,13 @@ app-main::-webkit-scrollbar {
   color: $common-marker;
 }
 
-.checked-include-url,
-.auto-zoom {
+.checked-include-url {
   .main-menu>div {
     padding-left: 1.6em;
   }
 }
 
-.checked-include-url .main-menu>.include-url,
-.auto-zoom .main-menu>.auto-zoom {
+.checked-include-url .main-menu>.include-url {
   >.icon-check-solid {
     display: inline-block;
   }
@@ -1406,7 +1402,7 @@ app-main::-webkit-scrollbar {
   filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
 }
 
-.auto-zoom:not(.disable-zoom-tabs) {
+app-main:not(.disable-zoom-tabs) {
   .header-tabs:not(.end) {
     button {
       display: none;
@@ -1430,7 +1426,7 @@ app-main::-webkit-scrollbar {
   }
 }
 
-.auto-zoom:not(.disable-zoom-history) {
+app-main:not(.disable-zoom-history) {
   .header-histories:not(.end) {
     button {
       display: none;

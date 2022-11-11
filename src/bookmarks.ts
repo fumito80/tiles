@@ -23,13 +23,11 @@ export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
 }
 
 export class PaneHeader extends HTMLDivElement implements IPublishElement {
-  #autoZoom!: boolean;
   #includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], _?: boolean) {
     this.$mainMenu = $byClass('main-menu', this);
-    this.#autoZoom = settings.autoZoom;
     this.#includeUrl = settings.includeUrl;
     pipe(
       addListener('click', (e) => {
@@ -57,13 +55,6 @@ export class PaneHeader extends HTMLDivElement implements IPublishElement {
       return {};
     }
     return {
-      setAutoZoom: makeAction({
-        initValue: this.#autoZoom,
-        persistent: true,
-        target: $byClass('auto-zoom', this.$mainMenu),
-        eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
-      }),
       setIncludeUrl: makeAction({
         initValue: this.#includeUrl,
         persistent: true,
