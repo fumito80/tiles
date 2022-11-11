@@ -422,10 +422,7 @@ window-header,
 }
 
 [role="menuitem"] {
-
-
-  i,
-  >.icon-zoom {
+  i {
     width: 2.5rem;
     text-align: center;
     font-size: 1.0rem;
@@ -505,7 +502,6 @@ window-header,
   .search-path.path>.marker {
     >.title {
       &::before {
-        // color: $light-folder-color;
         content: "\f07c";
       }
     }
@@ -1387,19 +1383,6 @@ app-main.zoom-pane {
   >.icon-check-solid {
     display: inline-block;
   }
-}
-
-.icon-zoom {
-  background-image: url(data:image/svg+xml;charset=utf-8;base64,CiAgICA8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwMDAwIiBjbGFzcz0iem9vbS1pY29uIiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMTAiIGQ9Ik0yMCA2NCBMMTA4IDY0IiAvPgogICAgICA8cGF0aCBzdHJva2Utd2lkdGg9IjEwIiBkPSJNNDAgNDQgTDIwIDY0IEw0MCA4NCIgLz4KICAgICAgPHBhdGggc3Ryb2tlLXdpZHRoPSIxMCIgZD0iTTg4IDQ0IEwxMDggNjQgTDg4IDg0IiAvPgogICAgICA8cGF0aCBzdHJva2Utd2lkdGg9IjEwIiBkPSJNNSAyMCBMNSAxMDgiIC8+CiAgICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMTAiIGQ9Ik0xMjMgMjAgTDEyMyAxMDgiIC8+CiAgICA8L3N2Zz4KICA=);
-}
-
-.icon-zoom {
-  width: 2.5em;
-  height: 1.2em;
-  background-size: 1.2em;
-  background-repeat: no-repeat;
-  background-position: center;
-  filter: invert(8%) sepia(1%) saturate(2805%) hue-rotate(317deg) brightness(104%) contrast(89%);
 }
 
 app-main:not(.disable-zoom-tabs) {
