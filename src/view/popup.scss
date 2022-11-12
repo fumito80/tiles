@@ -321,29 +321,46 @@ window-header,
   transition: visibility 0.1s;
 }
 
-.pane-header button {
-  display: flex;
-  padding: 0;
-  justify-content: center;
-  align-items: center;
-  border: 0;
-  font-size: 1.2em;
+.pane-header {
+  button {
+    display: flex;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    border: 0;
+    font-size: 1.2em;
 
-  &:focus {
-    pointer-events: none;
+    &:focus {
+      pointer-events: none;
 
-    +.main-menu {
-      display: block;
-      animation: fade-in 0.15s ease-in-out;
+      +.main-menu {
+        display: block;
+        animation: fade-in 0.15s ease-in-out;
+      }
+    }
+
+    >.icon-fa-ellipsis-v {
+      pointer-events: none;
+    }
+
+    &:active {
+      pointer-events: all;
     }
   }
 
-  >.icon-fa-ellipsis-v {
-    pointer-events: none;
+  .icon-check-all {
+    display: none;
   }
 
-  &:active {
-    pointer-events: all;
+  .icon-check-all.show {
+    display: inline;
+    left: 20px;
+    position: absolute;
+    color: blue;
+    font-size: 1.0rem;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    padding: 2px;
   }
 }
 
