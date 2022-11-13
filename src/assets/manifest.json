@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Popup'n My Resources",
-  "version": "0.18.4",
+  "version": "0.18.5",
   "default_locale": "en",
   "description": "Search/view across bookmarks, tabs, and history for a one-stop access to your browsing resources.",
   "permissions": [
