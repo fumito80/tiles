@@ -183,19 +183,21 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     };
   }
   setTooltipPosition() {
+    const marginBottom = 3;
+    const marginTop = 3;
     const rect = this.getBoundingClientRect();
     const rectTT = this.$tooltip.getBoundingClientRect();
     const rectMain = this.$main.getBoundingClientRect();
     const left = Math.min(
-      rect.right - rectMain.left,
+      rect.left - rectMain.left,
       rectMain.width - rectMain.left - rectTT.width - 5,
     );
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
-    if (rect.bottom + rectTT.height > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - rectTT.height}px`)(this.$tooltip);
+    if (rect.bottom + rectTT.height + marginBottom > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - rectTT.height - marginTop}px`)(this.$tooltip);
       return;
     }
-    addStyle('top', `${rect.bottom}px`)(this.$tooltip);
+    addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
   }
   connect(store: Store) {
     addListener('click', this.closeTab(store))($byClass('icon-x', this));

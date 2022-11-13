@@ -3,7 +3,7 @@ $article-bgcolor: #F6F6F6;
 $common-marker: #1A73E8;
 
 @import 'glyphs';
-@import './bootstrap.min.css';
+@import 'bootstrap';
 
 main {
   width: 800px;
@@ -400,6 +400,8 @@ label.theme {
 [name="bookmarks-panes"] {
   display: flex;
   margin: 10px;
+  align-items: center;
+  gap: 4px;
 
   >div {
     pointer-events: none;
@@ -412,44 +414,12 @@ label.theme {
 }
 
 .btn-flip-bm {
-  margin: 5px;
-}
-
-.btn-flip-bm {
   display: flex;
-  padding: 0;
-  justify-content: center;
-  align-items: center;
-  border: 0;
-  outline: none;
-  background-color: transparent;
-  border-radius: 3px;
+  padding: 2px;
+  border-radius: 50%;
   font-size: 1.2em;
 
   >i {
     color: $common-marker;
-    width: 1.2em;
   }
-
-  &::after {
-    border-radius: 50%;
-    background-color: transparent;
-    transition: all 0.1s;
-    pointer-events: none;
-  }
-
-  &:hover::after,
-  &:focus::after {
-    content: "";
-    background-color: rgba(0, 0, 0, 0.1);
-    position: absolute;
-    width: 1.3em;
-    height: 1.3em;
-    transition: all 0.1s;
-  }
-
-  &:active::after {
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-
 }

@@ -10,6 +10,7 @@ import {
   cssid,
   curry,
   curry3,
+  delayMultiSelect,
   extractUrl, pipe, setEvents, setFavicon, switches,
 } from './common';
 import { ISearchable, SearchParams } from './search';
@@ -171,8 +172,13 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
 }
 
 export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearchable {
+  store!: Store;
+  #options!: Options;
+  #timerMultiSelect!: number;
   init(options: Options) {
+    this.#options = options;
     this.addEventListener('click', (e) => {
+      this.store.getState('multiSelectLeafs', (a) => a);
       const $target = e.target as HTMLDivElement;
       if ($target.hasAttribute('contenteditable')) {
         return;
@@ -188,8 +194,27 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
         addStyle({ top: '-1000px' })($leafMenu);
       }
+      clearTimeout(this.#timerMultiSelect);
+      this.#timerMultiSelect = setTimeout(this.startMultiSelect, delayMultiSelect);
     });
     setLeafMenu($leafMenu, options);
+  }
+  // click({ newValue, states }: any) {
+  //   const $target = e.target as HTMLDivElement;
+  //   if ($target.hasAttribute('contenteditable')) {
+  //     return;
+  //   }
+  //   if (hasClass($target, 'anchor')) {
+  //     openOrFindBookmarks(options, $target!);
+  //   } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
+  //     toggleClass('path')($target.parentElement?.parentElement);
+  //   }
+  // }
+  multiSelect(changes: { newValue: boolean }) {
+    this.classList.toggle('multi-select', changes.newValue);
+  }
+  startMultiSelect() {
+    this.store.dispatch('multiSelectLeafs', true);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     const targetBookmarks = switches(searchSelector)
@@ -227,7 +252,49 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     $$byClass('search-path', this).forEach(rmClass('search-path'));
     $$byClass('path', this).forEach(rmClass('path'));
   }
+  // eslint-disable-next-line class-methods-use-this
+  actions() {
+    return {
+      multiSelectLeafs: { initValue: false },
+      clickLeafs: makeAction({
+        target: this,
+        eventType: 'click',
+        needState: true,
+        eventProcesser: (e) => {
+          const $target = e.target as HTMLDivElement;
+          if ($target.hasAttribute('contenteditable')) {
+            return undefined;
+          }
+          if (hasClass($target, 'anchor')) {
+            // openOrFindBookmarks(this.#options, $target!);
+            return { openOrFindBookmarks: $target.parentElement!.id };
+          }
+          if (hasClass($target, 'title', 'icon-fa-angle-right')) {
+            // toggleClass('path')($target.parentElement?.parentElement);
+            return { action: '', id: $target.parentElement!.id };
+          }
+          return undefined;
+        },
+      }),
+    };
+  }
   connect(store: Store) {
+    store.subscribe('clickLeafs', ({ newValue: e, states }) => {
+      if (states.multiSelectLeafs) {
+        return;
+      }
+      const $target = e.target as HTMLDivElement;
+      if ($target.hasAttribute('contenteditable')) {
+        return;
+      }
+      if (hasClass($target, 'anchor')) {
+        openOrFindBookmarks(this.#options, $target!);
+      } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
+        toggleClass('path')($target.parentElement?.parentElement);
+      }
+    });
     store.subscribe('clearSearch', this.clearSearch.bind(this));
+    store.subscribe('multiSelectLeafs', this.multiSelect.bind(this));
+    this.store = store;
   }
 }
