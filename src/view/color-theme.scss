@@ -49,7 +49,9 @@ window-header:hover,
 .draggable-clone .title::before,
 .draggable-clone window-header::before,
 .drag-source,
-.drag-source::before {
+.drag-source::before,
+// selected
+.leaf.selected {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 }

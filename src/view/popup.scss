@@ -352,7 +352,7 @@ window-header,
     display: none;
   }
 
-  .icon-check-all.show {
+  &.multi-select .icon-check-all {
     display: inline;
     left: 20px;
     position: absolute;
@@ -537,7 +537,7 @@ app-main:not(.searching) .leafs {
   margin-left: 30px;
 }
 
-app-main:not(.drag-start) .leaf:hover>div:not([contenteditable])+button {
+app-main:not(.drag-start) .leaf:not(.selected):hover>div:not([contenteditable])+button {
   display: flex;
 }
 
@@ -1616,6 +1616,27 @@ app-main.zoom-pane {
 
   &.pane1 {
     grid-column: 7/8;
+  }
+}
+
+.header-leafs.multi-select~.leafs {
+  .leaf {
+    transition: filter 0.4s;
+
+    &.selected {
+      filter: contrast(1.5);
+
+      &:active {
+        filter: contrast(1.0);
+        transition: filter 0.1s;
+      }
+    }
+
+    &:not(.selected) {
+      &:active {
+        filter: contrast(2.0);
+      }
+    }
   }
 }
 

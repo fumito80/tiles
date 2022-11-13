@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import { openOrFindBookmarks } from './bookmarks';
+import { Leaf } from './bookmarks';
 import {
   $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
@@ -75,12 +75,16 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
       ] as const;
       const targetClass = whichClass(targetClasses, $target);
       switch (targetClass) {
-        case 'anchor':
+        case 'anchor': {
           if ($target.hasAttribute('contenteditable')) {
             return;
           }
-          openOrFindBookmarks(this.#options, $target!);
+          const $leaf = $target.parentElement;
+          if ($leaf instanceof Leaf) {
+            $leaf.openOrFind(this.#options);
+          }
           break;
+        }
         case 'marker':
           $byClass('title', $target)!.click();
           break;

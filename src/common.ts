@@ -12,6 +12,7 @@ import {
   defaultColorPalette,
   HTMLElementEventType,
   pastMSec,
+  EventListenerOptions,
 } from './types';
 
 import {
@@ -24,7 +25,7 @@ import { applyVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
-export const delayMultiSelect = 3000;
+export const delayMultiSelect = 800;
 
 type AnyFunction = (...p: any[]) => any;
 
@@ -45,8 +46,7 @@ type EventListeners<
 export function setEvents<T extends HTMLElement>(
   htmlElements: Array<T>,
   eventListeners: EventListenerMap<T>,
-  // eslint-disable-next-line no-undef
-  options?: boolean | AddEventListenerOptions,
+  options?: EventListenerOptions,
   thisArg?: any,
 ) {
   const itrEventListeners = Object.entries(eventListeners) as
@@ -64,8 +64,7 @@ export function setEvents<T extends HTMLElement>(
 export function addListener<T extends keyof HTMLElementEventType>(
   type: T,
   ev: (e: HTMLElementEventType[T]) => any,
-  // eslint-disable-next-line no-undef
-  options?: boolean | AddEventListenerOptions,
+  options?: EventListenerOptions,
 ) {
   return <U extends Element | null>(element: U) => {
     (element as unknown as HTMLElement)?.addEventListener(type, ev, options);

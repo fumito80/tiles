@@ -1,4 +1,5 @@
 import {
+  EventListenerOptions,
   HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
@@ -16,7 +17,8 @@ type Action<
   R extends any,
   S extends boolean,
   T extends boolean,
-  U extends boolean,
+  U extends EventListenerOptions,
+  V extends boolean = false,
 > = {
   initValue?: R;
   target?: HTMLElement;
@@ -24,7 +26,8 @@ type Action<
   eventProcesser?: (e: HTMLElementEventType[A], value: R) => R;
   force?: S,
   persistent?: T,
-  needState?: U,
+  listenerOptions?: U,
+  eventOnly?: V,
 };
 
 export function makeAction<
@@ -32,17 +35,22 @@ export function makeAction<
   T extends keyof HTMLElementEventType = any,
   S extends boolean = false,
   V extends boolean = false,
-  W extends boolean = false,
+  W extends EventListenerOptions = any,
+  X extends boolean = false,
 >(
-  action: Action<T, U, S, V, W>,
+  action: Action<T, U, S, V, W, X>,
 ) {
   return { force: false, persistent: false, ...action };
 }
 
-type ActionValue<T> = T extends Action<any, infer R, any, any, any> ? R : never;
+type ActionValue<T> = T extends Action<any, infer R, any, any, any, any> ? R : never;
+
+type ActionEventType<T> = T extends Action<infer R, any, any, any, any, any> ? R : never;
+
+type ActionEventOnly<T> = T extends Action<any, any, any, any, any, infer R> ? R : never;
 
 type Actions<T> = {
-  [K in keyof T]: T[K] extends Action<any, any, any, any, any> ? T : never;
+  [K in keyof T]: T[K] extends Action<any, any, any, any, any, any> ? T : never;
 }
 
 const actionPrefix = 'action-';
@@ -65,21 +73,31 @@ type ActionResult = ReturnType<typeof makeActionValue>;
 export function registerActions<T extends Actions<any>>(actions: T) {
   const subscribers = {} as { [actionName: string]: Function[] };
   const initPromises = Object.entries(actions).map(([name, {
-    target, eventType, eventProcesser, initValue, persistent, needState,
+    target, eventType, eventProcesser, initValue, persistent, listenerOptions, eventOnly,
   }]) => {
     const actionName = prefixedAction(name);
     if (target) {
       const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
-      target.addEventListener(eventType, (e: any) => {
+      target.addEventListener(eventType, async (e: any) => {
+        if (eventOnly) {
+          const states = await chrome.storage.session.get().then(
+            (values) => Object.entries(values).reduce(
+              (acc, [key, { value }]) => ({ ...acc, [getActionName(key)]: value }),
+              {},
+            ),
+          );
+          subscribers[actionName]?.forEach((cb) => cb(undefined, undefined, e, states));
+          return;
+        }
         chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
           const newValue = valueProcesser(e, (currentValue as ActionResult).value);
           const forced = currentValue.forced + Number(actions[name].force);
           const actionNewValue = makeActionValue(newValue, forced);
           chrome.storage.session.set({ [actionName]: actionNewValue });
         });
-      });
+      }, listenerOptions);
     }
-    return new Promise<{ [key: string]: { persistent: boolean, needState: boolean } }>(
+    return new Promise<{ [key: string]: { persistent: boolean, eventOnly: boolean } }>(
       (resolve) => {
         chrome.storage.session.remove(actionName, () => {
           if (persistent) {
@@ -93,7 +111,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
           }
           const actionValue = makeActionValue(initValue);
           chrome.storage.session.set({ [actionName]: actionValue }, () => {
-            resolve({ [actionName]: { persistent, needState } });
+            resolve({ [actionName]: { persistent, eventOnly } });
           });
         });
       },
@@ -107,22 +125,16 @@ export function registerActions<T extends Actions<any>>(actions: T) {
         return;
       }
       Object.entries(storage).forEach(async ([actionName, changes]) => {
+        const { persistent, eventOnly } = persistentsAction[actionName];
+        if (eventOnly) {
+          return;
+        }
         const oldValue = (changes.oldValue as ActionResult)?.value;
         const newValue = (changes.newValue as ActionResult)?.value;
-        const { persistent, needState } = persistentsAction[actionName];
         if (persistent) {
           chrome.storage.local.set({ [actionName]: newValue });
         }
-        let states = {};
-        if (needState) {
-          states = await chrome.storage.session.get().then(
-            (values) => Object.entries(values).reduce((acc, [key, { value }]) => {
-              const name = getActionName(key);
-              return { ...acc, [name]: value };
-            }, {}),
-          );
-        }
-        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue, states }));
+        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue }));
       });
     });
     Object.entries(actions)
@@ -135,11 +147,18 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       });
   });
   return {
-    subscribe<U extends keyof T, V extends ActionValue<T[U]>>(
+    subscribe<
+      U extends keyof T,
+      V extends ActionValue<T[U]>,
+      W extends ActionEventType<T[U]>,
+      X extends ActionEventOnly<T[U]>,
+    >(
       name: U,
       cb: (
-        changes: { oldValue: V, newValue: V, states: { [key in keyof T]: T[key]['initValue'] } },
+        changes: { oldValue: V, newValue: V },
         isInit: boolean,
+        e: W extends keyof HTMLElementEventType ? HTMLElementEventType[W] : never,
+        states: X extends true ? { [key in keyof T]: T[key]['initValue'] } : never,
       ) => void,
     ) {
       const actionName = prefixedAction(name);
@@ -159,9 +178,16 @@ export function registerActions<T extends Actions<any>>(actions: T) {
         });
       });
     },
-    getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb: (value: V) => void) {
+    getState<U extends keyof T, V extends ActionValue<T[U]>>(name: U, cb?: (value: V) => void) {
       const actionName = prefixedAction(name);
-      chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => cb(value));
+      return new Promise((resolve) => {
+        chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => {
+          if (cb) {
+            cb(value);
+          }
+          resolve(value);
+        });
+      });
     },
   };
 }
@@ -219,6 +245,7 @@ export function initComponents(
   // Coonect store
   $appMain.connect(store);
   $leafs.connect(store);
+  $headerLeafs.connect(store);
   $folders.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);
@@ -231,32 +258,6 @@ export function initComponents(
 }
 
 export type Store = ReturnType<typeof initComponents>;
-export type StoreStates = Parameters<Parameters<Store['subscribe']>[1]>[0]['states'];
-// type Head<U> = U extends [any, ...any[]]
-//   ? ((...args: U) => any) extends (head: infer H, ...args: any) => any
-//     ? H
-//     : never
-//   : never;
-
-// type Second<U> = U extends [any, ...any[]]
-//   ? ((...args: U) => any) extends (head: any, second: infer H, ...args: any) => any
-//     ? H
-//     : never
-//   : never;
-
-// // export type StoreStates = Parameters<Parameters<Store['subscribe']>[1]>[0]['states'];
-
-// type DeepPath<T extends any[]> = {
-//   0: never,
-//   1: T[1],
-// };
-
-// const test = [1, 's'] as [number, string];
-
-// type Test = Head<typeof test>;
-// type Test2 = (typeof test)[1];
-
-// const w: Test = '1';
 
 export interface IPublishElement {
   actions(): Actions<any>;

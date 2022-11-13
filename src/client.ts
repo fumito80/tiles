@@ -2,7 +2,6 @@
 
 import {
   splitterClasses,
-  OpenBookmarkType,
   Options,
   State,
   Settings,
@@ -20,7 +19,6 @@ import {
   getCurrentTab,
   getLocal,
   setLocal,
-  extractDomain,
   htmlEscape,
   curry3,
   pipe,
@@ -214,30 +212,8 @@ export function getGridTemplateColumns() {
   };
 }
 
-// async function checkSplitWidth(pane1: number, pane2: number, pane3: number, bodyWidth: number) {
-//   if (bodyWidth >= (pane1 + pane2 + pane3 + 100)) {
-//     return true;
-//   }
-//   const width = 800;
-//   const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
-//   addStyle('width', `${width}px`)(document.body);
-//   // eslint-disable-next-line no-use-before-define
-//   setSplitWidth(paneWidth, width);
-//   const saved = await getLocal('settings');
-//   const settings = {
-//     ...saved.settings,
-//     width,
-//     paneWidth,
-//   };
-//   setLocal({ settings });
-//   return false;
-// }
-
 export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  // if (!await checkSplitWidth(pane1, pane2, pane3, bodyWidth)) {
-  //   return;
-  // }
   const $bodies = $$byClass('pane-body');
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
@@ -319,28 +295,6 @@ export function getBookmark(id: string) {
   return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
     chrome.bookmarks.get(id, ([treeNode]) => resolve(treeNode));
   });
-}
-
-export async function openBookmark(
-  options: Options,
-  target: EventTarget | HTMLElement,
-  openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
-) {
-  const { id } = (target as HTMLAnchorElement).parentElement!;
-  const { url } = await getBookmark(id);
-  switch (openType) {
-    case OpenBookmarkType.tab: {
-      createNewTab(options, url!);
-      break;
-    }
-    case OpenBookmarkType.window:
-    case OpenBookmarkType.incognito: {
-      const incognito = openType === OpenBookmarkType.incognito;
-      chrome.windows.create({ url, incognito }, window.close);
-      break;
-    }
-    default:
-  }
 }
 
 export function setHasChildren($target: HTMLElement) {
@@ -449,37 +403,6 @@ export function setAnimationFolder(className: string) {
       addClass(className),
     )(el);
   };
-}
-
-export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
-  const { id } = $anchor.parentElement!;
-  const { url = '' } = await getBookmark(id);
-  const [schemeSrc, domainSrc] = extractDomain(url);
-  const finder = options.findTabsMatches === 'prefix'
-    ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
-    : (tab: chrome.tabs.Tab) => {
-      const [scheme, domain] = extractDomain(tab.url);
-      return domain === domainSrc && scheme === schemeSrc;
-    };
-  const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
-    chrome.tabs.query({}, (tabs) => {
-      chrome.windows.getCurrent((win) => {
-        const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
-        const sorted = [
-          ...tabs.slice(findIndex + 1),
-          ...tabs.slice(0, findIndex + 1),
-        ];
-        const firstTab = sorted.find(finder);
-        resolve(firstTab);
-      });
-    });
-  });
-  if (tab?.id == null) {
-    openBookmark(options, $anchor);
-    return;
-  }
-  chrome.windows.update(tab.windowId, { focused: true });
-  chrome.tabs.update(tab.id, { active: true }, window.close);
 }
 
 export async function removeFolder($folder: HTMLElement) {
