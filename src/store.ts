@@ -11,6 +11,7 @@ import { HeaderHistory, History } from './history';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
 import { AppMain } from './app-main';
+import DragAndDropEvents from './drag-drop';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -87,7 +88,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
             ),
           );
           subscribers[actionName]?.forEach((cb) => cb(undefined, undefined, e, states));
-          return;
+          return true;
         }
         chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
           const newValue = valueProcesser(e, (currentValue as ActionResult).value);
@@ -95,6 +96,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
           const actionNewValue = makeActionValue(newValue, forced);
           chrome.storage.session.set({ [actionName]: actionNewValue });
         });
+        return true;
       }, listenerOptions);
     }
     return new Promise<{ [key: string]: { persistent: boolean, eventOnly: boolean } }>(
@@ -217,6 +219,7 @@ export function initComponents(
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
   // Initialize component
+  const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
     $tmplOpenTab,
     $tmplWindow,
@@ -233,6 +236,7 @@ export function initComponents(
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   // Register actions
   const actions = {
+    ...$appMain.actions(),
     ...$leafs.actions(),
     ...$headerLeafs.actions(),
     ...$headerTabs.actions(),
@@ -240,6 +244,7 @@ export function initComponents(
     ...$formSearch.actions(),
     ...$history.actions(),
     ...$headerHistory.actions(),
+    ...dragAndDropEvents.actions(),
   };
   const store = registerActions(actions);
   // Coonect store
@@ -252,6 +257,7 @@ export function initComponents(
   $headerHistory.connect(store);
   $history.connect(store);
   $formSearch.connect(store);
+  dragAndDropEvents.connect(store);
   // v-scroll initialize
   store.dispatch('resetHistory', { initialize: true });
   return store;

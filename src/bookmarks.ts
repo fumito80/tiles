@@ -275,13 +275,22 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       addStyle({ top: '-1000px' })(this.$leafMenu);
       return;
     }
+    const $leaf = $target.parentElement;
+    if (!($leaf instanceof Leaf)) {
+      return;
+    }
     clearTimeout(this.#timerMultiSelect);
     this.#timerMultiSelect = setTimeout(() => {
-      this.switchMultiSelect(!multiSelect);
-      const $leaf = $target.parentElement;
-      if ($leaf instanceof Leaf) {
+      this.store.getState('dragstart', (dragstart) => {
+        if (dragstart) {
+          if (multiSelect) {
+            $leaf.select(true);
+          }
+          return;
+        }
+        this.switchMultiSelect(!multiSelect);
         $leaf.preMultiSelect(!multiSelect);
-      }
+      });
     }, delayMultiSelect);
   }
   clickItem(e: MouseEvent, multiSelect: boolean) {
@@ -294,6 +303,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       if ($leaf instanceof Leaf) {
         if (multiSelect) {
           $leaf.select();
+          e.stopImmediatePropagation();
           return;
         }
         $leaf.openOrFind(this.#options);

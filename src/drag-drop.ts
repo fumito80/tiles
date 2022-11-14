@@ -13,6 +13,7 @@ import {
   when,
   postMessage,
   extractUrl,
+  setEvents,
 } from './common';
 import {
   $, $$,
@@ -35,7 +36,7 @@ import {
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
-import { Store } from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -268,6 +269,14 @@ function checkDroppable(e: DragEvent) {
   return dropAreaClass;
 }
 
+// function search(sourceId: string, includeUrl: boolean, store: Store) {
+//   const $source = $byId(sourceId);
+//   const value = includeUrl
+//     ? extractUrl($source.style.backgroundImage)
+//     : $source.firstElementChild?.textContent!;
+//   store.dispatch('search', value, true);
+// }
+
 function search(sourceId: string, store: Store) {
   store.getState('setIncludeUrl', (includeUrl) => {
     const $source = $byId(sourceId);
@@ -278,11 +287,23 @@ function search(sourceId: string, store: Store) {
   });
 }
 
-export default class DragAndDropEvents {
+export default class DragAndDropEvents implements IPubSubElement {
+  $appMain: HTMLElement;
   timerDragEnterFolder = 0;
-  store: Store;
-  constructor(store: Store) {
-    this.store = store;
+  store!: Store;
+  constructor($appMain: HTMLElement) {
+    this.$appMain = $appMain;
+    // const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
+    //   .filter((name) => name !== 'constructor')
+    //   .reduce((acc, name) => ({ ...acc, [name]: (this as any)[name] }), {});
+    const dragAndDropEvents = {
+      dragstart: this.dragstart,
+      dragover: this.dragover,
+      dragenter: this.dragenter,
+      dragend: this.dragend,
+      drop: this.drop,
+    };
+    setEvents([$appMain], dragAndDropEvents, undefined, this);
   }
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
@@ -314,7 +335,8 @@ export default class DragAndDropEvents {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    setTimeout(() => addClass('drag-start')($main), 0);
+    // setTimeout(() => addClass('drag-start')($main), 0);
+    this.store.dispatch('dragstart', true);
   }
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -340,13 +362,14 @@ export default class DragAndDropEvents {
   }
   dragend(e: DragEvent) {
     rmClass('drag-source')($byClass('drag-source'));
-    rmClass('drag-start')($byTag('app-main'));
+    // rmClass('drag-start')($byTag('app-main'));
     setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
       $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
+    this.store.dispatch('dragstart', false);
   }
   async drop(e: DragEvent) {
     const $dropArea = e.target as HTMLElement;
@@ -354,6 +377,7 @@ export default class DragAndDropEvents {
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
+      // search(sourceId, includeUrl, this.store);
       search(sourceId, this.store);
       return;
     }
@@ -432,5 +456,27 @@ export default class DragAndDropEvents {
     }
     $destLeafs.insertAdjacentElement(position, $sourceLeafs);
     setAnimationClass('hilite')($sourceLeafs);
+  }
+  actions() {
+    return {
+      dragstart: makeAction({
+        initValue: false,
+      }),
+      // dragstart: makeAction({
+      //   target: this.$appMain,
+      //   eventType: 'dragstart',
+      //   eventOnly: true,
+      // }),
+      // drop: makeAction({
+      //   target: this.$appMain,
+      //   eventType: 'drop',
+      //   eventOnly: true,
+      // }),
+    };
+  }
+  connect(store: Store) {
+    this.store = store;
+    // store.subscribe('dragstart', (_, __, e) => this.dragstart(e));
+    // store.subscribe('drop', (_, __, e, states) => this.drop(e, states.setIncludeUrl as boolean));
   }
 }

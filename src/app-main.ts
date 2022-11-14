@@ -5,7 +5,7 @@ import {
   setEvents, addListener,
   last, getColorWhiteness, lightColorWhiteness, camelToSnake,
 } from './common';
-import DragAndDropEvents from './drag-drop';
+// import DragAndDropEvents from './drag-drop';
 import { setZoomSetting } from './zoom';
 import {
   $byClass, $$byClass,
@@ -18,10 +18,11 @@ import {
   getEndPaneMinWidth,
   showMenu,
 } from './client';
-import { ISubscribeElement, Store } from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 import { resetVScrollData } from './vscroll';
 
-export class AppMain extends HTMLElement implements ISubscribeElement {
+export class AppMain extends HTMLElement implements IPubSubElement {
+  private store!: Store;
   init(options: Options, isSearching: boolean) {
     this.classList.toggle('searching', isSearching);
     const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
@@ -73,27 +74,30 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
-  setEvents(store: Store) {
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (hasClass($target, 'main-menu-button', 'query')) {
-        return;
-      }
-      if (hasClass($target, 'leaf-menu-button')) {
-        showMenu('leaf-menu')(e);
-        return;
-      }
-      if ($target.hasAttribute('contenteditable')) {
-        return;
-      }
-      store.dispatch('focusQuery');
-    });
-    const ddEvents = new DragAndDropEvents(store);
-    const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(ddEvents))
-      .filter((name) => name !== 'constructor')
-      .reduce((acc, name) => ({ ...acc, [name]: (ddEvents as any)[name] }), {});
-    setEvents([this], dragAndDropEvents, undefined, ddEvents);
+  clickAppMain(e: MouseEvent, multiSelect: boolean) {
+    const $target = e.target as HTMLElement;
+    if (multiSelect && !hasClass($target, 'anchor')) {
+      this.store.dispatch('multiSelectLeafs', false);
+    }
+    if (hasClass($target, 'main-menu-button', 'query')) {
+      return;
+    }
+    if (hasClass($target, 'leaf-menu-button')) {
+      showMenu('leaf-menu')(e);
+      return;
+    }
+    if ($target.hasAttribute('contenteditable')) {
+      return;
+    }
+    this.store.dispatch('focusQuery');
   }
+  // setEvents(store: Store) {
+  //   const ddEvents = new DragAndDropEvents(store);
+  //   const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(ddEvents))
+  //     .filter((name) => name !== 'constructor')
+  //     .reduce((acc, name) => ({ ...acc, [name]: (ddEvents as any)[name] }), {});
+  //   setEvents([this], dragAndDropEvents, undefined, ddEvents);
+  // }
   setIncludeUrl(store: Store, includeUrl: boolean, isInit: boolean) {
     toggleClass('checked-include-url', includeUrl)(this);
     store.dispatch('changeIncludeUrl', includeUrl, true);
@@ -102,9 +106,21 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
     }
     resetVScrollData((data) => data);
   }
+  actions() {
+    return {
+      clickAppMain: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+    };
+  }
   connect(store: Store) {
+    this.store = store;
     store.subscribe('setIncludeUrl', (changes, isInit) => this.setIncludeUrl(store, changes.newValue, isInit));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    this.setEvents(store);
+    store.subscribe('clickAppMain', (_, __, e, states) => this.clickAppMain(e, states.multiSelectLeafs!));
+    store.subscribe('dragstart', (changes) => this.classList.toggle('drag-start', changes.newValue));
+    // this.setEvents(store);
   }
 }
