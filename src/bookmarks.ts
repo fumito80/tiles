@@ -298,7 +298,6 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       if ($leaf instanceof Leaf) {
         if (await states('multiSelectLeafs')) {
           $leaf.select();
-          e.stopImmediatePropagation();
           return;
         }
         $leaf.openOrFind(this.#options);

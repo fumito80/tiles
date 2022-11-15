@@ -132,7 +132,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       clearQuery: makeAction({
         target: this.$iconX,
         eventType: 'click',
-        eventOnly: true,
+        force: true,
       }),
       focusQuery: {},
       clearSearch: {},
