@@ -136,11 +136,11 @@ function getTooltip(tab: chrome.tabs.Tab) {
   return `${tab.title}\n${schemeAdd}${domain}`;
 }
 
-export class OpenTab extends HTMLElement implements ISubscribeElement {
+export class OpenTab extends HTMLElement {
   #tabId!: number;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
-  init(tab: chrome.tabs.Tab, isSearching: boolean) {
+  init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
     this.$main = $byTag('app-main');
     this.$tooltip = $byClass('tooltip', this);
     this.classList.toggle('unmatch', isSearching);
@@ -155,6 +155,7 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('click', this.gotoTab)(this);
     addListener('mouseover', this.setTooltipPosition)(this);
+    addListener('click', this.closeTab(dispatch))($byClass('icon-x', this));
     return this;
   }
   getParentWindow() {
@@ -169,14 +170,14 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     chrome.windows.update(windowId, { focused: true });
     chrome.tabs.update(this.#tabId, { active: true }, window.close);
   }
-  closeTab(store: Store) {
+  closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
       e.stopPropagation();
       this.addEventListener('animationend', () => {
         chrome.tabs.remove(this.#tabId, () => {
           const { windowId } = this.getParentWindow();
           this.remove();
-          store.dispatch('windowAction', { type: 'closeTab', windowId }, true);
+          dispatch('windowAction', { type: 'closeTab', windowId }, true);
         });
       }, { once: true });
       setAnimationClass('remove-hilite')(this);
@@ -198,9 +199,6 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
       return;
     }
     addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
-  }
-  connect(store: Store) {
-    addListener('click', this.closeTab(store))($byClass('icon-x', this));
   }
 }
 
@@ -254,14 +252,14 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
-  #store!: Store;
   #isSearching = false;
+  private tabs!: chrome.tabs.Tab[];
   private $tmplTab!: OpenTab;
   private $header!: WindowHeader;
   init(
     windowId: number,
     tmplTab: OpenTab,
-    [firstTab, ...rest]: chrome.tabs.Tab[],
+    tabs: chrome.tabs.Tab[],
     collapseTabs: boolean,
     isSearching: boolean,
     isCurrent: boolean,
@@ -270,11 +268,12 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
     this.$tmplTab = tmplTab;
+    this.tabs = tabs;
     this.#isSearching = isSearching;
     this.id = `win-${windowId}`;
     this.classList.toggle('current-window', isCurrent);
+    const [firstTab] = tabs;
     this.$header.init(windowId, firstTab);
-    this.addTabs([firstTab, ...rest]);
     this.addEventListener('click', (e) => {
       const $target = e.target as HTMLElement;
       if (!hasClass($target, 'window', 'tab', 'icon-incognito')) {
@@ -290,17 +289,14 @@ export class Window extends HTMLElement implements ISubscribeElement {
   searchDone() {
     this.classList.toggle('empty', this.offsetHeight < 10);
   }
-  addTab(tab: chrome.tabs.Tab) {
+  addTab(tab: chrome.tabs.Tab, dispatch: Store['dispatch']) {
     const $openTab = document.importNode(this.$tmplTab!, true);
-    return $openTab.init(tab, this.#isSearching);
+    return $openTab.init(tab, this.#isSearching, dispatch);
   }
-  addTabs(tabs: chrome.tabs.Tab[]) {
-    const $tabs = tabs.map((tab) => this.addTab(tab));
+  addTabs(tabs: chrome.tabs.Tab[], dispatch: Store['dispatch']) {
+    const $tabs = tabs.map((tab) => this.addTab(tab, dispatch));
     this.append(...$tabs);
     return $tabs;
-  }
-  connectTabs($tabs: OpenTab[]) {
-    $tabs.forEach(($tab) => $tab.connect(this.#store!));
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed', collapsed)(this);
@@ -312,7 +308,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   clearTabs() {
     this.getTabs().forEach(($tab) => $tab.remove());
   }
-  reloadTabs() {
+  reloadTabs(dispatch: Store['dispatch']) {
     chrome.windows.get(this.#windowId, { populate: true }, (win) => {
       if (chrome.runtime.lastError) {
         this.remove();
@@ -321,13 +317,12 @@ export class Window extends HTMLElement implements ISubscribeElement {
       const [firstTab, ...rest] = win.tabs!;
       this.$header.update(firstTab);
       this.clearTabs();
-      this.connectTabs(this.addTabs([firstTab, ...rest]));
+      this.addTabs([firstTab, ...rest], dispatch);
     });
   }
   connect(store: Store) {
-    this.#store = store;
     this.$header.connect(store);
-    this.connectTabs(this.getTabs());
+    this.addTabs(this.tabs, store.dispatch);
     store.subscribe('collapseWindowsAll', (changes) => {
       this.switchCollapseIcon(changes.newValue);
     });

@@ -59,11 +59,11 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
 }
 
 export class History extends HTMLDivElement implements IPubSubElement, ISearchable {
+  #options!: Options;
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
   #jumpDate = '';
   #rowHeight!: number;
-  #store!: Store;
   private $rows!: HTMLElement;
   private promiseInitHistory!: Promise<MyHistoryItem[]>;
   init(
@@ -72,6 +72,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     htmlHistory: string,
     isSearching: boolean,
   ) {
+    this.#options = options;
     this.promiseInitHistory = promiseInitHistory;
     this.$rows = $byClass('rows', this)!;
     if (isSearching) {
@@ -82,40 +83,37 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     } else {
       insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
     }
-    this.setEvents(options);
     const rowHeight = getRowHeight();
     setLocal({ vscrollProps: { rowHeight } });
     this.#rowHeight = rowHeight;
   }
-  setEvents(options: Options) {
-    this.addEventListener('click', async (e) => {
-      const $target = e.target as HTMLElement;
-      if (hasClass($target, 'header-date')) {
-        this.#store.getState('historyCollapseDate', (collapsed) => {
-          if (collapsed) {
-            this.jumpHistoryDate($target.textContent!);
-          }
-        });
-        return;
-      }
-      const $parent = $target.parentElement!;
-      const $url = $target.title ? $target : $parent;
-      const { url } = await getHistoryById($url.id);
-      if (!url) {
-        return;
-      }
-      if (hasClass($target, 'icon-x')) {
-        setAnimationClass('hilite')($parent);
-        chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
-        return;
-      }
-      createNewTab(options, url);
-    });
+  async clickItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
+    const $target = e.target as HTMLElement;
+    if (hasClass($target, 'header-date')) {
+      states('historyCollapseDate', (collapsed) => {
+        if (collapsed) {
+          this.jumpHistoryDate($target.textContent!, dispatch);
+        }
+      });
+      return;
+    }
+    const $parent = $target.parentElement!;
+    const $url = $target.title ? $target : $parent;
+    const { url } = await getHistoryById($url.id);
+    if (!url) {
+      return;
+    }
+    if (hasClass($target, 'icon-x')) {
+      setAnimationClass('hilite')($parent);
+      chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
+      return;
+    }
+    createNewTab(this.#options, url);
   }
-  search({ reFilter, includeUrl }: SearchParams) {
+  search({ reFilter, includeUrl }: SearchParams, dispatch: Store['dispatch']) {
     this.#reFilter = reFilter;
     this.#includeUrl = includeUrl;
-    this.#store.dispatch('historyCollapseDate', false, true);
+    dispatch('historyCollapseDate', false, true);
   }
   async resetHistory({
     initialize,
@@ -156,9 +154,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   async restoreHistory() {
     return this.resetHistory({ reFilter: this.#reFilter!, includeUrl: this.#includeUrl });
   }
-  clearSearch() {
+  clearSearch(dispatch: Store['dispatch']) {
     this.#reFilter = null;
-    this.#store.dispatch('historyCollapseDate', false, true);
+    dispatch('historyCollapseDate', false, true);
   }
   async collapseHistoryDate(collapsed: boolean) {
     if (!collapsed) {
@@ -173,9 +171,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     setVScroll(this, rowSetterHistory, data, this.#rowHeight, false);
     setScrollTop(0);
   }
-  async jumpHistoryDate(localeDate: string) {
+  async jumpHistoryDate(localeDate: string, dispatch: Store['dispatch']) {
     this.#jumpDate = localeDate;
-    this.#store.dispatch('historyCollapseDate', false, true);
+    dispatch('historyCollapseDate', false, true);
   }
   async jumpDate() {
     const histories = getVScrollData();
@@ -185,22 +183,26 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';
   }
-  // eslint-disable-next-line class-methods-use-this
   actions() {
     return {
       resetHistory: makeAction({
         initValue: {} as ResetParams,
       }),
+      clickHistory: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
     };
   }
   connect(store: Store) {
-    store.subscribe('clearSearch', this.clearSearch.bind(this));
+    store.subscribe('clickHistory', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
+    store.subscribe('clearSearch', (_, __, dispatch) => this.clearSearch(dispatch));
     store.subscribe('resetHistory', (changes) => this.resetHistory(changes.newValue));
     store.subscribe('historyCollapseDate', (changes) => this.collapseHistoryDate(changes.newValue));
     store.subscribe('changeIncludeUrl', (changes) => {
       this.#includeUrl = changes.newValue;
     });
-    this.#store = store;
   }
 }
 

@@ -47,13 +47,13 @@ function getSubTree(id: string) {
   });
 }
 
-function moveTab(sourceId: string, $dropTarget: HTMLElement) {
+function moveTab(sourceId: string, $dropTarget: HTMLElement, dispatch: Store['dispatch']) {
   const $sourceTab = $byId(sourceId);
   const $sourceWindow = $sourceTab.parentElement as Window;
-  $sourceWindow.reloadTabs();
+  $sourceWindow.reloadTabs(dispatch);
   const $destWindow = $dropTarget.parentElement as Window;
   if ($sourceWindow.id !== $destWindow?.id) {
-    $destWindow.reloadTabs();
+    $destWindow.reloadTabs(dispatch);
   }
 }
 
@@ -120,6 +120,7 @@ async function dropWithTabs(
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
+  dispatch: Store['dispatch'],
 ) {
   // Tab to new window
   if (dropAreaClass === 'new-window-plus') {
@@ -156,7 +157,7 @@ async function dropWithTabs(
         alert(errorMessage);
         return;
       }
-      ($dropTarget.parentElement as Window).reloadTabs();
+      ($dropTarget.parentElement as Window).reloadTabs(dispatch);
       $byId(srcElementId).remove();
     }
     return;
@@ -184,7 +185,7 @@ async function dropWithTabs(
       alert(chrome.runtime.lastError.message);
       return;
     }
-    moveTab(srcElementId, $dropTarget);
+    moveTab(srcElementId, $dropTarget, dispatch);
   });
   if (
     sourceTab.active
@@ -269,43 +270,26 @@ function checkDroppable(e: DragEvent) {
   return dropAreaClass;
 }
 
-// function search(sourceId: string, includeUrl: boolean, store: Store) {
-//   const $source = $byId(sourceId);
-//   const value = includeUrl
-//     ? extractUrl($source.style.backgroundImage)
-//     : $source.firstElementChild?.textContent!;
-//   store.dispatch('search', value, true);
-// }
-
-function search(sourceId: string, store: Store) {
-  store.getState('setIncludeUrl', (includeUrl) => {
-    const $source = $byId(sourceId);
-    const value = includeUrl
-      ? extractUrl($source.style.backgroundImage)
-      : $source.firstElementChild?.textContent!;
-    store.dispatch('search', value, true);
-  });
+function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch']) {
+  const $source = $byId(sourceId);
+  const value = includeUrl
+    ? extractUrl($source.style.backgroundImage)
+    : $source.firstElementChild?.textContent!;
+  dispatch('search', value, true);
 }
 
 export default class DragAndDropEvents implements IPubSubElement {
   $appMain: HTMLElement;
   timerDragEnterFolder = 0;
-  store!: Store;
   constructor($appMain: HTMLElement) {
     this.$appMain = $appMain;
-    // const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
-    //   .filter((name) => name !== 'constructor')
-    //   .reduce((acc, name) => ({ ...acc, [name]: (this as any)[name] }), {});
     const dragAndDropEvents = {
-      dragstart: this.dragstart,
       dragover: this.dragover,
       dragenter: this.dragenter,
-      dragend: this.dragend,
-      drop: this.drop,
     };
     setEvents([$appMain], dragAndDropEvents, undefined, this);
   }
-  dragstart(e: DragEvent) {
+  dragstart(e: DragEvent, dispatch: Store['dispatch']) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
     if (!className) {
@@ -335,8 +319,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
-    // setTimeout(() => addClass('drag-start')($main), 0);
-    this.store.dispatch('dragstart', true);
+    dispatch('dragging', true);
   }
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -360,25 +343,24 @@ export default class DragAndDropEvents implements IPubSubElement {
       }
     }
   }
-  dragend(e: DragEvent) {
+  dragend(e: DragEvent, dispatch: Store['dispatch']) {
     rmClass('drag-source')($byClass('drag-source'));
-    // rmClass('drag-start')($byTag('app-main'));
     setHTML('')($byClass('draggable-clone'));
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
       $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
-    this.store.dispatch('dragstart', false);
+    dispatch('dragging', false);
   }
-  async drop(e: DragEvent) {
+  async drop(e: DragEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
     const $dropArea = e.target as HTMLElement;
     const sourceId = e.dataTransfer?.getData('application/source-id')!;
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
-      // search(sourceId, includeUrl, this.store);
-      search(sourceId, this.store);
+      const includeUrl = await states('setIncludeUrl');
+      search(sourceId, includeUrl, dispatch);
       return;
     }
     const $dropTarget = $dropArea.parentElement?.id
@@ -407,7 +389,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       return;
     }
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
-      dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest);
+      dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest, dispatch);
       return;
     }
     const position = positions[dropAreaClass];
@@ -459,24 +441,29 @@ export default class DragAndDropEvents implements IPubSubElement {
   }
   actions() {
     return {
-      dragstart: makeAction({
+      dragging: makeAction({
         initValue: false,
       }),
-      // dragstart: makeAction({
-      //   target: this.$appMain,
-      //   eventType: 'dragstart',
-      //   eventOnly: true,
-      // }),
-      // drop: makeAction({
-      //   target: this.$appMain,
-      //   eventType: 'drop',
-      //   eventOnly: true,
-      // }),
+      dragstart: makeAction({
+        target: this.$appMain,
+        eventType: 'dragstart',
+        eventOnly: true,
+      }),
+      drop: makeAction({
+        target: this.$appMain,
+        eventType: 'drop',
+        eventOnly: true,
+      }),
+      dragend: makeAction({
+        target: this.$appMain,
+        eventType: 'dragend',
+        eventOnly: true,
+      }),
     };
   }
   connect(store: Store) {
-    this.store = store;
-    // store.subscribe('dragstart', (_, __, e) => this.dragstart(e));
-    // store.subscribe('drop', (_, __, e, states) => this.drop(e, states.setIncludeUrl as boolean));
+    store.subscribe('dragstart', (_, __, dispatch, e) => this.dragstart(e, dispatch));
+    store.subscribe('drop', (_, states, dispatch, e) => this.drop(e, states, dispatch));
+    store.subscribe('dragend', (_, __, dispatch, e) => this.dragend(e, dispatch));
   }
 }

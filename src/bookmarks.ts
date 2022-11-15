@@ -249,7 +249,6 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
 }
 
 export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearchable {
-  store!: Store;
   #options!: Options;
   $leafMenu!: HTMLElement;
   #timerMultiSelect!: number;
@@ -266,10 +265,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       $$('.selected', this).forEach(rmClass('selected'));
     }
   }
-  switchMultiSelect(enabled: boolean) {
-    this.store.dispatch('multiSelectLeafs', enabled);
-  }
-  mousedownItem(e: MouseEvent, multiSelect: boolean) {
+  mousedownItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
     const $target = e.target as HTMLDivElement;
     if (hasClass($target, 'leaf-menu-button')) {
       addStyle({ top: '-1000px' })(this.$leafMenu);
@@ -280,20 +276,19 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       return;
     }
     clearTimeout(this.#timerMultiSelect);
-    this.#timerMultiSelect = setTimeout(() => {
-      this.store.getState('dragstart', (dragstart) => {
-        if (dragstart) {
-          if (multiSelect) {
-            $leaf.select(true);
-          }
-          return;
+    this.#timerMultiSelect = setTimeout(async () => {
+      const { dragging, multiSelectLeafs } = await states();
+      if (dragging) {
+        if (multiSelectLeafs) {
+          $leaf.select(true);
         }
-        this.switchMultiSelect(!multiSelect);
-        $leaf.preMultiSelect(!multiSelect);
-      });
+        return;
+      }
+      dispatch('multiSelectLeafs', !multiSelectLeafs);
+      $leaf.preMultiSelect(!multiSelectLeafs);
     }, delayMultiSelect);
   }
-  clickItem(e: MouseEvent, multiSelect: boolean) {
+  async clickItem(e: MouseEvent, states: Store['getStates']) {
     const $target = e.target as HTMLDivElement;
     if ($target.hasAttribute('contenteditable')) {
       return;
@@ -301,7 +296,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     if (hasClass($target, 'anchor')) {
       const $leaf = $target.parentElement;
       if ($leaf instanceof Leaf) {
-        if (multiSelect) {
+        if (await states('multiSelectLeafs')) {
           $leaf.select();
           e.stopImmediatePropagation();
           return;
@@ -366,10 +361,9 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     };
   }
   connect(store: Store) {
-    this.store = store;
     store.subscribe('clearSearch', this.clearSearch.bind(this));
-    store.subscribe('clickLeafs', (_, __, e, states) => this.clickItem(e, states.multiSelectLeafs!));
-    store.subscribe('mousedownLeafs', (_, __, e, states) => this.mousedownItem(e, states.multiSelectLeafs!));
+    store.subscribe('clickLeafs', (_, states, __, e) => this.clickItem(e, states));
+    store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('multiSelectLeafs', ({ newValue }) => this.multiSelectLeafs(newValue));
   }
 }
