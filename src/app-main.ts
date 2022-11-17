@@ -20,16 +20,18 @@ import {
 import { IPubSubElement, makeAction, Store } from './store';
 import { resetVScrollData } from './vscroll';
 
-async function clickAppMain(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
+async function clickAppMain(e: MouseEvent, dispatch: Store['dispatch']) {
   const $target = e.target as HTMLElement;
-  if (await states('multiSelectLeafs') && !hasClass($target, 'anchor')) {
-    dispatch('multiSelectLeafs', false);
-  }
-  if (hasClass($target, 'main-menu-button', 'query')) {
+  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show')) {
     return;
   }
+  dispatch('multiSelPanes', { leafs: false, tabs: false, history: false });
   if (hasClass($target, 'leaf-menu-button')) {
     showMenu('leaf-menu')(e);
+    dispatch('multiSelPanes', { leafs: false });
+    return;
+  }
+  if (hasClass($target, 'main-menu-button')) {
     return;
   }
   if ($target.hasAttribute('contenteditable')) {
@@ -105,12 +107,23 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         eventType: 'click',
         eventOnly: true,
       }),
+      multiSelPanes: makeAction({
+        initValue: {
+          leafs: false,
+          tabs: false,
+          history: false,
+        } as {
+          leafs?: boolean,
+          tabs?: boolean,
+          history?: boolean,
+        },
+      }),
     };
   }
   connect(store: Store) {
     store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(store, changes.newValue, changes.isInit));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    store.subscribe('clickAppMain', (_, states, dispatch, e) => clickAppMain(e, states, dispatch));
+    store.subscribe('clickAppMain', (_, __, dispatch, e) => clickAppMain(e, dispatch));
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
   }
 }

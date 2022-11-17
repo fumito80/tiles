@@ -38,7 +38,7 @@ import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
 import { IPubSubElement, makeAction, Store } from './store';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -255,7 +255,7 @@ function checkDroppable(e: DragEvent) {
   }
   const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dropAreaClass === 'leafs') {
-    return ['leaf', 'tab-wrap', 'history'].includes(dragSource)
+    return ['leaf', 'tab-wrap', 'history', 'tabs-header'].includes(dragSource)
       && !hasClass($byTag('app-main'), 'searching')
       && !(dragPanes === 'leafs' && $(`.leafs ${cssid($dragSource.id)}:last-of-type`));
   }
@@ -369,6 +369,9 @@ export default class DragAndDropEvents implements IPubSubElement {
     const destId = $dropTarget.id;
     const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
     let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: $dropTarget.id };
+    if (sourceClass === 'tabs-header') {
+      return;
+    }
     if (dropAreaClass === 'leafs') {
       const parentId = $byClass('open')?.id || '1';
       bookmarkDest = { parentId };

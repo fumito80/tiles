@@ -39,7 +39,7 @@
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
             </div>
-            <i class="icon-check-all" title="Multiple checks mode"></i>
+            <!-- <i class="icon-check-all" title="Multiple checks mode"></i> -->
         </div>
         <div is="header-tabs" class="pane-header header-tabs">
             <i class="icon-tabs" title="OPEN TABS"></i>
@@ -60,7 +60,7 @@
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
             </div>
-            <i class="icon-check-all" title="Multiple checks mode"></i>
+            <!-- <i class="icon-check-all" title="Multiple checks mode"></i> -->
         </div>
         <div is="header-leafs" class="pane-header header-leafs">
             <i class="icon-bookmarks" title="BOOKMARKS"></i>
@@ -80,7 +80,7 @@
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
             </div>
-            <i class="icon-check-all" title="Multiple checks mode"></i>
+            <!-- <i class="icon-check-all" title="Multiple checks mode"></i> -->
         </div>
         <div class="pane-header header-folders"></div>
         <div is="body-leafs" class="pane-body leafs"></div>
@@ -103,8 +103,8 @@
         </form>
         <div class="leaf-menu" role="menu">
             <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab-find"></i>Find in tabs first</div>
-            <div role="menuitem" data-value="open-new-tab"><i class="icon-tabs"></i>Open in new tab</div>
-            <hr aria-hidden="true">
+            <div role="menuitem" data-value="open-new-tab"><i class="icon-tab-plus"></i>Open in new tab</div>
+            <div role="menuitem" data-value="open-in-current-tab"><i class="icon-tabs"></i>Open in current tab</div>
             <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window</div>
             <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Open in incognito window
             </div>
@@ -163,6 +163,15 @@
             <div class="drop-top"></div>
             <div class="drop-bottom"></div>
         </open-tab>
+        <multi-sel-pane>
+            <i class="icon-check-all" title="Multiple selection mode"></i>
+            <button class="del-multi-sel" type="button" title="Delete">
+                <i class="icon-fa-trash-alt"></i>
+            </button>
+            <button class="multi-sel-menu-button" type="button">
+                <i class="icon-fa-ellipsis-v"></i>
+            </button>
+        </multi-sel-pane>
     </template>
 </body>
 

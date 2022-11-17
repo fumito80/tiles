@@ -1,18 +1,17 @@
 import {
   $, $$, $$byClass, $byClass,
-  addClass, rmClass, toggleClass, hasClass, addChild, addStyle,
+  addClass, rmClass, hasClass, addStyle,
   addBookmark, getBookmark,
-  addFolder, setAnimationClass, editTitle, createNewTab,
+  addFolder, setAnimationClass, editTitle, createNewTab, remeveBookmark,
 } from './client';
 import {
   addListener,
   cbToResolve,
   cssid,
-  curry,
   curry3,
   delayMultiSelect,
   extractDomain,
-  extractUrl, pipe, setEvents, setFavicon, switches,
+  extractUrl, getCurrentTab, pipe, setEvents, setFavicon, switches,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -64,18 +63,12 @@ export class PaneHeader extends HTMLDivElement implements IPublishElement {
   }
 }
 
-export class HeaderLeafs extends PaneHeader implements ISubscribeElement {
+export class HeaderLeafs extends PaneHeader {
   private $pinBookmark!: HTMLElement;
   override init(settings: State['settings']) {
     super.init(settings);
     this.$pinBookmark = $byClass('pin-bookmark', this);
     this.$pinBookmark.addEventListener('click', () => addBookmark());
-  }
-  multiSelect(changes: { newValue: boolean }) {
-    this.classList.toggle('multi-select', changes.newValue);
-  }
-  connect(store: Store) {
-    store.subscribe('multiSelectLeafs', this.multiSelect.bind(this));
   }
 }
 
@@ -129,6 +122,9 @@ export class Leaf extends HTMLElement {
         chrome.windows.create({ url, incognito }, window.close);
         break;
       }
+      case OpenBookmarkType.current:
+        getCurrentTab().then(({ id }) => chrome.tabs.update(id!, { url }, window.close));
+        break;
       default:
     }
   }
@@ -191,6 +187,9 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
         case 'open-new-tab':
           $leaf.openBookmark(options);
           break;
+        case 'open-in-current-tab':
+          $leaf.openBookmark(options, OpenBookmarkType.current);
+          break;
         case 'open-new-window':
           $leaf.openBookmark(options, OpenBookmarkType.window);
           break;
@@ -213,16 +212,9 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
           setAnimationClass('hilite')($leaf);
           break;
         }
-        case 'remove': {
-          await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($byClass('leaf-menu'))($byClass('components'));
-          pipe(
-            addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
-            rmClass('hilite'),
-            setAnimationClass('remove-hilite'),
-          )($leaf);
+        case 'remove':
+          remeveBookmark($leaf);
           break;
-        }
         case 'show-in-folder': {
           const id = $leaf.parentElement?.id;
           const $target = $(`.folders ${cssid(id!)} > .marker > .title`);
@@ -260,7 +252,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     });
     setLeafMenu(this.$leafMenu, options);
   }
-  multiSelectLeafs(multiSelect: boolean) {
+  multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean }) {
     if (!multiSelect) {
       $$('.selected', this).forEach(rmClass('selected'));
     }
@@ -277,15 +269,15 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     }
     clearTimeout(this.#timerMultiSelect);
     this.#timerMultiSelect = setTimeout(async () => {
-      const { dragging, multiSelectLeafs } = await states();
+      const { dragging, multiSelPanes } = await states();
       if (dragging) {
-        if (multiSelectLeafs) {
+        if (multiSelPanes?.leafs) {
           $leaf.select(true);
         }
         return;
       }
-      dispatch('multiSelectLeafs', !multiSelectLeafs);
-      $leaf.preMultiSelect(!multiSelectLeafs);
+      dispatch('multiSelPanes', { leafs: !multiSelPanes?.leafs });
+      $leaf.preMultiSelect(!multiSelPanes?.leafs);
     }, delayMultiSelect);
   }
   async clickItem(e: MouseEvent, states: Store['getStates']) {
@@ -293,19 +285,20 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     if ($target.hasAttribute('contenteditable')) {
       return;
     }
-    if (hasClass($target, 'anchor')) {
-      const $leaf = $target.parentElement;
-      if ($leaf instanceof Leaf) {
-        if (await states('multiSelectLeafs')) {
-          $leaf.select();
-          return;
-        }
-        $leaf.openOrFind(this.#options);
-      }
+    if (hasClass($target, 'leaf', 'leaf-menu-button')) {
       return;
     }
     if (hasClass($target, 'title', 'icon-fa-angle-right')) {
-      toggleClass('path')($target.parentElement?.parentElement);
+      $target.parentElement?.parentElement?.classList.toggle('path');
+      return;
+    }
+    const $leaf = $target instanceof Leaf ? $target : $target.parentElement;
+    if ($leaf instanceof Leaf) {
+      if ((await states('multiSelPanes')).leafs) {
+        $leaf.select();
+        return;
+      }
+      $leaf.openOrFind(this.#options);
     }
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
@@ -346,7 +339,6 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   }
   actions() {
     return {
-      multiSelectLeafs: makeAction({ initValue: false }),
       clickLeafs: makeAction({
         target: this,
         eventType: 'click',
@@ -363,6 +355,6 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     store.subscribe('clearSearch', this.clearSearch.bind(this));
     store.subscribe('clickLeafs', (_, states, __, e) => this.clickItem(e, states));
     store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
-    store.subscribe('multiSelectLeafs', ({ newValue }) => this.multiSelectLeafs(newValue));
+    store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
   }
 }

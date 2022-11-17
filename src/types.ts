@@ -122,6 +122,7 @@ export const OpenBookmarkType = {
   tab: 'tab',
   window: 'window',
   incognito: 'incognito',
+  current: 'current',
 } as const;
 
 export type OpenBookmarkTypes = {

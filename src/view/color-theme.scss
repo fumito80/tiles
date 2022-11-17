@@ -166,11 +166,21 @@ app-main:not(.drag-start) {
       }
     }
   }
+
+  multi-sel-pane.show {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    &:not(.pre) .icon-check-all {
+      color: deepskyblue;
+    }
+  }
 }
 
 .theme-dark-frame {
-  .pane-header::before {
-    background-color: rgba(255, 255, 255, 0.15);
+  .pane-header {
+    &::before {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
   }
 
   .pane-header,

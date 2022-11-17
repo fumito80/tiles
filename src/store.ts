@@ -12,6 +12,7 @@ import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
 import { AppMain } from './app-main';
 import DragAndDropEvents from './drag-drop';
+import { MultiSelPane } from './multi-sel-pane';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -217,6 +218,7 @@ export function initComponents(
   const $template = $byTag<HTMLTemplateElement>('template').content;
   const $tmplOpenTab = $('open-tab', $template) as OpenTab;
   const $tmplWindow = $('open-window', $template) as Window;
+  const $tmplMultiSelPane = $('multi-sel-pane', $template) as MultiSelPane;
   // Define component (Custom element)
   const $formSearch = $byClass('form-query') as FormSearch;
   const $appMain = compos['app-main'];
@@ -227,6 +229,7 @@ export function initComponents(
   const $headerTabs = compos['header-tabs'];
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
+  const $muitiSelLeafs = document.importNode($tmplMultiSelPane, true);
   // Initialize component
   const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
@@ -243,6 +246,7 @@ export function initComponents(
   $headerHistory.init(settings);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
+  $muitiSelLeafs.init('leafs', $headerLeafs);
   // Register actions
   const actions = {
     ...$appMain.actions(),
@@ -259,7 +263,7 @@ export function initComponents(
   // Coonect store
   $appMain.connect(store);
   $leafs.connect(store);
-  $headerLeafs.connect(store);
+  // $headerLeafs.connect(store);
   $folders.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);
@@ -267,13 +271,18 @@ export function initComponents(
   $history.connect(store);
   $formSearch.connect(store);
   dragAndDropEvents.connect(store);
+  $muitiSelLeafs.connect(store);
   // v-scroll initialize
   store.dispatch('resetHistory', { initialize: true });
   return store;
 }
 
 export type Store = ReturnType<typeof initComponents>;
-
+export type Dispatch = Store['dispatch'];
+export type Subscribe = Store['subscribe'];
+export type States = Store['getStates'];
+// export type DispatchName = Parameters<Store['subscribe']>[0];
+// export type DispatchArgs = Store['subscribe'];
 export interface IPublishElement {
   actions(): Actions<any>;
 }
@@ -299,3 +308,4 @@ customElements.define('form-search', FormSearch, { extends: 'form' });
 customElements.define('body-history', History, { extends: 'div' });
 customElements.define('header-history', HeaderHistory, { extends: 'div' });
 customElements.define('bm-leaf', Leaf);
+customElements.define('multi-sel-pane', MultiSelPane);
