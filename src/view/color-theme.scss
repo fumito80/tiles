@@ -422,3 +422,37 @@ app-main:not(.theme-dark-search).searching .form-query {
     color: $font-color;
   }
 }
+
+app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
+  button {
+    >i {
+      color: rgba(0, 0, 0, 0.5);
+    }
+
+    &:hover::after,
+    &:focus::after {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    &:active::after {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.theme-dark-pane .pane-header multi-sel-pane.show {
+  button {
+    >i {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &:hover::after,
+    &:focus::after {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    &:active::after {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}

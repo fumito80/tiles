@@ -221,7 +221,8 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
       }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('historyCollapseDate', (changes) => this.toggleCollapseIcon(changes.newValue));
   }
 }

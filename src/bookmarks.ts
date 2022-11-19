@@ -5,61 +5,70 @@ import {
   addFolder, setAnimationClass, editTitle, createNewTab, remeveBookmark,
 } from './client';
 import {
-  addListener,
-  cbToResolve,
-  cssid,
-  curry3,
-  delayMultiSelect,
-  extractDomain,
-  extractUrl, getCurrentTab, pipe, setEvents, setFavicon, switches,
+  cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
+  delayMultiSelect, extractDomain,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
-  IPublishElement, ISubscribeElement, makeAction, Store,
+  IPubSubElement, ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
 import { OpenBookmarkType, Options, State } from './types';
 
-export class PaneHeader extends HTMLDivElement implements IPublishElement {
+export class PaneHeader extends HTMLDivElement implements IPubSubElement {
   #includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], _?: boolean) {
     this.$mainMenu = $byClass('main-menu', this);
     this.#includeUrl = settings.includeUrl;
-    pipe(
-      addListener('click', (e) => {
-        const $menu = e.target as HTMLElement;
-        switch ($menu.dataset.value) {
-          case 'add-bookmark': {
-            const id = $byClass('open')?.id;
-            addBookmark(id || '1');
-            break;
-          }
-          case 'add-folder':
-            addFolder();
-            break;
-          case 'settings':
-            chrome.runtime.openOptionsPage();
-            break;
-          default:
-        }
-      }),
-      addListener('mousedown', (e) => e.preventDefault()),
-    )(this.$mainMenu);
+    this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+  }
+  clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
+    const $menu = e.target as HTMLElement;
+    switch ($menu.dataset.value) {
+      case 'add-bookmark': {
+        const id = $byClass('open')?.id;
+        addBookmark(id || '1');
+        break;
+      }
+      case 'start-multi-select':
+        dispatch('multiSelPanes', { all: true });
+        $byClass('main-menu-button', this).blur();
+        break;
+      case 'add-folder':
+        addFolder();
+        break;
+      case 'settings':
+        chrome.runtime.openOptionsPage();
+        break;
+      default:
+    }
   }
   actions() {
-    if (!hasClass(this, 'end')) {
-      return {};
+    if (hasClass(this, 'end')) {
+      return {
+        setIncludeUrl: makeAction({
+          initValue: this.#includeUrl,
+          persistent: true,
+          target: $byClass('include-url', this.$mainMenu),
+          eventType: 'click',
+          eventProcesser: (_, currentValue) => !currentValue,
+        }),
+        clickMainMenu: makeAction({
+          target: this.$mainMenu,
+          eventType: 'click',
+          eventOnly: true,
+        }),
+      };
     }
-    return {
-      setIncludeUrl: makeAction({
-        initValue: this.#includeUrl,
-        persistent: true,
-        target: $byClass('include-url', this.$mainMenu),
-        eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
-      }),
-    };
+    return {};
+  }
+  // eslint-disable-next-line class-methods-use-this
+  connect(store: Store) {
+    if (!hasClass(this, 'end')) {
+      return;
+    }
+    store.subscribe('clickMainMenu', (_, __, dispatch, e) => this.clickMainMenu(e, dispatch));
   }
 }
 
@@ -69,6 +78,9 @@ export class HeaderLeafs extends PaneHeader {
     super.init(settings);
     this.$pinBookmark = $byClass('pin-bookmark', this);
     this.$pinBookmark.addEventListener('click', () => addBookmark());
+  }
+  override connect(store: Store) {
+    super.connect(store);
   }
 }
 
@@ -247,9 +259,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   init(options: Options) {
     this.#options = options;
     this.$leafMenu = $byClass('leaf-menu');
-    this.addEventListener('mouseup', () => {
-      clearTimeout(this.#timerMultiSelect);
-    });
+    this.addEventListener('mouseup', () => clearTimeout(this.#timerMultiSelect));
     setLeafMenu(this.$leafMenu, options);
   }
   multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean }) {
@@ -280,7 +290,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       $leaf.preMultiSelect(!multiSelPanes?.leafs);
     }, delayMultiSelect);
   }
-  async clickItem(e: MouseEvent, states: Store['getStates']) {
+  async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
     if ($target.hasAttribute('contenteditable')) {
       return;
@@ -294,8 +304,12 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     }
     const $leaf = $target instanceof Leaf ? $target : $target.parentElement;
     if ($leaf instanceof Leaf) {
-      if ((await states('multiSelPanes')).leafs) {
+      const { leafs, all } = await states('multiSelPanes');
+      if (leafs || all) {
         $leaf.select();
+        if (all) {
+          dispatch('multiSelPanes', { leafs: true });
+        }
         return;
       }
       $leaf.openOrFind(this.#options);
@@ -353,7 +367,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   }
   connect(store: Store) {
     store.subscribe('clearSearch', this.clearSearch.bind(this));
-    store.subscribe('clickLeafs', (_, states, __, e) => this.clickItem(e, states));
+    store.subscribe('clickLeafs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
     store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
   }

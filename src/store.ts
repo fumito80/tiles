@@ -124,7 +124,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
             chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
               const actionValue = makeActionValue(value ?? initValue);
               chrome.storage.session.set({ [actionName]: actionValue }, () => {
-                setTimeout(() => resolve({ [actionName]: persistent }), 0);
+                setTimeout(() => resolve({ [actionName]: { persistent, eventOnly } }), 0);
               });
             });
             return;
@@ -263,7 +263,7 @@ export function initComponents(
   // Coonect store
   $appMain.connect(store);
   $leafs.connect(store);
-  // $headerLeafs.connect(store);
+  $headerLeafs.connect(store);
   $folders.connect(store);
   $headerTabs.connect(store);
   $tabs.connect(store);

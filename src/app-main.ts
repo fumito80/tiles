@@ -22,7 +22,7 @@ import { resetVScrollData } from './vscroll';
 
 async function clickAppMain(e: MouseEvent, dispatch: Store['dispatch']) {
   const $target = e.target as HTMLElement;
-  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show')) {
+  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show', 'start-multi-select')) {
     return;
   }
   dispatch('multiSelPanes', { leafs: false, tabs: false, history: false });
@@ -112,10 +112,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           leafs: false,
           tabs: false,
           history: false,
+          all: false,
         } as {
           leafs?: boolean,
           tabs?: boolean,
           history?: boolean,
+          all?: boolean,
         },
       }),
     };

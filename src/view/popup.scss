@@ -267,7 +267,7 @@ window-header,
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin: 2px 0 4px 0;
+  margin: 3px 0;
   padding: 3px 0;
   border-radius: 100px;
   background-color: rgba(0, 0, 0, 0.1);
@@ -354,16 +354,18 @@ window-header,
 
   >multi-sel-pane.show {
     position: absolute;
+    left: 1.6em;
     display: flex;
     gap: 5px;
-    right: 0;
     padding: 3px;
-    margin: 2px 0 4px 0;
-    border-radius: 5px;
+    border-radius: 100px;
     background-color: var(--pane-bg);
+    transition: all 0.15s;
 
-    &.pre button {
-      display: none;
+    &.pre {
+      button {
+        display: none;
+      }
     }
 
     .del-multi-sel:hover>.icon-fa-trash-alt {
@@ -373,8 +375,8 @@ window-header,
     .icon-check-all {
       display: inline;
       color: $common-marker;
-      font-size: 1.0rem;
-      padding: 2px;
+      font-size: 1.2em;
+      padding: 1px 2px;
     }
 
     .multi-sel-menu-button:focus+.leaf-menu {
@@ -1648,23 +1650,12 @@ app-main.zoom-pane {
 
 .header-leafs.multi-select~.leafs {
   .leaf {
-    //     transition: filter 0.1s;
+    transition: filter 0.1s;
 
     &.selected {
-      //       // filter: contrast(0.8);
-      //       filter: drop-shadow(2px 2px 2px black);
-
       &:active {
-        // filter: contrast(0.7); // background-color: transparent;
-        // filter: none;
-        filter: opacity(0.7) //       //   // transition: filter 0.1s;
+        filter: opacity(0.7);
       }
-
-      //     // &:not(.selected) {
-      //     //   &:active {
-      //     //     filter: contrast(0.6);
-      //     //   }
-      //     // }
     }
   }
 }
