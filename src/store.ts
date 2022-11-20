@@ -230,6 +230,8 @@ export function initComponents(
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
   const $muitiSelLeafs = document.importNode($tmplMultiSelPane, true);
+  const $muitiSelTabs = document.importNode($tmplMultiSelPane, true);
+  const $muitiSelHistory = document.importNode($tmplMultiSelPane, true);
   // Initialize component
   const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
@@ -247,6 +249,8 @@ export function initComponents(
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   $muitiSelLeafs.init('leafs', $headerLeafs);
+  $muitiSelTabs.init('tabs', $headerTabs);
+  $muitiSelHistory.init('history', $headerHistory);
   // Register actions
   const actions = {
     ...$appMain.actions(),
@@ -272,6 +276,8 @@ export function initComponents(
   $formSearch.connect(store);
   dragAndDropEvents.connect(store);
   $muitiSelLeafs.connect(store);
+  $muitiSelTabs.connect(store);
+  $muitiSelHistory.connect(store);
   // v-scroll initialize
   store.dispatch('resetHistory', { initialize: true });
   return store;
@@ -281,8 +287,6 @@ export type Store = ReturnType<typeof initComponents>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
 export type States = Store['getStates'];
-// export type DispatchName = Parameters<Store['subscribe']>[0];
-// export type DispatchArgs = Store['subscribe'];
 export interface IPublishElement {
   actions(): Actions<any>;
 }

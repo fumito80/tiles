@@ -1,8 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { Leaf } from './bookmarks';
 import {
-  $$,
-  $$byTag, hasClass, remeveBookmark, showMenu,
+  $$, $$byTag, hasClass, remeveBookmark, showMenu,
 } from './client';
 import { setEvents, whichClass } from './common';
 import { ISubscribeElement, Store } from './store';
@@ -10,12 +9,14 @@ import { ISubscribeElement, Store } from './store';
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   #header!: HTMLElement;
   #className!: string;
+  // #minWidth!: string;
+  #maxWidth!: string;
   init(className: string, header: HTMLElement) {
     this.#header = header;
     this.#className = className;
     header.appendChild(this);
     const { width } = header.firstElementChild!.getBoundingClientRect();
-    this.style.setProperty('left', `${width + 9}px`);
+    this.style.setProperty('left', `${Math.ceil(width) + 10}px`);
     setEvents($$byTag('button'), {
       click(e) {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
@@ -43,14 +44,14 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.classList.toggle('show', !!show);
     if (value.all) {
       const { width } = this.getBoundingClientRect();
-      this.dataset.maxWidth = String(width); // .setProperty('max-width', `${width}px`);
+      this.#maxWidth = `${String(Math.ceil(width))}px`;
     } else if (hasClass(this, 'pre')) {
-      this.style.setProperty('max-width', `${this.dataset.maxWidth}px`);
+      this.style.setProperty('max-width', this.#maxWidth);
     }
     this.classList.toggle('pre', !!value.all);
     if (value.all) {
-      const { width } = this.getBoundingClientRect();
-      this.style.setProperty('max-width', `${width}px`);
+      const rect = this.getBoundingClientRect();
+      this.style.setProperty('max-width', `${Math.ceil(rect.width)}px`);
     }
     this.#header.classList.toggle('multi-select', !!show);
     // if (this.#className === 'leafs' && show) {
