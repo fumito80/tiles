@@ -33,10 +33,13 @@ import {
   setOpenPaths,
   $$byClass,
   panes,
+  getPrevTarget,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
-import { IPubSubElement, makeAction, Store } from './store';
+import {
+  Dispatch, IPubSubElement, makeAction, States, Store,
+} from './store';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -235,7 +238,7 @@ function checkDroppable(e: DragEvent) {
   }
   const $dragSource = $byClass('drag-source');
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
-  const $dropTarget = $dropArea.closest('.leaf, .folder, .tab-wrap')!;
+  const $dropTarget = $dropArea.closest('.leaf, .folder, .tab-wrap') as HTMLElement;
   if ($dropTarget?.id === sourceId) {
     return undefined;
   }
@@ -243,6 +246,9 @@ function checkDroppable(e: DragEvent) {
     return undefined;
   }
   if (dropAreaClass === 'drop-top' && $dropTarget.previousElementSibling?.id === sourceId) {
+    return undefined;
+  }
+  if (hasClass($dropTarget, 'selected') || hasClass(getPrevTarget('leaf', 'tab-wrap')($dropTarget), 'selected')) {
     return undefined;
   }
   const dragSource = whichClass(sourceClasses, $dragSource) || '';
@@ -278,6 +284,23 @@ function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch
   dispatch('search', value, true);
 }
 
+function getDraggableElement(
+  $dragTarget: HTMLElement,
+  // multiSelPanes: Promise<{ leafs?: boolean, tabs?: boolean, history?: boolean }>,
+  isMultiSelect: boolean,
+) {
+  // const { leafs, tabs, history } = await multiSelPanes;
+  // const clones = (leafs || tabs || history) ? $$byClass('selected') : [$dragTarget];
+  const clones = isMultiSelect ? $$byClass('selected') : [$dragTarget];
+  return clones.reduce((acc, $el) => {
+    const clone = $el.cloneNode(true) as HTMLElement;
+    addChild(clone)(acc);
+    return acc;
+  }, $byClass('draggable-clone'));
+  // const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
+  // const $draggable = addChild(clone)($byClass('draggable-clone'));
+}
+
 export default class DragAndDropEvents implements IPubSubElement {
   $appMain: HTMLElement;
   timerDragEnterFolder = 0;
@@ -289,7 +312,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
     setEvents([$appMain], dragAndDropEvents, undefined, this);
   }
-  dragstart(e: DragEvent, dispatch: Store['dispatch']) {
+  dragstart(e: DragEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
     if (!className) {
@@ -297,7 +320,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     const [$dragTarget, id] = when(className === 'marker')
       .then([$target, $target.parentElement!.id] as const)
-      .when(className === 'window').then([$target.firstElementChild!, $target.id] as const)
+      .when(className === 'window').then([$target.firstElementChild as HTMLElement, $target.id] as const)
       .else([$target, $target.id] as const);
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
@@ -314,8 +337,9 @@ export default class DragAndDropEvents implements IPubSubElement {
     if ($menu) {
       document.body.append($menu);
     }
-    const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-    const $draggable = addChild(clone)($byClass('draggable-clone'));
+    const $draggable = getDraggableElement($dragTarget, hasClass($dragTarget, 'selected'));
+    // const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
+    // const $draggable = addChild(clone)($byClass('draggable-clone'));
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
@@ -465,7 +489,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('dragstart', (_, __, dispatch, e) => this.dragstart(e, dispatch));
+    store.subscribe('dragstart', (_, states, dispatch, e) => this.dragstart(e, states, dispatch));
     store.subscribe('drop', (_, states, dispatch, e) => this.drop(e, states, dispatch));
     store.subscribe('dragend', (_, __, dispatch, e) => this.dragend(e, dispatch));
   }

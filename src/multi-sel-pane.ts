@@ -28,7 +28,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
           }
           case 'del-multi-sel':
             if (className === 'leafs') {
-              $$<Leaf>('.leafs .selected').forEach(remeveBookmark);
+              $$<Leaf>('.leafs .selected, .folders .selected').forEach(remeveBookmark);
             }
             e.stopImmediatePropagation();
             break;

@@ -256,6 +256,7 @@ export function initComponents(
     ...$appMain.actions(),
     ...$leafs.actions(),
     ...$headerLeafs.actions(),
+    ...$folders.actions(),
     ...$headerTabs.actions(),
     ...$tabs.actions(),
     ...$formSearch.actions(),

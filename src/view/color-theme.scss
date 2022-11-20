@@ -170,8 +170,8 @@ app-main:not(.drag-start) {
   multi-sel-pane.show {
     border: 1px solid rgba(255, 255, 255, 0.5);
 
-    &:not(.pre) .icon-check-all {
-      color: deepskyblue;
+    .icon-check-all {
+      color: deepskyblue !important;
     }
   }
 }

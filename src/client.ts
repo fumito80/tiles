@@ -680,3 +680,16 @@ export async function remeveBookmark($leaf: Leaf) {
     setAnimationClass('remove-hilite'),
   )($leaf);
 }
+
+export function getPrevTarget(...className: string[]) {
+  return ($nextTarget: HTMLElement): HTMLElement | null => {
+    const $target = $nextTarget?.previousElementSibling as HTMLElement | null;
+    if (!$target) {
+      return null;
+    }
+    if (hasClass($target, ...className)) {
+      return $target;
+    }
+    return getPrevTarget(...className)($target);
+  };
+}

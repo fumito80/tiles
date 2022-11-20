@@ -1,12 +1,12 @@
 /* eslint-disable import/prefer-default-export */
 
-import { Leaf } from './bookmarks';
+// import { Leaf } from './bookmarks';
 import {
   $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
-import { ISubscribeElement, Store } from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 import { Options } from './types';
 
 function onClickAngle($target: HTMLElement) {
@@ -51,7 +51,7 @@ setEvents($$byClass('folder-menu'), {
   },
 });
 
-export class Folders extends HTMLDivElement implements ISubscribeElement {
+export class Folders extends HTMLDivElement implements IPubSubElement {
   #options!: Options;
   private $foldersMenu!: HTMLElement;
   init(options: Options) {
@@ -68,6 +68,7 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
       const $target = e.target as HTMLDivElement;
       const targetClasses = [
         'anchor',
+        'leaf',
         'marker',
         'title',
         'folder-menu-button',
@@ -75,16 +76,16 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
       ] as const;
       const targetClass = whichClass(targetClasses, $target);
       switch (targetClass) {
-        case 'anchor': {
-          if ($target.hasAttribute('contenteditable')) {
-            return;
-          }
-          const $leaf = $target.parentElement;
-          if ($leaf instanceof Leaf) {
-            $leaf.openOrFind(this.#options);
-          }
+        case 'anchor':
+        case 'leaf':
+          //   if ($target.hasAttribute('contenteditable')) {
+          //     return;
+          //   }
+          //   const $leaf = $target.parentElement;
+          //   if ($leaf instanceof Leaf) {
+          //     $leaf.openOrFind(this.#options);
+          //   }
           break;
-        }
         case 'marker':
           $byClass('title', $target)!.click();
           break;
@@ -106,6 +107,25 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
         default:
       }
     });
+  }
+  actions() {
+    return {
+      clickFolers: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownFolders: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupFolders: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+      }),
+    };
   }
   connect(store: Store) {
     this.setEvents(store);

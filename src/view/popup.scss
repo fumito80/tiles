@@ -363,7 +363,7 @@ window-header,
     transition: all 0.15s;
 
     &.pre {
-      button {
+      button:not(.select-all) {
         display: none;
       }
     }
@@ -373,10 +373,9 @@ window-header,
     }
 
     .icon-check-all {
-      display: inline;
-      color: $common-marker;
+      color: $common-marker !important;
+      padding: 1px;
       font-size: 1.2em;
-      padding: 1px 2px;
     }
 
     .multi-sel-menu-button:focus+.leaf-menu {
@@ -1433,7 +1432,7 @@ app-main.zoom-pane {
 
 app-main:not(.disable-zoom-tabs) {
   .header-tabs:not(.end) {
-    button {
+    >button {
       display: none;
     }
   }
@@ -1457,7 +1456,7 @@ app-main:not(.disable-zoom-tabs) {
 
 app-main:not(.disable-zoom-history) {
   .header-histories:not(.end) {
-    button {
+    >button {
       display: none;
     }
   }
@@ -1648,7 +1647,8 @@ app-main.zoom-pane {
   }
 }
 
-.header-leafs.multi-select~.leafs {
+.header-leafs.multi-select~.leafs,
+.header-leafs.multi-select~.folders {
   .leaf {
     transition: filter 0.1s;
 
