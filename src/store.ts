@@ -289,7 +289,6 @@ export type Store = ReturnType<typeof initComponents>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
 export type States = Store['getStates'];
-// export type ActionStates<T extends keyof Subscribe> =
 export interface IPublishElement {
   actions(): Actions<any>;
 }

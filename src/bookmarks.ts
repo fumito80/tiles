@@ -296,7 +296,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
       this.$lastClickedLeaf = undefined;
     }
   }
-  mousedownItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
+  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
     if (hasClass($target, 'leaf-menu-button')) {
       addStyle({ top: '-1000px' })(this.$leafMenu);

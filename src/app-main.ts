@@ -22,7 +22,7 @@ import {
 } from './store';
 import { resetVScrollData } from './vscroll';
 
-async function clickAppMain(e: MouseEvent, dispatch: Store['dispatch']) {
+async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
   if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show', 'start-multi-select')) {
     return;
@@ -161,8 +161,5 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
     store.subscribe('keydownMain', (_, states, dispatch, e) => keydown(e, states, dispatch));
     store.subscribe('keyupMain', (_, states, dispatch, e) => keyup(e, states, dispatch));
-    // store.subscribe('multiSelPanes', () => {
-    //   this.focus();
-    // });
   }
 }

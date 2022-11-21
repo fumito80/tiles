@@ -25,7 +25,7 @@ import { applyVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
-export const delayMultiSelect = 800;
+export const delayMultiSelect = 500;
 
 type AnyFunction = (...p: any[]) => any;
 
