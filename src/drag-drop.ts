@@ -34,6 +34,7 @@ import {
   $$byClass,
   panes,
   getPrevTarget,
+  addStyle,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -236,7 +237,7 @@ function checkDroppable(e: DragEvent) {
   if (dropAreaClass == null) {
     return undefined;
   }
-  const $dragSource = $byClass('drag-source');
+  const $dragSource = $byClass('drag-source')!;
   const sourceId = $dragSource.id || $dragSource.parentElement!.id;
   const $dropTarget = $dropArea.closest('.leaf, .folder, .tab-wrap') as HTMLElement;
   if ($dropTarget?.id === sourceId) {
@@ -269,7 +270,7 @@ function checkDroppable(e: DragEvent) {
     dropPane === 'folders'
     && ['leaf', 'tab-wrap', 'history'].includes(dragSource)
     && ['drop-bottom', 'drop-top'].includes(dropAreaClass)
-    && hasClass($dropArea.parentElement?.parentElement?.parentElement || null, 'folder')
+    && hasClass($dropArea.parentElement?.parentElement?.parentElement || undefined, 'folder')
   ) {
     return undefined;
   }
@@ -286,19 +287,26 @@ function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch
 
 function getDraggableElement(
   $dragTarget: HTMLElement,
-  // multiSelPanes: Promise<{ leafs?: boolean, tabs?: boolean, history?: boolean }>,
   isMultiSelect: boolean,
 ) {
-  // const { leafs, tabs, history } = await multiSelPanes;
-  // const clones = (leafs || tabs || history) ? $$byClass('selected') : [$dragTarget];
+  if (isMultiSelect) {
+    $dragTarget.classList.add('selected');
+  }
   const clones = isMultiSelect ? $$byClass('selected') : [$dragTarget];
-  return clones.reduce((acc, $el) => {
+  const $draggableClone = $byClass('draggable-clone')!;
+  const itemHeight = $dragTarget.offsetHeight;
+  clones.some(($el, i) => {
     const clone = $el.cloneNode(true) as HTMLElement;
-    addChild(clone)(acc);
-    return acc;
-  }, $byClass('draggable-clone'));
-  // const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-  // const $draggable = addChild(clone)($byClass('draggable-clone'));
+    if (itemHeight * i > 120) {
+      const $div = addChild(document.createElement('div'))($draggableClone);
+      $div.textContent = `... and ${clones.length - i} more`;
+      addStyle({ padding: '2px' })($div);
+      return true;
+    }
+    addChild(clone)($draggableClone);
+    return false;
+  });
+  return $draggableClone;
 }
 
 export default class DragAndDropEvents implements IPubSubElement {
@@ -337,9 +345,8 @@ export default class DragAndDropEvents implements IPubSubElement {
     if ($menu) {
       document.body.append($menu);
     }
-    const $draggable = getDraggableElement($dragTarget, hasClass($dragTarget, 'selected'));
-    // const clone = $dragTarget.cloneNode(true) as HTMLAnchorElement;
-    // const $draggable = addChild(clone)($byClass('draggable-clone'));
+    const isMultiSelect = !!$byClass('selected');
+    const $draggable = getDraggableElement($dragTarget, isMultiSelect);
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', id);
     e.dataTransfer!.setData('application/source-class', className!);
@@ -351,7 +358,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
   }
   dragenter(e: DragEvent) {
-    rmClass('drag-enter')($byClass('drag-enter'));
+    $byClass('drag-enter')?.classList.remove('drag-enter');
     const dropAreaClass = checkDroppable(e);
     if (dropAreaClass) {
       addClass('drag-enter')(e.target as HTMLElement);
@@ -368,8 +375,8 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
   }
   dragend(e: DragEvent, dispatch: Store['dispatch']) {
-    rmClass('drag-source')($byClass('drag-source'));
-    setHTML('')($byClass('draggable-clone'));
+    $byClass('drag-source')?.classList.remove('drag-source');
+    setHTML('')($byClass('draggable-clone')!);
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
       const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);

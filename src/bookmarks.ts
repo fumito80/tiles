@@ -19,10 +19,11 @@ export class PaneHeader extends HTMLDivElement implements IPubSubElement {
   private $mainMenu!: HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], _?: boolean) {
-    this.$mainMenu = $byClass('main-menu', this);
+    this.$mainMenu = $byClass('main-menu', this)!;
     this.#includeUrl = settings.includeUrl;
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
   }
+  // eslint-disable-next-line class-methods-use-this
   clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
     const $menu = e.target as HTMLElement;
     switch ($menu.dataset.value) {
@@ -33,7 +34,7 @@ export class PaneHeader extends HTMLDivElement implements IPubSubElement {
       }
       case 'start-multi-select':
         dispatch('multiSelPanes', { all: true });
-        $byClass('main-menu-button', this).blur();
+        // $byClass('main-menu-button', this)!.blur();
         break;
       case 'add-folder':
         addFolder();
@@ -76,7 +77,7 @@ export class HeaderLeafs extends PaneHeader {
   private $pinBookmark!: HTMLElement;
   override init(settings: State['settings']) {
     super.init(settings);
-    this.$pinBookmark = $byClass('pin-bookmark', this);
+    this.$pinBookmark = $byClass('pin-bookmark', this)!;
     this.$pinBookmark.addEventListener('click', () => addBookmark());
   }
   override connect(store: Store) {
@@ -254,12 +255,6 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   });
 }
 
-function multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean }) {
-  if (!multiSelect) {
-    $$('.selected').forEach(rmClass('selected'));
-  }
-}
-
 export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearchable {
   #options!: Options;
   $leafMenu!: HTMLElement;
@@ -267,7 +262,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   #timerMultiSelect!: number;
   init(options: Options) {
     this.#options = options;
-    this.$leafMenu = $byClass('leaf-menu');
+    this.$leafMenu = $byClass('leaf-menu')!;
     // this.addEventListener('mouseup', () => clearTimeout(this.#timerMultiSelect));
     setLeafMenu(this.$leafMenu, options);
   }
@@ -295,6 +290,12 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
         }
       }
       leafs.forEach(($leaf) => $leaf.select(true));
+    }
+  }
+  multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean, all?: boolean }) {
+    if (!multiSelect) {
+      $$('.selected').forEach(rmClass('selected'));
+      this.$lastClickedLeaf = undefined;
     }
   }
   mousedownItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
@@ -412,7 +413,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     store.subscribe('clickLeafs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
     store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
-    store.subscribe('multiSelPanes', ({ newValue }) => multiSelectLeafs(newValue));
+    store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
     store.subscribe('clickFolers', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
     store.subscribe('mousedownFolders', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));

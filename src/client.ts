@@ -37,10 +37,10 @@ import { Leaf } from './bookmarks';
 // DOM operation
 
 export function $<T extends HTMLElement>(
-  selector: string | null = null,
-  parent: HTMLElement | DocumentFragment | Document | null | Element = document,
+  selector: string,
+  parent: HTMLElement | DocumentFragment | Document | undefined | Element = document,
 ) {
-  return parent?.querySelector<T>(selector!) ?? null;
+  return parent?.querySelector<T>(selector) ?? undefined;
 }
 
 export function $$<T extends HTMLElement>(
@@ -54,7 +54,7 @@ export function $byClass<T extends HTMLElement>(
   className: string | null,
   parent: HTMLElement | Document = document,
 ) {
-  return parent.getElementsByClassName(className!)[0] as T;
+  return parent.getElementsByClassName(className!)[0] as T | undefined;
 }
 
 export function $byId<T extends HTMLElement>(
@@ -93,10 +93,11 @@ export function addChild<T extends Element | null>($child: T) {
   };
 }
 
-export function addStyle(styleNames: Model): <T extends Element | null>($el: T) => T;
-export function addStyle(styleName: string, value: string): <T extends Element | null>($el: T) => T;
+export function addStyle(styleNames: Model): <T extends Element | undefined | null>($el: T) => T;
+export function addStyle(styleName: string, value: string):
+  <T extends Element | undefined>($el: T) => T;
 export function addStyle(styleName: string | Model, value?: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if (typeof styleName === 'string') {
       ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
     } else {
@@ -109,43 +110,43 @@ export function addStyle(styleName: string | Model, value?: string) {
 }
 
 export function rmStyle(...styleNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     styleNames.forEach(
       (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
     );
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function addAttr(attrName: string, value: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.setAttribute(attrName, value);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function rmAttr(attrName: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.removeAttribute(attrName);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function addClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.classList.add(...classNames);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function rmClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.classList.remove(...classNames);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
-export function hasClass($el: Element | null, ...classNames: string[]) {
+export function hasClass($el: Element | undefined, ...classNames: string[]) {
   if (!$el) {
     return false;
   }
@@ -161,14 +162,14 @@ export function toggleElement(isShow = true, shownDisplayType = 'block') {
 }
 
 export function toggleClass(className: string, force?: boolean) {
-  return <T extends Element | null>($el?: T) => {
+  return <T extends Element | undefined>($el?: T) => {
     $el?.classList.toggle(className, force);
     return $el;
   };
 }
 
 export function setHTML(html: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if ($el) {
       // eslint-disable-next-line no-param-reassign
       $el.innerHTML = html;
@@ -178,7 +179,7 @@ export function setHTML(html: string) {
 }
 
 export function setText(text: string | null) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if ($el) {
       // eslint-disable-next-line no-param-reassign
       $el.textContent = text;
@@ -189,9 +190,9 @@ export function setText(text: string | null) {
 
 // eslint-disable-next-line no-undef
 export function insertHTML(position: InsertPosition, html: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.insertAdjacentHTML(position, html);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
@@ -394,7 +395,7 @@ export function resizeHeightHandler(e: MouseEvent) {
 }
 
 export function setAnimationFolder(className: string) {
-  return (el: Element | null = null) => {
+  return (el: Element | null | undefined = undefined) => {
     if (!el) {
       return el;
     }
@@ -407,7 +408,7 @@ export function setAnimationFolder(className: string) {
 
 export async function removeFolder($folder: HTMLElement) {
   await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-  addChild($byClass('folder-menu'))(document.body);
+  addChild($byClass('folder-menu')!)(document.body);
   pipe(
     addListener('animationend', () => {
       const $parent = $folder.parentElement!;
@@ -417,7 +418,7 @@ export async function removeFolder($folder: HTMLElement) {
     }, { once: true }),
     rmClass('hilite'),
     setAnimationFolder('remove-hilite'),
-  )($byClass('marker', $folder));
+  )($byClass('marker', $folder)!);
   $byId($folder.id).remove();
 }
 
@@ -516,7 +517,7 @@ export async function addBookmark(
 export function showModalInput(desc: string) {
   const $modal = $byClass('modal')!;
   addClass('show-modal')(document.body);
-  setText(desc)($byClass('popup-desc', $modal));
+  setText(desc)($byClass('popup-desc', $modal)!);
   return $<HTMLInputElement>('input', $modal)!.value;
 }
 
@@ -673,7 +674,7 @@ export function setOpenPaths($folder: HTMLElement) {
 
 export async function remeveBookmark($leaf: Leaf) {
   await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-  addChild($byClass('leaf-menu'))($byClass('components'));
+  addChild($byClass('leaf-menu')!)($byClass('components')!);
   pipe(
     addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
     rmClass('hilite'),
@@ -682,10 +683,10 @@ export async function remeveBookmark($leaf: Leaf) {
 }
 
 export function getPrevTarget(...className: string[]) {
-  return ($nextTarget: HTMLElement): HTMLElement | null => {
-    const $target = $nextTarget?.previousElementSibling as HTMLElement | null;
+  return ($nextTarget: HTMLElement): HTMLElement | undefined => {
+    const $target = $nextTarget?.previousElementSibling as HTMLElement | undefined;
     if (!$target) {
-      return null;
+      return undefined;
     }
     if (hasClass($target, ...className)) {
       return $target;

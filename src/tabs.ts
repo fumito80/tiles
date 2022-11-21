@@ -142,7 +142,7 @@ export class OpenTab extends HTMLElement {
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
     this.$main = $byTag('app-main');
-    this.$tooltip = $byClass('tooltip', this);
+    this.$tooltip = $byClass('tooltip', this)!;
     this.classList.toggle('unmatch', isSearching);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
@@ -155,7 +155,7 @@ export class OpenTab extends HTMLElement {
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('click', this.gotoTab)(this);
     addListener('mouseover', this.setTooltipPosition)(this);
-    addListener('click', this.closeTab(dispatch))($byClass('icon-x', this));
+    addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
   }
   getParentWindow() {
@@ -207,14 +207,14 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   private $btnCollapseTabs!: HTMLElement;
   private $tabsMenu!: HTMLElement;
   init(windowId: number, tab: chrome.tabs.Tab) {
-    this.$btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
-    this.$tabsMenu = $byClass('tabs-menu', this);
+    this.$btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this)!;
+    this.$tabsMenu = $byClass('tabs-menu', this)!;
     this.#windowId = windowId;
     this.update(tab);
     pipe(
       addListener('click', showMenu(this.$tabsMenu)),
       addListener('mousedown', () => addStyle({ top: '-1000px' })(this.$tabsMenu)),
-    )($byClass('tabs-menu-button', this));
+    )($byClass('tabs-menu-button', this)!);
     return this;
   }
   update(tab: chrome.tabs.Tab) {
@@ -378,7 +378,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     return this;
   }
   setEvent() {
-    $byClass('new-window-plus', this).addEventListener('click', () => {
+    $byClass('new-window-plus', this)!.addEventListener('click', () => {
       chrome.windows.create();
     });
   }
@@ -428,9 +428,9 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   private $buttonNextWin!: HTMLElement;
   override init(settings: State['settings'], collapsed: boolean) {
     super.init(settings);
-    this.$buttonCollapse = $byClass('collapse-tabs', this);
-    this.$buttonPrevWin = $byClass('win-prev', this);
-    this.$buttonNextWin = $byClass('win-next', this);
+    this.$buttonCollapse = $byClass('collapse-tabs', this)!;
+    this.$buttonPrevWin = $byClass('win-prev', this)!;
+    this.$buttonNextWin = $byClass('win-next', this)!;
     this.#collapsed = collapsed;
     this.switchCollapseIcon(collapsed);
   }

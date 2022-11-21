@@ -34,11 +34,11 @@ function getRowHeight() {
     addClass('history'),
     setText('A'),
   )(document.body);
-  const styles = getComputedStyle($tester);
+  const styles = getComputedStyle($tester!);
   const props = pick('marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'height')(styles);
   const rowHeight = Object.values(props)
     .reduce((acc, value) => acc + Number.parseFloat(String(value)), 0);
-  $tester.remove();
+  $tester!.remove();
   return rowHeight;
 }
 

@@ -41,9 +41,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$searchTargets = $searchTargets;
-    this.$inputQuery = $byClass<HTMLInputElement>('query', this);
-    this.$iconX = $byClass('icon-x', this);
-    this.$leafs = $byClass('leafs');
+    this.$inputQuery = $byClass<HTMLInputElement>('query', this)!;
+    this.$iconX = $byClass('icon-x', this)!;
+    this.$leafs = $byClass('leafs')!;
     this.$inputQuery.value = lastSearchWord;
     this.addEventListener('submit', (e) => this.submitForm(e, options));
   }
@@ -86,7 +86,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     if (openFolder) {
       rmClass('open')(openFolder);
       const $target = $(':scope > .marker > .title', openFolder)!;
-      selectFolder($target, $byClass('leafs'), this.#exclusiveOpenBmFolderTree);
+      selectFolder($target, $byClass('leafs')!, this.#exclusiveOpenBmFolderTree);
     }
   }
   search(newValue: string, dispatch: Store['dispatch']) {
@@ -154,5 +154,10 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('clearQuery', (_, __, dispatch) => this.clearQuery(dispatch));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
     store.subscribe('search', (changes, _, dispatch) => this.search(changes.newValue || this.$inputQuery.value, dispatch));
+    store.subscribe('multiSelPanes', async (changes) => {
+      if (changes.newValue.all) {
+        this.$inputQuery.focus();
+      }
+    });
   }
 }

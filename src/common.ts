@@ -66,7 +66,7 @@ export function addListener<T extends keyof HTMLElementEventType>(
   ev: (e: HTMLElementEventType[T]) => any,
   options?: EventListenerOptions,
 ) {
-  return <U extends Element | null>(element: U) => {
+  return <U extends Element | undefined>(element: U) => {
     (element as unknown as HTMLElement)?.addEventListener(type, ev, options);
     return element;
   };
@@ -251,7 +251,7 @@ export function tail<T extends Array<any>>([, ...rest]: readonly [any, ...T]) {
 }
 
 export function last<T>(args: T[]) {
-  return args.at(-1) ?? null as T | null;
+  return args.at(-1);
 }
 
 // test

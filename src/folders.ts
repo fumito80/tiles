@@ -56,7 +56,7 @@ export class Folders extends HTMLDivElement implements IPubSubElement {
   private $foldersMenu!: HTMLElement;
   init(options: Options) {
     this.#options = options;
-    this.$foldersMenu = $byClass('folder-menu');
+    this.$foldersMenu = $byClass('folder-menu')!;
   }
   setEvents(store: Store) {
     this.addEventListener('mousedown', (e) => {
@@ -97,7 +97,7 @@ export class Folders extends HTMLDivElement implements IPubSubElement {
           break;
         case 'title': {
           store.dispatch('clearQuery');
-          selectFolder($target, $byClass('leafs'), this.#options.exclusiveOpenBmFolderTree);
+          selectFolder($target, $byClass('leafs')!, this.#options.exclusiveOpenBmFolderTree);
           break;
         }
         case 'folder-menu-button': {

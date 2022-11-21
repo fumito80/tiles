@@ -17,7 +17,9 @@ import {
   getEndPaneMinWidth,
   showMenu,
 } from './client';
-import { IPubSubElement, makeAction, Store } from './store';
+import {
+  Dispatch, IPubSubElement, makeAction, States, Store,
+} from './store';
 import { resetVScrollData } from './vscroll';
 
 async function clickAppMain(e: MouseEvent, dispatch: Store['dispatch']) {
@@ -38,6 +40,26 @@ async function clickAppMain(e: MouseEvent, dispatch: Store['dispatch']) {
     return;
   }
   dispatch('focusQuery');
+}
+
+async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+  if (e.key === 'Shift') {
+    const { leafs, tabs, history } = await states('multiSelPanes');
+    if (leafs || tabs || history) {
+      return;
+    }
+    dispatch('multiSelPanes', { all: true });
+  }
+}
+
+async function keyup(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+  if (e.key === 'Shift') {
+    const { all } = await states('multiSelPanes');
+    if (!all) {
+      return;
+    }
+    dispatch('multiSelPanes', { all: false });
+  }
 }
 
 export class AppMain extends HTMLElement implements IPubSubElement {
@@ -85,8 +107,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
 
     const panes = [
-      ...(options.zoomHistory ? [$byClass('histories', this)] : []),
-      ...(options.zoomTabs ? [$byClass('tabs', this)] : []),
+      ...(options.zoomHistory ? [$byClass('histories', this)!] : []),
+      ...(options.zoomTabs ? [$byClass('tabs', this)!] : []),
     ];
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
@@ -120,6 +142,16 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           all?: boolean,
         },
       }),
+      keydownMain: makeAction({
+        target: this,
+        eventType: 'keydown',
+        eventOnly: true,
+      }),
+      keyupMain: makeAction({
+        target: this,
+        eventType: 'keyup',
+        eventOnly: true,
+      }),
     };
   }
   connect(store: Store) {
@@ -127,5 +159,10 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
     store.subscribe('clickAppMain', (_, __, dispatch, e) => clickAppMain(e, dispatch));
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
+    store.subscribe('keydownMain', (_, states, dispatch, e) => keydown(e, states, dispatch));
+    store.subscribe('keyupMain', (_, states, dispatch, e) => keyup(e, states, dispatch));
+    // store.subscribe('multiSelPanes', () => {
+    //   this.focus();
+    // });
   }
 }
