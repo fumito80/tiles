@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { Leaf } from './bookmarks';
 import {
-  $$, $$byTag, hasClass, remeveBookmark, showMenu,
+  $$, $$byTag, addStyle, hasClass, remeveBookmark, rmStyle, showMenu,
 } from './client';
 import { setEvents, whichClass } from './common';
 import { ISubscribeElement, Store } from './store';
@@ -9,11 +9,12 @@ import { ISubscribeElement, Store } from './store';
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   #header!: HTMLElement;
   #className!: string;
-  // #minWidth!: string;
   #maxWidth!: string;
+  $buttons!: HTMLButtonElement[];
   init(className: string, header: HTMLElement) {
     this.#header = header;
     this.#className = className;
+    this.$buttons = $$byTag('button', this);
     header.appendChild(this);
     const { width } = header.firstElementChild!.getBoundingClientRect();
     this.style.setProperty('left', `${Math.ceil(width) + 10}px`);
@@ -41,19 +42,27 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     const [, show] = value.all
       ? [null, true]
       : Object.entries(value).find(([key]) => key === this.#className) || [];
-    this.classList.toggle('show', !!show);
-    if (value.all) {
+    const isPre = !!value.all;
+    const isShow = !!show;
+    if (isPre && this.$buttons[0]?.style.display !== 'none') {
       const { width } = this.getBoundingClientRect();
       this.#maxWidth = `${String(Math.ceil(width))}px`;
-    } else if (hasClass(this, 'pre')) {
+    }
+    if (isPre) {
+      this.$buttons.forEach(addStyle({ display: 'none' }));
+    } else if (isShow) {
+      this.$buttons.forEach(rmStyle('display'));
+    }
+    this.classList.toggle('show', isShow);
+    if (!isPre && hasClass(this, 'pre')) {
       this.style.setProperty('max-width', this.#maxWidth);
     }
-    this.classList.toggle('pre', !!value.all);
-    if (value.all) {
+    this.classList.toggle('pre', isPre);
+    if (isPre) {
       const rect = this.getBoundingClientRect();
       this.style.setProperty('max-width', `${Math.ceil(rect.width)}px`);
     }
-    this.#header.classList.toggle('multi-select', !!show);
+    this.#header.classList.toggle('multi-select', isShow);
     // if (this.#className === 'leafs' && show) {
     //   const $leafs = $byClass('leafs');
     //   if (hasClass($leafs.nextElementSibling, 'folders')) {

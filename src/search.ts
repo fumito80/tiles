@@ -122,6 +122,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
   }
+  multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
+    if (changes?.all) {
+      this.$inputQuery.focus();
+    }
+    const isMultiSelect = Object.values(changes).some((type) => type);
+    this.classList.toggle('hidden', isMultiSelect);
+  }
   actions() {
     return {
       inputQuery: makeAction({
@@ -154,10 +161,6 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('clearQuery', (_, __, dispatch) => this.clearQuery(dispatch));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
     store.subscribe('search', (changes, _, dispatch) => this.search(changes.newValue || this.$inputQuery.value, dispatch));
-    store.subscribe('multiSelPanes', async (changes) => {
-      if (changes.newValue.all) {
-        this.$inputQuery.focus();
-      }
-    });
+    store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
   }
 }

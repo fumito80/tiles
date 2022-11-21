@@ -14,6 +14,27 @@ import {
 } from './store';
 import { OpenBookmarkType, Options, State } from './types';
 
+function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
+  const $menu = e.target as HTMLElement;
+  switch ($menu.dataset.value) {
+    case 'add-bookmark': {
+      const id = $byClass('open')?.id;
+      addBookmark(id || '1');
+      break;
+    }
+    case 'start-multi-select':
+      dispatch('multiSelPanes', { all: true });
+      break;
+    case 'add-folder':
+      addFolder();
+      break;
+    case 'settings':
+      chrome.runtime.openOptionsPage();
+      break;
+    default:
+  }
+}
+
 export class PaneHeader extends HTMLDivElement implements IPubSubElement {
   #includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
@@ -22,28 +43,6 @@ export class PaneHeader extends HTMLDivElement implements IPubSubElement {
     this.$mainMenu = $byClass('main-menu', this)!;
     this.#includeUrl = settings.includeUrl;
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
-  }
-  // eslint-disable-next-line class-methods-use-this
-  clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
-    const $menu = e.target as HTMLElement;
-    switch ($menu.dataset.value) {
-      case 'add-bookmark': {
-        const id = $byClass('open')?.id;
-        addBookmark(id || '1');
-        break;
-      }
-      case 'start-multi-select':
-        dispatch('multiSelPanes', { all: true });
-        // $byClass('main-menu-button', this)!.blur();
-        break;
-      case 'add-folder':
-        addFolder();
-        break;
-      case 'settings':
-        chrome.runtime.openOptionsPage();
-        break;
-      default:
-    }
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -64,12 +63,11 @@ export class PaneHeader extends HTMLDivElement implements IPubSubElement {
     }
     return {};
   }
-  // eslint-disable-next-line class-methods-use-this
   connect(store: Store) {
     if (!hasClass(this, 'end')) {
       return;
     }
-    store.subscribe('clickMainMenu', (_, __, dispatch, e) => this.clickMainMenu(e, dispatch));
+    store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
   }
 }
 

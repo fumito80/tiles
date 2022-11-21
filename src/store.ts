@@ -201,6 +201,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
     ): U extends keyof T ? Promise<ActionValue<T[U]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }> {
       return getStates(name, cb) as any;
     },
+    actions,
   };
 }
 
@@ -288,6 +289,7 @@ export type Store = ReturnType<typeof initComponents>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
 export type States = Store['getStates'];
+// export type ActionStates<T extends keyof Subscribe> =
 export interface IPublishElement {
   actions(): Actions<any>;
 }
