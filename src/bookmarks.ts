@@ -292,7 +292,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   }
   multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean, all?: boolean }) {
     if (!multiSelect) {
-      $$('.selected').forEach(rmClass('selected'));
+      $$('.leafs .selected, .folders .selected').forEach(rmClass('selected'));
       this.$lastClickedLeaf = undefined;
     }
   }
@@ -412,7 +412,7 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
     store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
-    store.subscribe('clickFolers', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
+    store.subscribe('clickFolders', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
     store.subscribe('mousedownFolders', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
   }

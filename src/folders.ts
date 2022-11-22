@@ -110,7 +110,7 @@ export class Folders extends HTMLDivElement implements IPubSubElement {
   }
   actions() {
     return {
-      clickFolers: makeAction({
+      clickFolders: makeAction({
         target: this,
         eventType: 'click',
         eventOnly: true,

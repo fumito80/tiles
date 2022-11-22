@@ -1,14 +1,16 @@
 import { PaneHeader } from './bookmarks';
 import {
+  $$,
   $$byClass, $$byTag, $byClass, $byTag,
   addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, showMenu, toggleClass,
 } from './client';
 import {
-  addListener, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
+  addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
-  IPubSubElement, ISubscribeElement, makeAction, Store,
+  Dispatch,
+  IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
 import { PromiseInitTabs, State } from './types';
 
@@ -138,6 +140,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 
 export class OpenTab extends HTMLElement {
   #tabId!: number;
+  #preMultiSel = false;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -153,7 +156,7 @@ export class OpenTab extends HTMLElement {
     $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
-    addListener('click', this.gotoTab)(this);
+    // addListener('click', this.gotoTab)(this);
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
@@ -199,6 +202,25 @@ export class OpenTab extends HTMLElement {
       return;
     }
     addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
+  }
+  preMultiSelect(isBegin: boolean) {
+    this.#preMultiSel = true;
+    this.classList.toggle('selected', isBegin);
+  }
+  checkMultiSelect() {
+    if (this.#preMultiSel) {
+      this.#preMultiSel = false;
+      return true;
+    }
+    return false;
+  }
+  select(selected?: boolean) {
+    if (this.checkMultiSelect()) {
+      return false;
+    }
+    const isSelected = selected ?? !this.classList.contains('selected');
+    this.classList.toggle('selected', isSelected);
+    return isSelected;
   }
 }
 
@@ -352,6 +374,8 @@ export class Window extends HTMLElement implements ISubscribeElement {
 export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
   #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
+  #timerMultiSelect!: number;
+  $lastClickedTab!: OpenTab | undefined;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -399,6 +423,94 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
+  selectWithShift($target: OpenTab) {
+    if (
+      this.$lastClickedTab !== $target
+      && this.$lastClickedTab?.parentElement === $target.parentElement
+    ) {
+      const OpenTabs = [] as OpenTab[];
+      let started = false;
+      for (
+        let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
+        next != null;
+        next = next.nextElementSibling
+      ) {
+        if (next === $target || next === this.$lastClickedTab) {
+          if (started) {
+            OpenTabs.push(next as OpenTab);
+            break;
+          }
+          started = true;
+        }
+        if (started && next instanceof OpenTab) {
+          OpenTabs.push(next);
+        }
+      }
+      OpenTabs.forEach(($tab) => $tab.select(true));
+    }
+  }
+  multiSelectTabs({ tabs: multiSelect }: { tabs?: boolean, all?: boolean }) {
+    if (!multiSelect) {
+      $$('.tabs .selected').forEach(rmClass('selected'));
+      this.$lastClickedTab = undefined;
+    }
+  }
+  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    // if (hasClass($target, 'leaf-menu-button')) {
+    //   addStyle({ top: '-1000px' })(this.$leafMenu);
+    //   return;
+    // }
+    const $tab = $target; // .parentElement;
+    if (!($tab instanceof OpenTab)) {
+      return;
+    }
+    clearTimeout(this.#timerMultiSelect);
+    this.#timerMultiSelect = setTimeout(async () => {
+      const { dragging, multiSelPanes } = await states();
+      if (dragging) {
+        if (multiSelPanes?.tabs) {
+          $tab.select(true);
+        }
+        return;
+      }
+      dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
+      $tab.preMultiSelect(!multiSelPanes?.tabs);
+    }, delayMultiSelect);
+  }
+  mouseupItem() {
+    clearTimeout(this.#timerMultiSelect);
+  }
+  async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    // if ($target.hasAttribute('contenteditable')) {
+    //   return;
+    // }
+    // if (hasClass($target, 'tab-wrap', 'leaf-menu-button')) {
+    //   return;
+    // }
+    // if (hasClass($target, 'title', 'icon-fa-angle-right') && $target.closest('.leafs')) {
+    //   $target.parentElement?.parentElement?.classList.toggle('path');
+    //   return;
+    // }
+    const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
+    if ($tab instanceof OpenTab) {
+      const { tabs, all } = await states('multiSelPanes');
+      if (tabs || all) {
+        $tab.select();
+        if (all) {
+          dispatch('multiSelPanes', { tabs: true });
+        }
+        if (e.shiftKey) {
+          this.selectWithShift($tab);
+        }
+        this.$lastClickedTab = $tab;
+        return;
+      }
+      // $leaf.openOrFind(this.#options);
+      $tab.gotoTab();
+    }
+  }
   // eslint-disable-next-line class-methods-use-this
   actions() {
     return {
@@ -409,6 +521,21 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
         },
       }),
       search: {},
+      clickTabs: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownTabs: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupTabs: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+      }),
     };
   }
   connect(store: Store) {
@@ -417,6 +544,10 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
       store.subscribe('clearSearch', this.clearSearch.bind(this));
+      store.subscribe('clickTabs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
+      store.subscribe('mousedownTabs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
+      store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
+      store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectTabs(newValue));
     });
   }
 }

@@ -86,14 +86,6 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       this.style.setProperty('max-width', `${Math.ceil(rect.width)}px`);
     }
     this.#header.classList.toggle('multi-select', isShow);
-    // if (this.#className === 'leafs' && show) {
-    //   const $leafs = $byClass('leafs');
-    //   if (hasClass($leafs.nextElementSibling, 'folders')) {
-    //     const { width } = $leafs.getBoundingClientRect();
-    //     this.style.setProperty('left', `${width - this.offsetWidth}px`);
-    //     this.style.setProperty('right', 'unset');
-    //   }
-    // }
   }
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));

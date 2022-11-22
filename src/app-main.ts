@@ -24,7 +24,7 @@ import { resetVScrollData } from './vscroll';
 
 async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
-  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show', 'start-multi-select')) {
+  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show', 'start-multi-select', 'tab-wrap')) {
     return;
   }
   dispatch('multiSelPanes', { leafs: false, tabs: false, history: false });
