@@ -35,7 +35,7 @@ import {
   panes,
   getPrevTarget,
   addStyle,
-  moveBookmark,
+  moveBookmarks,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -439,15 +439,18 @@ export default class DragAndDropEvents implements IPubSubElement {
       const index = findIndex + (dropAreaClass === 'drop-bottom' ? 1 : 0);
       bookmarkDest = { parentId, index };
     }
+    // From History
     if (sourceClass === 'history') {
       dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
       return;
     }
+    // From Tab/To Window of tabs
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
       dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest, dispatch);
       return;
     }
     const position = positions[dropAreaClass];
+    // From Window of tabs
     if (sourceClass === 'window') {
       const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
       addFromTabs(
@@ -461,14 +464,12 @@ export default class DragAndDropEvents implements IPubSubElement {
       );
       return;
     }
+    // Bookmark/Folder only
     if (dropAreaClass === 'new-window-plus') {
       dropBmInNewWindow([sourceId, ...sourceIds], sourceClass);
       return;
     }
-    [sourceId, ...sourceIds].forEach((sId, i) => {
-      // const index = bookmarkDest.index === undefined ? undefined : bookmarkDest.index + i;
-      moveBookmark(dropAreaClass, bookmarkDest, sId, destId);
-    });
+    moveBookmarks(dropAreaClass, bookmarkDest, [sourceId, ...sourceIds], destId);
   }
   actions() {
     return {

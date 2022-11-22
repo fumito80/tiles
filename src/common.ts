@@ -516,6 +516,32 @@ export function pipeP(...fns: Array<any>) {
   };
 }
 
+export function maybePipeP<T, R1, R2>(
+  fn1: (a: T) => R1,
+  fn2: (a: R1) => R2,
+): (a: Promise<T>) => Promise<R2 | null>;
+export function maybePipeP<T, R1, R2, R3>(
+  fn1: (a: T) => R1,
+  fn2: (a: R1) => R2,
+  fn3: (a: R2) => R3,
+): (a: Promise<T>) => Promise<R3 | null>;
+export function maybePipeP<T>(
+  ...fn1: any[]
+): (a: Promise<T>) => any;
+
+export function maybePipeP(fn: any, ...fns: any[]) {
+  return async (...values: any[]) => {
+    const result = await fn(...values);
+    if (result == null) {
+      return null;
+    }
+    if (fns.length === 0) {
+      return result;
+    }
+    return maybePipeP(...fns)(result);
+  };
+}
+
 export function pick<U extends Array<string>>(...props: U): <T>(target: T) =>
   Pick<T, U[number] extends keyof T ? U[number] : never[number]>;
 export function pick(...props: any) {
