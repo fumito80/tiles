@@ -311,7 +311,7 @@ window-header,
   &.mousedown,
   &:hover {
     background-color: $common-marker;
-    transition: background-color .4s ease-in;
+    transition: background-color .8s cubic-bezier(1, 0, 0, 0);
   }
 }
 

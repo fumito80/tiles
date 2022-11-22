@@ -410,7 +410,7 @@ export default class DragAndDropEvents {
       return;
     }
     await cbToResolve(curry3(chrome.bookmarks.move)(sourceId)(bookmarkDest));
-    const isRootTo = $destLeafs.parentElement?.id === '1' && dropAreaClass !== 'drop-folder';
+    const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
     const isRootFrom = $sourceLeafs.parentElement?.id === '1';
     const isLeafFrom = hasClass($sourceLeafs, 'leaf');
     if (isLeafFrom && isRootFrom && !isRootTo) {
