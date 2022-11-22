@@ -249,9 +249,9 @@ export function initComponents(
   $headerHistory.init(settings);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
-  $muitiSelLeafs.init('leafs', $headerLeafs);
-  $muitiSelTabs.init('tabs', $headerTabs);
-  $muitiSelHistory.init('history', $headerHistory);
+  $muitiSelLeafs.init('leafs', $headerLeafs, options);
+  $muitiSelTabs.init('tabs', $headerTabs, options);
+  $muitiSelHistory.init('history', $headerHistory, options);
   // Register actions
   const actions = {
     ...$appMain.actions(),

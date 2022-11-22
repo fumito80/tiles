@@ -121,7 +121,7 @@ async function createTabsFromFolder(parentId: string, windowId?: number, index?:
 
 async function dropWithTabs(
   $dropTarget: HTMLElement,
-  srcElementId: string,
+  [sourceId, ...sourceIds]: string[],
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
@@ -129,13 +129,13 @@ async function dropWithTabs(
 ) {
   // Tab to new window
   if (dropAreaClass === 'new-window-plus') {
-    const { id: tabId, incognito } = await getTabInfo(srcElementId);
+    const { id: tabId, incognito } = await getTabInfo(sourceId);
     chrome.windows.create({ tabId, incognito });
     return;
   }
   // Tab to bookmark
   if (!hasClass($dropTarget, 'tab-wrap')) {
-    const { url, title } = await getTabInfo(srcElementId);
+    const { url, title } = await getTabInfo(sourceId);
     addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     return;
   }
@@ -143,16 +143,18 @@ async function dropWithTabs(
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
-    const { url } = await getBookmark(srcElementId);
-    chrome.tabs.create({ index, url, windowId }, () => {
-      chrome.windows.update(windowId, { focused: true }).then(window.close);
+    [sourceId, ...sourceIds].forEach(async (srcElementId) => {
+      const { url } = await getBookmark(srcElementId);
+      chrome.tabs.create({ index, url, windowId }, () => {
+        chrome.windows.update(windowId, { focused: true }).then(window.close);
+      });
     });
     return;
   }
   // Merge window
   if (sourceClass === 'window') {
     if ($dropTarget.closest('.tabs')) {
-      const sourceWindowId = getChromeId(srcElementId);
+      const sourceWindowId = getChromeId(sourceId);
       const errorMessage = await postMessage({
         type: CliMessageTypes.moveWindow,
         payload: { sourceWindowId, windowId, index },
@@ -163,18 +165,18 @@ async function dropWithTabs(
         return;
       }
       ($dropTarget.parentElement as Window).reloadTabs(dispatch);
-      $byId(srcElementId).remove();
+      $byId(sourceId).remove();
     }
     return;
   }
   // Move folder to tab
   if (sourceClass === 'marker') {
     index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
-    createTabsFromFolder(srcElementId, windowId, index);
+    createTabsFromFolder(sourceId, windowId, index);
     return;
   }
   // Move tab
-  const sourceTab = await getTabInfo(srcElementId);
+  const sourceTab = await getTabInfo(sourceId);
   if (sourceTab.windowId === windowId) {
     index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
     if (rest.index < sourceTab.index) {
@@ -190,7 +192,7 @@ async function dropWithTabs(
       alert(chrome.runtime.lastError.message);
       return;
     }
-    moveTab(srcElementId, $dropTarget, dispatch);
+    moveTab(sourceId, $dropTarget, dispatch);
   });
   if (
     sourceTab.active
@@ -224,11 +226,15 @@ async function dropFromHistory(
   chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
-function dropBmInNewWindow(sourceIds: string[], sourceClass: Extract<typeof sourceClasses[number], 'leaf' | 'marker'>) {
+export function dropBmInNewWindow(
+  sourceIds: string[],
+  sourceClass: Extract<typeof sourceClasses[number], 'leaf' | 'marker'>,
+  incognito = false,
+) {
   const [sourceId, ...rest] = sourceIds;
   if (sourceClass === 'leaf') {
     getBookmark(sourceId)
-      .then(({ url }) => chrome.windows.create({ url }))
+      .then(({ url }) => chrome.windows.create({ url, incognito }))
       .then((win) => {
         Promise.all(rest.map(getBookmark))
           .then((bm) => bm.forEach(({ url }) => {
@@ -415,6 +421,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       search(sourceId, includeUrl, dispatch);
       return;
     }
+    dispatch('multiSelPanes', { all: false });
     const $dropTarget = $dropArea.parentElement?.id
       ? $dropArea.parentElement!
       : $dropArea.parentElement!.parentElement!;
@@ -446,7 +453,14 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     // From Tab/To Window of tabs
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
-      dropWithTabs($dropTarget, sourceId, sourceClass, dropAreaClass, bookmarkDest, dispatch);
+      dropWithTabs(
+        $dropTarget,
+        [sourceId, ...sourceIds],
+        sourceClass,
+        dropAreaClass,
+        bookmarkDest,
+        dispatch,
+      );
       return;
     }
     const position = positions[dropAreaClass];
@@ -464,11 +478,12 @@ export default class DragAndDropEvents implements IPubSubElement {
       );
       return;
     }
-    // Bookmark/Folder only
+    // Bookmark/Folder to new window
     if (dropAreaClass === 'new-window-plus') {
       dropBmInNewWindow([sourceId, ...sourceIds], sourceClass);
       return;
     }
+    // Bookmark/Folder move each other
     moveBookmarks(dropAreaClass, bookmarkDest, [sourceId, ...sourceIds], destId);
   }
   actions() {

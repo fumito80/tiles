@@ -3,17 +3,25 @@ import { Leaf } from './bookmarks';
 import {
   $$, $$byTag, addStyle, hasClass, remeveBookmark, rmStyle, showMenu,
 } from './client';
-import { setEvents, whichClass } from './common';
+import { prop, setEvents, whichClass } from './common';
+import { dropBmInNewWindow } from './drag-drop';
 import { ISubscribeElement, Store } from './store';
+import { OpenBookmarkType, Options } from './types';
+
+function getSelecteds() {
+  return $$<Leaf>('.leafs .selected, .folders .selected');
+}
 
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
-  #header!: HTMLElement;
   #className!: string;
+  #header!: HTMLElement;
+  #options!: Options;
   #maxWidth!: string;
   $buttons!: HTMLButtonElement[];
-  init(className: string, header: HTMLElement) {
-    this.#header = header;
+  init(className: string, header: HTMLElement, options: Options) {
     this.#className = className;
+    this.#header = header;
+    this.#options = options;
     this.$buttons = $$byTag('button', this);
     header.appendChild(this);
     const { width } = header.firstElementChild!.getBoundingClientRect();
@@ -22,21 +30,36 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       click(e) {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
         switch (buttonClass) {
-          case 'multi-sel-menu-button': {
+          case 'multi-sel-menu-button':
             showMenu('leaf-menu')(e);
-            e.stopImmediatePropagation();
             break;
-          }
           case 'del-multi-sel':
             if (className === 'leafs') {
-              $$<Leaf>('.leafs .selected, .folders .selected').forEach(remeveBookmark);
+              getSelecteds().forEach(remeveBookmark);
             }
-            e.stopImmediatePropagation();
             break;
           default:
         }
+        e.stopImmediatePropagation();
       },
     }, true);
+    this.addEventListener('click', (e) => {
+      const $target = e.target as HTMLElement;
+      switch ($target.dataset.value) {
+        case 'open-new-tab': {
+          getSelecteds().reverse()
+            .forEach(($leaf) => $leaf.openBookmark(this.#options, OpenBookmarkType.tab));
+          break;
+        }
+        case 'open-incognito':
+        case 'open-new-window': {
+          const selecteds = getSelecteds().map(prop('id'));
+          dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+          break;
+        }
+        default:
+      }
+    });
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all
