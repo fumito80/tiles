@@ -210,6 +210,37 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
+  // eslint-disable-next-line class-methods-use-this
+  get multiSelPaneParams() {
+    return {
+      className: 'history',
+      deleteHandler: ($selecteds: HTMLElement[]) => {
+        $selecteds
+          .filter(($el): $el is History => $el instanceof History);
+        // .map(($history) => $history.url)
+        // .forEach(chrome.history.deleteUrl);
+      },
+    } as const;
+  }
+  // eslint-disable-next-line class-methods-use-this
+  menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    switch ($target.dataset.value) {
+      case 'open-new-tab': {
+        // getSelecteds().reverse()
+        //   .filter(($el): $el is Leaf => $el instanceof Leaf)
+        //   .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
+        break;
+      }
+      case 'open-incognito':
+      case 'open-new-window': {
+        // const selecteds = getSelecteds().map(prop('id'));
+        // dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+        break;
+      }
+      default:
+    }
+  }
   override actions() {
     return {
       ...super.actions(),

@@ -8,7 +8,9 @@ import {
 } from './tabs';
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
-import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
+import {
+  HeaderLeafs, Leaf, Leafs, PopupMenu,
+} from './bookmarks';
 import { Folders } from './folders';
 import { AppMain } from './app-main';
 import DragAndDropEvents from './drag-drop';
@@ -230,9 +232,6 @@ export function initComponents(
   const $headerTabs = compos['header-tabs'];
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
-  const $muitiSelLeafs = document.importNode($tmplMultiSelPane, true);
-  const $muitiSelTabs = document.importNode($tmplMultiSelPane, true);
-  const $muitiSelHistory = document.importNode($tmplMultiSelPane, true);
   // Initialize component
   const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
@@ -244,14 +243,11 @@ export function initComponents(
   );
   $leafs.init(options);
   $folders.init(options);
-  $headerLeafs.init(settings);
-  $headerTabs.init(settings, options.collapseTabs);
-  $headerHistory.init(settings);
+  $headerLeafs.init(settings, $tmplMultiSelPane, options);
+  $headerTabs.init(settings, $tmplMultiSelPane, options.collapseTabs);
+  $headerHistory.init(settings, $tmplMultiSelPane);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
-  $muitiSelLeafs.init('leafs', $headerLeafs, options);
-  $muitiSelTabs.init('tabs', $headerTabs, options);
-  $muitiSelHistory.init('history', $headerHistory, options);
   // Register actions
   const actions = {
     ...$appMain.actions(),
@@ -277,9 +273,6 @@ export function initComponents(
   $history.connect(store);
   $formSearch.connect(store);
   dragAndDropEvents.connect(store);
-  $muitiSelLeafs.connect(store);
-  $muitiSelTabs.connect(store);
-  $muitiSelHistory.connect(store);
   // v-scroll initialize
   store.dispatch('resetHistory', { initialize: true });
   return store;
@@ -315,3 +308,4 @@ customElements.define('body-history', History, { extends: 'div' });
 customElements.define('header-history', HeaderHistory, { extends: 'div' });
 customElements.define('bm-leaf', Leaf);
 customElements.define('multi-sel-pane', MultiSelPane);
+customElements.define('popup-menu', PopupMenu);

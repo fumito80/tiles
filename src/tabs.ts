@@ -7,6 +7,7 @@ import {
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
+import { MultiSelPane } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
   Dispatch,
@@ -159,6 +160,9 @@ export class OpenTab extends MutiSelectableItem {
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
   }
+  get tabId() {
+    return this.#tabId;
+  }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
     return this.parentElement as Window;
@@ -172,13 +176,13 @@ export class OpenTab extends MutiSelectableItem {
     }
     const { windowId } = this.getParentWindow();
     chrome.windows.update(windowId, { focused: true });
-    chrome.tabs.update(this.#tabId, { active: true }, window.close);
+    chrome.tabs.update(this.tabId, { active: true }, window.close);
   }
   closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
       e.stopPropagation();
       this.addEventListener('animationend', () => {
-        chrome.tabs.remove(this.#tabId, () => {
+        chrome.tabs.remove(this.tabId, () => {
           const { windowId } = this.getParentWindow();
           this.remove();
           dispatch('windowAction', { type: 'closeTab', windowId }, true);
@@ -538,8 +542,8 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
   private $buttonNextWin!: HTMLElement;
-  override init(settings: State['settings'], collapsed: boolean) {
-    super.init(settings);
+  override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
+    super.init(settings, $tmplMultiSelPane);
     this.$buttonCollapse = $byClass('collapse-tabs', this)!;
     this.$buttonPrevWin = $byClass('win-prev', this)!;
     this.$buttonNextWin = $byClass('win-next', this)!;
@@ -549,6 +553,36 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
     this.$buttonCollapse.blur();
+  }
+  // eslint-disable-next-line class-methods-use-this
+  get multiSelPaneParams() {
+    return {
+      className: 'tabs',
+      deleteHandler: ($selecteds: HTMLElement[]) => {
+        $selecteds
+          .filter(($el): $el is OpenTab => $el instanceof OpenTab)
+          .map(($tab) => $tab.tabId)
+          .forEach((tabId) => chrome.tabs.remove(tabId));
+      },
+    } as const;
+  }
+  // eslint-disable-next-line class-methods-use-this
+  menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    switch ($target.dataset.value) {
+      case 'open-incognito': {
+        // getSelecteds().reverse()
+        //   .filter(($el): $el is Leaf => $el instanceof Leaf)
+        //   .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
+        break;
+      }
+      case 'open-new-window': {
+        // const selecteds = getSelecteds().map(prop('id'));
+        // dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+        break;
+      }
+      default:
+    }
   }
   override actions() {
     return {

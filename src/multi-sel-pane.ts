@@ -1,23 +1,31 @@
 /* eslint-disable import/prefer-default-export */
-import { Leaf } from './bookmarks';
+// import { Leaf } from './bookmarks';
+import { PopupMenu } from './bookmarks';
 import {
-  $$, $$byTag, $byClass, addStyle, hasClass, remeveBookmark, rmStyle, showMenu,
+  $$byClass, $$byTag, addStyle, hasClass, rmStyle, showMenu,
 } from './client';
-import { prop, setEvents, whichClass } from './common';
-import { dropBmInNewWindow } from './drag-drop';
+import { setEvents, whichClass } from './common';
+// import { dropBmInNewWindow } from './drag-drop';
 import { ISubscribeElement, Store } from './store';
-import { OpenBookmarkType, Options } from './types';
+// import { OpenBookmarkType, Options } from './types';
 
-function getSelecteds() {
-  return $$<Leaf>('.leafs .selected, .folders .selected');
+export function getSelecteds() {
+  return $$byClass('selected');
 }
+
+export type MultiSelectPaneType = Exclude<keyof NonNullable<Store['actions']['multiSelPanes']['initValue']>, 'all'>;
 
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   #className!: string;
   #header!: HTMLElement;
   #maxWidth!: string;
   $buttons!: HTMLButtonElement[];
-  init(className: string, header: HTMLElement, options: Options) {
+  init(
+    className: MultiSelectPaneType,
+    header: HTMLElement,
+    $menu: PopupMenu,
+    deleteHandler: ($selecteds: HTMLElement[]) => void,
+  ) {
     this.#className = className;
     this.#header = header;
     this.$buttons = $$byTag('button', this);
@@ -29,44 +37,45 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
         switch (buttonClass) {
           case 'multi-sel-menu-button':
-            showMenu('multi-sel-menu')(e);
+            showMenu($menu)(e);
             e.stopImmediatePropagation();
             break;
           case 'del-multi-sel':
-            if (className === 'leafs') {
-              getSelecteds().forEach(remeveBookmark);
-            }
+            // if (className === 'leafs') {
+            //   getSelecteds().forEach(remeveBookmark);
+            // }
+            deleteHandler(getSelecteds());
             e.stopImmediatePropagation();
             break;
           default:
         }
       },
     }, true);
-    setEvents([$byClass('multi-sel-menu')!], {
-      click(e) {
-        const $target = e.target as HTMLElement;
-        if ($target.closest('multi-sel-pane') !== this) {
-          return;
-        }
-        switch ($target.dataset.value) {
-          case 'open-new-tab': {
-            getSelecteds().reverse()
-              .forEach(($leaf) => $leaf.openBookmark(options, OpenBookmarkType.tab));
-            break;
-          }
-          case 'open-incognito':
-          case 'open-new-window': {
-            const selecteds = getSelecteds().map(prop('id'));
-            dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
-            break;
-          }
-          default:
-        }
-      },
-      mousedown(e) {
-        e.preventDefault();
-      },
-    }, false, this);
+    // setEvents([$byClass('multi-sel-menu')!], {
+    //   click(e) {
+    //     const $target = e.target as HTMLElement;
+    //     if ($target.closest('multi-sel-pane') !== this) {
+    //       return;
+    //     }
+    //     switch ($target.dataset.value) {
+    //       case 'open-new-tab': {
+    //         getSelecteds().reverse()
+    //           .forEach(($leaf) => $leaf.openBookmark(options, OpenBookmarkType.tab));
+    //         break;
+    //       }
+    //       case 'open-incognito':
+    //       case 'open-new-window': {
+    //         const selecteds = getSelecteds().map(prop('id'));
+    //         dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+    //         break;
+    //       }
+    //       default:
+    //     }
+    //   },
+    //   mousedown(e) {
+    //     e.preventDefault();
+    //   },
+    // }, false, this);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all

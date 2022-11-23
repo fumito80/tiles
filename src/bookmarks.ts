@@ -2,12 +2,14 @@ import {
   $, $$, $$byClass, $byClass,
   addClass, rmClass, hasClass, addStyle,
   addBookmark, getBookmark,
-  addFolder, setAnimationClass, editTitle, createNewTab, remeveBookmark,
+  addFolder, setAnimationClass, editTitle, createNewTab, remeveBookmark, $byTag,
 } from './client';
 import {
   cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
-  delayMultiSelect, extractDomain,
+  delayMultiSelect, extractDomain, prop,
 } from './common';
+import { dropBmInNewWindow } from './drag-drop';
+import { getSelecteds, MultiSelectPaneType, MultiSelPane } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store, Dispatch, States,
@@ -60,14 +62,35 @@ export class MutiSelectableItem extends HTMLElement {
   }
 }
 
-export class PaneHeader extends HTMLDivElement implements IPubSubElement {
+export class PopupMenu extends HTMLElement {
+  init(menuClickHandler: (e: MouseEvent) => void) {
+    this.addEventListener('click', menuClickHandler);
+    this.addEventListener('mousedown', (e) => e.preventDefault());
+  }
+}
+
+export abstract class PaneHeader extends HTMLDivElement implements IPubSubElement {
   #includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
+  protected $multiSelPane!: MultiSelPane;
+  protected $popupMenu!: PopupMenu;
+  abstract menuClickHandler(e: MouseEvent): void;
+  abstract multiSelPaneParams: {
+    className: MultiSelectPaneType,
+    deleteHandler: ($selecteds: HTMLElement[]) => void,
+  };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(settings: State['settings'], _?: boolean) {
+  init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
     this.#includeUrl = settings.includeUrl;
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+    this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
+    this.$popupMenu = $byTag('popup-menu', this);
+    if (this.$popupMenu instanceof PopupMenu) {
+      this.$popupMenu.init(this.menuClickHandler.bind(this));
+      const { className, deleteHandler } = this.multiSelPaneParams;
+      this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
+    }
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -89,22 +112,11 @@ export class PaneHeader extends HTMLDivElement implements IPubSubElement {
     return {};
   }
   connect(store: Store) {
+    this.$multiSelPane.connect(store);
     if (!hasClass(this, 'end')) {
       return;
     }
     store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
-  }
-}
-
-export class HeaderLeafs extends PaneHeader {
-  private $pinBookmark!: HTMLElement;
-  override init(settings: State['settings']) {
-    super.init(settings);
-    this.$pinBookmark = $byClass('pin-bookmark', this)!;
-    this.$pinBookmark.addEventListener('click', () => addBookmark());
-  }
-  override connect(store: Store) {
-    super.connect(store);
   }
 }
 
@@ -186,6 +198,50 @@ export class Leaf extends MutiSelectableItem {
       ($(`.leafs ${cssid(this.id)}`) as Leaf).updateTitle(title);
     }
     setAnimationClass('hilite')(this);
+  }
+}
+
+export class HeaderLeafs extends PaneHeader {
+  private $pinBookmark!: HTMLElement;
+  private options!: Options;
+  override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, options: Options) {
+    super.init(settings, $tmplMultiSelPane);
+    this.$pinBookmark = $byClass('pin-bookmark', this)!;
+    this.$pinBookmark.addEventListener('click', () => addBookmark());
+    this.options = options;
+  }
+  override connect(store: Store) {
+    super.connect(store);
+  }
+  // eslint-disable-next-line class-methods-use-this
+  get multiSelPaneParams() {
+    return {
+      className: 'leafs',
+      deleteHandler: ($selecteds: HTMLElement[]) => {
+        $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf).forEach(remeveBookmark);
+      },
+    } as const;
+  }
+  menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    // if ($target.closest('multi-sel-pane') !== this) {
+    //   return;
+    // }
+    switch ($target.dataset.value) {
+      case 'open-new-tab': {
+        getSelecteds().reverse()
+          .filter(($el): $el is Leaf => $el instanceof Leaf)
+          .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
+        break;
+      }
+      case 'open-incognito':
+      case 'open-new-window': {
+        const selecteds = getSelecteds().map(prop('id'));
+        dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+        break;
+      }
+      default:
+    }
   }
 }
 

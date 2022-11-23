@@ -401,18 +401,10 @@ window-header,
     }
   }
 
-  >multi-sel-pane .multi-sel-menu-button:focus+.multi-sel-menu {
+  >multi-sel-pane .multi-sel-menu-button:focus+popup-menu {
     display: block;
     left: unset !important;
     animation: fade-in 0.15s ease-in-out;
-  }
-
-  &.header-leafs>multi-sel-pane {
-    .multi-sel-menu-button:focus+.multi-sel-menu {
-      >div:has(.icon-incognito-tab) {
-        display: none;
-      }
-    }
   }
 }
 
