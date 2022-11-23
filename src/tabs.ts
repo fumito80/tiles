@@ -1,4 +1,4 @@
-import { MutiSelectableItem, PaneHeader } from './bookmarks';
+import { MultiSelPane, MutiSelectableItem, PaneHeader } from './multi-sel-pane';
 import {
   $$,
   $$byClass, $$byTag, $byClass, $byTag,
@@ -7,7 +7,6 @@ import {
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
 } from './common';
-import { MultiSelPane } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
   Dispatch,

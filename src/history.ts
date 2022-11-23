@@ -19,7 +19,7 @@ import {
   setScrollTop,
   setVScroll,
 } from './vscroll';
-import { PaneHeader } from './bookmarks';
+import { PaneHeader } from './multi-sel-pane';
 
 type ResetParams = {
   initialize?: boolean,

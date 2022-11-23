@@ -2,123 +2,21 @@ import {
   $, $$, $$byClass, $byClass,
   addClass, rmClass, hasClass, addStyle,
   addBookmark, getBookmark,
-  addFolder, setAnimationClass, editTitle, createNewTab, remeveBookmark, $byTag,
+  setAnimationClass, editTitle, createNewTab, remeveBookmark,
 } from './client';
 import {
   cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
   delayMultiSelect, extractDomain, prop,
 } from './common';
 import { dropBmInNewWindow } from './drag-drop';
-import { getSelecteds, MultiSelectPaneType, MultiSelPane } from './multi-sel-pane';
+import {
+  getSelecteds, MultiSelPane, MutiSelectableItem, PaneHeader,
+} from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
-  IPubSubElement, ISubscribeElement, makeAction, Store, Dispatch, States,
+  ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
 import { OpenBookmarkType, Options, State } from './types';
-
-function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
-  const $menu = e.target as HTMLElement;
-  switch ($menu.dataset.value) {
-    case 'add-bookmark': {
-      const id = $byClass('open')?.id;
-      addBookmark(id || '1');
-      break;
-    }
-    case 'start-multi-select':
-      dispatch('multiSelPanes', { all: true });
-      break;
-    case 'add-folder':
-      addFolder();
-      break;
-    case 'settings':
-      chrome.runtime.openOptionsPage();
-      break;
-    default:
-  }
-}
-
-export class MutiSelectableItem extends HTMLElement {
-  selected = false;
-  protected preMultiSel = false;
-  protected checkMultiSelect() {
-    if (this.preMultiSel) {
-      this.preMultiSel = false;
-      return true;
-    }
-    return false;
-  }
-  preMultiSelect(isBegin: boolean) {
-    this.preMultiSel = true;
-    this.classList.toggle('selected', isBegin);
-  }
-  select(selected?: boolean) {
-    if (this.checkMultiSelect()) {
-      return false;
-    }
-    const isSelected = selected ?? !this.classList.contains('selected');
-    this.classList.toggle('selected', isSelected);
-    this.selected = isSelected;
-    return isSelected;
-  }
-}
-
-export class PopupMenu extends HTMLElement {
-  init(menuClickHandler: (e: MouseEvent) => void) {
-    this.addEventListener('click', menuClickHandler);
-    this.addEventListener('mousedown', (e) => e.preventDefault());
-  }
-}
-
-export abstract class PaneHeader extends HTMLDivElement implements IPubSubElement {
-  #includeUrl!: boolean;
-  private $mainMenu!: HTMLElement;
-  protected $multiSelPane!: MultiSelPane;
-  protected $popupMenu!: PopupMenu;
-  abstract menuClickHandler(e: MouseEvent): void;
-  abstract multiSelPaneParams: {
-    className: MultiSelectPaneType,
-    deleteHandler: ($selecteds: HTMLElement[]) => void,
-  };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
-    this.$mainMenu = $byClass('main-menu', this)!;
-    this.#includeUrl = settings.includeUrl;
-    this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
-    this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
-    this.$popupMenu = $byTag('popup-menu', this);
-    if (this.$popupMenu instanceof PopupMenu) {
-      this.$popupMenu.init(this.menuClickHandler.bind(this));
-      const { className, deleteHandler } = this.multiSelPaneParams;
-      this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
-    }
-  }
-  actions() {
-    if (hasClass(this, 'end')) {
-      return {
-        setIncludeUrl: makeAction({
-          initValue: this.#includeUrl,
-          persistent: true,
-          target: $byClass('include-url', this.$mainMenu),
-          eventType: 'click',
-          eventProcesser: (_, currentValue) => !currentValue,
-        }),
-        clickMainMenu: makeAction({
-          target: this.$mainMenu,
-          eventType: 'click',
-          eventOnly: true,
-        }),
-      };
-    }
-    return {};
-  }
-  connect(store: Store) {
-    this.$multiSelPane.connect(store);
-    if (!hasClass(this, 'end')) {
-      return;
-    }
-    store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
-  }
-}
 
 export class Leaf extends MutiSelectableItem {
   updateTitle(title: string) {

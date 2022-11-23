@@ -1,22 +1,49 @@
-/* eslint-disable import/prefer-default-export */
-// import { Leaf } from './bookmarks';
-import { PopupMenu } from './bookmarks';
-import {
-  $$byClass, $$byTag, addStyle, hasClass, rmStyle, showMenu,
-} from './client';
+import { State } from './types';
 import { setEvents, whichClass } from './common';
-// import { dropBmInNewWindow } from './drag-drop';
-import { ISubscribeElement, Store } from './store';
-// import { OpenBookmarkType, Options } from './types';
+import {
+  $$byClass, $$byTag, $byClass, $byTag,
+  addBookmark, addFolder, addStyle, hasClass, rmStyle, showMenu,
+} from './client';
+import {
+  Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store,
+} from './store';
 
 export function getSelecteds() {
   return $$byClass('selected');
 }
 
+function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
+  const $menu = e.target as HTMLElement;
+  switch ($menu.dataset.value) {
+    case 'add-bookmark': {
+      const id = $byClass('open')?.id;
+      addBookmark(id || '1');
+      break;
+    }
+    case 'start-multi-select':
+      dispatch('multiSelPanes', { all: true });
+      break;
+    case 'add-folder':
+      addFolder();
+      break;
+    case 'settings':
+      chrome.runtime.openOptionsPage();
+      break;
+    default:
+  }
+}
+
+export class PopupMenu extends HTMLElement {
+  init(menuClickHandler: (e: MouseEvent) => void) {
+    this.addEventListener('click', menuClickHandler);
+    this.addEventListener('mousedown', (e) => e.preventDefault());
+  }
+}
+
 export type MultiSelectPaneType = Exclude<keyof NonNullable<Store['actions']['multiSelPanes']['initValue']>, 'all'>;
 
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
-  #className!: string;
+  #className!: MultiSelectPaneType;
   #header!: HTMLElement;
   #maxWidth!: string;
   $buttons!: HTMLButtonElement[];
@@ -41,9 +68,6 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
             e.stopImmediatePropagation();
             break;
           case 'del-multi-sel':
-            // if (className === 'leafs') {
-            //   getSelecteds().forEach(remeveBookmark);
-            // }
             deleteHandler(getSelecteds());
             e.stopImmediatePropagation();
             break;
@@ -51,31 +75,6 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
         }
       },
     }, true);
-    // setEvents([$byClass('multi-sel-menu')!], {
-    //   click(e) {
-    //     const $target = e.target as HTMLElement;
-    //     if ($target.closest('multi-sel-pane') !== this) {
-    //       return;
-    //     }
-    //     switch ($target.dataset.value) {
-    //       case 'open-new-tab': {
-    //         getSelecteds().reverse()
-    //           .forEach(($leaf) => $leaf.openBookmark(options, OpenBookmarkType.tab));
-    //         break;
-    //       }
-    //       case 'open-incognito':
-    //       case 'open-new-window': {
-    //         const selecteds = getSelecteds().map(prop('id'));
-    //         dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
-    //         break;
-    //       }
-    //       default:
-    //     }
-    //   },
-    //   mousedown(e) {
-    //     e.preventDefault();
-    //   },
-    // }, false, this);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all
@@ -105,5 +104,81 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   }
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));
+  }
+}
+
+export class MutiSelectableItem extends HTMLElement {
+  selected = false;
+  protected preMultiSel = false;
+  protected checkMultiSelect() {
+    if (this.preMultiSel) {
+      this.preMultiSel = false;
+      return true;
+    }
+    return false;
+  }
+  preMultiSelect(isBegin: boolean) {
+    this.preMultiSel = true;
+    this.classList.toggle('selected', isBegin);
+  }
+  select(selected?: boolean) {
+    if (this.checkMultiSelect()) {
+      return false;
+    }
+    const isSelected = selected ?? !this.classList.contains('selected');
+    this.classList.toggle('selected', isSelected);
+    this.selected = isSelected;
+    return isSelected;
+  }
+}
+
+export abstract class PaneHeader extends HTMLDivElement implements IPubSubElement {
+  #includeUrl!: boolean;
+  private $mainMenu!: HTMLElement;
+  protected $multiSelPane!: MultiSelPane;
+  protected $popupMenu!: PopupMenu;
+  abstract menuClickHandler(e: MouseEvent): void;
+  abstract multiSelPaneParams: {
+    className: MultiSelectPaneType,
+    deleteHandler: ($selecteds: HTMLElement[]) => void,
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
+    this.$mainMenu = $byClass('main-menu', this)!;
+    this.#includeUrl = settings.includeUrl;
+    this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+    this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
+    this.$popupMenu = $byTag('popup-menu', this);
+    if (this.$popupMenu instanceof PopupMenu) {
+      this.$popupMenu.init(this.menuClickHandler.bind(this));
+      const { className, deleteHandler } = this.multiSelPaneParams;
+      this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
+    }
+  }
+  actions() {
+    if (hasClass(this, 'end')) {
+      return {
+        setIncludeUrl: makeAction({
+          initValue: this.#includeUrl,
+          persistent: true,
+          target: $byClass('include-url', this.$mainMenu),
+          eventType: 'click',
+          eventProcesser: (_, currentValue) => !currentValue,
+        }),
+        clickMainMenu: makeAction({
+          target: this.$mainMenu,
+          eventType: 'click',
+          eventOnly: true,
+        }),
+      };
+    }
+    return {};
+  }
+  connect(store: Store) {
+    this.$multiSelPane.connect(store);
+    if (!hasClass(this, 'end')) {
+      return;
+    }
+    store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
   }
 }

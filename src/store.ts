@@ -9,12 +9,12 @@ import {
 import { FormSearch } from './search';
 import { HeaderHistory, History } from './history';
 import {
-  HeaderLeafs, Leaf, Leafs, PopupMenu,
+  HeaderLeafs, Leaf, Leafs,
 } from './bookmarks';
 import { Folders } from './folders';
 import { AppMain } from './app-main';
 import DragAndDropEvents from './drag-drop';
-import { MultiSelPane } from './multi-sel-pane';
+import { MultiSelPane, PopupMenu } from './multi-sel-pane';
 
 type Action<
   A extends keyof HTMLElementEventType,
