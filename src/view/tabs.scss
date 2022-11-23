@@ -49,8 +49,14 @@ open-tab {
     padding: 0;
   }
 
-  .tab-wrap:hover>.icon-x {
-    display: var(--show-close-tab, none);
+  .tab-wrap {
+    &:hover>.icon-x {
+      display: var(--show-close-tab, none);
+    }
+
+    >.tab {
+      pointer-events: none;
+    }
   }
 }
 
@@ -214,17 +220,19 @@ window-header {
   }
 
   .icon-incognito.show+.tab {
-    margin-left: 2px;
+    padding-left: 44px;
     text-indent: 0;
   }
 
   .icon-incognito {
-    margin-left: 2px;
+    position: absolute;
+    left: 22px;
     color: $font-color;
     background-color: rgba(255, 255, 255, 0.3);
     padding: 3px 2px;
     border-radius: 5px;
     display: none;
+    pointer-events: none;
 
     &.show {
       display: block;
@@ -263,9 +271,9 @@ app-main {
       &.tabs-collapsed {
         padding-bottom: 0;
 
-        .icon-incognito {
-          margin-left: 22px;
-        }
+        // .icon-incognito {
+        //   margin-left: 22px;
+        // }
 
         >.tab-wrap {
           width: 26px;
@@ -412,7 +420,7 @@ app-main {
     margin-left: 24px;
 
     +.tab {
-      text-indent: 18px;
+      text-indent: 2px;
     }
   }
 }

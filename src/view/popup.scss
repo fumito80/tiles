@@ -136,6 +136,7 @@ button:not(.submit) {
   >i {
     color: rgba(0, 0, 0, 0.5);
     width: 1.2em;
+    pointer-events: none;
   }
 
   &:hover>i,
@@ -238,6 +239,7 @@ window-header,
 .leaf-menu-button,
 .folder-menu-button,
 .tabs-menu-button,
+.multi-sel-menu-button,
 .collapse-tab {
   display: none;
   z-index: 1;
@@ -380,18 +382,6 @@ window-header,
       font-size: 1.2em;
     }
 
-    .multi-sel-menu-button:focus+.leaf-menu {
-      display: block;
-      left: unset !important;
-      animation: fade-in 0.15s ease-in-out;
-
-      [data-value="open-in-current-tab"],
-      hr,
-      hr~div {
-        display: none;
-      }
-    }
-
     &.show:not(.pre) {
       opacity: 1;
       pointer-events: all;
@@ -407,6 +397,20 @@ window-header,
       button {
         display: none;
         opacity: 0;
+      }
+    }
+  }
+
+  >multi-sel-pane .multi-sel-menu-button:focus+.multi-sel-menu {
+    display: block;
+    left: unset !important;
+    animation: fade-in 0.15s ease-in-out;
+  }
+
+  &.header-leafs>multi-sel-pane {
+    .multi-sel-menu-button:focus+.multi-sel-menu {
+      >div:has(.icon-incognito-tab) {
+        display: none;
       }
     }
   }
@@ -1677,6 +1681,14 @@ app-main.zoom-pane {
         filter: opacity(0.7);
       }
     }
+  }
+}
+
+app-main:not(.searching):not(.drag-start) .tab-wrap {
+
+  &.selected:active {
+    // border-color: var(--item-hover-bg);
+    filter: opacity(0.7);
   }
 }
 

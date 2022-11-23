@@ -14,6 +14,7 @@ import {
   postMessage,
   extractUrl,
   setEvents,
+  prop,
 } from './common';
 import {
   $, $$,
@@ -112,11 +113,12 @@ async function createTabsFromFolder(parentId: string, windowId?: number, index?:
     return;
   }
   if (windowId == null) {
-    chrome.windows.create({ url: bm.url }, (win) => createTabs(win!.id!, rest, 1));
+    const urls = [bm, ...rest].map(prop('url')) as string[];
+    postMessage({ type: CliMessageTypes.openNewWindow, payload: { urls, incognito: false } });
     return;
   }
-  const createds = createTabs(windowId, [bm, ...rest], index);
-  Promise.all(await createds).then(() => chrome.windows.update(windowId, { focused: true }));
+  const createds = await createTabs(windowId, [bm, ...rest], index);
+  Promise.all(createds).then(() => chrome.windows.update(windowId, { focused: true }));
 }
 
 async function dropWithTabs(
@@ -143,12 +145,14 @@ async function dropWithTabs(
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
-    [sourceId, ...sourceIds].forEach(async (srcElementId) => {
-      const { url } = await getBookmark(srcElementId);
-      chrome.tabs.create({ index, url, windowId }, () => {
-        chrome.windows.update(windowId, { focused: true }).then(window.close);
-      });
-    });
+    const tabs = [sourceId, ...sourceIds].map(
+      (srcElementId) => getBookmark(srcElementId)
+        .then(({ url }) => chrome.tabs.create({
+          index, url, windowId, active: false,
+        })),
+    );
+    Promise.all(tabs)
+      .then(() => chrome.windows.update(windowId, { focused: true }).then(window.close));
     return;
   }
   // Merge window
@@ -200,8 +204,8 @@ async function dropWithTabs(
     && sourceTab.windowId !== windowId
     && sourceTab.incognito === rest.incognito
   ) {
-    chrome.windows.update(windowId, { focused: true });
     chrome.tabs.update(sourceTab.id!, { active: true });
+    chrome.windows.update(windowId, { focused: true });
   }
   $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
 }
@@ -231,18 +235,16 @@ export function dropBmInNewWindow(
   sourceClass: Extract<typeof sourceClasses[number], 'leaf' | 'marker'>,
   incognito = false,
 ) {
-  const [sourceId, ...rest] = sourceIds;
   if (sourceClass === 'leaf') {
-    getBookmark(sourceId)
-      .then(({ url }) => chrome.windows.create({ url, incognito }))
-      .then((win) => {
-        Promise.all(rest.map(getBookmark))
-          .then((bm) => bm.forEach(({ url }) => {
-            chrome.tabs.create({ url, windowId: win.id, active: false });
-          }));
-      });
+    Promise.all(sourceIds.map(getBookmark))
+      .then((bms) => bms.map((bm) => bm.url!))
+      .then((urls) => postMessage({
+        type: CliMessageTypes.openNewWindow,
+        payload: { urls, incognito },
+      }));
     return;
   }
+  const [sourceId] = sourceIds;
   createTabsFromFolder(sourceId);
 }
 
@@ -312,7 +314,7 @@ function getDraggableElement(
     const clone = $el.cloneNode(true) as HTMLElement;
     if (itemHeight * i > 120) {
       const $div = addChild(document.createElement('div'))($draggableClone);
-      $div.textContent = `... and ${$dragTargets.length - i} more`;
+      $div.textContent = `... and ${$dragTargets.length - i} other items`;
       addStyle({ padding: '2px' })($div);
       return true;
     }

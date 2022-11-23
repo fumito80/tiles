@@ -645,11 +645,11 @@ export function openFolder(folderId: string, incognito = false) {
   });
 }
 
-type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu';
+type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
 export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
   return (e: MouseEvent) => {
-    e.stopImmediatePropagation();
+    // e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
     const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
     if ($target.parentElement !== $menu.parentElement) {

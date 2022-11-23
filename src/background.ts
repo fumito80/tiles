@@ -150,6 +150,16 @@ export const mapMessagesPtoB = {
       });
     })
   ),
+  [CliMessageTypes.openNewWindow]: (
+    { payload: { urls, incognito } }: PayloadAction<{ urls: string[], incognito: boolean }>,
+  ) => {
+    const [url1, ...rest] = urls;
+    return chrome.windows.create({ url: url1, incognito }).then((win) => {
+      rest.forEach(async (url) => {
+        await chrome.tabs.create({ windowId: win!.id, url, active: false });
+      });
+    });
+  },
 };
 
 setMessageListener(mapMessagesPtoB);

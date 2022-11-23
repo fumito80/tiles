@@ -37,7 +37,9 @@ app-main.searching .form-query {
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap.selected,
 .searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap:hover,
+.searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap.selected,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
@@ -50,7 +52,6 @@ window-header:hover,
 .draggable-clone window-header::before,
 .drag-source,
 .drag-source::before,
-// selected
 .leaf.selected {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
@@ -61,8 +62,12 @@ window-header:hover,
   color: var(--item-hover-bg);
 }
 
-app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
-  border-color: var(--item-hover-bg);
+app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap {
+
+  &:hover,
+  &.selected {
+    border-color: var(--item-hover-bg);
+  }
 }
 
 app-main:not(.drag-start) {

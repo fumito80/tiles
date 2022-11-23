@@ -35,6 +35,31 @@ function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
   }
 }
 
+export class MutiSelectableItem extends HTMLElement {
+  selected = false;
+  protected preMultiSel = false;
+  protected checkMultiSelect() {
+    if (this.preMultiSel) {
+      this.preMultiSel = false;
+      return true;
+    }
+    return false;
+  }
+  preMultiSelect(isBegin: boolean) {
+    this.preMultiSel = true;
+    this.classList.toggle('selected', isBegin);
+  }
+  select(selected?: boolean) {
+    if (this.checkMultiSelect()) {
+      return false;
+    }
+    const isSelected = selected ?? !this.classList.contains('selected');
+    this.classList.toggle('selected', isSelected);
+    this.selected = isSelected;
+    return isSelected;
+  }
+}
+
 export class PaneHeader extends HTMLDivElement implements IPubSubElement {
   #includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
@@ -83,8 +108,7 @@ export class HeaderLeafs extends PaneHeader {
   }
 }
 
-export class Leaf extends HTMLElement {
-  #preMultiSel = false;
+export class Leaf extends MutiSelectableItem {
   updateTitle(title: string) {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
     $anchor.setAttribute('title', title);
@@ -93,25 +117,6 @@ export class Leaf extends HTMLElement {
   updateAnchor({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
     setFavicon(url!)(this);
     this.updateTitle(title);
-  }
-  preMultiSelect(isBegin: boolean) {
-    this.#preMultiSel = true;
-    this.classList.toggle('selected', isBegin);
-  }
-  checkMultiSelect() {
-    if (this.#preMultiSel) {
-      this.#preMultiSel = false;
-      return true;
-    }
-    return false;
-  }
-  select(selected?: boolean) {
-    if (this.checkMultiSelect()) {
-      return false;
-    }
-    const isSelected = selected ?? !this.classList.contains('selected');
-    this.classList.toggle('selected', isSelected);
-    return isSelected;
   }
   openOrFind(options: Options) {
     if (this.checkMultiSelect()) {
@@ -261,7 +266,6 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   init(options: Options) {
     this.#options = options;
     this.$leafMenu = $byClass('leaf-menu')!;
-    // this.addEventListener('mouseup', () => clearTimeout(this.#timerMultiSelect));
     setLeafMenu(this.$leafMenu, options);
   }
   selectWithShift($target: Leaf) {

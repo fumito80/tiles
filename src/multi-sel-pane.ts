@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { Leaf } from './bookmarks';
 import {
-  $$, $$byTag, addStyle, hasClass, remeveBookmark, rmStyle, showMenu,
+  $$, $$byTag, $byClass, addStyle, hasClass, remeveBookmark, rmStyle, showMenu,
 } from './client';
 import { prop, setEvents, whichClass } from './common';
 import { dropBmInNewWindow } from './drag-drop';
@@ -15,51 +15,58 @@ function getSelecteds() {
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   #className!: string;
   #header!: HTMLElement;
-  #options!: Options;
   #maxWidth!: string;
   $buttons!: HTMLButtonElement[];
   init(className: string, header: HTMLElement, options: Options) {
     this.#className = className;
     this.#header = header;
-    this.#options = options;
     this.$buttons = $$byTag('button', this);
     header.appendChild(this);
     const { width } = header.firstElementChild!.getBoundingClientRect();
     this.style.setProperty('left', `${Math.ceil(width) + 10}px`);
-    setEvents($$byTag('button'), {
+    setEvents($$byTag('button', this), {
       click(e) {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
         switch (buttonClass) {
           case 'multi-sel-menu-button':
-            showMenu('leaf-menu')(e);
+            showMenu('multi-sel-menu')(e);
+            e.stopImmediatePropagation();
             break;
           case 'del-multi-sel':
             if (className === 'leafs') {
               getSelecteds().forEach(remeveBookmark);
             }
+            e.stopImmediatePropagation();
             break;
           default:
         }
-        e.stopImmediatePropagation();
       },
     }, true);
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      switch ($target.dataset.value) {
-        case 'open-new-tab': {
-          getSelecteds().reverse()
-            .forEach(($leaf) => $leaf.openBookmark(this.#options, OpenBookmarkType.tab));
-          break;
+    setEvents([$byClass('multi-sel-menu')!], {
+      click(e) {
+        const $target = e.target as HTMLElement;
+        if ($target.closest('multi-sel-pane') !== this) {
+          return;
         }
-        case 'open-incognito':
-        case 'open-new-window': {
-          const selecteds = getSelecteds().map(prop('id'));
-          dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
-          break;
+        switch ($target.dataset.value) {
+          case 'open-new-tab': {
+            getSelecteds().reverse()
+              .forEach(($leaf) => $leaf.openBookmark(options, OpenBookmarkType.tab));
+            break;
+          }
+          case 'open-incognito':
+          case 'open-new-window': {
+            const selecteds = getSelecteds().map(prop('id'));
+            dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+            break;
+          }
+          default:
         }
-        default:
-      }
-    });
+      },
+      mousedown(e) {
+        e.preventDefault();
+      },
+    }, false, this);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all

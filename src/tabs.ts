@@ -1,8 +1,8 @@
-import { PaneHeader } from './bookmarks';
+import { MutiSelectableItem, PaneHeader } from './bookmarks';
 import {
   $$,
   $$byClass, $$byTag, $byClass, $byTag,
-  addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, showMenu, toggleClass,
+  addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
@@ -138,9 +138,8 @@ function getTooltip(tab: chrome.tabs.Tab) {
   return `${tab.title}\n${schemeAdd}${domain}`;
 }
 
-export class OpenTab extends HTMLElement {
+export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
-  #preMultiSel = false;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -156,7 +155,6 @@ export class OpenTab extends HTMLElement {
     $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
-    // addListener('click', this.gotoTab)(this);
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
@@ -169,6 +167,9 @@ export class OpenTab extends HTMLElement {
     this.classList.toggle('current-tab', tab.active);
   }
   gotoTab() {
+    if (this.checkMultiSelect()) {
+      return;
+    }
     const { windowId } = this.getParentWindow();
     chrome.windows.update(windowId, { focused: true });
     chrome.tabs.update(this.#tabId, { active: true }, window.close);
@@ -203,25 +204,6 @@ export class OpenTab extends HTMLElement {
     }
     addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
   }
-  preMultiSelect(isBegin: boolean) {
-    this.#preMultiSel = true;
-    this.classList.toggle('selected', isBegin);
-  }
-  checkMultiSelect() {
-    if (this.#preMultiSel) {
-      this.#preMultiSel = false;
-      return true;
-    }
-    return false;
-  }
-  select(selected?: boolean) {
-    if (this.checkMultiSelect()) {
-      return false;
-    }
-    const isSelected = selected ?? !this.classList.contains('selected');
-    this.classList.toggle('selected', isSelected);
-    return isSelected;
-  }
 }
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
@@ -251,6 +233,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     const windowId = this.#windowId;
     this.$btnCollapseTabs.addEventListener('click', () => {
       store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
+      this.$btnCollapseTabs.blur();
     });
     pipe(
       addListener('click', (e) => {
@@ -296,13 +279,6 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.classList.toggle('current-window', isCurrent);
     const [firstTab] = tabs;
     this.$header.init(windowId, firstTab);
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (!hasClass($target, 'window', 'tab', 'icon-incognito')) {
-        return;
-      }
-      chrome.windows.update(this.#windowId, { focused: true }, window.close);
-    });
     return this;
   }
   get windowId() {
@@ -345,6 +321,20 @@ export class Window extends HTMLElement implements ISubscribeElement {
   connect(store: Store) {
     this.$header.connect(store);
     this.addTabs(this.tabs, store.dispatch);
+    this.addEventListener('click', async (e) => {
+      const $target = e.target as HTMLElement;
+      if (!hasClass($target, 'window', 'tab')) {
+        return;
+      }
+      const { tabs } = await store.getStates('multiSelPanes');
+      if (tabs) {
+        const openTabs = this.getTabs();
+        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
+        openTabs.map((tab) => tab.select(selectAll));
+        return;
+      }
+      chrome.windows.update(this.#windowId, { focused: true }, window.close);
+    });
     store.subscribe('collapseWindowsAll', (changes) => {
       this.switchCollapseIcon(changes.newValue);
     });
@@ -483,14 +473,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   }
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
-    // if ($target.hasAttribute('contenteditable')) {
-    //   return;
-    // }
     // if (hasClass($target, 'tab-wrap', 'leaf-menu-button')) {
-    //   return;
-    // }
-    // if (hasClass($target, 'title', 'icon-fa-angle-right') && $target.closest('.leafs')) {
-    //   $target.parentElement?.parentElement?.classList.toggle('path');
     //   return;
     // }
     const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
@@ -507,11 +490,9 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
         this.$lastClickedTab = $tab;
         return;
       }
-      // $leaf.openOrFind(this.#options);
       $tab.gotoTab();
     }
   }
-  // eslint-disable-next-line class-methods-use-this
   actions() {
     return {
       windowAction: makeAction({
@@ -567,6 +548,7 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
+    this.$buttonCollapse.blur();
   }
   override actions() {
     return {

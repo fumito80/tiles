@@ -22,9 +22,23 @@ import {
 } from './store';
 import { resetVScrollData } from './vscroll';
 
+const excludeClasses = [
+  'anchor',
+  'leaf',
+  'multi-sel-menu-button',
+  'show',
+  'start-multi-select',
+  'tab-wrap',
+  'collapse-tabs',
+  'collapse-tab',
+  'window', 'tab',
+  'tabs-menu-button',
+  'folder-menu-button',
+];
+
 async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
-  if (hasClass($target, 'anchor', 'leaf', 'multi-sel-menu-button', 'show', 'start-multi-select', 'tab-wrap')) {
+  if (hasClass($target, ...excludeClasses)) {
     return;
   }
   dispatch('multiSelPanes', { leafs: false, tabs: false, history: false });
