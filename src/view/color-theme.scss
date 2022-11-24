@@ -159,6 +159,16 @@ app-main:not(.drag-start) {
     }
   }
 
+  .tabs open-window.current-window {
+    padding-left: 9px !important;
+
+    &::before {
+      height: calc(100% - 4px);
+      top: 2px;
+      left: 3px;
+    }
+  }
+
   multi-sel-pane.show {
     border: 1px solid rgba(255, 255, 255, 0.5);
 
