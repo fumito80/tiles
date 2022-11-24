@@ -112,7 +112,9 @@ export const CliMessageTypes = {
   initialize: 'cl-initialize',
   moveWindow: 'cl-move-window',
   moveWindowNew: 'cl-move-window-new',
-  openNewWindow: 'cl-open-new-window',
+  // openNewWindow: 'cl-open-new-window',
+  moveTabs: 'cl-move-tabs',
+  moveTabsNewWindow: 'cl-move-tabs-new-window',
 } as const;
 
 export const BkgMessageTypes = {

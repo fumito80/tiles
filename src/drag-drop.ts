@@ -2,8 +2,6 @@
 import { CliMessageTypes, dropAreaClasses, positions } from './types';
 import {
   pipe,
-  // cbToResolve,
-  // curry3,
   cssid,
   whichClass,
   propEq,
@@ -28,10 +26,7 @@ import {
   hasClass,
   addBookmark,
   getBookmark,
-  // setHasChildren,
-  // setAnimationClass,
   addFromTabs,
-  // setOpenPaths,
   $$byClass,
   panes,
   getPrevTarget,
@@ -113,8 +108,8 @@ async function createTabsFromFolder(parentId: string, windowId?: number, index?:
     return;
   }
   if (windowId == null) {
-    const urls = [bm, ...rest].map(prop('url')) as string[];
-    postMessage({ type: CliMessageTypes.openNewWindow, payload: { urls, incognito: false } });
+    const url = [bm, ...rest].map(prop('url')) as string[];
+    chrome.windows.create({ url, incognito: false });
     return;
   }
   const createds = await createTabs(windowId, [bm, ...rest], index);
@@ -158,10 +153,14 @@ async function dropWithTabs(
   // Merge window
   if (sourceClass === 'window') {
     if ($dropTarget.closest('.tabs')) {
-      const sourceWindowId = getChromeId(sourceId);
+      const sourceWindow = $byId(sourceId) as Window;
+      const sourceWindowId = sourceWindow.windowId;
+      const focused = sourceWindow.isCurrent;
       const errorMessage = await postMessage({
         type: CliMessageTypes.moveWindow,
-        payload: { sourceWindowId, windowId, index },
+        payload: {
+          sourceWindowId, windowId, index, focused,
+        },
       });
       if (errorMessage) {
         // eslint-disable-next-line no-alert
@@ -238,10 +237,7 @@ export function dropBmInNewWindow(
   if (sourceClass === 'leaf') {
     Promise.all(sourceIds.map(getBookmark))
       .then((bms) => bms.map((bm) => bm.url!))
-      .then((urls) => postMessage({
-        type: CliMessageTypes.openNewWindow,
-        payload: { urls, incognito },
-      }));
+      .then((url) => chrome.windows.create({ url, incognito }));
     return;
   }
   const [sourceId] = sourceIds;

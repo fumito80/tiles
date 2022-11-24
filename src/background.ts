@@ -112,29 +112,34 @@ getLocal(...initStateKeys).then(init);
 
 // Messagings popup to background
 
-type PayloadMoveWindow = PayloadAction<{ sourceWindowId: number, windowId: number, index: number }>;
+type PayloadMoveWindow = PayloadAction<
+  { sourceWindowId: number, windowId: number, index: number, focused: boolean }
+>;
 
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
   [CliMessageTypes.moveWindow]:
-    ({ payload: { sourceWindowId, windowId, index } }: PayloadMoveWindow) => (
-      new Promise<string | undefined>((resolve) => {
-        chrome.windows.get(sourceWindowId, { populate: true }).then(async ({ tabs }) => {
-          if (!tabs) {
-            resolve(`Error: ${CliMessageTypes.moveWindow}`);
-            return;
+    ({
+      payload: {
+        sourceWindowId, windowId, index, focused,
+      },
+    }: PayloadMoveWindow) => (
+      chrome.windows.get(sourceWindowId, { populate: true })
+        .then(async ({ tabs }) => {
+          const tabIds = tabs!.map((tab) => tab.id!);
+          return chrome.tabs.move(tabIds, { windowId, index });
+        })
+        .then(async () => {
+          if (chrome.runtime.lastError) {
+            return chrome.runtime.lastError.message;
           }
-          const tabIds = tabs.map((tab) => tab.id!);
-          chrome.tabs.move(tabIds, { windowId, index }, () => {
-            if (chrome.runtime.lastError) {
-              return resolve(chrome.runtime.lastError.message);
-            }
-            return resolve(undefined);
-          });
-        });
-      })
+          if (focused) {
+            return chrome.windows.update(windowId, { focused });
+          }
+          return undefined;
+        })
     ),
   [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
     chrome.windows.get(payload.windowId, { populate: true }).then(({ tabs, incognito }) => {
@@ -150,16 +155,31 @@ export const mapMessagesPtoB = {
       });
     })
   ),
-  [CliMessageTypes.openNewWindow]: (
-    { payload: { urls, incognito } }: PayloadAction<{ urls: string[], incognito: boolean }>,
-  ) => {
-    const [url1, ...rest] = urls;
-    return chrome.windows.create({ url: url1, incognito }).then((win) => {
-      rest.forEach(async (url) => {
-        await chrome.tabs.create({ windowId: win!.id, url, active: false });
-      });
-    });
+  [CliMessageTypes.moveTabsNewWindow]: async (
+    { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: number[], incognito: boolean}>,
+  ): Promise<{ windowId: number, msg?: string }> => {
+    // const [tabId, ...rest] = tabIds;
+    const newWindow = await chrome.windows.create({ incognito, focused: false });
+    return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
+      .then(([{ windowId }]) => ({ windowId }))
+      .catch((reason) => ({ windowId: -1, msg: reason.message }))
+      // .catch((reason) => reason.message)
+      .finally(() => chrome.tabs.remove(newWindow!.tabs![0].id!));
+    // const tab = await chrome.treasonabs.get()
+    // return chrome.windows.create({ tabId, incognito }).then(
+    //   (win) => chrome.tabs.move(rest, { windowId: win!.id!, index: -1 }),
+    // );
   },
+  // [CliMessageTypes.moveTabs]: (
+  //   { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: string[], incognito: boolean }>,
+  // ) => {
+  //   const [url1, ...rest] = urls;
+  //   return chrome.windows.create({ url: url1, incognito }).then((win) => {
+  //     rest.forEach(async (url) => {
+  //       await chrome.tabs.create({ windowId: win!.id, url, active: false });
+  //     });
+  //   });
+  // },
 };
 
 setMessageListener(mapMessagesPtoB);

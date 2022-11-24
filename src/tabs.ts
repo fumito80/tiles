@@ -1,18 +1,21 @@
-import { MultiSelPane, MutiSelectableItem, PaneHeader } from './multi-sel-pane';
+import {
+  getSelecteds, MultiSelPane, MutiSelectableItem, PaneHeader,
+} from './multi-sel-pane';
 import {
   $$,
   $$byClass, $$byTag, $byClass, $byTag,
   addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
+  addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
+  makeStyleIcon, pipe, postMessage,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
   Dispatch,
   IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
-import { PromiseInitTabs, State } from './types';
+import { CliMessageTypes, PromiseInitTabs, State } from './types';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
@@ -140,6 +143,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 
 export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
+  #incognito!: boolean;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -148,6 +152,7 @@ export class OpenTab extends MutiSelectableItem {
     this.classList.toggle('unmatch', isSearching);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
+    this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
@@ -161,6 +166,9 @@ export class OpenTab extends MutiSelectableItem {
   }
   get tabId() {
     return this.#tabId;
+  }
+  get incognito() {
+    return this.#incognito;
   }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
@@ -261,6 +269,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
   #isSearching = false;
+  #isCurrent = false;
   private tabs!: chrome.tabs.Tab[];
   private $tmplTab!: OpenTab;
   private $header!: WindowHeader;
@@ -279,6 +288,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.tabs = tabs;
     this.#isSearching = isSearching;
     this.id = `win-${windowId}`;
+    this.#isCurrent = isCurrent;
     this.classList.toggle('current-window', isCurrent);
     const [firstTab] = tabs;
     this.$header.init(windowId, firstTab);
@@ -286,6 +296,9 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   get windowId() {
     return this.#windowId;
+  }
+  get isCurrent() {
+    return this.#isCurrent;
   }
   searchDone() {
     this.classList.toggle('empty', this.offsetHeight < 10);
@@ -450,11 +463,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   }
   mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
-    // if (hasClass($target, 'leaf-menu-button')) {
-    //   addStyle({ top: '-1000px' })(this.$leafMenu);
-    //   return;
-    // }
-    const $tab = $target.parentElement;
+    const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
     if (!($tab instanceof OpenTab)) {
       return;
     }
@@ -566,18 +575,22 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
     } as const;
   }
   // eslint-disable-next-line class-methods-use-this
-  menuClickHandler(e: MouseEvent) {
+  async menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
+    const openTabs = getSelecteds().filter(($el): $el is OpenTab => $el instanceof OpenTab);
     switch ($target.dataset.value) {
-      case 'open-incognito': {
-        // getSelecteds().reverse()
-        //   .filter(($el): $el is Leaf => $el instanceof Leaf)
-        //   .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
-        break;
-      }
+      case 'open-incognito':
       case 'open-new-window': {
-        // const selecteds = getSelecteds().map(prop('id'));
-        // dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+        const tabIds = openTabs.map(({ tabId }) => tabId);
+        const incognito = $target.dataset.value === 'open-incognito';
+        const { windowId, msg } = await postMessage(
+          { type: CliMessageTypes.moveTabsNewWindow, payload: { tabIds, incognito } },
+        );
+        if (windowId === -1) {
+          // eslint-disable-next-line no-alert
+          alert(msg);
+        }
+        chrome.windows.update(windowId, { focused: true });
         break;
       }
       default:
