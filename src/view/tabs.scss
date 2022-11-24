@@ -40,9 +40,6 @@ open-tab {
       display: none;
     }
 
-    // &:not(:hover)>window-header>button {
-    //   display: none;
-    // }
   }
 
   >.empty {
@@ -271,10 +268,6 @@ app-main {
       &.tabs-collapsed {
         padding-bottom: 0;
 
-        // .icon-incognito {
-        //   margin-left: 22px;
-        // }
-
         >.tab-wrap {
           width: 26px;
           height: 26px;
@@ -457,19 +450,38 @@ app-main {
   }
 }
 
-app-main:not(.searching) .tabs-collapsed {
-  .current-tab::after {
-    width: 100%;
-    height: 4px;
-    bottom: -4px;
+app-main:not(.searching) {
+  .tabs-wrap>.tabs-collapsed>.tab-wrap {
+    >.outline {
+      content: '';
+      position: absolute;
+      width: calc(100% + 4px);
+      height: calc(100% + 4px);
+      border: 2px solid transparent;
+      left: -4px;
+      top: -4px;
+    }
+
+    &:hover>.outline,
+    &.selected>.outline {
+      border-radius: 6px;
+      border-color: var(--item-hover-bg);
+    }
   }
 
-  .tab-wrap[data-initial]::before {
-    margin-left: 3px;
-  }
+  .tabs-collapsed {
 
-  .tab-wrap[data-file]::before {
-    margin-left: 4px;
+    >.tab-wrap.current-tab {
+      border-color: var(--key-bg);
+    }
+
+    .tab-wrap[data-initial]::before {
+      margin-left: 3px;
+    }
+
+    .tab-wrap[data-file]::before {
+      margin-left: 4px;
+    }
   }
 }
 

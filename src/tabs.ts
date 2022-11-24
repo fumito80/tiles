@@ -454,7 +454,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     //   addStyle({ top: '-1000px' })(this.$leafMenu);
     //   return;
     // }
-    const $tab = $target; // .parentElement;
+    const $tab = $target.parentElement;
     if (!($tab instanceof OpenTab)) {
       return;
     }

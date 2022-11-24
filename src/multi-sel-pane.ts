@@ -149,11 +149,12 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     this.$popupMenu = $byTag('popup-menu', this);
-    if (this.$popupMenu instanceof PopupMenu) {
-      this.$popupMenu.init(this.menuClickHandler.bind(this));
-      const { className, deleteHandler } = this.multiSelPaneParams;
-      this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
+    if (!(this.$popupMenu instanceof PopupMenu)) {
+      throw new Error('No popup found');
     }
+    this.$popupMenu.init(this.menuClickHandler.bind(this));
+    const { className, deleteHandler } = this.multiSelPaneParams;
+    this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
   }
   actions() {
     if (hasClass(this, 'end')) {

@@ -43,8 +43,8 @@ app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap.
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
-app-main:not(.drag-start) .window.tabs-collapsed:hover window-header,
-window-header:hover,
+app-main:not(.drag-start) .window.tabs-collapsed:not(:has(.outline:hover)):hover window-header,
+.window:not(:has(.outline:hover)) window-header:hover,
 .tooltip,
 .draggable-clone,
 .draggable-clone>div,
@@ -60,14 +60,6 @@ window-header:hover,
 .shade-right:hover~.zoom-out,
 .shade-left:hover~.zoom-out {
   color: var(--item-hover-bg);
-}
-
-app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap {
-
-  &:hover,
-  &.selected {
-    border-color: var(--item-hover-bg);
-  }
 }
 
 app-main:not(.drag-start) {

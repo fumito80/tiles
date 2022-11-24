@@ -28,7 +28,7 @@ const excludeClasses = [
   'multi-sel-menu-button',
   'show',
   'start-multi-select',
-  'tab-wrap',
+  'tab-wrap', 'outline',
   'collapse-tabs',
   'collapse-tab',
   'window', 'tab',
