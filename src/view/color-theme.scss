@@ -16,14 +16,9 @@ body {
 }
 
 .folders .open>.marker>.title,
-.current-tab::after,
 .current-window window-header::before {
   background-color: var(--key-bg);
   color: var(--key-color);
-}
-
-.current-window window-header {
-  border-bottom: 4px solid var(--key-bg);
 }
 
 .pane-header .pin-bookmark:hover::after {
