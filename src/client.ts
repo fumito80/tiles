@@ -516,13 +516,6 @@ export async function addBookmark(
   }
 }
 
-export function showModalInput(desc: string) {
-  const $modal = $byClass('modal')!;
-  addClass('show-modal')(document.body);
-  setText(desc)($byClass('popup-desc', $modal)!);
-  return $<HTMLInputElement>('input', $modal)!.value;
-}
-
 export function selectFolder(
   $target: HTMLElement,
   $leafs: HTMLElement,
@@ -647,13 +640,16 @@ export function openFolder(folderId: string, incognito = false) {
 
 type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
-export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
+export function showMenu(menuClassOrElement: MenuClass | HTMLElement, calcPos = true) {
   return (e: MouseEvent) => {
     // e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
     const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
     if ($target.parentElement !== $menu.parentElement) {
       $target.insertAdjacentElement('afterend', $menu);
+    }
+    if (!calcPos) {
+      return;
     }
     const rect = $target.getBoundingClientRect();
     const { width, height } = $menu.getBoundingClientRect();

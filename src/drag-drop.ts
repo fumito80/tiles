@@ -38,6 +38,7 @@ import { Window } from './tabs';
 import {
   Dispatch, IPubSubElement, makeAction, States, Store,
 } from './store';
+import { dialog } from './dialogs';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -163,8 +164,7 @@ async function dropWithTabs(
         },
       });
       if (errorMessage) {
-        // eslint-disable-next-line no-alert
-        alert(errorMessage);
+        dialog.alert(errorMessage);
         return;
       }
       ($dropTarget.parentElement as Window).reloadTabs(dispatch);
@@ -191,8 +191,7 @@ async function dropWithTabs(
   }
   chrome.tabs.move([sourceTab.id!], { windowId, index }, () => {
     if (chrome.runtime.lastError) {
-      // eslint-disable-next-line no-alert
-      alert(chrome.runtime.lastError.message);
+      dialog.alert(chrome.runtime.lastError.message!);
       return;
     }
     moveTab(sourceId, $dropTarget, dispatch);
@@ -364,7 +363,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       rmClass('hilite'),
       addClass('drag-source'),
     ));
-    $$('[role="menu"]').forEach(($menu) => document.body.append($menu));
+    document.body.append(...$$('[role="menu"]'));
     // const $menu = $('[role="menu"]', $dragTarget);
     // if ($menu) {
     //   document.body.append($menu);
@@ -437,8 +436,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       const subTree = await getSubTree(parentId);
       const findIndex = subTree.children?.findIndex(propEq('id', destId));
       if (findIndex == null) {
-        // eslint-disable-next-line no-alert
-        alert('Operation failed with unknown error.');
+        dialog.alert('Operation failed with unknown error.');
         return;
       }
       const index = findIndex + (dropAreaClass === 'drop-bottom' ? 1 : 0);

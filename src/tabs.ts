@@ -2,9 +2,8 @@ import {
   getSelecteds, MultiSelPane, MutiSelectableItem, PaneHeader,
 } from './multi-sel-pane';
 import {
-  $$,
-  $$byClass, $$byTag, $byClass, $byTag,
-  addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
+  $$, $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
@@ -12,10 +11,10 @@ import {
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
-  Dispatch,
-  IPubSubElement, ISubscribeElement, makeAction, States, Store,
+  Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
 import { CliMessageTypes, PromiseInitTabs, State } from './types';
+import { dialog } from './dialogs';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
@@ -581,14 +580,12 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
     switch ($target.dataset.value) {
       case 'open-incognito':
       case 'open-new-window': {
-        const tabIds = openTabs.map(({ tabId }) => tabId);
-        const incognito = $target.dataset.value === 'open-incognito';
-        const { windowId, msg } = await postMessage(
-          { type: CliMessageTypes.moveTabsNewWindow, payload: { tabIds, incognito } },
+        const payload = openTabs.map(({ tabId, incognito }) => ({ tabId, incognito }));
+        const { windowId, message } = await postMessage(
+          { type: CliMessageTypes.moveTabsNewWindow, payload },
         );
-        if (windowId === -1) {
-          // eslint-disable-next-line no-alert
-          alert(msg);
+        if (message) {
+          await dialog.alert(message);
         }
         chrome.windows.update(windowId, { focused: true });
         break;

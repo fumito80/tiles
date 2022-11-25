@@ -123,6 +123,10 @@ open-tab {
       }
     }
   }
+
+  .multi-sel-menu-button {
+    display: none;
+  }
 }
 
 // Tabs collapse
@@ -461,6 +465,10 @@ app-main {
       width: 4px;
       height: 100%;
     }
+  }
+
+  .icon-incognito {
+    left: 3px;
   }
 }
 

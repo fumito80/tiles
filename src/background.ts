@@ -131,15 +131,13 @@ export const mapMessagesPtoB = {
           const tabIds = tabs!.map((tab) => tab.id!);
           return chrome.tabs.move(tabIds, { windowId, index });
         })
-        .then(async () => {
-          if (chrome.runtime.lastError) {
-            return chrome.runtime.lastError.message;
-          }
+        .then(() => {
           if (focused) {
-            return chrome.windows.update(windowId, { focused });
+            chrome.windows.update(windowId, { focused });
           }
           return undefined;
         })
+        .catch((reason) => reason.message as string)
     ),
   [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
     chrome.windows.get(payload.windowId, { populate: true }).then(({ tabs, incognito }) => {
@@ -156,19 +154,19 @@ export const mapMessagesPtoB = {
     })
   ),
   [CliMessageTypes.moveTabsNewWindow]: async (
-    { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: number[], incognito: boolean}>,
-  ): Promise<{ windowId: number, msg?: string }> => {
-    // const [tabId, ...rest] = tabIds;
-    const newWindow = await chrome.windows.create({ incognito, focused: false });
+    { payload }: PayloadAction<{ tabId: number, incognito: boolean}[]>,
+  ): Promise<{ windowId: number, message?: string }> => {
+    const [tab1, ...rest] = payload;
+    const focused = rest.every((t) => t.incognito === tab1.incognito);
+    const incognito = focused ? tab1.incognito : false;
+    const newWindow = await chrome.windows.create({ tabId: tab1.tabId, incognito, focused });
+    const primary = rest.filter((t) => t.incognito === tab1.incognito).map((t) => t.tabId);
+    const secondary = rest.filter((t) => t.incognito !== tab1.incognito).map((t) => t.tabId);
+    const tabIds = [...primary, ...secondary];
     return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
       .then(([{ windowId }]) => ({ windowId }))
-      .catch((reason) => ({ windowId: -1, msg: reason.message }))
-      // .catch((reason) => reason.message)
-      .finally(() => chrome.tabs.remove(newWindow!.tabs![0].id!));
-    // const tab = await chrome.treasonabs.get()
-    // return chrome.windows.create({ tabId, incognito }).then(
-    //   (win) => chrome.tabs.move(rest, { windowId: win!.id!, index: -1 }),
-    // );
+      .catch((reason) => ({ windowId: -1, message: reason.message }));
+    // .finally(() => chrome.tabs.remove(newWindow!.tabs![0].id!));
   },
   // [CliMessageTypes.moveTabs]: (
   //   { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: string[], incognito: boolean }>,

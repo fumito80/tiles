@@ -64,7 +64,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
         switch (buttonClass) {
           case 'multi-sel-menu-button':
-            showMenu($menu)(e);
+            showMenu($menu, false)(e);
             e.stopImmediatePropagation();
             break;
           case 'del-multi-sel':
@@ -133,7 +133,7 @@ export class MutiSelectableItem extends HTMLElement {
 }
 
 export abstract class PaneHeader extends HTMLDivElement implements IPubSubElement {
-  #includeUrl!: boolean;
+  private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
   protected $popupMenu!: PopupMenu;
@@ -145,8 +145,10 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
-    this.#includeUrl = settings.includeUrl;
+    this.includeUrl = settings.includeUrl;
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+    const $menu = $byClass('main-menu', this)!;
+    $byClass('main-menu-button', this)?.addEventListener('click', showMenu($menu, false));
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     this.$popupMenu = $byTag('popup-menu', this);
     if (!(this.$popupMenu instanceof PopupMenu)) {
@@ -160,7 +162,7 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
     if (hasClass(this, 'end')) {
       return {
         setIncludeUrl: makeAction({
-          initValue: this.#includeUrl,
+          initValue: this.includeUrl,
           persistent: true,
           target: $byClass('include-url', this.$mainMenu),
           eventType: 'click',
