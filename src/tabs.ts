@@ -1,5 +1,5 @@
 import {
-  getSelecteds, MultiSelPane, MutiSelectableItem, PaneHeader,
+  MultiSelPane, MutiSelectableItem, PaneHeader,
 } from './multi-sel-pane';
 import {
   $$, $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
@@ -7,14 +7,13 @@ import {
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
-  makeStyleIcon, pipe, postMessage,
+  makeStyleIcon, pipe,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
   Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
-import { CliMessageTypes, PromiseInitTabs, State } from './types';
-import { dialog } from './dialogs';
+import { PromiseInitTabs, State } from './types';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
@@ -484,9 +483,6 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   }
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
-    // if (hasClass($target, 'tab-wrap', 'leaf-menu-button')) {
-    //   return;
-    // }
     const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
     if ($tab instanceof OpenTab) {
       const { tabs, all } = await states('multiSelPanes');
@@ -576,18 +572,18 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
-    const openTabs = getSelecteds().filter(($el): $el is OpenTab => $el instanceof OpenTab);
+    // const openTabs = getSelecteds().filter(($el): $el is OpenTab => $el instanceof OpenTab);
     switch ($target.dataset.value) {
       case 'open-incognito':
       case 'open-new-window': {
-        const payload = openTabs.map(({ tabId, incognito }) => ({ tabId, incognito }));
-        const { windowId, message } = await postMessage(
-          { type: CliMessageTypes.moveTabsNewWindow, payload },
-        );
-        if (message) {
-          await dialog.alert(message);
-        }
-        chrome.windows.update(windowId, { focused: true });
+        // const payload = openTabs.map(({ tabId, incognito }) => ({ tabId, incognito }));
+        // const { windowId, message } = await postMessage(
+        //   { type: CliMessageTypes.moveTabsNewWindow, payload },
+        // );
+        // if (message) {
+        //   await dialog.alert(message);
+        // }
+        // chrome.windows.update(windowId, { focused: true });
         break;
       }
       default:

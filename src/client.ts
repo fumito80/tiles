@@ -8,7 +8,7 @@ import {
   SplitterClasses,
   Model,
   InsertPosition,
-  CliMessageTypes,
+  // CliMessageTypes,
   dropAreaClasses,
   positions,
 } from './types';
@@ -29,8 +29,8 @@ import {
   prop,
   last,
   addListener,
-  getChromeId,
-  postMessage,
+  // getChromeId,
+  // postMessage,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -595,40 +595,44 @@ export async function addFolder(
 
 export const panes = ['folders', 'leafs', 'tabs'] as const;
 
-export async function addFromTabs(
-  parentId: string,
-  index: number,
-  sourceId: string,
+export function addBookmarksFromTabs(
+  tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
+  bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
+) {
+  const { parentId, index } = bookmarkDestArg;
+  const silent = tabs.length > 1;
+  const sourceList = index == null ? tabs : tabs.reverse();
+  sourceList.forEach(({ title, url }) => addBookmark(parentId, {
+    title, url, index, parentId,
+  }, silent));
+}
+
+export async function addFolderFromTabs(
+  tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
+  bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
+  // parentId: string,
+  // index: number,
   destId: string,
   position: InsertPosition,
-  dropPane?: typeof panes[number],
-  isNewWindow = false,
+  // dropPane?: typeof panes[number],
 ) {
-  const windowId = getChromeId(sourceId);
-  if (isNewWindow) {
-    postMessage({ type: CliMessageTypes.moveWindowNew, payload: { windowId } });
+  const { parentId, index } = bookmarkDestArg;
+  // if (dropPane === 'leafs') {
+  //   const silent = tabs.length > 1;
+  //   const sourceList = index == null ? tabs : tabs.reverse();
+  //   sourceList.forEach(({ title, url }) => addBookmark(parentId, {
+  //     title, url, index, parentId,
+  //   }, silent));
+  //   return;
+  // }
+  const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
+  if (!parentFolderId) {
     return;
   }
-  chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
-    if (!tabs) {
-      return;
-    }
-    if (dropPane === 'leafs') {
-      const sourceList = index == null ? tabs : tabs.reverse();
-      sourceList.forEach(({ title, url }) => addBookmark(parentId, {
-        title, url, index, parentId,
-      }, true));
-      return;
-    }
-    const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
-    if (!parentFolderId) {
-      return;
-    }
-    tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
-    const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
-    setAnimationFolder('hilite')($target.parentElement);
-    editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
-  });
+  tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
+  const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
+  setAnimationFolder('hilite')($target.parentElement);
+  editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
 }
 
 export function openFolder(folderId: string, incognito = false) {
