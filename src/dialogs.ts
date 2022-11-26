@@ -46,6 +46,9 @@ export default class ModalDialog extends HTMLDialogElement {
     this.resolve();
   }
   async alert(msg: string) {
+    if (this.open) {
+      return undefined;
+    }
     this.dialogContent.setText(msg);
     this.showModal();
     return new Promise((resolve) => {

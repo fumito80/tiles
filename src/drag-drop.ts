@@ -32,6 +32,8 @@ import {
   getPrevTarget,
   addStyle,
   moveBookmarks,
+  addFolderFromTabs,
+  addBookmarksFromTabs,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -119,7 +121,7 @@ async function createTabsFromFolder(parentId: string, windowId?: number, index?:
 
 async function dropWithTabs(
   $dropTarget: HTMLElement,
-  [sourceId, ...sourceIds]: string[],
+  sourceIds: string[],
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
   // bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
@@ -127,7 +129,7 @@ async function dropWithTabs(
 ) {
   // tab to new window
   if (dropAreaClass === 'new-window-plus') {
-    const payload = await Promise.all([sourceId, ...sourceIds].map(getTabInfo))
+    const payload = await Promise.all(sourceIds.map(getTabInfo))
       .then((tabs) => tabs.map(({ id, incognito }) => ({ tabId: id!, incognito })));
     const { windowId, message } = await postMessage(
       { type: CliMessageTypes.moveTabsNewWindow, payload },
@@ -148,13 +150,14 @@ async function dropWithTabs(
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   if (sourceClass === 'leaf') {
-    Promise.resolve([sourceId, ...sourceIds].map(getBookmark))
+    Promise.resolve(sourceIds.map(getBookmark))
       .then((tabs) => Promise.all(tabs))
       .then((tabs) => tabs.map((tab) => tab.url!).reverse())
       .then((urls) => urls.map((url) => chrome.tabs.create({ index, url, windowId })));
     return;
   }
   // merge window
+  const [sourceId] = sourceIds;
   if (sourceClass === 'window') {
     if ($dropTarget.closest('.tabs')) {
       const sourceWindow = $byId(sourceId) as Window;
@@ -182,33 +185,44 @@ async function dropWithTabs(
     return;
   }
   // move tab
-  const sourceTab = await getTabInfo(sourceId);
-  if (sourceTab.windowId === windowId) {
-    index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
-    if (rest.index < sourceTab.index) {
-      // move to right
-      index = rest.index;
-    }
-  } else {
-    index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
-  }
-  chrome.tabs.move([sourceTab.id!], { windowId, index }, () => {
-    if (chrome.runtime.lastError) {
-      dialog.alert(chrome.runtime.lastError.message!);
-      return;
-    }
-    moveTab(sourceId, $dropTarget, dispatch);
-  });
-  if (
-    sourceTab.active
-    && sourceTab.isCurrentWindow
-    && sourceTab.windowId !== windowId
-    && sourceTab.incognito === rest.incognito
-  ) {
-    chrome.tabs.update(sourceTab.id!, { active: true });
-    chrome.windows.update(windowId, { focused: true });
-  }
-  $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
+  Promise.resolve()
+    .then(() => (
+      sourceIds.reverse().map(async (tabId) => {
+        const sourceTab = await getTabInfo(tabId);
+        if (sourceTab.windowId === windowId) {
+          index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
+          if (rest.index < sourceTab.index) {
+            // move to right
+            index = rest.index;
+          }
+        } else {
+          index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
+        }
+        chrome.tabs.move([sourceTab.id!], { windowId, index }, () => {
+          if (chrome.runtime.lastError) {
+            dialog.alert(chrome.runtime.lastError.message!);
+            return;
+          }
+          moveTab(tabId, $dropTarget, dispatch);
+        });
+        return sourceTab;
+      })
+    ))
+    .then((sourceTabs) => Promise.all(sourceTabs))
+    .then((sourceTabs) => sourceTabs.some((sourceTab) => {
+      if (
+        sourceTab.active
+        && sourceTab.isCurrentWindow
+        && sourceTab.windowId !== windowId
+        && sourceTab.incognito === rest.incognito
+      ) {
+        chrome.tabs.update(sourceTab.id!, { active: true });
+        chrome.windows.update(windowId, { focused: true });
+        return true;
+      }
+      return false;
+    }))
+    .then(() => $byClass('tabs')!.dispatchEvent(new Event('mouseenter')));
 }
 
 async function dropFromHistory(
@@ -446,26 +460,19 @@ export default class DragAndDropEvents implements IPubSubElement {
     // from tabs to bookmarks/folder
     const position = positions[dropAreaClass];
     const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
-    if (sourceClass === 'tab-wrap' && !isDroppedTab) {
+    const isRootFolder = ['drop-top', 'drop-bottom'].includes(dropAreaClass) && $(`.leafs ${cssid(destId)}`)?.parentElement?.id === '1';
+    if (
+      sourceClass === 'tab-wrap'
+      && !isDroppedTab
+      && (dropPane === 'leafs' || dropAreaClass === 'drop-folder' || isRootFolder)
+    ) {
       const tabs = await Promise.all([sourceId, ...sourceIds].map(getTabInfo));
-      // .then((t) => t.map(({ url, title }) => ({ url, title })));
-      const position = positions[dropAreaClass];
-      const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
-
-      dropAreaClass
-      addFromTabs(tabs, bookmarkDest, destId, position, dropPane);
+      addBookmarksFromTabs(tabs, bookmarkDest);
       return;
     }
     // from tabs to window of tabs
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
-      dropWithTabs(
-        $dropTarget,
-        [sourceId, ...sourceIds],
-        sourceClass,
-        dropAreaClass,
-        // bookmarkDest,
-        dispatch,
-      );
+      dropWithTabs($dropTarget, [sourceId, ...sourceIds], sourceClass, dropAreaClass, dispatch);
       return;
     }
     // from window of tabs
@@ -478,7 +485,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       }
       // to bookmarks/folder
       chrome.windows.get(windowId, { populate: true })
-        .then(({ tabs }) => addFromTabs(tabs!, bookmarkDest, destId, position, dropPane));
+        .then(({ tabs }) => addFolderFromTabs(tabs!, bookmarkDest, destId, position));
       return;
     }
     // bookmark/folder to new window

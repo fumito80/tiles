@@ -562,10 +562,14 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
     return {
       className: 'tabs',
       deleteHandler: ($selecteds: HTMLElement[]) => {
-        $selecteds
+        const removeds = $selecteds
           .filter(($el): $el is OpenTab => $el instanceof OpenTab)
-          .map(($tab) => $tab.tabId)
-          .forEach((tabId) => chrome.tabs.remove(tabId));
+          .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
+        const [promises, $tabs] = removeds.reduce(
+          ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
+          [[], []] as [Promise<void>[], OpenTab[]],
+        );
+        Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
       },
     } as const;
   }
