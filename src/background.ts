@@ -66,7 +66,7 @@ async function setHtmlHistory() {
   const histories = await getHistoryData().then(addHeadersHistory);
   const html = histories.slice(0, 32).map(makeHtmlHistory).join('');
   const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
-  return setLocal({ htmlHistory }).then(() => histories);
+  return setLocal({ htmlHistory });
 }
 
 let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
@@ -127,7 +127,7 @@ export const mapMessagesPtoB = {
       },
     }: PayloadMoveWindow) => (
       chrome.windows.get(sourceWindowId, { populate: true })
-        .then(async ({ tabs }) => {
+        .then(({ tabs }) => {
           const tabIds = tabs!.map((tab) => tab.id!);
           return chrome.tabs.move(tabIds, { windowId, index });
         })
@@ -160,13 +160,18 @@ export const mapMessagesPtoB = {
     const focused = rest.every((t) => t.incognito === tab1.incognito);
     const incognito = focused ? tab1.incognito : false;
     const newWindow = await chrome.windows.create({ tabId: tab1.tabId, incognito, focused });
-    const primary = rest.filter((t) => t.incognito === tab1.incognito).map((t) => t.tabId);
-    const secondary = rest.filter((t) => t.incognito !== tab1.incognito).map((t) => t.tabId);
-    const tabIds = [...primary, ...secondary];
+    const [primary, reject] = rest.reduce(([p, r], t) => {
+      if (t.incognito === tab1.incognito) {
+        return [[...p, t.tabId], r];
+      }
+      return [p, [...r, t.tabId]];
+    }, [[], []] as [number[], number[]]);
+    // const primary = rest.filter((t) => t.incognito === tab1.incognito).map((t) => t.tabId);
+    // const secondary = rest.filter((t) => t.incognito !== tab1.incognito).map((t) => t.tabId);
+    const tabIds = [...primary, ...reject];
     return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
       .then(([{ windowId }]) => ({ windowId }))
       .catch((reason) => ({ windowId: -1, message: reason.message }));
-    // .finally(() => chrome.tabs.remove(newWindow!.tabs![0].id!));
   },
   // [CliMessageTypes.moveTabs]: (
   //   { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: string[], incognito: boolean }>,

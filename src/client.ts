@@ -693,19 +693,15 @@ export function getPrevTarget(...className: string[]) {
   };
 }
 
-function sequentialMoveBookmarks(sourceIds: string[], destId: string, parentId: string) {
+async function sequentialMoveBookmarks(sourceIds: string[], parentId: string, destId?: string) {
   const [sourceId, ...rest] = sourceIds;
-  chrome.bookmarks.get(destId, ([bm]) => {
-    chrome.bookmarks.move(sourceId, { parentId, index: bm.index }, () => {
-      if (rest.length === 0) {
-        return;
-      }
-      sequentialMoveBookmarks(rest, destId, parentId);
-    });
-  });
+  const [bm] = destId ? await chrome.bookmarks.get(destId) : [{ index: undefined }];
+  chrome.bookmarks.move(sourceId, { parentId, index: bm.index }, () => (
+    rest.length === 0 ? null : sequentialMoveBookmarks(rest, parentId, destId)
+  ));
 }
 
-export async function moveBookmarks(
+export function moveBookmarks(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
   sourceIds: string[],
@@ -716,39 +712,33 @@ export async function moveBookmarks(
     return;
   }
   const { parentId, index } = bookmarkDest;
-  if (index != null) {
-    chrome.bookmarks.getSubTree(parentId!)
-      .then(([node]) => node.children?.find((bm) => bm.index === index))
-      .then((destBm) => sequentialMoveBookmarks(sourceIds, destBm!.id, parentId!));
-  } else {
-    sourceIds.forEach(async (sourceId) => {
-      await chrome.bookmarks.move(sourceId, bookmarkDest);
-    });
-  }
-  sourceIds.forEach((sourceId) => {
-    const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
-    const position = positions[dropAreaClass];
-    const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
-    const isRootFrom = $sourceLeafs.parentElement?.id === '1';
-    const isLeafFrom = hasClass($sourceLeafs, 'leaf');
-    if (isLeafFrom && isRootFrom && !isRootTo) {
-      $sourceFolders.remove();
-    } else if (isLeafFrom && isRootTo) {
-      const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
-      $destFolders.insertAdjacentElement(position, $source);
-      pipe(
-        rmClass('search-path'),
-        setAnimationClass('hilite'),
-      )($source);
-    } else if (!isLeafFrom) {
-      const $lastParantElement = $sourceFolders.parentElement!;
-      $destFolders.insertAdjacentElement(position, $sourceFolders);
-      setHasChildren($lastParantElement);
-      setHasChildren($sourceFolders.parentElement!);
-      setOpenPaths($sourceFolders);
-      setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
-    }
-    $destLeafs.insertAdjacentElement(position, $sourceLeafs);
-    setAnimationClass('hilite')($sourceLeafs);
-  });
+  chrome.bookmarks.getSubTree(parentId!)
+    .then(([node]) => node.children?.find((bm) => bm.index === index))
+    .then((destBm) => sequentialMoveBookmarks(sourceIds, parentId!, destBm?.id))
+    .then(() => sourceIds.forEach((sourceId) => {
+      const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+      const position = positions[dropAreaClass];
+      const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
+      const isRootFrom = $sourceLeafs.parentElement?.id === '1';
+      const isLeafFrom = hasClass($sourceLeafs, 'leaf');
+      if (isLeafFrom && isRootFrom && !isRootTo) {
+        $sourceFolders.remove();
+      } else if (isLeafFrom && isRootTo) {
+        const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
+        $destFolders.insertAdjacentElement(position, $source);
+        pipe(
+          rmClass('search-path'),
+          setAnimationClass('hilite'),
+        )($source);
+      } else if (!isLeafFrom) {
+        const $lastParantElement = $sourceFolders.parentElement!;
+        $destFolders.insertAdjacentElement(position, $sourceFolders);
+        setHasChildren($lastParantElement);
+        setHasChildren($sourceFolders.parentElement!);
+        setOpenPaths($sourceFolders);
+        setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+      }
+      $destLeafs.insertAdjacentElement(position, $sourceLeafs);
+      setAnimationClass('hilite')($sourceLeafs);
+    }));
 }

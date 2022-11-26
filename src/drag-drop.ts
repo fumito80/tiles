@@ -141,14 +141,10 @@ async function dropWithTabs(
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   // Bookmark to tabs
   if (sourceClass === 'leaf') {
-    const tabs = [sourceId, ...sourceIds].map(
-      (srcElementId) => getBookmark(srcElementId)
-        .then(({ url }) => chrome.tabs.create({
-          index, url, windowId, active: false,
-        })),
-    );
-    Promise.all(tabs)
-      .then(() => chrome.windows.update(windowId, { focused: true }).then(window.close));
+    Promise.resolve([sourceId, ...sourceIds].map(getBookmark))
+      .then((tabs) => Promise.all(tabs))
+      .then((tabs) => tabs.map((tab) => tab.url!).reverse())
+      .then((urls) => urls.map((url) => chrome.tabs.create({ index, url, windowId })));
     return;
   }
   // Merge window
@@ -306,13 +302,14 @@ function getDraggableElement(
   const $draggableClone = $byClass('draggable-clone')!;
   const itemHeight = $dragTargets[0].offsetHeight;
   $dragTargets.some(($el, i) => {
-    const clone = $el.cloneNode(true) as HTMLElement;
     if (itemHeight * i > 120) {
       const $div = addChild(document.createElement('div'))($draggableClone);
       $div.textContent = `... and ${$dragTargets.length - i} other items`;
       addStyle({ padding: '2px' })($div);
       return true;
     }
+    const clone = $el.cloneNode(true) as HTMLElement;
+    clone.style.removeProperty('transform');
     addChild(clone)($draggableClone);
     return false;
   });
@@ -342,7 +339,6 @@ export default class DragAndDropEvents implements IPubSubElement {
       .then([[$target], [$target.parentElement!.id]] as const)
       .when(className === 'window')
       .then([[$target.firstElementChild as HTMLElement], [$target.id]] as const)
-      // .else([$target, $target.id] as const);
       .else(() => {
         if (!isMultiSelect) {
           return [[$target], [$target.id]] as const;
@@ -351,7 +347,6 @@ export default class DragAndDropEvents implements IPubSubElement {
         const $targets = $$byClass('selected');
         return [$targets, $targets.map(($el) => $el.id)] as const;
       });
-    // const $draggable = getDraggableElement($dragTarget, $selecteds);
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
       const $zoomPane = $dragTargets[0].closest('.histories, .tabs') as HTMLElement;
@@ -364,11 +359,6 @@ export default class DragAndDropEvents implements IPubSubElement {
       addClass('drag-source'),
     ));
     document.body.append(...$$('[role="menu"]'));
-    // const $menu = $('[role="menu"]', $dragTarget);
-    // if ($menu) {
-    //   document.body.append($menu);
-    // }
-    // const isMultiSelect = !!$byClass('selected');
     const $draggable = getDraggableElement($dragTargets as HTMLElement[]);
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', ids.join(','));
@@ -414,8 +404,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
-      const includeUrl = await states('setIncludeUrl');
-      search(sourceId, includeUrl, dispatch);
+      states('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, dispatch));
       return;
     }
     dispatch('multiSelPanes', { all: false });
