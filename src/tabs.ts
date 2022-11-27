@@ -2,7 +2,7 @@ import {
   MultiSelPane, MutiSelectableItem, PaneHeader,
 } from './multi-sel-pane';
 import {
-  $$, $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
   rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
 } from './client';
 import {
@@ -38,7 +38,7 @@ export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   return promise;
 }
 
-async function collapseTab(store: Store, $win: HTMLElement) {
+async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   const promiseCollapse = new Promise<TransitionEvent>((resolve) => {
     $win.addEventListener('transitionend', resolve, { once: true });
   });
@@ -46,9 +46,9 @@ async function collapseTab(store: Store, $win: HTMLElement) {
   await promiseCollapse;
   const { length } = $$byClass('tabs-collapsed');
   if (length === $win.parentElement!.children.length) {
-    store.dispatch('collapseWindowsAll', true);
+    dispatch('collapseWindowsAll', true);
   } else if (length === 0) {
-    store.dispatch('collapseWindowsAll', false);
+    dispatch('collapseWindowsAll', false);
   }
   const $tabs = $win.parentElement!.parentElement!;
   const winBottom = $win.offsetTop + $win.offsetHeight;
@@ -332,6 +332,26 @@ export class Window extends HTMLElement implements ISubscribeElement {
       this.addTabs([firstTab, ...rest], dispatch);
     });
   }
+  dispathAction(windowAction: Store['actions']['windowAction']['initValue'], dispatch: Dispatch) {
+    if (windowAction?.windowId !== this.#windowId) {
+      return;
+    }
+    switch (windowAction.type) {
+      case 'collapseWindow':
+        collapseTab(dispatch, this);
+        break;
+      case 'closeTab':
+        if (this.childElementCount <= 1) {
+          this.remove();
+        }
+        break;
+      case 'closeWindow': {
+        chrome.windows.remove(this.#windowId, () => this.remove());
+        break;
+      }
+      default:
+    }
+  }
   connect(store: Store) {
     this.$header.connect(store);
     this.addTabs(this.tabs, store.dispatch);
@@ -341,37 +361,19 @@ export class Window extends HTMLElement implements ISubscribeElement {
         return;
       }
       const { tabs } = await store.getStates('multiSelPanes');
-      if (tabs) {
+      if (tabs || e.shiftKey) {
         const openTabs = this.getTabs();
         const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
         openTabs.map((tab) => tab.select(selectAll));
+        if (e.shiftKey) {
+          store.dispatch('multiSelPanes', { tabs: true });
+        }
         return;
       }
       chrome.windows.update(this.#windowId, { focused: true }, window.close);
     });
-    store.subscribe('collapseWindowsAll', (changes) => {
-      this.switchCollapseIcon(changes.newValue);
-    });
-    store.subscribe('windowAction', (changes) => {
-      if (changes?.newValue?.windowId !== this.#windowId) {
-        return;
-      }
-      switch (changes.newValue.type) {
-        case 'collapseWindow':
-          collapseTab(store, this);
-          break;
-        case 'closeTab':
-          if (this.childElementCount <= 1) {
-            this.remove();
-          }
-          break;
-        case 'closeWindow': {
-          chrome.windows.remove(this.#windowId, () => this.remove());
-          break;
-        }
-        default:
-      }
-    });
+    store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
+    store.subscribe('windowAction', (changes, _, dispatch) => this.dispathAction(changes.newValue, dispatch));
   }
 }
 
@@ -455,7 +457,9 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   }
   multiSelectTabs({ tabs: multiSelect }: { tabs?: boolean, all?: boolean }) {
     if (!multiSelect) {
-      $$('.tabs .selected').forEach(rmClass('selected'));
+      this.getWindows()
+        .map((win) => win.getTabs())
+        .forEach((tabs) => tabs.map((tab) => tab.select(false)));
       this.$lastClickedTab = undefined;
     }
   }

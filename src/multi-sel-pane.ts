@@ -57,8 +57,6 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
     header.appendChild(this);
-    const { width } = header.firstElementChild!.getBoundingClientRect();
-    this.style.setProperty('left', `${Math.ceil(width) + 10}px`);
     setEvents($$byTag('button', this), {
       click(e) {
         const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);

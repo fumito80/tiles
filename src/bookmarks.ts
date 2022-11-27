@@ -250,7 +250,9 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
   }
   multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean, all?: boolean }) {
     if (!multiSelect) {
-      $$('.leafs .selected, .folders .selected').forEach(rmClass('selected'));
+      $$('.leafs .selected, .folders .selected')
+        .filter(($el): $el is Leaf => $el instanceof Leaf)
+        .forEach(($leaf) => $leaf.select(false));
       this.$lastClickedLeaf = undefined;
     }
   }
