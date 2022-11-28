@@ -96,7 +96,6 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const clientState = storage.clientState || {};
   const lastSearchWord = storage.lastSearchWord || '';
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
-  // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
   setHtmlHistory();
@@ -166,8 +165,6 @@ export const mapMessagesPtoB = {
       }
       return [p, [...r, t.tabId]];
     }, [[], []] as [number[], number[]]);
-    // const primary = rest.filter((t) => t.incognito === tab1.incognito).map((t) => t.tabId);
-    // const secondary = rest.filter((t) => t.incognito !== tab1.incognito).map((t) => t.tabId);
     const tabIds = [...primary, ...reject];
     return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
       .then(([{ windowId }]) => ({ windowId }))

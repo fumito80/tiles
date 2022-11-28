@@ -26,7 +26,6 @@ import {
   hasClass,
   addBookmark,
   getBookmark,
-  // addFromTabs,
   $$byClass,
   panes,
   getPrevTarget,
@@ -41,6 +40,7 @@ import {
   Dispatch, IPubSubElement, makeAction, States, Store,
 } from './store';
 import { dialog } from './dialogs';
+import { MutiSelectableItem } from './multi-sel-pane';
 
 const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header'] as const;
 type SourceClass = (typeof sourceClasses)[number];
@@ -140,12 +140,6 @@ async function dropWithTabs(
     chrome.windows.update(windowId, { focused: true });
     return;
   }
-  // tab to bookmark
-  // if (!hasClass($dropTarget, 'tab-wrap')) {
-  //   const { url, title } = await getTabInfo(sourceId);
-  //   addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
-  //   return;
-  // }
   // bookmark to tabs
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
@@ -337,6 +331,25 @@ function getDraggableElement(
   return $draggableClone;
 }
 
+function resetMultiSelect($target: HTMLElement, $selecteds: HTMLElement[], dispatch: Dispatch) {
+  if ($selecteds.length === 0) {
+    return [$target];
+  }
+  if ($target instanceof MutiSelectableItem) {
+    const className = $target.constructor.name;
+    const selectedLeafs = $selecteds.filter(($el) => $el.constructor.name === className);
+    if (selectedLeafs.length === 0) {
+      dispatch('multiSelPanes', { all: false });
+      return [$target];
+    }
+    if ($target.selected) {
+      return $selecteds;
+    }
+    $target.select(true);
+  }
+  return undefined;
+}
+
 export default class DragAndDropEvents implements IPubSubElement {
   $appMain: HTMLElement;
   timerDragEnterFolder = 0;
@@ -354,19 +367,14 @@ export default class DragAndDropEvents implements IPubSubElement {
     if (!className) {
       return;
     }
-    const $selecteds = $$byClass('selected');
-    const isMultiSelect = $selecteds.length > 0;
     const [$dragTargets, ids] = when(className === 'marker')
       .then([[$target], [$target.parentElement!.id]] as const)
       .when(className === 'window')
       .then([[$target.firstElementChild as HTMLElement], [$target.id]] as const)
       .else(() => {
-        if (!isMultiSelect) {
-          return [[$target], [$target.id]] as const;
-        }
-        $target.classList.add('selected');
-        const $targets = $$byClass('selected');
-        return [$targets, $targets.map(($el) => $el.id)] as const;
+        const $selecteds = $$byClass('selected');
+        const $reselecteds = resetMultiSelect($target, $selecteds, dispatch) || $$byClass('selected');
+        return [$reselecteds, $reselecteds.map(($el) => $el.id)] as const;
       });
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {

@@ -122,9 +122,6 @@ export class HeaderLeafs extends PaneHeader {
   }
   menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
-    // if ($target.closest('multi-sel-pane') !== this) {
-    //   return;
-    // }
     switch ($target.dataset.value) {
       case 'open-new-tab': {
         getSelecteds().reverse()
@@ -270,9 +267,6 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     this.#timerMultiSelect = setTimeout(async () => {
       const { dragging, multiSelPanes } = await states();
       if (dragging) {
-        if (multiSelPanes?.leafs) {
-          $leaf.select(true);
-        }
         return;
       }
       dispatch('multiSelPanes', { leafs: !multiSelPanes?.leafs });

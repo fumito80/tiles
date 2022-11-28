@@ -2,8 +2,8 @@ import {
   MultiSelPane, MutiSelectableItem, PaneHeader,
 } from './multi-sel-pane';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
@@ -355,26 +355,29 @@ export class Window extends HTMLElement implements ISubscribeElement {
   connect(store: Store) {
     this.$header.connect(store);
     this.addTabs(this.tabs, store.dispatch);
-    this.addEventListener('click', async (e) => {
-      const $target = e.target as HTMLElement;
-      if (!hasClass($target, 'window', 'tab')) {
-        return;
-      }
-      const { tabs } = await store.getStates('multiSelPanes');
-      if (tabs || e.shiftKey) {
-        const openTabs = this.getTabs();
-        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
-        openTabs.map((tab) => tab.select(selectAll));
-        if (e.shiftKey) {
-          store.dispatch('multiSelPanes', { tabs: true });
-        }
-        return;
-      }
-      chrome.windows.update(this.#windowId, { focused: true }, window.close);
-    });
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
     store.subscribe('windowAction', (changes, _, dispatch) => this.dispathAction(changes.newValue, dispatch));
   }
+}
+
+function isWindow($target: HTMLElement) {
+  if ($target instanceof Window) {
+    return $target;
+  }
+  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'tab')) {
+    return $target.parentElement?.parentElement;
+  }
+  return undefined;
+}
+
+function isOpenTab($target: HTMLElement) {
+  if ($target instanceof OpenTab) {
+    return $target;
+  }
+  if ($target.parentElement instanceof OpenTab) {
+    return $target.parentElement;
+  }
+  return undefined;
 }
 
 export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
@@ -455,40 +458,42 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       OpenTabs.forEach(($tab) => $tab.select(true));
     }
   }
-  multiSelectTabs({ tabs: multiSelect }: { tabs?: boolean, all?: boolean }) {
+  multiSelectTabs({ tabs: multiSelect }: { tabs?: boolean }) {
     if (!multiSelect) {
       this.getWindows()
-        .map((win) => win.getTabs())
-        .forEach((tabs) => tabs.map((tab) => tab.select(false)));
+        .flatMap((win) => win.getTabs())
+        .filter((tab) => tab.selected)
+        .forEach((tab) => tab.select(false));
       this.$lastClickedTab = undefined;
     }
   }
   mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
-    const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
-    if (!($tab instanceof OpenTab)) {
-      return;
+    const $tab = isOpenTab($target);
+    const $window = isWindow($target);
+    if ($tab || $window) {
+      clearTimeout(this.#timerMultiSelect);
+      this.#timerMultiSelect = setTimeout(
+        async () => {
+          const { dragging, multiSelPanes } = await states();
+          if (dragging) {
+            return;
+          }
+          dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
+          $tab?.preMultiSelect(!multiSelPanes?.tabs);
+          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(!multiSelPanes?.tabs));
+        },
+        delayMultiSelect,
+      );
     }
-    clearTimeout(this.#timerMultiSelect);
-    this.#timerMultiSelect = setTimeout(async () => {
-      const { dragging, multiSelPanes } = await states();
-      if (dragging) {
-        if (multiSelPanes?.tabs) {
-          $tab.select(true);
-        }
-        return;
-      }
-      dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
-      $tab.preMultiSelect(!multiSelPanes?.tabs);
-    }, delayMultiSelect);
   }
   mouseupItem() {
     clearTimeout(this.#timerMultiSelect);
   }
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
-    const $tab = $target instanceof OpenTab ? $target : $target.parentElement;
-    if ($tab instanceof OpenTab) {
+    const $tab = isOpenTab($target);
+    if ($tab) {
       const { tabs, all } = await states('multiSelPanes');
       if (tabs || all) {
         $tab.select();
@@ -502,6 +507,26 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
         return;
       }
       $tab.gotoTab();
+      return;
+    }
+    const $window = isWindow($target);
+    if ($window) {
+      const { tabs } = await states('multiSelPanes');
+      if (tabs || e.shiftKey) {
+        const openTabs = $window.getTabs();
+        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
+        openTabs.map((tab) => tab.select(selectAll));
+        if (e.shiftKey) {
+          dispatch('multiSelPanes', { tabs: true });
+        }
+        return;
+      }
+      const [$tab1, ...rest] = $window.getTabs();
+      if ($tab1.checkMultiSelect()) {
+        rest.forEach(($tab2) => $tab2.checkMultiSelect());
+        return;
+      }
+      chrome.windows.update($window.windowId, { focused: true }, window.close);
     }
   }
   actions() {
@@ -580,18 +605,9 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
-    // const openTabs = getSelecteds().filter(($el): $el is OpenTab => $el instanceof OpenTab);
     switch ($target.dataset.value) {
       case 'open-incognito':
       case 'open-new-window': {
-        // const payload = openTabs.map(({ tabId, incognito }) => ({ tabId, incognito }));
-        // const { windowId, message } = await postMessage(
-        //   { type: CliMessageTypes.moveTabsNewWindow, payload },
-        // );
-        // if (message) {
-        //   await dialog.alert(message);
-        // }
-        // chrome.windows.update(windowId, { focused: true });
         break;
       }
       default:

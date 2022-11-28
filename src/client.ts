@@ -8,7 +8,6 @@ import {
   SplitterClasses,
   Model,
   InsertPosition,
-  // CliMessageTypes,
   dropAreaClasses,
   positions,
 } from './types';
@@ -29,8 +28,6 @@ import {
   prop,
   last,
   addListener,
-  // getChromeId,
-  // postMessage,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -482,20 +479,20 @@ export async function editTitle(
 
 export async function addBookmark(
   parentId = '1',
-  paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
+  bookmarkCreateArg: chrome.bookmarks.BookmarkCreateArg | null = null,
   silent = false,
 ) {
   const isSearching = hasClass($byTag('app-main'), 'searching');
-  const { title, url } = paramsIn ?? await getCurrentTab();
-  const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
+  const { title, url } = bookmarkCreateArg ?? await getCurrentTab();
+  const index = bookmarkCreateArg?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
     title: title!, url: url!, parentId, index,
   };
-  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlAnchor = makeLeaf({ id, ...params });
+  const { id } = await chrome.bookmarks.create(params);
+  const htmlLeaf = makeLeaf({ id, ...params });
   if (parentId === '1') {
-    insertHTML('beforebegin', htmlAnchor)($byId('1')!.children[index! + 1]);
-    insertHTML('beforebegin', htmlAnchor)($byClass('folders')!.children[index!]);
+    insertHTML('beforebegin', htmlLeaf)($byId('1')!.children[index! + 1]);
+    insertHTML('beforebegin', htmlLeaf)($byClass('folders')!.children[index!]);
   } else {
     if (parentId !== $byClass('open')?.id && !isSearching) {
       $$byClass('open').forEach(rmClass('open'));
@@ -503,9 +500,9 @@ export async function addBookmark(
     }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
     if (index == null) {
-      insertHTML('beforeend', htmlAnchor)($targetFolder);
+      insertHTML('beforeend', htmlLeaf)($targetFolder);
     } else {
-      insertHTML('afterend', htmlAnchor)($targetFolder.children[index]);
+      insertHTML('afterend', htmlLeaf)($targetFolder.children[index]);
     }
   }
   const $Leaf = $(`.folders ${cssid(id)}`) as Leaf || $(`.leafs ${cssid(id)}`) as Leaf;
@@ -610,21 +607,10 @@ export function addBookmarksFromTabs(
 export async function addFolderFromTabs(
   tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
   bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
-  // parentId: string,
-  // index: number,
   destId: string,
   position: InsertPosition,
-  // dropPane?: typeof panes[number],
 ) {
   const { parentId, index } = bookmarkDestArg;
-  // if (dropPane === 'leafs') {
-  //   const silent = tabs.length > 1;
-  //   const sourceList = index == null ? tabs : tabs.reverse();
-  //   sourceList.forEach(({ title, url }) => addBookmark(parentId, {
-  //     title, url, index, parentId,
-  //   }, silent));
-  //   return;
-  // }
   const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
   if (!parentFolderId) {
     return;
@@ -646,7 +632,6 @@ type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
 export function showMenu(menuClassOrElement: MenuClass | HTMLElement, calcPos = true) {
   return (e: MouseEvent) => {
-    // e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
     const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
     if ($target.parentElement !== $menu.parentElement) {

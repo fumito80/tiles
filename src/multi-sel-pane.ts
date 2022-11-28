@@ -106,17 +106,21 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
 }
 
 export class MutiSelectableItem extends HTMLElement {
-  selected = false;
+  private isSelected = false;
   protected preMultiSel = false;
-  protected checkMultiSelect() {
+  checkMultiSelect() {
     if (this.preMultiSel) {
       this.preMultiSel = false;
       return true;
     }
     return false;
   }
+  get selected() {
+    return this.isSelected;
+  }
   preMultiSelect(isBegin: boolean) {
     this.preMultiSel = true;
+    this.isSelected = isBegin;
     this.classList.toggle('selected', isBegin);
   }
   select(selected?: boolean) {
@@ -125,7 +129,7 @@ export class MutiSelectableItem extends HTMLElement {
     }
     const isSelected = selected ?? !this.classList.contains('selected');
     this.classList.toggle('selected', isSelected);
-    this.selected = isSelected;
+    this.isSelected = isSelected;
     return isSelected;
   }
 }

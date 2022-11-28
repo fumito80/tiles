@@ -41,7 +41,9 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   if (hasClass($target, ...excludeClasses)) {
     return;
   }
-  dispatch('multiSelPanes', { leafs: false, tabs: false, history: false });
+  dispatch('multiSelPanes', {
+    leafs: false, tabs: false, history: false, all: false,
+  });
   if (hasClass($target, 'leaf-menu-button')) {
     showMenu('leaf-menu')(e);
     dispatch('multiSelPanes', { leafs: false });
