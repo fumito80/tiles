@@ -458,7 +458,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       OpenTabs.forEach(($tab) => $tab.select(true));
     }
   }
-  multiSelectTabs({ tabs: multiSelect }: { tabs?: boolean }) {
+  multiSelect({ tabs: multiSelect }: { tabs?: boolean }) {
     if (!multiSelect) {
       this.getWindows()
         .flatMap((win) => win.getTabs())
@@ -564,7 +564,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       store.subscribe('clickTabs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
       store.subscribe('mousedownTabs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
       store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
-      store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectTabs(newValue));
+      store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
     });
   }
 }

@@ -7,7 +7,7 @@ import {
   HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
 } from './tabs';
 import { FormSearch } from './search';
-import { HeaderHistory, History } from './history';
+import { HeaderHistory, History, HistoryItem } from './history';
 import {
   HeaderLeafs, Leaf, Leafs,
 } from './bookmarks';
@@ -306,6 +306,7 @@ customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
 customElements.define('form-search', FormSearch, { extends: 'form' });
 customElements.define('body-history', History, { extends: 'div' });
 customElements.define('header-history', HeaderHistory, { extends: 'div' });
+customElements.define('history-item', HistoryItem);
 customElements.define('bm-leaf', Leaf);
 customElements.define('multi-sel-pane', MultiSelPane);
 customElements.define('popup-menu', PopupMenu);

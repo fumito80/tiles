@@ -48,7 +48,8 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(.outline:hover)):hover
 .draggable-clone window-header::before,
 .drag-source,
 .drag-source::before,
-.leaf.selected {
+.leaf.selected,
+.history.selected {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 }

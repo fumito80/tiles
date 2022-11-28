@@ -1,12 +1,15 @@
 /* eslint-disable max-classes-per-file */
 
 import { MyHistoryItem, Options } from './types';
-import { IPubSubElement, makeAction, Store } from './store';
+import {
+  Dispatch, IPubSubElement, makeAction, States, Store,
+} from './store';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass,
 } from './client';
 import {
+  delayMultiSelect,
   getHistoryById, getLocaleDate, isDateEq, pick, pipe, removeUrlHistory, setLocal,
 } from './common';
 import { ISearchable, SearchParams } from './search';
@@ -19,7 +22,7 @@ import {
   setScrollTop,
   setVScroll,
 } from './vscroll';
-import { PaneHeader } from './multi-sel-pane';
+import { MutiSelectableItem, PaneHeader } from './multi-sel-pane';
 
 type ResetParams = {
   initialize?: boolean,
@@ -58,12 +61,45 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
+export class HistoryItem extends MutiSelectableItem {
+  async getUrl() {
+    const { url } = await getHistoryById(this.id);
+    return url;
+  }
+  async open(options: Options) {
+    if (this.checkMultiSelect()) {
+      return;
+    }
+    // const $url = $target.title ? $target : $parent;
+    const url = await this.getUrl();
+    if (!url) {
+      return;
+    }
+    // if (hasClass($target, 'icon-x')) {
+    //   setAnimationClass('hilite')($parent);
+    //   chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
+    //   return;
+    // }
+    createNewTab(options, url);
+  }
+  async delete() {
+    const url = await this.getUrl();
+    if (!url) {
+      return;
+    }
+    setAnimationClass('hilite')(this);
+    chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
+  }
+}
+
 export class History extends HTMLDivElement implements IPubSubElement, ISearchable {
   #options!: Options;
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
   #jumpDate = '';
   #rowHeight!: number;
+  #timerMultiSelect!: number;
+  #lastClickedId!: string | undefined;
   private $rows!: HTMLElement;
   private promiseInitHistory!: Promise<MyHistoryItem[]>;
   init(
@@ -87,37 +123,12 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     setLocal({ vscrollProps: { rowHeight } });
     this.#rowHeight = rowHeight;
   }
-  async clickItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
-    const $target = e.target as HTMLElement;
-    if (hasClass($target, 'header-date')) {
-      states('historyCollapseDate', (collapsed) => {
-        if (collapsed) {
-          this.jumpHistoryDate($target.textContent!, dispatch);
-        }
-      });
-      return;
-    }
-    const $parent = $target.parentElement!;
-    const $url = $target.title ? $target : $parent;
-    const { url } = await getHistoryById($url.id);
-    if (!url) {
-      return;
-    }
-    if (hasClass($target, 'icon-x')) {
-      setAnimationClass('hilite')($parent);
-      chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
-      return;
-    }
-    createNewTab(this.#options, url);
-  }
   search({ reFilter, includeUrl }: SearchParams, dispatch: Store['dispatch']) {
     this.#reFilter = reFilter;
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', false, true);
   }
-  async resetHistory({
-    initialize,
-  }: ResetParams = {}) {
+  async resetHistory({ initialize }: ResetParams = {}) {
     const [init, ...tail] = await this.promiseInitHistory;
     let histories = [init, ...tail];
     if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
@@ -183,6 +194,102 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';
   }
+  selectWithShift($target: HistoryItem) {
+    if (this.#lastClickedId !== $target.id) {
+      // const Histories = [] as HistoryItem[];
+      // let started = false;
+      // for (
+      //   let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
+      //   next != null;
+      //   next = next.nextElementSibling
+      // ) {
+      //   if (next === $target || next === this.$lastClickedTab) {
+      //     if (started) {
+      //       OpenTabs.push(next as OpenTab);
+      //       break;
+      //     }
+      //     started = true;
+      //   }
+      //   if (started && next instanceof OpenTab) {
+      //     OpenTabs.push(next);
+      //   }
+      // }
+      // OpenTabs.forEach(($tab) => $tab.select(true));
+    }
+  }
+  async clickItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
+    const $target = e.target as HTMLElement;
+    if (hasClass($target, 'header-date')) {
+      states('historyCollapseDate', (collapsed) => {
+        if (collapsed) {
+          this.jumpHistoryDate($target.textContent!, dispatch);
+        }
+      });
+      return;
+    }
+    const $history = $target.parentElement;
+    if ($history instanceof HistoryItem) {
+      if (hasClass($target, 'icon-x')) {
+        $history.delete();
+        return;
+      }
+      const { history, all } = await states('multiSelPanes');
+      if (history || all) {
+        $history.select();
+        if (all) {
+          dispatch('multiSelPanes', { history: true });
+        }
+        if (e.shiftKey) {
+          this.selectWithShift($history);
+        }
+        this.#lastClickedId = $history.id;
+        return;
+      }
+      $history.open(this.#options);
+    }
+    // const $parent = $target.parentElement!;
+    // const $url = $target.title ? $target : $parent;
+    // const { url } = await getHistoryById($url.id);
+    // if (!url) {
+    //   return;
+    // }
+    // if (hasClass($target, 'icon-x')) {
+    //   setAnimationClass('hilite')($parent);
+    //   chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
+    //   return;
+    // }
+    // createNewTab(this.#options, url);
+  }
+  // eslint-disable-next-line class-methods-use-this
+  multiSelect({ history: multiSelect }: { history?: boolean }) {
+    if (!multiSelect) {
+      // this.getWindows()
+      //   .flatMap((win) => win.getTabs())
+      //   .filter((tab) => tab.selected)
+      //   .forEach((tab) => tab.select(false));
+      // this.$lastClickedTab = undefined;
+    }
+  }
+  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $history = (e.target as HTMLElement).parentElement;
+    if ($history instanceof HistoryItem && !hasClass($history, 'header-date')) {
+      clearTimeout(this.#timerMultiSelect);
+      this.#timerMultiSelect = setTimeout(
+        async () => {
+          const { dragging, multiSelPanes } = await states();
+          if (dragging) {
+            return;
+          }
+          dispatch('multiSelPanes', { history: !multiSelPanes?.history });
+          $history.preMultiSelect(!multiSelPanes?.history);
+        },
+        delayMultiSelect,
+      );
+    }
+  }
+  mouseupItem() {
+    clearTimeout(this.#timerMultiSelect);
+  }
   actions() {
     return {
       resetHistory: makeAction({
@@ -191,6 +298,16 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       clickHistory: makeAction({
         target: this,
         eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownHistory: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupHistory: makeAction({
+        target: this,
+        eventType: 'mouseup',
         eventOnly: true,
       }),
     };
@@ -203,6 +320,9 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     store.subscribe('changeIncludeUrl', (changes) => {
       this.#includeUrl = changes.newValue;
     });
+    store.subscribe('mousedownHistory', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
+    store.subscribe('mouseupHistory', this.mouseupItem.bind(this));
+    store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
   }
 }
 

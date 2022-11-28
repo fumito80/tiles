@@ -17,6 +17,16 @@
       &:hover>.icon-x {
         display: var(--show-delete-history, none);
       }
+
+      &.selected {
+        >.icon-x {
+          display: none;
+        }
+
+        &:active {
+          filter: opacity(0.7);
+        }
+      }
     }
 
     >div:empty {

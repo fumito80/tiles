@@ -32,6 +32,7 @@ const excludeClasses = [
   'collapse-tabs',
   'collapse-tab',
   'window', 'tab',
+  'history-title',
   'tabs-menu-button',
   'folder-menu-button',
 ];
