@@ -112,15 +112,6 @@ export class HeaderLeafs extends PaneHeader {
   override connect(store: Store) {
     super.connect(store);
   }
-  // eslint-disable-next-line class-methods-use-this
-  // get multiSelPaneParams() {
-  //   return {
-  //     className: 'bookmarks',
-  //     // deleteHandler: ($selecteds: HTMLElement[]) => {
-  //     //   $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf).forEach(remeveBookmark);
-  //     // },
-  //   } as const;
-  // }
   menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
     switch ($target.dataset.value) {
@@ -369,12 +360,12 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   override connect(store: Store) {
     super.connect(store);
     store.subscribe('clearSearch', this.clearSearch.bind(this));
-    store.subscribe('clickLeafs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
-    store.subscribe('mousedownLeafs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
+    store.subscribe('clickLeafs', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+    store.subscribe('mousedownLeafs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
     store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
     store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
-    store.subscribe('clickFolders', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
-    store.subscribe('mousedownFolders', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
+    store.subscribe('clickFolders', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+    store.subscribe('mousedownFolders', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
   }
 }

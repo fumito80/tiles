@@ -21,7 +21,6 @@ import {
   addColorSpec,
   recombiPaletteDark,
 } from './settings-colors';
-import { applyVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
 
@@ -689,11 +688,6 @@ export function extractUrl(faviconUrl?: string) {
 export function extractDomain(url?: string) {
   const [, scheme = '', domain = ''] = /^([\w-]+?:\/\/)([\s\S]+?)(\/|$)/.exec(url || '') || [];
   return [scheme, domain];
-}
-
-export async function getHistoryById(historyId: string) {
-  const [, id] = historyId.split('-');
-  return applyVScrollData(find(propEq('id', id)));
 }
 
 export function base64Encode(...parts: string[]) {

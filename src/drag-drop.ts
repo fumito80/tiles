@@ -5,7 +5,7 @@ import {
   cssid,
   whichClass,
   propEq,
-  getHistoryById,
+  // getHistoryById,
   decode,
   getChromeId,
   when,
@@ -225,7 +225,7 @@ async function dropFromHistory(
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
 ) {
-  const { url, title } = await getHistoryById(sourceId);
+  const { url, title } = { url: '', title: '' }; // await getHistoryById(sourceId);
   if (dropAreaClass === 'new-window-plus') {
     chrome.windows.create({ url });
     return;
@@ -527,8 +527,8 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('dragstart', (_, __, dispatch, e) => this.dragstart(e, dispatch));
-    store.subscribe('drop', (_, states, dispatch, e) => this.drop(e, states, dispatch));
-    store.subscribe('dragend', (_, __, dispatch, e) => this.dragend(e, dispatch));
+    store.subscribe('dragstart', (_, e) => this.dragstart(e, store.dispatch));
+    store.subscribe('drop', (_, e) => this.drop(e, store.getStates, store.dispatch));
+    store.subscribe('dragend', (_, e) => this.dragend(e, store.dispatch));
   }
 }

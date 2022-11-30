@@ -153,14 +153,14 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('inputQuery', (_, __, dispatch, e) => {
+    store.subscribe('inputQuery', (_, e) => {
       const { value } = (e.target as HTMLInputElement);
-      this.search(value, dispatch);
+      this.search(value, store.dispatch);
     });
-    store.subscribe('changeIncludeUrl', (changes, _, dispatch) => this.resetQuery(changes.newValue, dispatch));
-    store.subscribe('clearQuery', (_, __, dispatch) => this.clearQuery(dispatch));
+    store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue, store.dispatch));
+    store.subscribe('clearQuery', () => this.clearQuery(store.dispatch));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('search', (changes, _, dispatch) => this.search(changes.newValue || this.$inputQuery.value, dispatch));
+    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
     store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
   }
 }

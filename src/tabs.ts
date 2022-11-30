@@ -357,7 +357,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.$header.connect(store);
     this.addTabs(this.tabs, store.dispatch);
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
-    store.subscribe('windowAction', (changes, _, dispatch) => this.dispathAction(changes.newValue, dispatch));
+    store.subscribe('windowAction', (changes) => this.dispathAction(changes.newValue, store.dispatch));
   }
 }
 
@@ -575,8 +575,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
       store.subscribe('clearSearch', this.clearSearch.bind(this));
-      store.subscribe('clickTabs', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
-      store.subscribe('mousedownTabs', (_, states, dispatch, e) => this.mousedownItem(e, states, dispatch));
+      store.subscribe('clickTabs', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+      store.subscribe('mousedownTabs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
       store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
       store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
     });
@@ -601,22 +601,6 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
     toggleClass('tabs-collapsed-all', collapsed)(this);
     this.$buttonCollapse.blur();
   }
-  // eslint-disable-next-line class-methods-use-this
-  // get multiSelPaneParams() {
-  //   return {
-  //     className: 'tabs',
-  //     deleteHandler: ($selecteds: HTMLElement[]) => {
-  //       const removeds = $selecteds
-  //         .filter(($el): $el is OpenTab => $el instanceof OpenTab)
-  //         .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
-  //       const [promises, $tabs] = removeds.reduce(
-  //         ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
-  //         [[], []] as [Promise<void>[], OpenTab[]],
-  //       );
-  //       Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
-  //     },
-  //   } as const;
-  // }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;

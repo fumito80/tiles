@@ -107,7 +107,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
       target.addEventListener(eventType, async (e: any) => {
         if (eventOnly) {
-          subscribers[actionName]?.forEach((cb) => cb(undefined, getStates, dispatcher, e));
+          subscribers[actionName]?.forEach((cb) => cb(undefined, e));
           return true;
         }
         chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
@@ -156,7 +156,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
         if (persistent) {
           chrome.storage.local.set({ [actionName]: newValue });
         }
-        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue }, getStates, dispatcher));
+        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue }));
       });
     });
     Object.entries(actions)
@@ -165,7 +165,7 @@ export function registerActions<T extends Actions<any>>(actions: T) {
         const actionName = prefixedAction(name);
         chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => {
           subscribers[actionName]?.forEach(
-            (cb) => cb({ oldValue: null, newValue: value, isInit: true }, getStates, dispatcher),
+            (cb) => cb({ oldValue: null, newValue: value, isInit: true }),
           );
         });
       });
@@ -179,11 +179,6 @@ export function registerActions<T extends Actions<any>>(actions: T) {
       name: U,
       cb: (
         changes: { oldValue: V, newValue: V, isInit: boolean },
-        states: <X extends keyof T | undefined = undefined>(actionsName?: X) =>
-          X extends keyof T ? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
-        dispatch: <Y extends keyof T>(
-          dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
-        ) => void,
         e: W extends keyof HTMLElementEventType ? HTMLElementEventType[W] : never,
       ) => void,
     ) {

@@ -1,11 +1,10 @@
 import { Panes, State } from './types';
-// import { setEvents, whichClass } from './common';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
   addBookmark, addFolder, addStyle, hasClass, rmStyle, showMenu,
 } from './client';
 import {
-  Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
+  Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
 
 export function getSelecteds() {
@@ -54,23 +53,6 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       showMenu($menu, false)(e);
       e.stopImmediatePropagation();
     }, true);
-    // setEvents($$byTag('button', this), {
-    //   click(e) {
-    //     const buttonClass =
-    // whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
-    //     switch (buttonClass) {
-    //       case 'multi-sel-menu-button':
-    //         showMenu($menu, false)(e);
-    //         e.stopImmediatePropagation();
-    //         break;
-    //       case 'del-multi-sel':
-    //         deleteHandler(getSelecteds());
-    //         e.stopImmediatePropagation();
-    //         break;
-    //       default:
-    //     }
-    //   },
-    // }, true);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all
@@ -140,12 +122,8 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
-  // protected $popupMenu!: PopupMenu;
   abstract menuClickHandler(e: MouseEvent): void;
   abstract paneName: Panes;
-  //   className: Panes,
-  //   // deleteHandler: ($selecteds: HTMLElement[]) => void,
-  // };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
@@ -159,7 +137,6 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
       throw new Error('No popup found');
     }
     $popupMenu.init(this.menuClickHandler.bind(this));
-    // const { className } = this.multiSelPaneParams;
     this.$multiSelPane.init(this, $popupMenu);
   }
   actions() {
@@ -189,17 +166,17 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
     if (!hasClass(this, 'end')) {
       return;
     }
-    store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
+    store.subscribe('clickMainMenu', (_, e) => clickMainMenu(e, store.dispatch));
   }
 }
 
 export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
   abstract paneName: Panes;
-  abstract deletesHandler(selectds: HTMLElement[], states: States, dispatch: Dispatch): void;
+  abstract deletesHandler(selectds: HTMLElement[], store: Store): void;
   connect(store: Store) {
-    store.subscribe('deleteSelecteds', (changes, states, dispatch) => {
+    store.subscribe('deleteSelecteds', (changes) => {
       if (changes.newValue === this.paneName) {
-        this.deletesHandler(getSelecteds(), states, dispatch);
+        this.deletesHandler(getSelecteds(), store);
       }
     });
   }

@@ -20,7 +20,6 @@ import {
 import {
   Dispatch, IPubSubElement, makeAction, States, Store,
 } from './store';
-import { resetVScrollData } from './vscroll';
 
 const excludeClasses = [
   'anchor',
@@ -131,13 +130,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
-  setIncludeUrl(store: Store, includeUrl: boolean, isInit: boolean) {
+  setIncludeUrl(includeUrl: boolean, dispatch: Dispatch) {
     toggleClass('checked-include-url', includeUrl)(this);
-    store.dispatch('changeIncludeUrl', includeUrl, true);
-    if (isInit) {
-      return;
-    }
-    resetVScrollData((data) => data);
+    dispatch('changeIncludeUrl', includeUrl, true);
   }
   actions() {
     return {
@@ -167,11 +162,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(store, changes.newValue, changes.isInit));
+    store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(changes.newValue, store.dispatch));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    store.subscribe('clickAppMain', (_, __, dispatch, e) => clickAppMain(e, dispatch));
+    store.subscribe('clickAppMain', (_, e) => clickAppMain(e, store.dispatch));
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
-    store.subscribe('keydownMain', (_, states, dispatch, e) => keydown(e, states, dispatch));
-    store.subscribe('keyupMain', (_, states, dispatch, e) => keyup(e, states, dispatch));
+    store.subscribe('keydownMain', (_, e) => keydown(e, store.getStates, store.dispatch));
+    store.subscribe('keyupMain', (_, e) => keyup(e, store.getStates, store.dispatch));
   }
 }
