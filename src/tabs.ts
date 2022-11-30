@@ -1,4 +1,5 @@
 import {
+  MulitiSelectablePaneBody,
   MultiSelPane, MutiSelectableItem, PaneHeader,
 } from './multi-sel-pane';
 import {
@@ -380,7 +381,8 @@ function isOpenTab($target: HTMLElement) {
   return undefined;
 }
 
-export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
+export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
+  readonly paneName = 'tabs';
   #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
   #timerMultiSelect!: number;
@@ -431,6 +433,17 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
   clearSearch() {
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
     $$byClass('empty', this).forEach(rmClass('empty'));
+  }
+  // eslint-disable-next-line class-methods-use-this
+  deletesHandler($selecteds: HTMLElement[]) {
+    const removeds = $selecteds
+      .filter(($el): $el is OpenTab => $el instanceof OpenTab)
+      .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
+    const [promises, $tabs] = removeds.reduce(
+      ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
+      [[], []] as [Promise<void>[], OpenTab[]],
+    );
+    Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
   }
   selectWithShift($target: OpenTab) {
     if (
@@ -555,7 +568,8 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
       }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     this.#initPromise.then(() => {
       this.getWindows().forEach(($window) => $window.connect(store));
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
@@ -570,6 +584,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
 }
 
 export class HeaderTabs extends PaneHeader implements IPubSubElement {
+  readonly paneName = 'tabs';
   #collapsed!: boolean;
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
@@ -587,21 +602,21 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
     this.$buttonCollapse.blur();
   }
   // eslint-disable-next-line class-methods-use-this
-  get multiSelPaneParams() {
-    return {
-      className: 'tabs',
-      deleteHandler: ($selecteds: HTMLElement[]) => {
-        const removeds = $selecteds
-          .filter(($el): $el is OpenTab => $el instanceof OpenTab)
-          .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
-        const [promises, $tabs] = removeds.reduce(
-          ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
-          [[], []] as [Promise<void>[], OpenTab[]],
-        );
-        Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
-      },
-    } as const;
-  }
+  // get multiSelPaneParams() {
+  //   return {
+  //     className: 'tabs',
+  //     deleteHandler: ($selecteds: HTMLElement[]) => {
+  //       const removeds = $selecteds
+  //         .filter(($el): $el is OpenTab => $el instanceof OpenTab)
+  //         .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
+  //       const [promises, $tabs] = removeds.reduce(
+  //         ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
+  //         [[], []] as [Promise<void>[], OpenTab[]],
+  //       );
+  //       Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
+  //     },
+  //   } as const;
+  // }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;

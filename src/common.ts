@@ -745,7 +745,7 @@ export function htmlEscape(text: string) {
   return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
 }
 
-export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
+export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
   return (histories: MyHistoryItem[]) => {
     const findIndex = histories.findIndex(
       (history) => history.url === url || history.lastVisitTime === lastVisitTime,

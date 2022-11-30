@@ -1,11 +1,11 @@
-import { State } from './types';
-import { setEvents, whichClass } from './common';
+import { Panes, State } from './types';
+// import { setEvents, whichClass } from './common';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
   addBookmark, addFolder, addStyle, hasClass, rmStyle, showMenu,
 } from './client';
 import {
-  Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store,
+  Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
 
 export function getSelecteds() {
@@ -40,44 +40,42 @@ export class PopupMenu extends HTMLElement {
   }
 }
 
-export type MultiSelectPaneType = Exclude<keyof NonNullable<Store['actions']['multiSelPanes']['initValue']>, 'all'>;
-
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
-  #className!: MultiSelectPaneType;
-  #header!: HTMLElement;
+  // eslint-disable-next-line no-use-before-define
+  #header!: PaneHeader;
   #maxWidth!: string;
   $buttons!: HTMLButtonElement[];
-  init(
-    className: MultiSelectPaneType,
-    header: HTMLElement,
-    $menu: PopupMenu,
-    deleteHandler: ($selecteds: HTMLElement[]) => void,
-  ) {
-    this.#className = className;
+  // eslint-disable-next-line no-use-before-define
+  init(header: PaneHeader, $menu: HTMLElement) {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
     header.appendChild(this);
-    setEvents($$byTag('button', this), {
-      click(e) {
-        const buttonClass = whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
-        switch (buttonClass) {
-          case 'multi-sel-menu-button':
-            showMenu($menu, false)(e);
-            e.stopImmediatePropagation();
-            break;
-          case 'del-multi-sel':
-            deleteHandler(getSelecteds());
-            e.stopImmediatePropagation();
-            break;
-          default:
-        }
-      },
+    $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
+      showMenu($menu, false)(e);
+      e.stopImmediatePropagation();
     }, true);
+    // setEvents($$byTag('button', this), {
+    //   click(e) {
+    //     const buttonClass =
+    // whichClass(['del-multi-sel', 'multi-sel-menu-button'] as const, this);
+    //     switch (buttonClass) {
+    //       case 'multi-sel-menu-button':
+    //         showMenu($menu, false)(e);
+    //         e.stopImmediatePropagation();
+    //         break;
+    //       case 'del-multi-sel':
+    //         deleteHandler(getSelecteds());
+    //         e.stopImmediatePropagation();
+    //         break;
+    //       default:
+    //     }
+    //   },
+    // }, true);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
     const [, show] = value.all
       ? [null, true]
-      : Object.entries(value).find(([key]) => key === this.#className) || [];
+      : Object.entries(value).find(([key]) => key === this.#header.paneName) || [];
     const isPre = !!value.all;
     const isShow = !!show;
     if (isPre && this.$buttons[0]?.style.display !== 'none') {
@@ -102,6 +100,10 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   }
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));
+    $byClass('del-multi-sel', this)?.addEventListener('click', (e) => {
+      store.dispatch('deleteSelecteds', this.#header.paneName);
+      e.stopImmediatePropagation();
+    }, true);
   }
 }
 
@@ -125,7 +127,7 @@ export class MutiSelectableItem extends HTMLElement {
   }
   select(selected?: boolean) {
     if (this.checkMultiSelect()) {
-      return false;
+      return this.isSelected;
     }
     const isSelected = selected ?? !this.classList.contains('selected');
     this.classList.toggle('selected', isSelected);
@@ -138,12 +140,12 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
-  protected $popupMenu!: PopupMenu;
+  // protected $popupMenu!: PopupMenu;
   abstract menuClickHandler(e: MouseEvent): void;
-  abstract multiSelPaneParams: {
-    className: MultiSelectPaneType,
-    deleteHandler: ($selecteds: HTMLElement[]) => void,
-  };
+  abstract paneName: Panes;
+  //   className: Panes,
+  //   // deleteHandler: ($selecteds: HTMLElement[]) => void,
+  // };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
@@ -152,13 +154,13 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
     const $menu = $byClass('main-menu', this)!;
     $byClass('main-menu-button', this)?.addEventListener('click', showMenu($menu, false));
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
-    this.$popupMenu = $byTag('popup-menu', this);
-    if (!(this.$popupMenu instanceof PopupMenu)) {
+    const $popupMenu = $byTag('popup-menu', this);
+    if (!($popupMenu instanceof PopupMenu)) {
       throw new Error('No popup found');
     }
-    this.$popupMenu.init(this.menuClickHandler.bind(this));
-    const { className, deleteHandler } = this.multiSelPaneParams;
-    this.$multiSelPane.init(className, this, this.$popupMenu, deleteHandler);
+    $popupMenu.init(this.menuClickHandler.bind(this));
+    // const { className } = this.multiSelPaneParams;
+    this.$multiSelPane.init(this, $popupMenu);
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -175,6 +177,9 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
           eventType: 'click',
           eventOnly: true,
         }),
+        deleteSelecteds: makeAction({
+          initValue: '' as Panes,
+        }),
       };
     }
     return {};
@@ -185,5 +190,17 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
       return;
     }
     store.subscribe('clickMainMenu', (_, __, dispatch, e) => clickMainMenu(e, dispatch));
+  }
+}
+
+export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
+  abstract paneName: Panes;
+  abstract deletesHandler(selectds: HTMLElement[], states: States, dispatch: Dispatch): void;
+  connect(store: Store) {
+    store.subscribe('deleteSelecteds', (changes, states, dispatch) => {
+      if (changes.newValue === this.paneName) {
+        this.deletesHandler(getSelecteds(), states, dispatch);
+      }
+    });
   }
 }

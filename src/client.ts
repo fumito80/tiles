@@ -660,7 +660,7 @@ export function setOpenPaths($folder: HTMLElement) {
 }
 
 export async function remeveBookmark($leaf: Leaf) {
-  await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
+  await chrome.bookmarks.remove($leaf.id);
   addChild($byClass('leaf-menu')!)($byClass('components')!);
   pipe(
     addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),

@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import { Options } from './types';
+import { MulitiSelectables, Options } from './types';
 import {
   setEvents, addListener,
   last, getColorWhiteness, lightColorWhiteness, camelToSnake,
@@ -32,7 +32,7 @@ const excludeClasses = [
   'collapse-tabs',
   'collapse-tab',
   'window', 'tab',
-  'history-title',
+  'history', 'history-title',
   'tabs-menu-button',
   'folder-menu-button',
 ];
@@ -43,11 +43,11 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
     return;
   }
   dispatch('multiSelPanes', {
-    leafs: false, tabs: false, history: false, all: false,
+    bookmarks: false, tabs: false, histories: false, all: false,
   });
   if (hasClass($target, 'leaf-menu-button')) {
     showMenu('leaf-menu')(e);
-    dispatch('multiSelPanes', { leafs: false });
+    dispatch('multiSelPanes', { bookmarks: false });
     return;
   }
   if (hasClass($target, 'main-menu-button')) {
@@ -61,8 +61,8 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
 
 async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
   if (e.key === 'Shift') {
-    const { leafs, tabs, history } = await states('multiSelPanes');
-    if (leafs || tabs || history) {
+    const { bookmarks, tabs, histories } = await states('multiSelPanes');
+    if (bookmarks || tabs || histories) {
       return;
     }
     dispatch('multiSelPanes', { all: true });
@@ -148,16 +148,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }),
       multiSelPanes: makeAction({
         initValue: {
-          leafs: false,
+          bookmarks: false,
           tabs: false,
-          history: false,
+          histories: false,
           all: false,
-        } as {
-          leafs?: boolean,
-          tabs?: boolean,
-          history?: boolean,
-          all?: boolean,
-        },
+        } as MulitiSelectables,
       }),
       keydownMain: makeAction({
         target: this,

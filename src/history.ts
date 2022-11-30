@@ -9,20 +9,20 @@ import {
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass,
 } from './client';
 import {
-  delayMultiSelect,
-  getHistoryById, getLocaleDate, isDateEq, pick, pipe, removeUrlHistory, setLocal,
+  delayMultiSelect, getHistoryById, getLocaleDate, isDateEq, map, pick, pipe, setLocal,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
 import {
   getVScrollData,
   resetVScrollData,
+  resetVScrollHeight,
   rowSetterHistory,
   searchCache,
   setScrollTop,
   setVScroll,
 } from './vscroll';
-import { MutiSelectableItem, PaneHeader } from './multi-sel-pane';
+import { MulitiSelectablePaneBody, MutiSelectableItem, PaneHeader } from './multi-sel-pane';
 
 type ResetParams = {
   initialize?: boolean,
@@ -61,38 +61,46 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
+function removeHistory(ids: string[]) {
+  let [head, ...rest] = ids;
+  return (histories: MyHistoryItem[]) => histories.filter((row) => {
+    const found = row.id! === head;
+    if (found) {
+      [head = '.', ...rest] = rest;
+    }
+    return !found;
+  });
+}
+
 export class HistoryItem extends MutiSelectableItem {
   async getUrl() {
     const { url } = await getHistoryById(this.id);
-    return url;
+    return url!;
   }
   async open(options: Options) {
     if (this.checkMultiSelect()) {
       return;
     }
-    // const $url = $target.title ? $target : $parent;
     const url = await this.getUrl();
-    if (!url) {
-      return;
-    }
-    // if (hasClass($target, 'icon-x')) {
-    //   setAnimationClass('hilite')($parent);
-    //   chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
-    //   return;
-    // }
     createNewTab(options, url);
+  }
+  override select(selected?: boolean) {
+    const isSelected = super.select(selected);
+    getHistoryById(this.id).then((data) => {
+      // eslint-disable-next-line no-param-reassign
+      data.selected = isSelected;
+    });
+    return isSelected;
   }
   async delete() {
     const url = await this.getUrl();
-    if (!url) {
-      return;
-    }
     setAnimationClass('hilite')(this);
-    chrome.history.deleteUrl({ url }).then(() => resetVScrollData(removeUrlHistory(url)));
+    return chrome.history.deleteUrl({ url });
   }
 }
 
-export class History extends HTMLDivElement implements IPubSubElement, ISearchable {
+export class History extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
+  readonly paneName = 'histories';
   #options!: Options;
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
@@ -100,6 +108,7 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
   #rowHeight!: number;
   #timerMultiSelect!: number;
   #lastClickedId!: string | undefined;
+  #histories!: MyHistoryItem[];
   private $rows!: HTMLElement;
   private promiseInitHistory!: Promise<MyHistoryItem[]>;
   init(
@@ -112,8 +121,8 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     this.promiseInitHistory = promiseInitHistory;
     this.$rows = $byClass('rows', this)!;
     if (isSearching) {
-      const header = '<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>';
-      const line = '<div class="history" draggable="true" style="transform: translateY(-10000px);"></div>';
+      const header = '<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>';
+      const line = '<history-item class="history" draggable="true" style="transform: translateY(-10000px);"></history-item>';
       const lines = Array(32).fill(line).join('');
       insertHTML('afterbegin', header + lines)(this.firstElementChild);
     } else {
@@ -129,7 +138,10 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     dispatch('historyCollapseDate', false, true);
   }
   async resetHistory({ initialize }: ResetParams = {}) {
-    const [init, ...tail] = await this.promiseInitHistory;
+    if (initialize) {
+      this.#histories = await this.promiseInitHistory;
+    }
+    const [init, ...tail] = this.#histories;
     let histories = [init, ...tail];
     if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
       const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
@@ -194,6 +206,18 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';
   }
+  // eslint-disable-next-line class-methods-use-this
+  deletesHandler($selecteds: HTMLElement[]) {
+    const [idList, promiseUrls] = $selecteds
+      .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
+      .reduce(
+        ([ids, urls], $history) => [[...ids, $history.id], [...urls, $history.getUrl()]],
+        [[], []] as [string[], Promise<string>[]],
+      );
+    Promise.all(promiseUrls)
+      .then((urls) => urls.map((url) => ({ url })).forEach(chrome.history.deleteUrl));
+    console.log(idList);
+  }
   selectWithShift($target: HistoryItem) {
     if (this.#lastClickedId !== $target.id) {
       // const Histories = [] as HistoryItem[];
@@ -230,14 +254,19 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     const $history = $target.parentElement;
     if ($history instanceof HistoryItem) {
       if (hasClass($target, 'icon-x')) {
-        $history.delete();
+        $history.delete().then(() => {
+          const [, id] = $history.id.split('-');
+          const newData = resetVScrollData(removeHistory([id]));
+          resetVScrollHeight(this, this.#rowHeight, newData.length);
+          this.#histories = removeHistory([id])(this.#histories);
+        });
         return;
       }
-      const { history, all } = await states('multiSelPanes');
-      if (history || all) {
+      const { histories, all } = await states('multiSelPanes');
+      if (histories || all) {
         $history.select();
         if (all) {
-          dispatch('multiSelPanes', { history: true });
+          dispatch('multiSelPanes', { histories: true });
         }
         if (e.shiftKey) {
           this.selectWithShift($history);
@@ -261,13 +290,17 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
     // createNewTab(this.#options, url);
   }
   // eslint-disable-next-line class-methods-use-this
-  multiSelect({ history: multiSelect }: { history?: boolean }) {
+  multiSelect({ histories: multiSelect }: { histories?: boolean }) {
     if (!multiSelect) {
-      // this.getWindows()
-      //   .flatMap((win) => win.getTabs())
-      //   .filter((tab) => tab.selected)
-      //   .forEach((tab) => tab.select(false));
-      // this.$lastClickedTab = undefined;
+      // applyVScrollData((data) => {
+      //   data.filter(propEq('selected', true)).forEach((selected) => {
+      //     // eslint-disable-next-line no-param-reassign
+      //     selected!.selected = false;
+      //   });
+      // });
+      // this.resetHistory();
+      resetVScrollData(map((row) => ({ ...row, selected: false })));
+      this.#lastClickedId = undefined;
     }
   }
   mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
@@ -280,8 +313,8 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
           if (dragging) {
             return;
           }
-          dispatch('multiSelPanes', { history: !multiSelPanes?.history });
-          $history.preMultiSelect(!multiSelPanes?.history);
+          dispatch('multiSelPanes', { histories: !multiSelPanes?.histories });
+          $history.preMultiSelect(!multiSelPanes?.histories);
         },
         delayMultiSelect,
       );
@@ -312,7 +345,8 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
       }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('clickHistory', (_, states, dispatch, e) => this.clickItem(e, states, dispatch));
     store.subscribe('clearSearch', (_, __, dispatch) => this.clearSearch(dispatch));
     store.subscribe('resetHistory', (changes) => this.resetHistory(changes.newValue));
@@ -327,21 +361,26 @@ export class History extends HTMLDivElement implements IPubSubElement, ISearchab
 }
 
 export class HeaderHistory extends PaneHeader implements IPubSubElement {
+  readonly paneName = 'histories';
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
   // eslint-disable-next-line class-methods-use-this
-  get multiSelPaneParams() {
-    return {
-      className: 'history',
-      deleteHandler: ($selecteds: HTMLElement[]) => {
-        $selecteds
-          .filter(($el): $el is History => $el instanceof History);
-        // .map(($history) => $history.url)
-        // .forEach(chrome.history.deleteUrl);
-      },
-    } as const;
-  }
+  // get multiSelPaneParams() {
+  //   return {
+  //     className: 'histories',
+  //     // deleteHandler: ($selecteds: HTMLElement[]) => {
+  //     //   const [idList, promiseUrls] = $selecteds
+  //     //     .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
+  //     //     .reduce(
+  //     //       ([ids, urls], $history) => [[...ids, $history.id], [...urls, $history.getUrl()]],
+  //     //       [[], []] as [string[], Promise<string>[]],
+  //     //     );
+  //     //   Promise.all(promiseUrls)
+  //     //     .then((urls) => urls.map((url) => ({ url })).forEach(chrome.history.deleteUrl));
+  //     // },
+  //   } as const;
+  // }
   // eslint-disable-next-line class-methods-use-this
   menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;

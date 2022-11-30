@@ -58,7 +58,9 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
-export type MyHistoryItem = Partial<chrome.history.HistoryItem & { headerDate: boolean }>;
+export type MyHistoryItem = Partial<
+  chrome.history.HistoryItem & { headerDate: boolean, selected: boolean }
+>;
 
 export type ColorPalette = [
   paneBg: string,
@@ -70,8 +72,10 @@ export type ColorPalette = [
 
 export const defaultColorPalette: ColorPalette = ['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
+const panes = ['histories', 'tabs', 'bookmarks'] as const;
+
 export const initialOptions = {
-  panes: ['histories', 'tabs', 'bookmarks'] as const,
+  panes,
   bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
@@ -90,6 +94,11 @@ export const initialOptions = {
   fontSize: '0.9em',
   collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
+};
+
+export type Panes = typeof panes[number];
+export type MulitiSelectables = {
+  [key in Panes | 'all']?: boolean;
 };
 
 export const initialState = {

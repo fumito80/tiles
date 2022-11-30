@@ -4,12 +4,13 @@ import {
 } from './common';
 import {
   $, $byClass,
-  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr,
+  addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, toggleClass,
 } from './client';
 
 const invisible = { transform: 'translateY(-10000px)' };
 
 export const searchCache = new Map<string, Array<MyHistoryItem>>();
+
 let vScrollHandler: Parameters<HTMLElement['removeEventListener']>[1];
 let vScrollData: MyHistoryItem[];
 
@@ -34,7 +35,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url, title, lastVisitTime, headerDate, id,
+      url, title, lastVisitTime, headerDate, id, selected,
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -53,6 +54,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addStyle({ transform })($currentDate);
       }
       pipe(
+        rmClass('selected'),
         setHTML(getLocaleDate(lastVisitTime)!),
         rmStyle('background-image'),
         addClass('header-date'),
@@ -66,6 +68,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
     const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
     pipe(
+      toggleClass('selected', !!selected),
       rmClass('hilite', 'header-date'),
       setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
@@ -76,6 +79,23 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
 }
 
 export type VScrollRowSetter = typeof rowSetterHistory;
+
+function getRowsPadding($container: HTMLDivElement) {
+  const $rows = $byClass('rows', $container)!;
+  const { paddingTop, paddingBottom } = getComputedStyle($rows);
+  return Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
+}
+
+export function resetVScrollHeight(
+  $container: HTMLDivElement,
+  rowHeight: State['vscrollProps']['rowHeight'],
+  dataCount: number,
+) {
+  const padding = getRowsPadding($container);
+  const $fakeBottom = $byClass('v-scroll-fake-bottom', $container)!;
+  const vScrollHeight = rowHeight * dataCount;
+  addStyle('height', `${vScrollHeight - $container.offsetHeight + padding}px`)($fakeBottom);
+}
 
 export async function setVScroll(
   $container: HTMLDivElement,
@@ -93,6 +113,7 @@ export async function setVScroll(
   const padding = Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
   addStyle('height', `${$container.offsetHeight - padding}px`)($rows);
   $container.removeEventListener('scroll', vScrollHandler);
+  // resetVScrollHeight($container, rowHeight, data.length);
   const $fakeBottom = $byClass('v-scroll-fake-bottom', $container)!;
   rmStyle('height')($fakeBottom);
   const vScrollHeight = rowHeight * data.length;
@@ -114,6 +135,7 @@ export function resetVScrollData(
   vScrollData = cbVScrollData(vScrollData);
   searchCache.clear();
   $byClass('v-scroll')!.dispatchEvent(new Event('scroll'));
+  return vScrollData;
 }
 
 export function getVScrollData() {
