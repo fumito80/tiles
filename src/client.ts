@@ -291,10 +291,8 @@ export async function createNewTab(options: Options, url: string) {
   chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
-export function getBookmark(id: string) {
-  return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
-    chrome.bookmarks.get(id, ([treeNode]) => resolve(treeNode));
-  });
+export async function getBookmark(id: string) {
+  return chrome.bookmarks.get(id).then(([tab]) => tab);
 }
 
 export function setHasChildren($target: HTMLElement) {

@@ -16,7 +16,9 @@ import { ISearchable, SearchParams } from './search';
 import {
   ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
-import { OpenBookmarkType, Options, State } from './types';
+import {
+  MulitiSelectables, OpenBookmarkType, Options, State,
+} from './types';
 
 export class Leaf extends MutiSelectableItem {
   updateTitle(title: string) {
@@ -242,7 +244,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   deletesHandler($selecteds: HTMLElement[]) {
     $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf).forEach(remeveBookmark);
   }
-  multiSelectLeafs({ leafs: multiSelect }: { leafs?: boolean, all?: boolean }) {
+  multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
     if (!multiSelect) {
       $$('.leafs .selected, .folders .selected')
         .filter(($el): $el is Leaf => $el instanceof Leaf)

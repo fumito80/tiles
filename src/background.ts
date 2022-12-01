@@ -170,16 +170,16 @@ export const mapMessagesPtoB = {
       .then(([{ windowId }]) => ({ windowId }))
       .catch((reason) => ({ windowId: -1, message: reason.message }));
   },
-  // [CliMessageTypes.moveTabs]: (
-  //   { payload: { tabIds, incognito } }: PayloadAction<{ tabIds: string[], incognito: boolean }>,
-  // ) => {
-  //   const [url1, ...rest] = urls;
-  //   return chrome.windows.create({ url: url1, incognito }).then((win) => {
-  //     rest.forEach(async (url) => {
-  //       await chrome.tabs.create({ windowId: win!.id, url, active: false });
-  //     });
-  //   });
-  // },
+  [CliMessageTypes.openUrls]: (
+    { payload: { urls, windowId, index } }: PayloadAction<{
+      urls: string[], windowId: number, index?: number,
+    }>,
+  ) => {
+    const tabs = urls.reverse().map((url) => chrome.tabs.create({
+      windowId, url, index, active: false,
+    }));
+    return Promise.all(tabs).then(() => chrome.windows.update(windowId, { focused: true }));
+  },
 };
 
 setMessageListener(mapMessagesPtoB);

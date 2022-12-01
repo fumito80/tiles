@@ -24,7 +24,7 @@ import {
   $byClass,
   $byTag,
   hasClass,
-  addBookmark,
+  // addBookmark,
   getBookmark,
   $$byClass,
   panes,
@@ -146,8 +146,11 @@ async function dropWithTabs(
   if (sourceClass === 'leaf') {
     Promise.resolve(sourceIds.map(getBookmark))
       .then((tabs) => Promise.all(tabs))
-      .then((tabs) => tabs.map((tab) => tab.url!).reverse())
-      .then((urls) => urls.map((url) => chrome.tabs.create({ index, url, windowId })));
+      .then((tabs) => tabs.map((tab) => tab.url!))
+      .then((urls) => postMessage({
+        type: CliMessageTypes.openUrls, payload: { urls, windowId, index },
+      }))
+      .then(window.close);
     return;
   }
   // merge window
@@ -221,22 +224,28 @@ async function dropWithTabs(
 
 async function dropFromHistory(
   $dropTarget: HTMLElement,
-  sourceId: string,
+  elementIds: string[],
   dropAreaClass: (typeof dropAreaClasses)[number],
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
+  dispatch: Dispatch,
 ) {
-  const { url, title } = { url: '', title: '' }; // await getHistoryById(sourceId);
+  // const { url, title } = { url: '', title: '' }; // await getHistoryById(sourceId);
   if (dropAreaClass === 'new-window-plus') {
-    chrome.windows.create({ url });
+    // chrome.windows.create({ url });
+    dispatch('openHistories', { elementIds, incognito: false });
     return;
   }
   if (!hasClass($dropTarget, 'tab-wrap')) {
-    addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+    // addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
+    dispatch('addBookmarksHistories', { elementIds, bookmarkDest });
     return;
   }
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
   const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
-  chrome.tabs.create({ index, url, windowId }, window.close);
+  dispatch('openHistories', {
+    elementIds, index, windowId, incognito: false,
+  });
+  // chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
 export function dropBmInNewWindow(
@@ -337,8 +346,8 @@ function resetMultiSelect($target: HTMLElement, $selecteds: HTMLElement[], dispa
   }
   if ($target instanceof MutiSelectableItem) {
     const className = $target.constructor.name;
-    const selectedLeafs = $selecteds.filter(($el) => $el.constructor.name === className);
-    if (selectedLeafs.length === 0) {
+    const selecteds = $selecteds.filter(($el) => $el.constructor.name === className);
+    if (selecteds.length === 0) {
       dispatch('multiSelPanes', { all: false });
       return [$target];
     }
@@ -429,14 +438,15 @@ export default class DragAndDropEvents implements IPubSubElement {
   async drop(e: DragEvent, states: States, dispatch: Dispatch) {
     const $dropArea = e.target as HTMLElement;
     const sourceIdCsv = e.dataTransfer?.getData('application/source-id')!;
-    const [sourceId, ...sourceIds] = sourceIdCsv.split(',');
+    const sourceIds = sourceIdCsv.split(',');
+    const [sourceId] = sourceIds;
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
       states('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, dispatch));
+      dispatch('multiSelPanes', { all: false });
       return;
     }
-    dispatch('multiSelPanes', { all: false });
     const $dropTarget = $dropArea.parentElement?.id
       ? $dropArea.parentElement!
       : $dropArea.parentElement!.parentElement!;
@@ -462,9 +472,11 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     // from history
     if (sourceClass === 'history') {
-      dropFromHistory($dropTarget, sourceId, dropAreaClass, bookmarkDest);
+      await dropFromHistory($dropTarget, sourceIds, dropAreaClass, bookmarkDest, dispatch);
+      dispatch('multiSelPanes', { all: false });
       return;
     }
+    dispatch('multiSelPanes', { all: false });
     // from tabs to bookmarks/folder
     const position = positions[dropAreaClass];
     const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
@@ -474,13 +486,13 @@ export default class DragAndDropEvents implements IPubSubElement {
       && !isDroppedTab
       && (dropPane === 'leafs' || dropAreaClass === 'drop-folder' || isRootFolder)
     ) {
-      const tabs = await Promise.all([sourceId, ...sourceIds].map(getTabInfo));
+      const tabs = await Promise.all(sourceIds.map(getTabInfo));
       addBookmarksFromTabs(tabs, bookmarkDest);
       return;
     }
     // from tabs to window of tabs
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
-      dropWithTabs($dropTarget, [sourceId, ...sourceIds], sourceClass, dropAreaClass, dispatch);
+      dropWithTabs($dropTarget, sourceIds, sourceClass, dropAreaClass, dispatch);
       return;
     }
     // from window of tabs
@@ -498,11 +510,11 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     // bookmark/folder to new window
     if (dropAreaClass === 'new-window-plus') {
-      dropBmInNewWindow([sourceId, ...sourceIds], sourceClass);
+      dropBmInNewWindow(sourceIds, sourceClass);
       return;
     }
     // bookmark/folder move each other
-    moveBookmarks(dropAreaClass, bookmarkDest, [sourceId, ...sourceIds], destId);
+    moveBookmarks(dropAreaClass, bookmarkDest, sourceIds, destId);
   }
   actions() {
     return {
