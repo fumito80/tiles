@@ -392,7 +392,15 @@ export default class DragAndDropEvents implements IPubSubElement {
       addClass('drag-source'),
     ));
     document.body.append(...$$('[role="menu"]'));
-    const $draggable = getDraggableElement($dragTargets as HTMLElement[]);
+    const $draggable = when(className === 'history')
+      .then(() => {
+        const $draggableClone = $byClass('draggable-clone')!;
+        if ($draggableClone.children.length > 1) {
+          $target.classList.add('selected');
+        }
+        return $draggableClone;
+      })
+      .else(() => getDraggableElement($dragTargets as HTMLElement[]));
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', ids.join(','));
     e.dataTransfer!.setData('application/source-class', className!);

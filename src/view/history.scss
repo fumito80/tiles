@@ -156,3 +156,19 @@ app-main:not(.disable-zoom-history) {
     }
   }
 }
+
+.header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  content: '\e917';
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-family: "glyphs";
+  line-height: 1;
+  left: 5px;
+  font-size: 1.2em;
+  color: $common-marker;
+}
+
+.theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  color: deepskyblue;
+}
