@@ -112,13 +112,19 @@
   }
 }
 
-.header-histories:not(.date-collapsed) {
-  .icon-calendar-plus-solid {
-    display: none;
+.header-histories {
+  .icon-history {
+    font-size: 1.1em;
   }
 
-  .icon-calendar-minus-solid {
-    display: inline-block;
+  &:not(.date-collapsed) {
+    .icon-calendar-plus-solid {
+      display: none;
+    }
+
+    .icon-calendar-minus-solid {
+      display: inline-block;
+    }
   }
 }
 

@@ -628,18 +628,22 @@ export function openFolder(folderId: string, incognito = false) {
 
 type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
-export function showMenu(menuClassOrElement: MenuClass | HTMLElement, calcPos = true) {
+export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePos = false) {
   return (e: MouseEvent) => {
+    e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
     const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
     if ($target.parentElement !== $menu.parentElement) {
       $target.insertAdjacentElement('afterend', $menu);
     }
-    if (!calcPos) {
-      return;
-    }
     const rect = $target.getBoundingClientRect();
     const { width, height } = $menu.getBoundingClientRect();
+    if (relativePos) {
+      if (rect.x - width < 5) {
+        addStyle({ left: `${$target.offsetLeft}px` })($menu);
+      }
+      return;
+    }
     const left = (rect.left + rect.width - 5) <= width
       ? `${rect.left}px`
       : `${rect.left - width + rect.width}px`;

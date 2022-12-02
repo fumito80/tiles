@@ -157,6 +157,10 @@ app-main:not(.drag-start) {
 
       >.tab-wrap {
         background-color: $dark-icon-color;
+
+        &.current-tab {
+          background-color: var(--key-bg);
+        }
       }
     }
   }

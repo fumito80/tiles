@@ -56,17 +56,6 @@ function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: bo
   return results;
 }
 
-// function removeHistory(ids: string[]) {
-//   let [head, ...rest] = ids;
-//   return (histories: MyHistoryItem[]) => histories.filter((row) => {
-//     const found = row.id! === head;
-//     if (found) {
-//       [head = '.', ...rest] = rest;
-//     }
-//     return !found;
-//   });
-// }
-
 export class HistoryItem extends MutiSelectableItem {
   async open(url: string, options: Options) {
     if (this.checkMultiSelect()) {
@@ -223,8 +212,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';
   }
-  // eslint-disable-next-line class-methods-use-this
-  deletesHandler($selecteds: HTMLElement[], store: Store) {
+  deletesHandler($selecteds: HTMLElement[]) {
     const promiseUrls = $selecteds
       .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
       .map(($history) => {
@@ -235,35 +223,41 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     Promise.all(promiseUrls)
       .then((urls) => urls.map(([url, id]) => chrome.history.deleteUrl({ url }).then(() => id)))
       .then((ids) => Promise.all(ids))
-      .then((ids) => store.dispatch('deleteVScroll', ids));
-    // .then((ids) => {
-    //   const newData = resetVScrollData(removeHistory(ids));
-    //   resetVScrollHeight(this, this.#rowHeight, newData.length);
-    //   this.#histories = removeHistory(ids)(this.#histories);
-    // });
+      .then((ids) => {
+        this.applyData((histories) => {
+          let [head, ...rest] = ids;
+          return histories.filter((row) => {
+            const found = row.id! === head;
+            if (found) {
+              [head = '.', ...rest] = rest;
+            }
+            return !found;
+          });
+        });
+      });
   }
-  selectWithShift($target: HistoryItem) {
-    if (this.#lastClickedId !== $target.id) {
-      // const Histories = [] as HistoryItem[];
-      // let started = false;
-      // for (
-      //   let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
-      //   next != null;
-      //   next = next.nextElementSibling
-      // ) {
-      //   if (next === $target || next === this.$lastClickedTab) {
-      //     if (started) {
-      //       OpenTabs.push(next as OpenTab);
-      //       break;
-      //     }
-      //     started = true;
-      //   }
-      //   if (started && next instanceof OpenTab) {
-      //     OpenTabs.push(next);
-      //   }
-      // }
-      // OpenTabs.forEach(($tab) => $tab.select(true));
-    }
+  selectWithShift($target: HistoryItem, lastElementId: string) {
+    const [, lastClickedId] = lastElementId.split('-');
+    const [, clickedId] = $target.id.split('-');
+    this.applyData((data) => {
+      const newDate = [] as MyHistoryItem[];
+      let ranged = false;
+      for (let i = 0; i < data.length; i += 1) {
+        const row = data[i];
+        const bound = [lastClickedId, clickedId].includes(row.id!);
+        if (ranged || bound) {
+          newDate.push({ ...row, selected: true });
+          if (ranged && bound) {
+            newDate.push(...data.slice(i + 1));
+            break;
+          }
+          ranged = true;
+        } else {
+          newDate.push(row);
+        }
+      }
+      return newDate;
+    });
   }
   async clickItem(e: MouseEvent, states: Store['getStates'], dispatch: Store['dispatch']) {
     const $target = e.target as HTMLElement;
@@ -298,8 +292,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         if (all) {
           dispatch('multiSelPanes', { histories: true });
         }
-        if (e.shiftKey) {
-          this.selectWithShift($history);
+        if (e.shiftKey && this.#lastClickedId && this.#lastClickedId !== $target.id) {
+          this.selectWithShift($history, this.#lastClickedId);
         }
         this.#lastClickedId = $history.id;
         return;
@@ -308,7 +302,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       $history.open(url!, this.#options);
     }
   }
-  // eslint-disable-next-line class-methods-use-this
   multiSelect({ histories: multiSelect }: MulitiSelectables) {
     if (!multiSelect) {
       this.applyData((data) => data.map((row) => ({ ...row, selected: false })));
@@ -419,17 +412,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }),
       addBookmarksHistories: makeAction({
         initValue: {
-          elementIds: [],
-          bookmarkDest: {},
-          // windowId: undefined,
-          // index: undefined,
-          // incognito: false,
-        } as {
-          elementIds: string[],
-          bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
-          // windowId?: number | undefined,
-          // index?: number | undefined,
-          // incognito: boolean,
+          elementIds: [] as string[],
+          bookmarkDest: {} as chrome.bookmarks.BookmarkDestinationArg,
         },
       }),
       resetHistory: makeAction({
@@ -451,9 +435,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         eventOnly: true,
       }),
       selectVScroll: makeAction({
-        initValue: [] as string[],
-      }),
-      deleteVScroll: makeAction({
         initValue: [] as string[],
       }),
     };
@@ -485,20 +466,20 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
+  multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
+    // const isMultiSelect = Object.values(changes).some((type) => type);
+    const isMultiSelect = changes.histories;
+    $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
+  }
   // eslint-disable-next-line class-methods-use-this
   menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
     switch ($target.dataset.value) {
       case 'open-new-tab': {
-        // getSelecteds().reverse()
-        //   .filter(($el): $el is Leaf => $el instanceof Leaf)
-        //   .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
         break;
       }
       case 'open-incognito':
       case 'open-new-window': {
-        // const selecteds = getSelecteds().map(prop('id'));
-        // dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
         break;
       }
       default:
@@ -518,5 +499,6 @@ export class HeaderHistory extends PaneHeader implements IPubSubElement {
   override connect(store: Store) {
     super.connect(store);
     store.subscribe('historyCollapseDate', (changes) => this.toggleCollapseIcon(changes.newValue));
+    store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
   }
 }

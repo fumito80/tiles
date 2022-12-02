@@ -48,9 +48,9 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   init(header: PaneHeader, $menu: HTMLElement) {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
-    header.appendChild(this);
+    header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
-      showMenu($menu, false)(e);
+      showMenu($menu, true)(e);
       e.stopImmediatePropagation();
     }, true);
   }
@@ -128,9 +128,8 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
     this.includeUrl = settings.includeUrl;
+    $byClass('main-menu-button', this)?.addEventListener('click', showMenu(this.$mainMenu, true));
     this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
-    const $menu = $byClass('main-menu', this)!;
-    $byClass('main-menu-button', this)?.addEventListener('click', showMenu($menu, false));
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     const $popupMenu = $byTag('popup-menu', this);
     if (!($popupMenu instanceof PopupMenu)) {
@@ -149,11 +148,6 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
           eventType: 'click',
           eventProcesser: (_, currentValue) => !currentValue,
         }),
-        clickMainMenu: makeAction({
-          target: this.$mainMenu,
-          eventType: 'click',
-          eventOnly: true,
-        }),
         deleteSelecteds: makeAction({
           initValue: '' as Panes,
         }),
@@ -163,10 +157,7 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   }
   connect(store: Store) {
     this.$multiSelPane.connect(store);
-    if (!hasClass(this, 'end')) {
-      return;
-    }
-    store.subscribe('clickMainMenu', (_, e) => clickMainMenu(e, store.dispatch));
+    this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store.dispatch));
   }
 }
 

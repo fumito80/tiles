@@ -124,7 +124,6 @@ async function dropWithTabs(
   sourceIds: string[],
   sourceClass: SourceClass,
   dropAreaClass: (typeof dropAreaClasses)[number],
-  // bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
   dispatch: Dispatch,
 ) {
   // tab to new window
@@ -229,14 +228,11 @@ async function dropFromHistory(
   bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
   dispatch: Dispatch,
 ) {
-  // const { url, title } = { url: '', title: '' }; // await getHistoryById(sourceId);
   if (dropAreaClass === 'new-window-plus') {
-    // chrome.windows.create({ url });
     dispatch('openHistories', { elementIds, incognito: false });
     return;
   }
   if (!hasClass($dropTarget, 'tab-wrap')) {
-    // addBookmark(bookmarkDest.parentId, { url, title, ...bookmarkDest });
     dispatch('addBookmarksHistories', { elementIds, bookmarkDest });
     return;
   }
@@ -245,7 +241,6 @@ async function dropFromHistory(
   dispatch('openHistories', {
     elementIds, index, windowId, incognito: false,
   });
-  // chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
 export function dropBmInNewWindow(

@@ -41,10 +41,8 @@ export function makeHistory({
     const lastVisitDate = getLocaleDate(lastVisitTime);
     return `<history-item class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</history-item>`;
   }
-  // const dt = new Date(lastVisitTime!).toLocaleString();
   const style = makeStyleIcon(url);
   const text = title || url;
-  // const tooltip = htmlEscape(`${title}\n${dt}\n${url}`);
   return `
     <history-item class="history" draggable="true" id="hst-${id}" style="${style}">
       <div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>
