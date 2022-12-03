@@ -923,9 +923,9 @@ export function getChromeId(preId: number | string) {
   return Number(id);
 }
 
-export function getHistoryData() {
+export function getHistoryData(maxResults = 99999) {
   const startTime = Date.now() - pastMSec;
-  return chrome.history.search({ text: '', startTime, maxResults: 99999 });
+  return chrome.history.search({ text: '', startTime, maxResults });
 }
 
 export function getHistoryDataByWorker() {

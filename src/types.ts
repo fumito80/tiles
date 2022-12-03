@@ -20,6 +20,7 @@ export type StoredElements = {
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
 export type MapMessagesBtoP = typeof mapMessagesBtoP;
 
+export const historyHtmlCount = 32;
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
 export const initialSettings = {

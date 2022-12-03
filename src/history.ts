@@ -18,6 +18,7 @@ import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
 import { rowSetterHistory, VScrollRowSetter } from './vscroll';
 import { MulitiSelectablePaneBody, MutiSelectableItem, PaneHeader } from './multi-sel-pane';
+import { dialog } from './dialogs';
 
 type ResetParams = {
   initialize?: boolean,
@@ -79,6 +80,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   #timerMultiSelect!: number;
   #lastClickedId!: string | undefined;
   #histories!: MyHistoryItem[];
+  private preSelectAll = false;
   private $draggableClone!: HTMLElement;
   private $rows!: HTMLElement;
   private promiseInitHistory!: Promise<MyHistoryItem[]>;
@@ -212,7 +214,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.setScrollTop(this.#rowHeight * index);
     this.#jumpDate = '';
   }
-  deletesHandler($selecteds: HTMLElement[]) {
+  async deletesHandler($selecteds: HTMLElement[]) {
+    const count = this.hookData((data) => data.filter(propEq('selected', true))).length;
+    const ret = await dialog.confirm(`Are you sure you want to delete ${count} selected items`);
+    if (!ret) {
+      return;
+    }
     const promiseUrls = $selecteds
       .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
       .map(($history) => {
@@ -236,17 +243,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         });
       });
   }
-  // eslint-disable-next-line class-methods-use-this
-  selectDateAllInit($headerDate: HTMLElement) {
-    for (
-      let $next = $headerDate.nextElementSibling;
-      $next && !$next.classList.contains('header-date');
-      $next = $next?.nextElementSibling ?? null
-    ) {
-      $next?.classList.add('selected');
+  selectDateAll($headerDate: HTMLElement, preSelect = false) {
+    if (this.preSelectAll) {
+      this.preSelectAll = false;
+      return;
     }
-  }
-  selectDateAll($headerDate: HTMLElement) {
+    this.preSelectAll = preSelect;
     const currentDate = $headerDate.textContent;
     this.applyData((data) => {
       const newData = [];
@@ -315,7 +317,17 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         const { url } = this.getHistoryById($history.id);
         $history.delete(url!).then(() => {
           const [, id] = $history.id.split('-');
-          this.applyData((data) => data.filter((row) => row.id !== id));
+          this.applyData((data) => {
+            const newData = [] as MyHistoryItem[];
+            for (let i = 0; i < data.length; i += 1) {
+              if (data[i].id === id) {
+                newData.push(...data.slice(i + 1));
+                break;
+              }
+              newData.push(data[i]);
+            }
+            return newData;
+          });
         });
         return;
       }
@@ -323,12 +335,17 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       if (histories || all) {
         const selected = $history.select();
         const [, id] = $history.id.split('-');
-        this.applyData((data) => data.map((row) => {
-          if (row.id !== id) {
-            return row;
+        this.applyData((data) => {
+          const newData = [] as MyHistoryItem[];
+          for (let i = 0; i < data.length; i += 1) {
+            if (data[i].id === id) {
+              newData.push({ ...data[i], selected }, ...data.slice(i + 1));
+              break;
+            }
+            newData.push(data[i]);
           }
-          return { ...row, selected };
-        }));
+          return newData;
+        });
         if (all) {
           dispatch('multiSelPanes', { histories: true });
         }
@@ -361,8 +378,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             return;
           }
           dispatch('multiSelPanes', { histories: !multiSelPanes?.histories });
+          if (multiSelPanes?.histories) {
+            return;
+          }
           if (isHeader) {
-            this.selectDateAllInit($history);
+            this.selectDateAll($history, true);
             return;
           }
           $history.preMultiSelect(!multiSelPanes?.histories);

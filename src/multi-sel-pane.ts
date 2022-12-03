@@ -83,7 +83,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));
     $byClass('del-multi-sel', this)?.addEventListener('click', (e) => {
-      store.dispatch('deleteSelecteds', this.#header.paneName);
+      store.dispatch('deleteSelecteds', this.#header.paneName, true);
       e.stopImmediatePropagation();
     }, true);
   }
@@ -150,6 +150,7 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
         }),
         deleteSelecteds: makeAction({
           initValue: '' as Panes,
+          force: true,
         }),
       };
     }

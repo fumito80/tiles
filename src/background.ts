@@ -7,6 +7,7 @@ import {
   HtmlBookmarks,
   CliMessageTypes,
   PayloadAction,
+  historyHtmlCount,
 } from './types';
 
 import {
@@ -63,8 +64,8 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData().then(addHeadersHistory);
-  const html = histories.slice(0, 32).map(makeHtmlHistory).join('');
+  const histories = await getHistoryData(historyHtmlCount).then(addHeadersHistory);
+  const html = histories.map(makeHtmlHistory).join('');
   const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
   return setLocal({ htmlHistory });
 }
@@ -73,7 +74,7 @@ let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
 
 async function onVisitRemoved() {
   clearTimeout(timeoutRemoveHistory);
-  timeoutRemoveHistory = setTimeout(setHtmlHistory, 200);
+  timeoutRemoveHistory = setTimeout(setHtmlHistory, 500);
 }
 
 let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
