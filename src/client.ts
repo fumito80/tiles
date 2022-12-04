@@ -733,3 +733,7 @@ export function moveBookmarks(
       setAnimationClass('hilite')($sourceLeafs);
     }));
 }
+
+export function getMessageDeleteSelecteds(count: number) {
+  return `Are you sure you want to delete ${count} selected items`;
+}

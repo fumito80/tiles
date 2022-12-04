@@ -177,7 +177,7 @@ export const mapMessagesPtoB = {
     }>,
   ) => {
     const tabs = urls.reverse().map((url) => chrome.tabs.create({
-      windowId, url, index, active: false,
+      windowId, url, index, active: true,
     }));
     return Promise.all(tabs).then(() => chrome.windows.update(windowId, { focused: true }));
   },

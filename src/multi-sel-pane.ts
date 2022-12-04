@@ -1,7 +1,7 @@
 import { Panes, State } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
-  addBookmark, addFolder, addStyle, hasClass, rmStyle, showMenu,
+  addBookmark, addClass, addFolder, addStyle, hasClass, rmClass, rmStyle, showMenu,
 } from './client';
 import {
   Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store,
@@ -41,13 +41,15 @@ export class PopupMenu extends HTMLElement {
 
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   // eslint-disable-next-line no-use-before-define
-  #header!: PaneHeader;
+  #header!: MulitiSelectablePaneHeader;
   #maxWidth!: string;
+  $count!: HTMLElement;
   $buttons!: HTMLButtonElement[];
   // eslint-disable-next-line no-use-before-define
-  init(header: PaneHeader, $menu: HTMLElement) {
+  init(header: MulitiSelectablePaneHeader, $menu: HTMLElement) {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
+    this.$count = $byClass('count-selected', this)!;
     header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
       showMenu($menu, true)(e);
@@ -55,30 +57,45 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     }, true);
   }
   show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
-    const [, show] = value.all
-      ? [null, true]
-      : Object.entries(value).find(([key]) => key === this.#header.paneName) || [];
-    const isPre = !!value.all;
-    const isShow = !!show;
-    if (isPre && this.$buttons[0]?.style.display !== 'none') {
+    const { all } = value;
+    const [, show] = Object.entries(value).find(([key]) => key === this.#header.paneName) || [];
+    if (!show && !all) {
+      this.$count.textContent = '';
+      rmClass('show', 'pre')(this);
+      this.style.removeProperty('max-width');
+      return;
+    }
+    if (all) {
+      this.$buttons.forEach(rmStyle('display'));
+      addClass('show')(this);
       const { width } = this.getBoundingClientRect();
       this.#maxWidth = `${String(Math.ceil(width))}px`;
-    }
-    if (isPre) {
-      this.$buttons.forEach(addStyle({ display: 'none' }));
-    } else if (isShow) {
-      this.$buttons.forEach(rmStyle('display'));
-    }
-    this.classList.toggle('show', isShow);
-    if (!isPre && hasClass(this, 'pre')) {
-      this.style.setProperty('max-width', this.#maxWidth);
-    }
-    this.classList.toggle('pre', isPre);
-    if (isPre) {
+      addClass('pre')(this);
       const rect = this.getBoundingClientRect();
       this.style.setProperty('max-width', `${Math.ceil(rect.width)}px`);
+      this.$buttons.forEach(addStyle({ display: 'none' }));
+      return;
     }
-    this.#header.classList.toggle('multi-select', isShow);
+    if (show) {
+      if (hasClass(this, 'pre')) {
+        this.style.setProperty('max-width', this.#maxWidth);
+      }
+      rmClass('pre')(this);
+      addClass('show')(this);
+      this.$buttons.forEach(rmStyle('display'));
+    }
+  }
+  selectItems(count: number) {
+    this.$count.textContent = String(count);
+    if (this.$buttons[0]?.style.display === 'none') {
+      const { maxWidth } = this.style;
+      this.style.removeProperty('max-width');
+      this.$buttons.forEach(rmStyle('display'));
+      const { width } = this.getBoundingClientRect();
+      this.$buttons.forEach(addStyle({ display: 'none' }));
+      this.style.setProperty('max-width', maxWidth);
+      this.#maxWidth = `${String(Math.ceil(width))}px`;
+    }
   }
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));
@@ -118,12 +135,12 @@ export class MutiSelectableItem extends HTMLElement {
   }
 }
 
-export abstract class PaneHeader extends HTMLDivElement implements IPubSubElement {
+export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implements IPubSubElement {
+  abstract paneName: Panes;
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
   abstract menuClickHandler(e: MouseEvent): void;
-  abstract paneName: Panes;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
@@ -137,6 +154,12 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
     }
     $popupMenu.init(this.menuClickHandler.bind(this));
     this.$multiSelPane.init(this, $popupMenu);
+  }
+  selectItems(newValue: Store['actions']['selectItems']['initValue']) {
+    if (newValue?.paneName !== this.paneName) {
+      return;
+    }
+    this.$multiSelPane.selectItems(newValue.count);
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -159,12 +182,23 @@ export abstract class PaneHeader extends HTMLDivElement implements IPubSubElemen
   connect(store: Store) {
     this.$multiSelPane.connect(store);
     this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store.dispatch));
+    store.subscribe('selectItems', (changes) => this.selectItems(changes.newValue));
   }
 }
 
 export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
   abstract paneName: Panes;
   abstract deletesHandler(selectds: HTMLElement[], store: Store): void;
+  actions() {
+    return {
+      selectItems: makeAction({
+        initValue: {
+          count: 0,
+          paneName: this.paneName,
+        },
+      }),
+    };
+  }
   connect(store: Store) {
     store.subscribe('deleteSelecteds', (changes) => {
       if (changes.newValue === this.paneName) {

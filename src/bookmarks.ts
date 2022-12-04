@@ -2,15 +2,17 @@ import {
   $, $$, $$byClass, $byClass,
   addClass, rmClass, hasClass, addStyle,
   addBookmark, getBookmark,
-  setAnimationClass, editTitle, createNewTab, remeveBookmark,
+  setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
   cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
   delayMultiSelect, extractDomain, prop,
 } from './common';
+import { dialog } from './dialogs';
 import { dropBmInNewWindow } from './drag-drop';
 import {
-  getSelecteds, MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, PaneHeader,
+  getSelecteds,
+  MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -101,7 +103,7 @@ export class Leaf extends MutiSelectableItem {
   }
 }
 
-export class HeaderLeafs extends PaneHeader {
+export class HeaderLeafs extends MulitiSelectablePaneHeader {
   readonly paneName = 'bookmarks';
   private $pinBookmark!: HTMLElement;
   private options!: Options;
@@ -241,8 +243,13 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     }
   }
   // eslint-disable-next-line class-methods-use-this
-  deletesHandler($selecteds: HTMLElement[]) {
-    $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf).forEach(remeveBookmark);
+  async deletesHandler($selecteds: HTMLElement[]) {
+    const selectes = $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf);
+    const ret = await dialog.confirm(getMessageDeleteSelecteds(selectes.length));
+    if (!ret) {
+      return;
+    }
+    selectes.forEach(remeveBookmark);
   }
   multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
     if (!multiSelect) {
@@ -340,8 +347,9 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     $$byClass('search-path', this).forEach(rmClass('search-path'));
     $$byClass('path', this).forEach(rmClass('path'));
   }
-  actions() {
+  override actions() {
     return {
+      ...super.actions(),
       clickLeafs: makeAction({
         target: this,
         eventType: 'click',

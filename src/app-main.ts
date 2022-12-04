@@ -34,6 +34,7 @@ const excludeClasses = [
   'history', 'history-title',
   'tabs-menu-button',
   'folder-menu-button',
+  'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
 async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {

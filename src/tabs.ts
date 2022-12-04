@@ -1,6 +1,6 @@
 import {
   MulitiSelectablePaneBody,
-  MultiSelPane, MutiSelectableItem, PaneHeader,
+  MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
@@ -143,6 +143,7 @@ function getTooltip(tab: chrome.tabs.Tab) {
 export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
   #incognito!: boolean;
+  #active!: boolean;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -153,6 +154,7 @@ export class OpenTab extends MutiSelectableItem {
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
+    this.#active = tab.active;
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
@@ -168,6 +170,9 @@ export class OpenTab extends MutiSelectableItem {
   }
   get incognito() {
     return this.#incognito;
+  }
+  get isCurrent() {
+    return this.#active;
   }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
@@ -434,8 +439,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
+  openTabsFromHistory(dispatch: Dispatch) {
+    const currentWindow = this.getWindows().find((win) => win.isCurrent);
+    const index = currentWindow?.getTabs().findIndex((tab) => tab.isCurrent);
+    const { windowId } = currentWindow!;
+    dispatch('openHistories', {
+      elementIds: [], index: index == null ? undefined : index + 1, windowId, incognito: false,
+    });
+  }
   // eslint-disable-next-line class-methods-use-this
-  deletesHandler($selecteds: HTMLElement[]) {
+  deletesHandler($selecteds: HTMLElement[], store: Store) {
     const removeds = $selecteds
       .filter(($el): $el is OpenTab => $el instanceof OpenTab)
       .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
@@ -443,7 +456,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
       [[], []] as [Promise<void>[], OpenTab[]],
     );
-    Promise.all(promises).then(() => $tabs.forEach(($tab) => $tab.remove()));
+    Promise.all(promises).then(() => {
+      $tabs
+        .map(($tab) => {
+          const win = $tab.getParentWindow();
+          $tab.remove();
+          return win.windowId;
+        })
+        .filter((id, i, ids) => ids.indexOf(id) === i)
+        .forEach((windowId) => store.dispatch('windowAction', { type: 'closeTab', windowId }, true));
+    });
   }
   selectWithShift($target: OpenTab) {
     if (
@@ -542,8 +564,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       chrome.windows.update($window.windowId, { focused: true }, window.close);
     }
   }
-  actions() {
+  override actions() {
     return {
+      ...super.actions(),
       windowAction: makeAction({
         initValue: {
           type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow',
@@ -566,6 +589,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         eventType: 'mouseup',
         eventOnly: true,
       }),
+      openTabsFromHistory: makeAction({
+        force: true,
+      }),
     };
   }
   override connect(store: Store) {
@@ -579,11 +605,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.subscribe('mousedownTabs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
       store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
       store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
+      store.subscribe('openTabsFromHistory', () => this.openTabsFromHistory(store.dispatch));
     });
   }
 }
 
-export class HeaderTabs extends PaneHeader implements IPubSubElement {
+export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubElement {
   readonly paneName = 'tabs';
   #collapsed!: boolean;
   private $buttonCollapse!: HTMLElement;

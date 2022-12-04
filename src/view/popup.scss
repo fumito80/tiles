@@ -359,9 +359,10 @@ window-header,
 
   >multi-sel-pane {
     position: absolute;
+    z-index: 2;
     display: flex;
+    align-items: center;
     left: 2em;
-    gap: 5px;
     opacity: 0;
     pointer-events: none;
     padding: 3px;
@@ -369,7 +370,15 @@ window-header,
     background-color: var(--pane-bg);
     transition: all 0.15s;
 
+    .count-selected:not(:empty) {
+      line-height: 1.1em;
+      margin: 0 5px;
+      display: flex;
+      align-items: center;
+    }
+
     button {
+      margin-left: 5px;
       opacity: 0;
       transition: opacity 0.2s !important;
     }
