@@ -20,6 +20,7 @@ export type StoredElements = {
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
 export type MapMessagesBtoP = typeof mapMessagesBtoP;
 
+export const historyHtmlCount = 32;
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
 export const initialSettings = {
@@ -58,7 +59,9 @@ export type HtmlBookmarks = {
   folders: string;
 }
 
-export type MyHistoryItem = Partial<chrome.history.HistoryItem & { headerDate: boolean }>;
+export type MyHistoryItem = Partial<
+  chrome.history.HistoryItem & { headerDate: boolean, selected: boolean }
+>;
 
 export type ColorPalette = [
   paneBg: string,
@@ -70,12 +73,14 @@ export type ColorPalette = [
 
 export const defaultColorPalette: ColorPalette = ['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
+const panes = ['histories', 'tabs', 'bookmarks'] as const;
+
 export const initialOptions = {
-  panes: ['histories', 'tabs', 'bookmarks'] as const,
+  panes,
   bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
-  showSwitchTabsWin: true,
+  showSwitchTabsWin: false,
   showDeleteHistory: true,
   findTabsFirst: true,
   enableExternalUrl: false,
@@ -90,6 +95,11 @@ export const initialOptions = {
   fontSize: '0.9em',
   collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
+};
+
+export type Panes = typeof panes[number];
+export type MulitiSelectables = {
+  [key in Panes | 'all']?: boolean;
 };
 
 export const initialState = {
@@ -112,6 +122,9 @@ export const CliMessageTypes = {
   initialize: 'cl-initialize',
   moveWindow: 'cl-move-window',
   moveWindowNew: 'cl-move-window-new',
+  moveTabs: 'cl-move-tabs',
+  moveTabsNewWindow: 'cl-move-tabs-new-window',
+  openUrls: 'cl-open-urls',
 } as const;
 
 export const BkgMessageTypes = {
@@ -122,6 +135,7 @@ export const OpenBookmarkType = {
   tab: 'tab',
   window: 'window',
   incognito: 'incognito',
+  current: 'current',
 } as const;
 
 export type OpenBookmarkTypes = {
@@ -199,3 +213,6 @@ export type InitailTabs = {
 }[];
 
 export type PromiseInitTabs = Promise<[InitailTabs, number]>;
+
+// eslint-disable-next-line no-undef
+export type EventListenerOptions = boolean | AddEventListenerOptions;

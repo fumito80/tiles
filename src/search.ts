@@ -20,15 +20,14 @@ export type SearchParams = {
 }
 
 export interface ISearchable {
-  search(params: SearchParams): void;
-  clearSearch(): void;
+  search(params: SearchParams, dispatch: Store['dispatch']): void;
+  clearSearch(dispatch: Store['dispatch']): void;
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
-  #store!: Store;
   private $inputQuery!: HTMLInputElement;
   private $iconX!: HTMLElement;
   private $leafs!: HTMLElement;
@@ -42,15 +41,11 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$searchTargets = $searchTargets;
-    this.$inputQuery = $byClass<HTMLInputElement>('query', this);
-    this.$iconX = $byClass('icon-x', this);
-    this.$leafs = $byClass('leafs');
-    this.$inputQuery.addEventListener('input', (e) => {
-      const { value } = (e.target as HTMLInputElement);
-      this.search(value);
-    });
-    this.addEventListener('submit', (e) => this.submitForm(e, options));
+    this.$inputQuery = $byClass<HTMLInputElement>('query', this)!;
+    this.$iconX = $byClass('icon-x', this)!;
+    this.$leafs = $byClass('leafs')!;
     this.$inputQuery.value = lastSearchWord;
+    this.addEventListener('submit', (e) => this.submitForm(e, options));
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
@@ -67,34 +62,34 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   focusQuery() {
     this.$inputQuery.focus();
   }
-  clearQuery() {
+  clearQuery(dispatch: Store['dispatch']) {
     if (this.$inputQuery.value === '') {
       return;
     }
-    this.search('');
+    this.search('', dispatch);
     this.#oldValue = '';
-    this.$searchTargets.forEach((target) => target.clearSearch());
+    this.$searchTargets.forEach((target) => target.clearSearch(dispatch));
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
-    this.#store.dispatch('searching', false);
-    this.clearSearch();
+    dispatch('searching', false);
+    this.clearSearch(dispatch);
     this.$inputQuery.focus();
   }
-  resetQuery(includeUrl: boolean) {
+  resetQuery(includeUrl: boolean, dispatch: Store['dispatch']) {
     this.#includeUrl = includeUrl;
     this.#oldValue = '';
-    this.search(this.$inputQuery.value);
+    this.search(this.$inputQuery.value, dispatch);
   }
-  clearSearch() {
-    this.#store.dispatch('clearSearch');
+  clearSearch(dispatch: Store['dispatch']) {
+    dispatch('clearSearch');
     const openFolder = $('.folders .open');
     if (openFolder) {
       rmClass('open')(openFolder);
       const $target = $(':scope > .marker > .title', openFolder)!;
-      selectFolder($target, $byClass('leafs'), this.#exclusiveOpenBmFolderTree);
+      selectFolder($target, $byClass('leafs')!, this.#exclusiveOpenBmFolderTree);
     }
   }
-  search(newValue: string) {
+  search(newValue: string, dispatch: Store['dispatch']) {
     const oldValue = this.#oldValue;
     if (oldValue.length <= 1 && newValue.length <= 1) {
       this.#oldValue = newValue;
@@ -105,12 +100,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.$inputQuery.setAttribute('value', newValue);
       this.$inputQuery.value = newValue;
     }
-    this.#store.dispatch('searching', true);
+    dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
     if (newValue.length <= 1) {
-      this.clearSearch();
-      this.#store.dispatch('searching', false);
+      this.clearSearch(dispatch);
+      dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
       chrome.storage.local.set({ lastSearchWord: newValue });
@@ -123,12 +118,24 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       .else('tab-wrap' as const);
     const reFilter = getReFilter(newValue)!;
     const searchParams = { reFilter, searchSelector, includeUrl: this.#includeUrl };
-    this.$searchTargets.forEach((target) => target.search(searchParams));
+    this.$searchTargets.forEach((target) => target.search(searchParams, dispatch));
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
   }
+  multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
+    if (changes?.all) {
+      this.$inputQuery.focus();
+    }
+    const isMultiSelect = Object.values(changes).some((type) => type);
+    this.classList.toggle('hidden', isMultiSelect);
+  }
   actions() {
     return {
+      inputQuery: makeAction({
+        target: this.$inputQuery,
+        eventType: 'input',
+        eventOnly: true,
+      }),
       clearQuery: makeAction({
         target: this.$iconX,
         eventType: 'click',
@@ -146,10 +153,14 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue));
-    store.subscribe('clearQuery', this.clearQuery.bind(this));
+    store.subscribe('inputQuery', (_, e) => {
+      const { value } = (e.target as HTMLInputElement);
+      this.search(value, store.dispatch);
+    });
+    store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue, store.dispatch));
+    store.subscribe('clearQuery', () => this.clearQuery(store.dispatch));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('search', (changes) => this.search.bind(this)(changes.newValue || this.$inputQuery.value));
-    this.#store = store;
+    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
+    store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
   }
 }

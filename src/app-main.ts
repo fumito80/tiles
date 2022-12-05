@@ -1,11 +1,10 @@
 /* eslint-disable import/prefer-default-export */
 
-import { Options } from './types';
+import { MulitiSelectables, Options } from './types';
 import {
   setEvents, addListener,
   last, getColorWhiteness, lightColorWhiteness, camelToSnake,
 } from './common';
-import DragAndDropEvents from './drag-drop';
 import { setZoomSetting } from './zoom';
 import {
   $byClass, $$byClass,
@@ -18,10 +17,69 @@ import {
   getEndPaneMinWidth,
   showMenu,
 } from './client';
-import { ISubscribeElement, Store } from './store';
-import { resetVScrollData } from './vscroll';
+import {
+  Dispatch, IPubSubElement, makeAction, States, Store,
+} from './store';
 
-export class AppMain extends HTMLElement implements ISubscribeElement {
+const excludeClasses = [
+  'anchor',
+  'leaf',
+  'multi-sel-menu-button',
+  'show',
+  'start-multi-select',
+  'tab-wrap', 'outline',
+  'collapse-tabs',
+  'collapse-tab',
+  'window', 'tab',
+  'history', 'history-title',
+  'tabs-menu-button',
+  'folder-menu-button',
+  'open-new-tab', 'open-new-window', 'open-incognito',
+];
+
+async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
+  const $target = e.target as HTMLElement;
+  if (hasClass($target, ...excludeClasses)) {
+    return;
+  }
+  dispatch('multiSelPanes', {
+    bookmarks: false, tabs: false, histories: false, all: false,
+  });
+  if (hasClass($target, 'leaf-menu-button')) {
+    showMenu('leaf-menu')(e);
+    dispatch('multiSelPanes', { bookmarks: false });
+    return;
+  }
+  if (hasClass($target, 'main-menu-button')) {
+    return;
+  }
+  if ($target.hasAttribute('contenteditable')) {
+    return;
+  }
+  dispatch('focusQuery');
+}
+
+async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+  if (e.key === 'Shift') {
+    const { bookmarks, tabs, histories } = await states('multiSelPanes');
+    if (bookmarks || tabs || histories) {
+      return;
+    }
+    dispatch('multiSelPanes', { all: true });
+  }
+}
+
+async function keyup(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+  if (e.key === 'Shift') {
+    const { all } = await states('multiSelPanes');
+    if (!all) {
+      return;
+    }
+    dispatch('multiSelPanes', { all: false });
+  }
+}
+
+export class AppMain extends HTMLElement implements IPubSubElement {
   init(options: Options, isSearching: boolean) {
     this.classList.toggle('searching', isSearching);
     const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
@@ -66,45 +124,50 @@ export class AppMain extends HTMLElement implements ISubscribeElement {
     $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
 
     const panes = [
-      ...(options.zoomHistory ? [$byClass('histories', this)] : []),
-      ...(options.zoomTabs ? [$byClass('tabs', this)] : []),
+      ...(options.zoomHistory ? [$byClass('histories', this)!] : []),
+      ...(options.zoomTabs ? [$byClass('tabs', this)!] : []),
     ];
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
-  setEvents(store: Store) {
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (hasClass($target, 'main-menu-button', 'query')) {
-        return;
-      }
-      if (hasClass($target, 'leaf-menu-button')) {
-        showMenu('leaf-menu')(e);
-        return;
-      }
-      if ($target.hasAttribute('contenteditable')) {
-        return;
-      }
-      store.dispatch('focusQuery');
-    });
-    const ddEvents = new DragAndDropEvents(store);
-    const dragAndDropEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(ddEvents))
-      .filter((name) => name !== 'constructor')
-      .reduce((acc, name) => ({ ...acc, [name]: (ddEvents as any)[name] }), {});
-    setEvents([this], dragAndDropEvents, undefined, ddEvents);
-  }
-  setIncludeUrl(store: Store, includeUrl: boolean, isInit: boolean) {
+  setIncludeUrl(includeUrl: boolean, dispatch: Dispatch) {
     toggleClass('checked-include-url', includeUrl)(this);
-    store.dispatch('changeIncludeUrl', includeUrl, true);
-    if (isInit) {
-      return;
-    }
-    resetVScrollData((data) => data);
+    dispatch('changeIncludeUrl', includeUrl, true);
+  }
+  actions() {
+    return {
+      clickAppMain: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      multiSelPanes: makeAction({
+        initValue: {
+          bookmarks: false,
+          tabs: false,
+          histories: false,
+          all: false,
+        } as MulitiSelectables,
+      }),
+      keydownMain: makeAction({
+        target: this,
+        eventType: 'keydown',
+        eventOnly: true,
+      }),
+      keyupMain: makeAction({
+        target: this,
+        eventType: 'keyup',
+        eventOnly: true,
+      }),
+    };
   }
   connect(store: Store) {
-    store.subscribe('setIncludeUrl', (changes, isInit) => this.setIncludeUrl(store, changes.newValue, isInit));
+    store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(changes.newValue, store.dispatch));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    this.setEvents(store);
+    store.subscribe('clickAppMain', (_, e) => clickAppMain(e, store.dispatch));
+    store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
+    store.subscribe('keydownMain', (_, e) => keydown(e, store.getStates, store.dispatch));
+    store.subscribe('keyupMain', (_, e) => keyup(e, store.getStates, store.dispatch));
   }
 }

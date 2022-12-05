@@ -12,6 +12,7 @@ import {
   defaultColorPalette,
   HTMLElementEventType,
   pastMSec,
+  EventListenerOptions,
 } from './types';
 
 import {
@@ -20,9 +21,10 @@ import {
   addColorSpec,
   recombiPaletteDark,
 } from './settings-colors';
-import { applyVScrollData } from './vscroll';
 
 export const aDayMSec = 1000 * 60 * 60 * 24;
+
+export const delayMultiSelect = 400;
 
 type AnyFunction = (...p: any[]) => any;
 
@@ -43,8 +45,7 @@ type EventListeners<
 export function setEvents<T extends HTMLElement>(
   htmlElements: Array<T>,
   eventListeners: EventListenerMap<T>,
-  // eslint-disable-next-line no-undef
-  options?: boolean | AddEventListenerOptions,
+  options?: EventListenerOptions,
   thisArg?: any,
 ) {
   const itrEventListeners = Object.entries(eventListeners) as
@@ -62,10 +63,9 @@ export function setEvents<T extends HTMLElement>(
 export function addListener<T extends keyof HTMLElementEventType>(
   type: T,
   ev: (e: HTMLElementEventType[T]) => any,
-  // eslint-disable-next-line no-undef
-  options?: boolean | AddEventListenerOptions,
+  options?: EventListenerOptions,
 ) {
-  return <U extends Element | null>(element: U) => {
+  return <U extends Element | undefined>(element: U) => {
     (element as unknown as HTMLElement)?.addEventListener(type, ev, options);
     return element;
   };
@@ -250,7 +250,7 @@ export function tail<T extends Array<any>>([, ...rest]: readonly [any, ...T]) {
 }
 
 export function last<T>(args: T[]) {
-  return args.at(-1) ?? null as T | null;
+  return args.at(-1);
 }
 
 // test
@@ -515,6 +515,32 @@ export function pipeP(...fns: Array<any>) {
   };
 }
 
+export function maybePipeP<T, R1, R2>(
+  fn1: (a: T) => R1,
+  fn2: (a: R1) => R2,
+): (a: Promise<T>) => Promise<R2 | null>;
+export function maybePipeP<T, R1, R2, R3>(
+  fn1: (a: T) => R1,
+  fn2: (a: R1) => R2,
+  fn3: (a: R2) => R3,
+): (a: Promise<T>) => Promise<R3 | null>;
+export function maybePipeP<T>(
+  ...fn1: any[]
+): (a: Promise<T>) => any;
+
+export function maybePipeP(fn: any, ...fns: any[]) {
+  return async (...values: any[]) => {
+    const result = await fn(...values);
+    if (result == null) {
+      return null;
+    }
+    if (fns.length === 0) {
+      return result;
+    }
+    return maybePipeP(...fns)(result);
+  };
+}
+
 export function pick<U extends Array<string>>(...props: U): <T>(target: T) =>
   Pick<T, U[number] extends keyof T ? U[number] : never[number]>;
 export function pick(...props: any) {
@@ -664,11 +690,6 @@ export function extractDomain(url?: string) {
   return [scheme, domain];
 }
 
-export async function getHistoryById(historyId: string) {
-  const [, id] = historyId.split('-');
-  return applyVScrollData(find(propEq('id', id)));
-}
-
 export function base64Encode(...parts: string[]) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -718,7 +739,7 @@ export function htmlEscape(text: string) {
   return text!.replace(/[&"<>]/g, (e) => escapes.get(e));
 }
 
-export function removeUrlHistory(url: string, lastVisitTime: number = -1) {
+export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
   return (histories: MyHistoryItem[]) => {
     const findIndex = histories.findIndex(
       (history) => history.url === url || history.lastVisitTime === lastVisitTime,
@@ -902,9 +923,9 @@ export function getChromeId(preId: number | string) {
   return Number(id);
 }
 
-export function getHistoryData() {
+export function getHistoryData(maxResults = 99999) {
   const startTime = Date.now() - pastMSec;
-  return chrome.history.search({ text: '', startTime, maxResults: 99999 });
+  return chrome.history.search({ text: '', startTime, maxResults });
 }
 
 export function getHistoryDataByWorker() {

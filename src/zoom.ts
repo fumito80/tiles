@@ -63,7 +63,7 @@ export function zoomOut(
     addStyle({ overflow: 'hidden', width: '0' })($form);
     addStyle('left', '-100px')($iconAngleLeft);
     rmStyle('transform')($main);
-    rmStyle('transform')($byClass('pane-header'));
+    rmStyle('transform')($byClass('pane-header')!);
     const promise1 = new Promise<void>((resolve) => {
       $shadeLeft.addEventListener('transitionend', () => {
         rmClass('zoom-pane', 'zoom-fade-out', 'zoom-center')($main);
@@ -121,7 +121,7 @@ async function enterZoom(
       resolve();
     }, { once: true });
   });
-  const $safetyZoneRight = $byClass('safety-zone-right');
+  const $safetyZoneRight = $byClass('safety-zone-right')!;
   rmStyle('width')($safetyZoneRight);
   addStyle('width', `${width}px`)($target);
   addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
@@ -132,7 +132,7 @@ async function enterZoom(
     addStyle('transform', `translateX(${offset}px)`)($main);
     addStyle('left', `${-offset + 5}px`)($iconAngleLeft);
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
-    addStyle('transform', `translateX(${-offset}px)`)($byClass('pane-header'));
+    addStyle('transform', `translateX(${-offset}px)`)($byClass('pane-header')!);
     addClass('zoom-center')($main);
     shiftSafetyZone = $target.offsetLeft + (offset > 0 ? 14 - offset : 4);
     if (zoomRatio >= 0.9) {

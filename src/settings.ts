@@ -158,7 +158,7 @@ function setSyncListener(inputs: Inputs) {
 
 function setAppInfo() {
   const { version, name } = chrome.runtime.getManifest() as chrome.runtime.Manifest;
-  setText(`Version ${version}`)($byClass('version'));
+  setText(`Version ${version}`)($byClass('version')!);
   setText(name)($byTag('title'));
 }
 
@@ -236,7 +236,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
 
   addListener('click', (e) => {
     const $target = e.target as HTMLElement;
-    if (!hasClass($target.parentElement, 'tab-pane')) {
+    if (!hasClass($target.parentElement ?? undefined, 'tab-pane')) {
       return;
     }
     const palette = ([...$target.children] as HTMLElement[])
@@ -244,5 +244,5 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
     $byTag<ColorPaletteClass>('color-palette')!.value = palette;
     rmClass('selected')($byClass('selected'));
     addClass('selected')($target);
-  })($byClass('tab-content'));
+  })($byClass('tab-content')!);
 });

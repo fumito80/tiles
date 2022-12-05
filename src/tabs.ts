@@ -1,14 +1,18 @@
-import { PaneHeader } from './bookmarks';
 import {
-  $$byClass, $$byTag, $byClass, $byTag,
-  addClass, addStyle, hasClass, rmClass, rmStyle, setAnimationClass, showMenu, toggleClass,
+  MulitiSelectablePaneBody,
+  MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
+} from './multi-sel-pane';
+import {
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass,
 } from './client';
 import {
-  addListener, extractDomain, extractUrl, htmlEscape, makeStyleIcon, pipe,
+  addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
+  makeStyleIcon, pipe,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
-  IPubSubElement, ISubscribeElement, makeAction, Store,
+  Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
 import { PromiseInitTabs, State } from './types';
 
@@ -35,7 +39,7 @@ export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   return promise;
 }
 
-async function collapseTab(store: Store, $win: HTMLElement) {
+async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   const promiseCollapse = new Promise<TransitionEvent>((resolve) => {
     $win.addEventListener('transitionend', resolve, { once: true });
   });
@@ -43,9 +47,9 @@ async function collapseTab(store: Store, $win: HTMLElement) {
   await promiseCollapse;
   const { length } = $$byClass('tabs-collapsed');
   if (length === $win.parentElement!.children.length) {
-    store.dispatch('collapseWindowsAll', true);
+    dispatch('collapseWindowsAll', true);
   } else if (length === 0) {
-    store.dispatch('collapseWindowsAll', false);
+    dispatch('collapseWindowsAll', false);
   }
   const $tabs = $win.parentElement!.parentElement!;
   const winBottom = $win.offsetTop + $win.offsetHeight;
@@ -136,26 +140,39 @@ function getTooltip(tab: chrome.tabs.Tab) {
   return `${tab.title}\n${schemeAdd}${domain}`;
 }
 
-export class OpenTab extends HTMLElement implements ISubscribeElement {
+export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
+  #incognito!: boolean;
+  #active!: boolean;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
-  init(tab: chrome.tabs.Tab, isSearching: boolean) {
+  init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
     this.$main = $byTag('app-main');
-    this.$tooltip = $byClass('tooltip', this);
+    this.$tooltip = $byClass('tooltip', this)!;
     this.classList.toggle('unmatch', isSearching);
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
+    this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
+    this.#active = tab.active;
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
-    addListener('click', this.gotoTab)(this);
     addListener('mouseover', this.setTooltipPosition)(this);
+    addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
+  }
+  get tabId() {
+    return this.#tabId;
+  }
+  get incognito() {
+    return this.#incognito;
+  }
+  get isCurrent() {
+    return this.#active;
   }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
@@ -165,40 +182,42 @@ export class OpenTab extends HTMLElement implements ISubscribeElement {
     this.classList.toggle('current-tab', tab.active);
   }
   gotoTab() {
+    if (this.checkMultiSelect()) {
+      return;
+    }
     const { windowId } = this.getParentWindow();
     chrome.windows.update(windowId, { focused: true });
-    chrome.tabs.update(this.#tabId, { active: true }, window.close);
+    chrome.tabs.update(this.tabId, { active: true }, window.close);
   }
-  closeTab(store: Store) {
+  closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
       e.stopPropagation();
       this.addEventListener('animationend', () => {
-        chrome.tabs.remove(this.#tabId, () => {
+        chrome.tabs.remove(this.tabId, () => {
           const { windowId } = this.getParentWindow();
           this.remove();
-          store.dispatch('windowAction', { type: 'closeTab', windowId }, true);
+          dispatch('windowAction', { type: 'closeTab', windowId }, true);
         });
       }, { once: true });
       setAnimationClass('remove-hilite')(this);
     };
   }
   setTooltipPosition() {
+    const marginBottom = 3;
+    const marginTop = 3;
     const rect = this.getBoundingClientRect();
     const rectTT = this.$tooltip.getBoundingClientRect();
     const rectMain = this.$main.getBoundingClientRect();
     const left = Math.min(
-      rect.right - rectMain.left,
+      rect.left - rectMain.left - 1,
       rectMain.width - rectMain.left - rectTT.width - 5,
     );
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
-    if (rect.bottom + rectTT.height > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - rectTT.height}px`)(this.$tooltip);
+    if (rect.bottom + rectTT.height + marginBottom > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - rectTT.height - marginTop}px`)(this.$tooltip);
       return;
     }
-    addStyle('top', `${rect.bottom}px`)(this.$tooltip);
-  }
-  connect(store: Store) {
-    addListener('click', this.closeTab(store))($byClass('icon-x', this));
+    addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
   }
 }
 
@@ -207,14 +226,14 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   private $btnCollapseTabs!: HTMLElement;
   private $tabsMenu!: HTMLElement;
   init(windowId: number, tab: chrome.tabs.Tab) {
-    this.$btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this);
-    this.$tabsMenu = $byClass('tabs-menu', this);
+    this.$btnCollapseTabs = $byClass<HTMLButtonElement>('collapse-tab', this)!;
+    this.$tabsMenu = $byClass('tabs-menu', this)!;
     this.#windowId = windowId;
     this.update(tab);
     pipe(
       addListener('click', showMenu(this.$tabsMenu)),
       addListener('mousedown', () => addStyle({ top: '-1000px' })(this.$tabsMenu)),
-    )($byClass('tabs-menu-button', this));
+    )($byClass('tabs-menu-button', this)!);
     return this;
   }
   update(tab: chrome.tabs.Tab) {
@@ -229,6 +248,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     const windowId = this.#windowId;
     this.$btnCollapseTabs.addEventListener('click', () => {
       store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
+      this.$btnCollapseTabs.blur();
     });
     pipe(
       addListener('click', (e) => {
@@ -252,14 +272,15 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
-  #store!: Store;
   #isSearching = false;
+  #isCurrent = false;
+  private tabs!: chrome.tabs.Tab[];
   private $tmplTab!: OpenTab;
   private $header!: WindowHeader;
   init(
     windowId: number,
     tmplTab: OpenTab,
-    [firstTab, ...rest]: chrome.tabs.Tab[],
+    tabs: chrome.tabs.Tab[],
     collapseTabs: boolean,
     isSearching: boolean,
     isCurrent: boolean,
@@ -268,37 +289,32 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.switchCollapseIcon(collapseTabs);
     this.#windowId = windowId;
     this.$tmplTab = tmplTab;
+    this.tabs = tabs;
     this.#isSearching = isSearching;
     this.id = `win-${windowId}`;
+    this.#isCurrent = isCurrent;
     this.classList.toggle('current-window', isCurrent);
+    const [firstTab] = tabs;
     this.$header.init(windowId, firstTab);
-    this.addTabs([firstTab, ...rest]);
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLElement;
-      if (!hasClass($target, 'window', 'tab', 'icon-incognito')) {
-        return;
-      }
-      chrome.windows.update(this.#windowId, { focused: true }, window.close);
-    });
     return this;
   }
   get windowId() {
     return this.#windowId;
   }
+  get isCurrent() {
+    return this.#isCurrent;
+  }
   searchDone() {
     this.classList.toggle('empty', this.offsetHeight < 10);
   }
-  addTab(tab: chrome.tabs.Tab) {
+  addTab(tab: chrome.tabs.Tab, dispatch: Store['dispatch']) {
     const $openTab = document.importNode(this.$tmplTab!, true);
-    return $openTab.init(tab, this.#isSearching);
+    return $openTab.init(tab, this.#isSearching, dispatch);
   }
-  addTabs(tabs: chrome.tabs.Tab[]) {
-    const $tabs = tabs.map((tab) => this.addTab(tab));
+  addTabs(tabs: chrome.tabs.Tab[], dispatch: Store['dispatch']) {
+    const $tabs = tabs.map((tab) => this.addTab(tab, dispatch));
     this.append(...$tabs);
     return $tabs;
-  }
-  connectTabs($tabs: OpenTab[]) {
-    $tabs.forEach(($tab) => $tab.connect(this.#store!));
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed', collapsed)(this);
@@ -310,7 +326,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   clearTabs() {
     this.getTabs().forEach(($tab) => $tab.remove());
   }
-  reloadTabs() {
+  reloadTabs(dispatch: Store['dispatch']) {
     chrome.windows.get(this.#windowId, { populate: true }, (win) => {
       if (chrome.runtime.lastError) {
         this.remove();
@@ -319,42 +335,63 @@ export class Window extends HTMLElement implements ISubscribeElement {
       const [firstTab, ...rest] = win.tabs!;
       this.$header.update(firstTab);
       this.clearTabs();
-      this.connectTabs(this.addTabs([firstTab, ...rest]));
+      this.addTabs([firstTab, ...rest], dispatch);
     });
   }
-  connect(store: Store) {
-    this.#store = store;
-    this.$header.connect(store);
-    this.connectTabs(this.getTabs());
-    store.subscribe('collapseWindowsAll', (changes) => {
-      this.switchCollapseIcon(changes.newValue);
-    });
-    store.subscribe('windowAction', (changes) => {
-      if (changes?.newValue?.windowId !== this.#windowId) {
-        return;
-      }
-      switch (changes.newValue.type) {
-        case 'collapseWindow':
-          collapseTab(store, this);
-          break;
-        case 'closeTab':
-          if (this.childElementCount <= 1) {
-            this.remove();
-          }
-          break;
-        case 'closeWindow': {
-          chrome.windows.remove(this.#windowId, () => this.remove());
-          break;
+  dispathAction(windowAction: Store['actions']['windowAction']['initValue'], dispatch: Dispatch) {
+    if (windowAction?.windowId !== this.#windowId) {
+      return;
+    }
+    switch (windowAction.type) {
+      case 'collapseWindow':
+        collapseTab(dispatch, this);
+        break;
+      case 'closeTab':
+        if (this.childElementCount <= 1) {
+          this.remove();
         }
-        default:
+        break;
+      case 'closeWindow': {
+        chrome.windows.remove(this.#windowId, () => this.remove());
+        break;
       }
-    });
+      default:
+    }
+  }
+  connect(store: Store) {
+    this.$header.connect(store);
+    this.addTabs(this.tabs, store.dispatch);
+    store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
+    store.subscribe('windowAction', (changes) => this.dispathAction(changes.newValue, store.dispatch));
   }
 }
 
-export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable {
+function isWindow($target: HTMLElement) {
+  if ($target instanceof Window) {
+    return $target;
+  }
+  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'tab')) {
+    return $target.parentElement?.parentElement;
+  }
+  return undefined;
+}
+
+function isOpenTab($target: HTMLElement) {
+  if ($target instanceof OpenTab) {
+    return $target;
+  }
+  if ($target.parentElement instanceof OpenTab) {
+    return $target.parentElement;
+  }
+  return undefined;
+}
+
+export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
+  readonly paneName = 'tabs';
   #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
+  #timerMultiSelect!: number;
+  $lastClickedTab!: OpenTab | undefined;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -381,7 +418,7 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     return this;
   }
   setEvent() {
-    $byClass('new-window-plus', this).addEventListener('click', () => {
+    $byClass('new-window-plus', this)!.addEventListener('click', () => {
       chrome.windows.create();
     });
   }
@@ -402,9 +439,134 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
+  openTabsFromHistory(dispatch: Dispatch) {
+    const currentWindow = this.getWindows().find((win) => win.isCurrent);
+    const index = currentWindow?.getTabs().findIndex((tab) => tab.isCurrent);
+    const { windowId } = currentWindow!;
+    dispatch('openHistories', {
+      elementIds: [], index: index == null ? undefined : index + 1, windowId, incognito: false,
+    });
+  }
   // eslint-disable-next-line class-methods-use-this
-  actions() {
+  deletesHandler($selecteds: HTMLElement[], store: Store) {
+    const removeds = $selecteds
+      .filter(($el): $el is OpenTab => $el instanceof OpenTab)
+      .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
+    const [promises, $tabs] = removeds.reduce(
+      ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
+      [[], []] as [Promise<void>[], OpenTab[]],
+    );
+    Promise.all(promises).then(() => {
+      $tabs
+        .map(($tab) => {
+          const win = $tab.getParentWindow();
+          $tab.remove();
+          return win.windowId;
+        })
+        .filter((id, i, ids) => ids.indexOf(id) === i)
+        .forEach((windowId) => store.dispatch('windowAction', { type: 'closeTab', windowId }, true));
+    });
+  }
+  selectWithShift($target: OpenTab) {
+    if (
+      this.$lastClickedTab !== $target
+      && this.$lastClickedTab?.parentElement === $target.parentElement
+    ) {
+      const OpenTabs = [] as OpenTab[];
+      let started = false;
+      for (
+        let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
+        next != null;
+        next = next.nextElementSibling
+      ) {
+        if (next === $target || next === this.$lastClickedTab) {
+          if (started) {
+            OpenTabs.push(next as OpenTab);
+            break;
+          }
+          started = true;
+        }
+        if (started && next instanceof OpenTab) {
+          OpenTabs.push(next);
+        }
+      }
+      OpenTabs.forEach(($tab) => $tab.select(true));
+    }
+  }
+  multiSelect({ tabs: multiSelect }: { tabs?: boolean }) {
+    if (!multiSelect) {
+      this.getWindows()
+        .flatMap((win) => win.getTabs())
+        .filter((tab) => tab.selected)
+        .forEach((tab) => tab.select(false));
+      this.$lastClickedTab = undefined;
+    }
+  }
+  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    const $tab = isOpenTab($target);
+    const $window = isWindow($target);
+    if ($tab || $window) {
+      clearTimeout(this.#timerMultiSelect);
+      this.#timerMultiSelect = setTimeout(
+        async () => {
+          const { dragging, multiSelPanes } = await states();
+          if (dragging) {
+            return;
+          }
+          dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
+          $tab?.preMultiSelect(!multiSelPanes?.tabs);
+          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(!multiSelPanes?.tabs));
+        },
+        delayMultiSelect,
+      );
+    }
+  }
+  mouseupItem() {
+    clearTimeout(this.#timerMultiSelect);
+  }
+  async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    const $tab = isOpenTab($target);
+    if ($tab) {
+      const { tabs, all } = await states('multiSelPanes');
+      if (tabs || all) {
+        $tab.select();
+        if (all) {
+          dispatch('multiSelPanes', { tabs: true });
+        }
+        if (e.shiftKey) {
+          this.selectWithShift($tab);
+        }
+        this.$lastClickedTab = $tab;
+        return;
+      }
+      $tab.gotoTab();
+      return;
+    }
+    const $window = isWindow($target);
+    if ($window) {
+      const { tabs } = await states('multiSelPanes');
+      if (tabs || e.shiftKey) {
+        const openTabs = $window.getTabs();
+        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
+        openTabs.map((tab) => tab.select(selectAll));
+        if (e.shiftKey) {
+          dispatch('multiSelPanes', { tabs: true });
+        }
+        return;
+      }
+      const [$tab1, ...rest] = $window.getTabs();
+      if ($tab1.checkMultiSelect()) {
+        rest.forEach(($tab2) => $tab2.checkMultiSelect());
+        return;
+      }
+      chrome.windows.update($window.windowId, { focused: true }, window.close);
+    }
+  }
+  override actions() {
     return {
+      ...super.actions(),
       windowAction: makeAction({
         initValue: {
           type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow',
@@ -412,33 +574,70 @@ export class Tabs extends HTMLDivElement implements IPubSubElement, ISearchable 
         },
       }),
       search: {},
+      clickTabs: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownTabs: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupTabs: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+      }),
+      openTabsFromHistory: makeAction({
+        force: true,
+      }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     this.#initPromise.then(() => {
       this.getWindows().forEach(($window) => $window.connect(store));
       store.subscribe('scrollNextWindow', () => switchTabWindow(this, true));
       store.subscribe('scrollPrevWindow', () => switchTabWindow(this, false));
       store.subscribe('clearSearch', this.clearSearch.bind(this));
+      store.subscribe('clickTabs', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+      store.subscribe('mousedownTabs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
+      store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
+      store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
+      store.subscribe('openTabsFromHistory', () => this.openTabsFromHistory(store.dispatch));
     });
   }
 }
 
-export class HeaderTabs extends PaneHeader implements IPubSubElement {
+export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubElement {
+  readonly paneName = 'tabs';
   #collapsed!: boolean;
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
   private $buttonNextWin!: HTMLElement;
-  override init(settings: State['settings'], collapsed: boolean) {
-    super.init(settings);
-    this.$buttonCollapse = $byClass('collapse-tabs', this);
-    this.$buttonPrevWin = $byClass('win-prev', this);
-    this.$buttonNextWin = $byClass('win-next', this);
+  override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
+    super.init(settings, $tmplMultiSelPane);
+    this.$buttonCollapse = $byClass('collapse-tabs', this)!;
+    this.$buttonPrevWin = $byClass('win-prev', this)!;
+    this.$buttonNextWin = $byClass('win-next', this)!;
     this.#collapsed = collapsed;
     this.switchCollapseIcon(collapsed);
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
+    this.$buttonCollapse.blur();
+  }
+  // eslint-disable-next-line class-methods-use-this
+  async menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    switch ($target.dataset.value) {
+      case 'open-incognito':
+      case 'open-new-window': {
+        break;
+      }
+      default:
+    }
   }
   override actions() {
     return {
@@ -453,7 +652,8 @@ export class HeaderTabs extends PaneHeader implements IPubSubElement {
       scrollNextWindow: {},
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
     this.$buttonPrevWin.addEventListener('click', () => store.dispatch('scrollPrevWindow', null, true));
     this.$buttonNextWin.addEventListener('click', () => store.dispatch('scrollNextWindow', null, true));

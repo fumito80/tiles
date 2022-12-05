@@ -17,9 +17,19 @@
       &:hover>.icon-x {
         display: var(--show-delete-history, none);
       }
+
+      &.selected {
+        >.icon-x {
+          display: none;
+        }
+
+        &:active {
+          filter: opacity(0.7);
+        }
+      }
     }
 
-    >div:empty {
+    >.history:empty {
       display: none;
     }
 
@@ -102,13 +112,19 @@
   }
 }
 
-.header-histories:not(.date-collapsed) {
-  .icon-calendar-plus-solid {
-    display: none;
+.header-histories {
+  .icon-history {
+    font-size: 1.1em;
   }
 
-  .icon-calendar-minus-solid {
-    display: inline-block;
+  &:not(.date-collapsed) {
+    .icon-calendar-plus-solid {
+      display: none;
+    }
+
+    .icon-calendar-minus-solid {
+      display: inline-block;
+    }
   }
 }
 
@@ -139,4 +155,20 @@ app-main:not(.disable-zoom-history) {
       display: none;
     }
   }
+}
+
+.header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  content: '\e912';
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-family: "glyphs";
+  line-height: 1;
+  left: 5px;
+  font-size: 1.2em;
+  color: $common-marker;
+}
+
+.theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  color: deepskyblue;
 }

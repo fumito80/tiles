@@ -1,89 +1,93 @@
 import {
   $, $$, $$byClass, $byClass,
-  addClass, rmClass, toggleClass, hasClass, addChild, addStyle,
-  addBookmark, findInTabsBookmark, openBookmark, getBookmark,
-  addFolder, setAnimationClass, editTitle,
+  addClass, rmClass, hasClass, addStyle,
+  addBookmark, getBookmark,
+  setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
-  addListener,
-  cbToResolve,
-  cssid,
-  curry,
-  curry3,
-  extractUrl, pipe, setEvents, setFavicon, switches,
+  cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
+  delayMultiSelect, extractDomain, prop,
 } from './common';
+import { dialog } from './dialogs';
+import { dropBmInNewWindow } from './drag-drop';
+import {
+  getSelecteds,
+  MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
+} from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
-  IPublishElement, ISubscribeElement, makeAction, Store,
+  ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
-import { OpenBookmarkType, Options, State } from './types';
+import {
+  MulitiSelectables, OpenBookmarkType, Options, State,
+} from './types';
 
-export function openOrFindBookmarks(options: Options, $target: HTMLElement) {
-  return (options.findTabsFirst ? findInTabsBookmark : openBookmark)(options, $target);
-}
-
-export class PaneHeader extends HTMLDivElement implements IPublishElement {
-  #includeUrl!: boolean;
-  private $mainMenu!: HTMLElement;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(settings: State['settings'], _?: boolean) {
-    this.$mainMenu = $byClass('main-menu', this);
-    this.#includeUrl = settings.includeUrl;
-    pipe(
-      addListener('click', (e) => {
-        const $menu = e.target as HTMLElement;
-        switch ($menu.dataset.value) {
-          case 'add-bookmark': {
-            const id = $byClass('open')?.id;
-            addBookmark(id || '1');
-            break;
-          }
-          case 'add-folder':
-            addFolder();
-            break;
-          case 'settings':
-            chrome.runtime.openOptionsPage();
-            break;
-          default:
-        }
-      }),
-      addListener('mousedown', (e) => e.preventDefault()),
-    )(this.$mainMenu);
-  }
-  actions() {
-    if (!hasClass(this, 'end')) {
-      return {};
-    }
-    return {
-      setIncludeUrl: makeAction({
-        initValue: this.#includeUrl,
-        persistent: true,
-        target: $byClass('include-url', this.$mainMenu),
-        eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
-      }),
-    };
-  }
-}
-
-export class HeaderLeafs extends PaneHeader {
-  private $pinBookmark!: HTMLElement;
-  override init(settings: State['settings']) {
-    super.init(settings);
-    this.$pinBookmark = $byClass('pin-bookmark', this);
-    this.$pinBookmark.addEventListener('click', () => addBookmark());
-  }
-}
-
-export class Leaf extends HTMLElement {
+export class Leaf extends MutiSelectableItem {
   updateTitle(title: string) {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
     $anchor.setAttribute('title', title);
     $anchor.textContent = title;
   }
-  updateAnker({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
+  updateAnchor({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
     setFavicon(url!)(this);
     this.updateTitle(title);
+  }
+  openOrFind(options: Options) {
+    if (this.checkMultiSelect()) {
+      return;
+    }
+    (options.findTabsFirst ? this.findInTabsBookmark : this.openBookmark).bind(this)(options);
+  }
+  async openBookmark(
+    options: Options,
+    openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
+  ) {
+    const { url } = await getBookmark(this.id);
+    switch (openType) {
+      case OpenBookmarkType.tab: {
+        createNewTab(options, url!);
+        break;
+      }
+      case OpenBookmarkType.window:
+      case OpenBookmarkType.incognito: {
+        const incognito = openType === OpenBookmarkType.incognito;
+        chrome.windows.create({ url, incognito }, window.close);
+        break;
+      }
+      case OpenBookmarkType.current:
+        getCurrentTab().then(({ id }) => chrome.tabs.update(id!, { url }, window.close));
+        break;
+      default:
+    }
+  }
+  async findInTabsBookmark(options: Options) {
+    const { url = '' } = await getBookmark(this.id);
+    const [schemeSrc, domainSrc] = extractDomain(url);
+    const finder = options.findTabsMatches === 'prefix'
+      ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
+      : (tab: chrome.tabs.Tab) => {
+        const [scheme, domain] = extractDomain(tab.url);
+        return domain === domainSrc && scheme === schemeSrc;
+      };
+    const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
+      chrome.tabs.query({}, (tabs) => {
+        chrome.windows.getCurrent((win) => {
+          const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
+          const sorted = [
+            ...tabs.slice(findIndex + 1),
+            ...tabs.slice(0, findIndex + 1),
+          ];
+          const firstTab = sorted.find(finder);
+          resolve(firstTab);
+        });
+      });
+    });
+    if (tab?.id == null) {
+      this.openBookmark(options);
+      return;
+    }
+    chrome.windows.update(tab.windowId, { focused: true });
+    chrome.tabs.update(tab.id, { active: true }, window.close);
   }
   async editBookmarkTitle() {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
@@ -99,25 +103,63 @@ export class Leaf extends HTMLElement {
   }
 }
 
+export class HeaderLeafs extends MulitiSelectablePaneHeader {
+  readonly paneName = 'bookmarks';
+  private $pinBookmark!: HTMLElement;
+  private options!: Options;
+  override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, options: Options) {
+    super.init(settings, $tmplMultiSelPane);
+    this.$pinBookmark = $byClass('pin-bookmark', this)!;
+    this.$pinBookmark.addEventListener('click', () => addBookmark());
+    this.options = options;
+  }
+  override connect(store: Store) {
+    super.connect(store);
+  }
+  menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    switch ($target.dataset.value) {
+      case 'open-new-tab': {
+        getSelecteds().reverse()
+          .filter(($el): $el is Leaf => $el instanceof Leaf)
+          .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
+        break;
+      }
+      case 'open-incognito':
+      case 'open-new-window': {
+        const selecteds = getSelecteds().map(prop('id'));
+        dropBmInNewWindow(selecteds, 'leaf', $target.dataset.value === 'open-incognito');
+        break;
+      }
+      default:
+    }
+  }
+}
+
 function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   setEvents([$leafMenu], {
     async click(e) {
       const $leaf = (e.target as HTMLElement)
-        ?.parentElement?.previousElementSibling?.parentElement as Leaf;
-      const $anchor = $leaf?.firstElementChild as HTMLAnchorElement;
+        ?.parentElement?.previousElementSibling?.parentElement;
+      if (!($leaf instanceof Leaf)) {
+        return;
+      }
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
-          findInTabsBookmark(options, $anchor);
+          $leaf.findInTabsBookmark(options);
           break;
         }
         case 'open-new-tab':
-          openBookmark(options, $anchor);
+          $leaf.openBookmark(options);
+          break;
+        case 'open-in-current-tab':
+          $leaf.openBookmark(options, OpenBookmarkType.current);
           break;
         case 'open-new-window':
-          openBookmark(options, $anchor, OpenBookmarkType.window);
+          $leaf.openBookmark(options, OpenBookmarkType.window);
           break;
         case 'open-incognito':
-          openBookmark(options, $anchor, OpenBookmarkType.incognito);
+          $leaf.openBookmark(options, OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
           $leaf.editBookmarkTitle();
@@ -131,20 +173,13 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
             break;
           }
           await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
-          $leaf.updateAnker({ title, url: value });
+          $leaf.updateAnchor({ title, url: value });
           setAnimationClass('hilite')($leaf);
           break;
         }
-        case 'remove': {
-          await cbToResolve(curry(chrome.bookmarks.remove)($leaf.id));
-          addChild($byClass('leaf-menu'))($byClass('components'));
-          pipe(
-            addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
-            rmClass('hilite'),
-            setAnimationClass('remove-hilite'),
-          )($leaf);
+        case 'remove':
+          remeveBookmark($leaf);
           break;
-        }
         case 'show-in-folder': {
           const id = $leaf.parentElement?.id;
           const $target = $(`.folders ${cssid(id!)} > .marker > .title`);
@@ -162,7 +197,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
         }
         default:
       }
-      ($anchor.nextElementSibling as HTMLElement).blur();
+      ($leaf.firstElementChild?.nextElementSibling as HTMLElement).blur();
     },
     mousedown(e) {
       e.preventDefault();
@@ -170,26 +205,111 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   });
 }
 
-export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearchable {
+export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement, ISearchable {
+  readonly paneName = 'bookmarks';
+  #options!: Options;
+  $leafMenu!: HTMLElement;
+  $lastClickedLeaf!: Leaf | undefined;
+  #timerMultiSelect!: number;
   init(options: Options) {
-    this.addEventListener('click', (e) => {
-      const $target = e.target as HTMLDivElement;
-      if ($target.hasAttribute('contenteditable')) {
+    this.#options = options;
+    this.$leafMenu = $byClass('leaf-menu')!;
+    setLeafMenu(this.$leafMenu, options);
+  }
+  selectWithShift($target: Leaf) {
+    if (
+      this.$lastClickedLeaf !== $target
+      && this.$lastClickedLeaf?.parentElement === $target.parentElement
+    ) {
+      const leafs = [] as Leaf[];
+      let started = false;
+      for (
+        let next = $target.parentElement?.firstElementChild as Leaf | Element | null;
+        next != null;
+        next = next.nextElementSibling
+      ) {
+        if (next === $target || next === this.$lastClickedLeaf) {
+          if (started) {
+            leafs.push(next as Leaf);
+            break;
+          }
+          started = true;
+        }
+        if (started && next instanceof Leaf) {
+          leafs.push(next);
+        }
+      }
+      leafs.forEach(($leaf) => $leaf.select(true));
+    }
+  }
+  // eslint-disable-next-line class-methods-use-this
+  async deletesHandler($selecteds: HTMLElement[]) {
+    const selectes = $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf);
+    const ret = await dialog.confirm(getMessageDeleteSelecteds(selectes.length));
+    if (!ret) {
+      return;
+    }
+    selectes.forEach(remeveBookmark);
+  }
+  multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
+    if (!multiSelect) {
+      $$('.leafs .selected, .folders .selected')
+        .filter(($el): $el is Leaf => $el instanceof Leaf)
+        .forEach(($leaf) => $leaf.select(false));
+      this.$lastClickedLeaf = undefined;
+    }
+  }
+  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    if (hasClass($target, 'leaf-menu-button')) {
+      addStyle({ top: '-1000px' })(this.$leafMenu);
+      return;
+    }
+    const $leaf = $target.parentElement;
+    if (!($leaf instanceof Leaf)) {
+      return;
+    }
+    clearTimeout(this.#timerMultiSelect);
+    this.#timerMultiSelect = setTimeout(async () => {
+      const { dragging, multiSelPanes } = await states();
+      if (dragging) {
         return;
       }
-      if (hasClass($target, 'anchor')) {
-        openOrFindBookmarks(options, $target!);
-      } else if (hasClass($target, 'title', 'icon-fa-angle-right')) {
-        toggleClass('path')($target.parentElement?.parentElement);
+      dispatch('multiSelPanes', { bookmarks: !multiSelPanes?.bookmarks });
+      $leaf.preMultiSelect(!multiSelPanes?.bookmarks);
+    }, delayMultiSelect);
+  }
+  mouseupItem() {
+    clearTimeout(this.#timerMultiSelect);
+  }
+  async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+    const $target = e.target as HTMLDivElement;
+    if ($target.hasAttribute('contenteditable')) {
+      return;
+    }
+    if (hasClass($target, 'leaf', 'leaf-menu-button')) {
+      return;
+    }
+    if (hasClass($target, 'title', 'icon-fa-angle-right') && $target.closest('.leafs')) {
+      $target.parentElement?.parentElement?.classList.toggle('path');
+      return;
+    }
+    const $leaf = $target instanceof Leaf ? $target : $target.parentElement;
+    if ($leaf instanceof Leaf) {
+      const { bookmarks, all } = await states('multiSelPanes');
+      if (bookmarks || all) {
+        $leaf.select();
+        if (all) {
+          dispatch('multiSelPanes', { bookmarks: true });
+        }
+        if (e.shiftKey) {
+          this.selectWithShift($leaf);
+        }
+        this.$lastClickedLeaf = $leaf;
+        return;
       }
-    });
-    const $leafMenu = $byClass('leaf-menu');
-    this.addEventListener('mousedown', (e) => {
-      if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
-        addStyle({ top: '-1000px' })($leafMenu);
-      }
-    });
-    setLeafMenu($leafMenu, options);
+      $leaf.openOrFind(this.#options);
+    }
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     const targetBookmarks = switches(searchSelector)
@@ -227,7 +347,35 @@ export class Leafs extends HTMLDivElement implements ISubscribeElement, ISearcha
     $$byClass('search-path', this).forEach(rmClass('search-path'));
     $$byClass('path', this).forEach(rmClass('path'));
   }
-  connect(store: Store) {
+  override actions() {
+    return {
+      ...super.actions(),
+      clickLeafs: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownLeafs: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupLeafs: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+      }),
+    };
+  }
+  override connect(store: Store) {
+    super.connect(store);
     store.subscribe('clearSearch', this.clearSearch.bind(this));
+    store.subscribe('clickLeafs', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+    store.subscribe('mousedownLeafs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
+    store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
+    store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
+    store.subscribe('clickFolders', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
+    store.subscribe('mousedownFolders', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
+    store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
   }
 }

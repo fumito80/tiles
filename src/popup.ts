@@ -58,14 +58,14 @@ function setOptions(settings: Settings, options: Options) {
   setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
 
   if (options.showCloseTab) {
-    addStyle('--show-close-tab', 'inline-block')($byClass('tabs'));
+    addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
   }
   if (options.showDeleteHistory) {
-    addStyle('--show-delete-history', 'inline-block')($byClass('histories'));
+    addStyle('--show-delete-history', 'inline-block')($byClass('histories')!);
   }
   if (!options.showSwitchTabsWin) {
-    $byClass('win-prev').remove();
-    $byClass('win-next').remove();
+    $byClass('win-prev')!.remove();
+    $byClass('win-next')!.remove();
   }
 }
 
@@ -81,8 +81,8 @@ function setExternalUrl(options: Options) {
 }
 
 function setBookmarks(html: HtmlBookmarks) {
-  setHTML(html.leafs)($byClass('leafs'));
-  setHTML(html.folders)($byClass('folders'));
+  setHTML(html.leafs)($byClass('leafs')!);
+  setHTML(html.folders)($byClass('folders')!);
   ($('.folders .open') as any)?.scrollIntoViewIfNeeded();
 }
 
@@ -100,7 +100,7 @@ function setBookmarksState(clState: ClientState, isSearching: boolean) {
 function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes'], prefix = '') {
   return panes
     .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name), [])
-    .map((name) => $byClass(prefix + name));
+    .map((name) => $byClass(prefix + name)!);
 }
 
 function layoutPanes(options: Options, isSearching: boolean) {
@@ -113,7 +113,7 @@ function layoutPanes(options: Options, isSearching: boolean) {
     last,
     addClass('end'),
     curry($byClass)('query-wrap'),
-    addChild($byClass('form-query')),
+    ($el) => addChild($byClass('form-query')!)($el!),
   )($headers);
   addClass('end')(last($bodies));
   // Bold Splitter

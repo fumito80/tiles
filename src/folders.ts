@@ -1,12 +1,12 @@
 /* eslint-disable import/prefer-default-export */
 
-import { openOrFindBookmarks } from './bookmarks';
+// import { Leaf } from './bookmarks';
 import {
   $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
-import { ISubscribeElement, Store } from './store';
+import { IPubSubElement, makeAction, Store } from './store';
 import { Options } from './types';
 
 function onClickAngle($target: HTMLElement) {
@@ -51,12 +51,12 @@ setEvents($$byClass('folder-menu'), {
   },
 });
 
-export class Folders extends HTMLDivElement implements ISubscribeElement {
+export class Folders extends HTMLDivElement implements IPubSubElement {
   #options!: Options;
   private $foldersMenu!: HTMLElement;
   init(options: Options) {
     this.#options = options;
-    this.$foldersMenu = $byClass('folder-menu');
+    this.$foldersMenu = $byClass('folder-menu')!;
   }
   setEvents(store: Store) {
     this.addEventListener('mousedown', (e) => {
@@ -68,6 +68,7 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
       const $target = e.target as HTMLDivElement;
       const targetClasses = [
         'anchor',
+        'leaf',
         'marker',
         'title',
         'folder-menu-button',
@@ -76,10 +77,14 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
       const targetClass = whichClass(targetClasses, $target);
       switch (targetClass) {
         case 'anchor':
-          if ($target.hasAttribute('contenteditable')) {
-            return;
-          }
-          openOrFindBookmarks(this.#options, $target!);
+        case 'leaf':
+          //   if ($target.hasAttribute('contenteditable')) {
+          //     return;
+          //   }
+          //   const $leaf = $target.parentElement;
+          //   if ($leaf instanceof Leaf) {
+          //     $leaf.openOrFind(this.#options);
+          //   }
           break;
         case 'marker':
           $byClass('title', $target)!.click();
@@ -92,7 +97,7 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
           break;
         case 'title': {
           store.dispatch('clearQuery');
-          selectFolder($target, $byClass('leafs'), this.#options.exclusiveOpenBmFolderTree);
+          selectFolder($target, $byClass('leafs')!, this.#options.exclusiveOpenBmFolderTree);
           break;
         }
         case 'folder-menu-button': {
@@ -102,6 +107,25 @@ export class Folders extends HTMLDivElement implements ISubscribeElement {
         default:
       }
     });
+  }
+  actions() {
+    return {
+      clickFolders: makeAction({
+        target: this,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownFolders: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+      }),
+      mouseupFolders: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+      }),
+    };
   }
   connect(store: Store) {
     this.setEvents(store);

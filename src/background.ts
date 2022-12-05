@@ -7,6 +7,7 @@ import {
   HtmlBookmarks,
   CliMessageTypes,
   PayloadAction,
+  historyHtmlCount,
 } from './types';
 
 import {
@@ -63,17 +64,19 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData().then(addHeadersHistory);
-  const html = histories.slice(0, 32).map(makeHtmlHistory).join('');
-  const htmlHistory = `<div class="current-date history header-date" style="transform: translateY(-10000px)"></div>${html}`;
-  return setLocal({ htmlHistory }).then(() => histories);
+  const histories = await getHistoryData()
+    .then(addHeadersHistory)
+    .then((data) => data.slice(0, historyHtmlCount));
+  const html = histories.map(makeHtmlHistory).join('');
+  const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
+  return setLocal({ htmlHistory });
 }
 
 let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
 
 async function onVisitRemoved() {
   clearTimeout(timeoutRemoveHistory);
-  timeoutRemoveHistory = setTimeout(setHtmlHistory, 200);
+  timeoutRemoveHistory = setTimeout(setHtmlHistory, 500);
 }
 
 let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
@@ -96,7 +99,6 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const clientState = storage.clientState || {};
   const lastSearchWord = storage.lastSearchWord || '';
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
-  // const historyRows = settings.historyMax.rows;
   setBrowserIcon(options.colorPalette);
   makeHtmlBookmarks();
   setHtmlHistory();
@@ -112,44 +114,82 @@ getLocal(...initStateKeys).then(init);
 
 // Messagings popup to background
 
-type PayloadMoveWindow = PayloadAction<{ sourceWindowId: number, windowId: number, index: number }>;
+type PayloadMoveWindow = PayloadAction<
+  { sourceWindowId: number, windowId: number, index: number, focused: boolean }
+>;
 
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
   [CliMessageTypes.moveWindow]:
-    ({ payload: { sourceWindowId, windowId, index } }: PayloadMoveWindow) => (
-      new Promise<string | undefined>((resolve) => {
-        chrome.windows.get(sourceWindowId, { populate: true }).then(async ({ tabs }) => {
-          if (!tabs) {
-            resolve(`Error: ${CliMessageTypes.moveWindow}`);
-            return;
+    ({
+      payload: {
+        sourceWindowId, windowId, index, focused,
+      },
+    }: PayloadMoveWindow) => (
+      chrome.windows.get(sourceWindowId, { populate: true })
+        .then(({ tabs }) => {
+          const tabIds = tabs!.map((tab) => tab.id!);
+          return chrome.tabs.move(tabIds, { windowId, index });
+        })
+        .then(() => {
+          if (focused) {
+            chrome.windows.update(windowId, { focused });
           }
-          const tabIds = tabs.map((tab) => tab.id!);
-          chrome.tabs.move(tabIds, { windowId, index }, () => {
-            if (chrome.runtime.lastError) {
-              return resolve(chrome.runtime.lastError.message);
-            }
-            return resolve(undefined);
-          });
-        });
-      })
+          return undefined;
+        })
+        .catch((reason) => reason.message as string)
     ),
   [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
-    chrome.windows.get(payload.windowId, { populate: true }).then(({ tabs, incognito }) => {
-      if (!tabs) {
-        return;
-      }
-      const activeTabIndex = tabs.findIndex((tab) => tab.active);
-      const [activeTab] = tabs.splice(activeTabIndex, 1);
-      chrome.windows.create({ tabId: activeTab.id, incognito }, (win) => {
-        tabs.forEach(async (tab) => {
-          await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+    chrome.windows.update(payload.windowId, { state: 'normal' }).then(() => {
+      chrome.windows.get(payload.windowId, { populate: true })
+        .then(({
+          tabs, incognito, left, top, width, height,
+        }) => {
+          if (!tabs) {
+            return;
+          }
+          const activeTabIndex = tabs.findIndex((tab) => tab.active);
+          const [activeTab] = tabs.splice(activeTabIndex, 1);
+          chrome.windows.create({
+            tabId: activeTab.id, incognito, left, top, width, height,
+          }, (win) => {
+            tabs.forEach(async (tab) => {
+              await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+            });
+          });
         });
-      });
     })
   ),
+  [CliMessageTypes.moveTabsNewWindow]: async (
+    { payload }: PayloadAction<{ tabId: number, incognito: boolean}[]>,
+  ): Promise<{ windowId: number, message?: string }> => {
+    const [tab1, ...rest] = payload;
+    const focused = rest.every((t) => t.incognito === tab1.incognito);
+    const incognito = focused ? tab1.incognito : false;
+    const newWindow = await chrome.windows.create({ tabId: tab1.tabId, incognito, focused });
+    const [primary, reject] = rest.reduce(([p, r], t) => {
+      if (t.incognito === tab1.incognito) {
+        return [[...p, t.tabId], r];
+      }
+      return [p, [...r, t.tabId]];
+    }, [[], []] as [number[], number[]]);
+    const tabIds = [...primary, ...reject];
+    return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
+      .then(([{ windowId }]) => ({ windowId }))
+      .catch((reason) => ({ windowId: -1, message: reason.message }));
+  },
+  [CliMessageTypes.openUrls]: (
+    { payload: { urls, windowId, index } }: PayloadAction<{
+      urls: string[], windowId: number, index?: number,
+    }>,
+  ) => {
+    const tabs = urls.reverse().map((url) => chrome.tabs.create({
+      windowId, url, index, active: true,
+    }));
+    return Promise.all(tabs).then(() => chrome.windows.update(windowId, { focused: true }));
+  },
 };
 
 setMessageListener(mapMessagesPtoB);

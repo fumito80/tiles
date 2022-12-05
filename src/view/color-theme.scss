@@ -22,10 +22,6 @@ body {
   color: var(--key-color);
 }
 
-.current-window window-header {
-  border-bottom: 4px solid var(--key-bg);
-}
-
 .pane-header .pin-bookmark:hover::after {
   color: var(--key-bg) !important;
 }
@@ -37,30 +33,36 @@ app-main.searching .form-query {
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap.selected,
 .searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap:hover,
+.searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap.selected,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
-app-main:not(.drag-start) .window.tabs-collapsed:hover window-header,
-window-header:hover,
+app-main:not(.drag-start) .window.tabs-collapsed:not(:has(.outline:hover)):hover window-header,
+.window:not(:has(.outline:hover)) window-header:hover,
 .tooltip,
 .draggable-clone,
 .draggable-clone>div,
 .draggable-clone .title::before,
 .draggable-clone window-header::before,
 .drag-source,
-.drag-source::before {
+.drag-source::before,
+.leaf.selected,
+.history.selected {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
+
+  .theme-dark-frame .title::before,
+  .theme-dark-frame .form-query .submit>i,
+  .theme-dark-frame .tabs .new-window-plus>i {
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 .shade-right:hover~.zoom-out,
 .shade-left:hover~.zoom-out {
   color: var(--item-hover-bg);
-}
-
-app-main:not(.searching):not(.drag-start) .tabs-wrap>.tabs-collapsed>.tab-wrap:hover {
-  border-color: var(--item-hover-bg);
 }
 
 app-main:not(.drag-start) {
@@ -91,7 +93,7 @@ app-main:not(.drag-start) {
   }
 
   .leafs .title::before {
-    color: $dark-font-color;
+    color: $dark-icon-color;
   }
 
   &.zoom-pane .shade-left,
@@ -161,14 +163,28 @@ app-main:not(.drag-start) {
 
       >.tab-wrap {
         background-color: $dark-icon-color;
+
+        &.current-tab {
+          background-color: var(--key-bg);
+        }
       }
+    }
+  }
+
+  multi-sel-pane.show {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    .icon-check-all {
+      color: deepskyblue !important;
     }
   }
 }
 
 .theme-dark-frame {
-  .pane-header::before {
-    background-color: rgba(255, 255, 255, 0.15);
+  .pane-header {
+    &::before {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
   }
 
   .pane-header,
@@ -180,7 +196,7 @@ app-main:not(.drag-start) {
     color: $dark-font-color;
   }
 
-  .title::before,
+  .folders .title::before,
   .form-query .submit>i,
   .tabs .new-window-plus>i {
     color: $dark-icon-color;
@@ -314,6 +330,14 @@ app-main:not(.drag-start) {
       background-color: lightgray;
     }
   }
+
+  &.theme-dark-pane {
+    .tabs open-window.current-window::before {
+      height: calc(100% - 4px);
+      top: 2px;
+      left: -9px;
+    }
+  }
 }
 
 .theme-dark-hover:not(.drag-start) {
@@ -408,5 +432,39 @@ app-main:not(.theme-dark-search).searching .form-query {
   .query,
   .icon-x {
     color: $font-color;
+  }
+}
+
+app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
+  button {
+    >i {
+      color: rgba(0, 0, 0, 0.5);
+    }
+
+    &:hover::after,
+    &:focus::after {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    &:active::after {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.theme-dark-pane .pane-header multi-sel-pane.show {
+  button {
+    >i {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &:hover::after,
+    &:focus::after {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    &:active::after {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
   }
 }

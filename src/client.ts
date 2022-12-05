@@ -2,14 +2,14 @@
 
 import {
   splitterClasses,
-  OpenBookmarkType,
   Options,
   State,
   Settings,
   SplitterClasses,
   Model,
   InsertPosition,
-  CliMessageTypes,
+  dropAreaClasses,
+  positions,
 } from './types';
 
 import {
@@ -20,7 +20,6 @@ import {
   getCurrentTab,
   getLocal,
   setLocal,
-  extractDomain,
   htmlEscape,
   curry3,
   pipe,
@@ -29,8 +28,6 @@ import {
   prop,
   last,
   addListener,
-  getChromeId,
-  postMessage,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -39,10 +36,10 @@ import { Leaf } from './bookmarks';
 // DOM operation
 
 export function $<T extends HTMLElement>(
-  selector: string | null = null,
-  parent: HTMLElement | DocumentFragment | Document | null | Element = document,
+  selector: string,
+  parent: HTMLElement | DocumentFragment | Document | undefined | Element = document,
 ) {
-  return parent?.querySelector<T>(selector!) ?? null;
+  return parent?.querySelector<T>(selector) ?? undefined;
 }
 
 export function $$<T extends HTMLElement>(
@@ -56,7 +53,7 @@ export function $byClass<T extends HTMLElement>(
   className: string | null,
   parent: HTMLElement | Document = document,
 ) {
-  return parent.getElementsByClassName(className!)[0] as T;
+  return parent.getElementsByClassName(className!)[0] as T | undefined;
 }
 
 export function $byId<T extends HTMLElement>(
@@ -95,10 +92,11 @@ export function addChild<T extends Element | null>($child: T) {
   };
 }
 
-export function addStyle(styleNames: Model): <T extends Element | null>($el: T) => T;
-export function addStyle(styleName: string, value: string): <T extends Element | null>($el: T) => T;
+export function addStyle(styleNames: Model): <T extends Element | undefined | null>($el: T) => T;
+export function addStyle(styleName: string, value: string):
+  <T extends Element | undefined>($el: T) => T;
 export function addStyle(styleName: string | Model, value?: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if (typeof styleName === 'string') {
       ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
     } else {
@@ -111,43 +109,43 @@ export function addStyle(styleName: string | Model, value?: string) {
 }
 
 export function rmStyle(...styleNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     styleNames.forEach(
       (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
     );
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function addAttr(attrName: string, value: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.setAttribute(attrName, value);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function rmAttr(attrName: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.removeAttribute(attrName);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function addClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.classList.add(...classNames);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
 export function rmClass(...classNames: string[]) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.classList.remove(...classNames);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
-export function hasClass($el: Element | null, ...classNames: string[]) {
+export function hasClass($el: Element | undefined, ...classNames: string[]) {
   if (!$el) {
     return false;
   }
@@ -163,14 +161,14 @@ export function toggleElement(isShow = true, shownDisplayType = 'block') {
 }
 
 export function toggleClass(className: string, force?: boolean) {
-  return <T extends Element | null>($el?: T) => {
+  return <T extends Element | undefined>($el?: T) => {
     $el?.classList.toggle(className, force);
     return $el;
   };
 }
 
 export function setHTML(html: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if ($el) {
       // eslint-disable-next-line no-param-reassign
       $el.innerHTML = html;
@@ -180,7 +178,7 @@ export function setHTML(html: string) {
 }
 
 export function setText(text: string | null) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined>($el: T) => {
     if ($el) {
       // eslint-disable-next-line no-param-reassign
       $el.textContent = text;
@@ -191,9 +189,9 @@ export function setText(text: string | null) {
 
 // eslint-disable-next-line no-undef
 export function insertHTML(position: InsertPosition, html: string) {
-  return <T extends Element | null>($el: T) => {
+  return <T extends Element | undefined | null>($el: T) => {
     $el?.insertAdjacentHTML(position, html);
-    return $el;
+    return $el ?? undefined;
   };
 }
 
@@ -214,30 +212,8 @@ export function getGridTemplateColumns() {
   };
 }
 
-// async function checkSplitWidth(pane1: number, pane2: number, pane3: number, bodyWidth: number) {
-//   if (bodyWidth >= (pane1 + pane2 + pane3 + 100)) {
-//     return true;
-//   }
-//   const width = 800;
-//   const paneWidth = { pane1: 200, pane2: 200, pane3: 200 };
-//   addStyle('width', `${width}px`)(document.body);
-//   // eslint-disable-next-line no-use-before-define
-//   setSplitWidth(paneWidth, width);
-//   const saved = await getLocal('settings');
-//   const settings = {
-//     ...saved.settings,
-//     width,
-//     paneWidth,
-//   };
-//   setLocal({ settings });
-//   return false;
-// }
-
 export async function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  // if (!await checkSplitWidth(pane1, pane2, pane3, bodyWidth)) {
-  //   return;
-  // }
   const $bodies = $$byClass('pane-body');
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
@@ -315,32 +291,8 @@ export async function createNewTab(options: Options, url: string) {
   chrome.tabs.create({ index, url, windowId }, window.close);
 }
 
-export function getBookmark(id: string) {
-  return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
-    chrome.bookmarks.get(id, ([treeNode]) => resolve(treeNode));
-  });
-}
-
-export async function openBookmark(
-  options: Options,
-  target: EventTarget | HTMLElement,
-  openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
-) {
-  const { id } = (target as HTMLAnchorElement).parentElement!;
-  const { url } = await getBookmark(id);
-  switch (openType) {
-    case OpenBookmarkType.tab: {
-      createNewTab(options, url!);
-      break;
-    }
-    case OpenBookmarkType.window:
-    case OpenBookmarkType.incognito: {
-      const incognito = openType === OpenBookmarkType.incognito;
-      chrome.windows.create({ url, incognito }, window.close);
-      break;
-    }
-    default:
-  }
+export async function getBookmark(id: string) {
+  return chrome.bookmarks.get(id).then(([tab]) => tab);
 }
 
 export function setHasChildren($target: HTMLElement) {
@@ -440,7 +392,7 @@ export function resizeHeightHandler(e: MouseEvent) {
 }
 
 export function setAnimationFolder(className: string) {
-  return (el: Element | null = null) => {
+  return (el: Element | null | undefined = undefined) => {
     if (!el) {
       return el;
     }
@@ -451,40 +403,9 @@ export function setAnimationFolder(className: string) {
   };
 }
 
-export async function findInTabsBookmark(options: Options, $anchor: HTMLElement) {
-  const { id } = $anchor.parentElement!;
-  const { url = '' } = await getBookmark(id);
-  const [schemeSrc, domainSrc] = extractDomain(url);
-  const finder = options.findTabsMatches === 'prefix'
-    ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
-    : (tab: chrome.tabs.Tab) => {
-      const [scheme, domain] = extractDomain(tab.url);
-      return domain === domainSrc && scheme === schemeSrc;
-    };
-  const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
-    chrome.tabs.query({}, (tabs) => {
-      chrome.windows.getCurrent((win) => {
-        const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
-        const sorted = [
-          ...tabs.slice(findIndex + 1),
-          ...tabs.slice(0, findIndex + 1),
-        ];
-        const firstTab = sorted.find(finder);
-        resolve(firstTab);
-      });
-    });
-  });
-  if (tab?.id == null) {
-    openBookmark(options, $anchor);
-    return;
-  }
-  chrome.windows.update(tab.windowId, { focused: true });
-  chrome.tabs.update(tab.id, { active: true }, window.close);
-}
-
 export async function removeFolder($folder: HTMLElement) {
   await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
-  addChild($byClass('folder-menu'))(document.body);
+  addChild($byClass('folder-menu')!)(document.body);
   pipe(
     addListener('animationend', () => {
       const $parent = $folder.parentElement!;
@@ -494,7 +415,7 @@ export async function removeFolder($folder: HTMLElement) {
     }, { once: true }),
     rmClass('hilite'),
     setAnimationFolder('remove-hilite'),
-  )($byClass('marker', $folder));
+  )($byClass('marker', $folder)!);
   $byId($folder.id).remove();
 }
 
@@ -556,20 +477,20 @@ export async function editTitle(
 
 export async function addBookmark(
   parentId = '1',
-  paramsIn: chrome.bookmarks.BookmarkCreateArg | null = null,
+  bookmarkCreateArg: chrome.bookmarks.BookmarkCreateArg | null = null,
   silent = false,
 ) {
   const isSearching = hasClass($byTag('app-main'), 'searching');
-  const { title, url } = paramsIn ?? await getCurrentTab();
-  const index = paramsIn?.index ?? (parentId === '1' ? 0 : undefined);
+  const { title, url } = bookmarkCreateArg ?? await getCurrentTab();
+  const index = bookmarkCreateArg?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
     title: title!, url: url!, parentId, index,
   };
-  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
-  const htmlAnchor = makeLeaf({ id, ...params });
+  const { id } = await chrome.bookmarks.create(params);
+  const htmlLeaf = makeLeaf({ id, ...params });
   if (parentId === '1') {
-    insertHTML('beforebegin', htmlAnchor)($byId('1')!.children[index! + 1]);
-    insertHTML('beforebegin', htmlAnchor)($byClass('folders')!.children[index!]);
+    insertHTML('beforebegin', htmlLeaf)($byId('1')!.children[index! + 1]);
+    insertHTML('beforebegin', htmlLeaf)($byClass('folders')!.children[index!]);
   } else {
     if (parentId !== $byClass('open')?.id && !isSearching) {
       $$byClass('open').forEach(rmClass('open'));
@@ -577,9 +498,9 @@ export async function addBookmark(
     }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
     if (index == null) {
-      insertHTML('beforeend', htmlAnchor)($targetFolder);
+      insertHTML('beforeend', htmlLeaf)($targetFolder);
     } else {
-      insertHTML('afterend', htmlAnchor)($targetFolder.children[index]);
+      insertHTML('afterend', htmlLeaf)($targetFolder.children[index]);
     }
   }
   const $Leaf = $(`.folders ${cssid(id)}`) as Leaf || $(`.leafs ${cssid(id)}`) as Leaf;
@@ -588,13 +509,6 @@ export async function addBookmark(
     setAnimationClass('hilite')($Leaf);
     $Leaf.editBookmarkTitle();
   }
-}
-
-export function showModalInput(desc: string) {
-  const $modal = $byClass('modal')!;
-  addClass('show-modal')(document.body);
-  setText(desc)($byClass('popup-desc', $modal));
-  return $<HTMLInputElement>('input', $modal)!.value;
 }
 
 export function selectFolder(
@@ -676,40 +590,33 @@ export async function addFolder(
 
 export const panes = ['folders', 'leafs', 'tabs'] as const;
 
-export async function addFromTabs(
-  parentId: string,
-  index: number,
-  sourceId: string,
+export function addBookmarksFromTabs(
+  tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
+  bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
+) {
+  const { parentId, index } = bookmarkDestArg;
+  const silent = tabs.length > 1;
+  const sourceList = index == null ? tabs : tabs.reverse();
+  sourceList.forEach(({ title, url }) => addBookmark(parentId, {
+    title, url, index, parentId,
+  }, silent));
+}
+
+export async function addFolderFromTabs(
+  tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
+  bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
   destId: string,
   position: InsertPosition,
-  dropPane?: typeof panes[number],
-  isNewWindow = false,
 ) {
-  const windowId = getChromeId(sourceId);
-  if (isNewWindow) {
-    postMessage({ type: CliMessageTypes.moveWindowNew, payload: { windowId } });
+  const { parentId, index } = bookmarkDestArg;
+  const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
+  if (!parentFolderId) {
     return;
   }
-  chrome.windows.get(windowId, { populate: true }, async ({ tabs }) => {
-    if (!tabs) {
-      return;
-    }
-    if (dropPane === 'leafs') {
-      const sourceList = index == null ? tabs : tabs.reverse();
-      sourceList.forEach(({ title, url }) => addBookmark(parentId, {
-        title, url, index, parentId,
-      }, true));
-      return;
-    }
-    const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
-    if (!parentFolderId) {
-      return;
-    }
-    tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
-    const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
-    setAnimationFolder('hilite')($target.parentElement);
-    editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
-  });
+  tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
+  const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
+  setAnimationFolder('hilite')($target.parentElement);
+  editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
 }
 
 export function openFolder(folderId: string, incognito = false) {
@@ -719,9 +626,9 @@ export function openFolder(folderId: string, incognito = false) {
   });
 }
 
-type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu';
+type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
-export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
+export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePos = false) {
   return (e: MouseEvent) => {
     e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
@@ -731,6 +638,12 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement) {
     }
     const rect = $target.getBoundingClientRect();
     const { width, height } = $menu.getBoundingClientRect();
+    if (relativePos) {
+      if (rect.x - width < 5) {
+        addStyle({ left: `${$target.offsetLeft}px` })($menu);
+      }
+      return;
+    }
     const left = (rect.left + rect.width - 5) <= width
       ? `${rect.left}px`
       : `${rect.left - width + rect.width}px`;
@@ -746,4 +659,81 @@ export function setOpenPaths($folder: HTMLElement) {
     addClass('path')($current);
   }
   saveStateAllPaths();
+}
+
+export async function remeveBookmark($leaf: Leaf) {
+  await chrome.bookmarks.remove($leaf.id);
+  addChild($byClass('leaf-menu')!)($byClass('components')!);
+  pipe(
+    addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
+    rmClass('hilite'),
+    setAnimationClass('remove-hilite'),
+  )($leaf);
+}
+
+export function getPrevTarget(...className: string[]) {
+  return ($nextTarget: HTMLElement): HTMLElement | undefined => {
+    const $target = $nextTarget?.previousElementSibling as HTMLElement | undefined;
+    if (!$target) {
+      return undefined;
+    }
+    if (hasClass($target, ...className)) {
+      return $target;
+    }
+    return getPrevTarget(...className)($target);
+  };
+}
+
+async function sequentialMoveBookmarks(sourceIds: string[], parentId: string, destId?: string) {
+  const [sourceId, ...rest] = sourceIds;
+  const [bm] = destId ? await chrome.bookmarks.get(destId) : [{ index: undefined }];
+  chrome.bookmarks.move(sourceId, { parentId, index: bm.index }, () => (
+    rest.length === 0 ? null : sequentialMoveBookmarks(rest, parentId, destId)
+  ));
+}
+
+export function moveBookmarks(
+  dropAreaClass: (typeof dropAreaClasses)[number],
+  bookmarkDest: chrome.bookmarks.BookmarkDestinationArg,
+  sourceIds: string[],
+  destId: string,
+) {
+  const [$destLeafs, $destFolders] = dropAreaClass === 'leafs' ? $$byClass('open') : $$(cssid(destId));
+  if (!$destLeafs) {
+    return;
+  }
+  const { parentId, index } = bookmarkDest;
+  chrome.bookmarks.getSubTree(parentId!)
+    .then(([node]) => node.children?.find((bm) => bm.index === index))
+    .then((destBm) => sequentialMoveBookmarks(sourceIds, parentId!, destBm?.id))
+    .then(() => sourceIds.forEach((sourceId) => {
+      const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+      const position = positions[dropAreaClass];
+      const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
+      const isRootFrom = $sourceLeafs.parentElement?.id === '1';
+      const isLeafFrom = hasClass($sourceLeafs, 'leaf');
+      if (isLeafFrom && isRootFrom && !isRootTo) {
+        $sourceFolders.remove();
+      } else if (isLeafFrom && isRootTo) {
+        const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
+        $destFolders.insertAdjacentElement(position, $source);
+        pipe(
+          rmClass('search-path'),
+          setAnimationClass('hilite'),
+        )($source);
+      } else if (!isLeafFrom) {
+        const $lastParantElement = $sourceFolders.parentElement!;
+        $destFolders.insertAdjacentElement(position, $sourceFolders);
+        setHasChildren($lastParantElement);
+        setHasChildren($sourceFolders.parentElement!);
+        setOpenPaths($sourceFolders);
+        setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+      }
+      $destLeafs.insertAdjacentElement(position, $sourceLeafs);
+      setAnimationClass('hilite')($sourceLeafs);
+    }));
+}
+
+export function getMessageDeleteSelecteds(count: number) {
+  return `Are you sure you want to delete ${count} selected items?`;
 }
