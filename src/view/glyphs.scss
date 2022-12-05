@@ -123,7 +123,7 @@ i {
 }
 
 .icon-arrow-up::before {
-  content: "\e912";
+  content: "\e917";
 }
 
 .icon-arrow-down::before {
@@ -179,5 +179,9 @@ i {
 }
 
 .icon-check-all::before {
-  content: '\e917';
+  content: '\e912';
+}
+
+.icon-info::before {
+  content: '\e91b';
 }

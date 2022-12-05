@@ -64,7 +64,9 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData(historyHtmlCount).then(addHeadersHistory);
+  const histories = await getHistoryData()
+    .then(addHeadersHistory)
+    .then((data) => data.slice(0, historyHtmlCount));
   const html = histories.map(makeHtmlHistory).join('');
   const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
   return setLocal({ htmlHistory });
@@ -140,17 +142,24 @@ export const mapMessagesPtoB = {
         .catch((reason) => reason.message as string)
     ),
   [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
-    chrome.windows.get(payload.windowId, { populate: true }).then(({ tabs, incognito }) => {
-      if (!tabs) {
-        return;
-      }
-      const activeTabIndex = tabs.findIndex((tab) => tab.active);
-      const [activeTab] = tabs.splice(activeTabIndex, 1);
-      chrome.windows.create({ tabId: activeTab.id, incognito }, (win) => {
-        tabs.forEach(async (tab) => {
-          await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+    chrome.windows.update(payload.windowId, { state: 'normal' }).then(() => {
+      chrome.windows.get(payload.windowId, { populate: true })
+        .then(({
+          tabs, incognito, left, top, width, height,
+        }) => {
+          if (!tabs) {
+            return;
+          }
+          const activeTabIndex = tabs.findIndex((tab) => tab.active);
+          const [activeTab] = tabs.splice(activeTabIndex, 1);
+          chrome.windows.create({
+            tabId: activeTab.id, incognito, left, top, width, height,
+          }, (win) => {
+            tabs.forEach(async (tab) => {
+              await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+            });
+          });
         });
-      });
     })
   ),
   [CliMessageTypes.moveTabsNewWindow]: async (

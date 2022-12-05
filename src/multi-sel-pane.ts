@@ -4,14 +4,14 @@ import {
   addBookmark, addClass, addFolder, addStyle, hasClass, rmClass, rmStyle, showMenu,
 } from './client';
 import {
-  Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store,
+  IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
 
 export function getSelecteds() {
   return $$byClass('selected');
 }
 
-function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
+function clickMainMenu(e: MouseEvent, store: Store) {
   const $menu = e.target as HTMLElement;
   switch ($menu.dataset.value) {
     case 'add-bookmark': {
@@ -20,7 +20,12 @@ function clickMainMenu(e: MouseEvent, dispatch: Dispatch) {
       break;
     }
     case 'start-multi-select':
-      dispatch('multiSelPanes', { all: true });
+      store.getStates('multiSelPanes').then(({ all }) => !all).then((all) => {
+        store.dispatch('multiSelPanes', { all });
+        if (!all) {
+          store.dispatch('focusQuery');
+        }
+      });
       break;
     case 'add-folder':
       addFolder();
@@ -181,7 +186,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   }
   connect(store: Store) {
     this.$multiSelPane.connect(store);
-    this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store.dispatch));
+    this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store));
     store.subscribe('selectItems', (changes) => this.selectItems(changes.newValue));
   }
 }

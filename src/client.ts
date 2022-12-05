@@ -735,5 +735,5 @@ export function moveBookmarks(
 }
 
 export function getMessageDeleteSelecteds(count: number) {
-  return `Are you sure you want to delete ${count} selected items`;
+  return `Are you sure you want to delete ${count} selected items?`;
 }

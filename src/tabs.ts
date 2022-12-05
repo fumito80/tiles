@@ -209,7 +209,7 @@ export class OpenTab extends MutiSelectableItem {
     const rectTT = this.$tooltip.getBoundingClientRect();
     const rectMain = this.$main.getBoundingClientRect();
     const left = Math.min(
-      rect.left - rectMain.left,
+      rect.left - rectMain.left - 1,
       rectMain.width - rectMain.left - rectTT.width - 5,
     );
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);

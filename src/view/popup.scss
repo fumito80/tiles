@@ -403,6 +403,7 @@ window-header,
 
       ~.collapse-history-date.hidden {
         opacity: 0;
+        pointer-events: none;
       }
     }
 
@@ -494,6 +495,12 @@ window-header,
   .searched-menu {
     display: none;
   }
+
+  .icon-info {
+    color: #999;
+    width: 1.8rem;
+    pointer-events: none;
+  }
 }
 
 [role="menuitem"] {
@@ -501,6 +508,7 @@ window-header,
     width: 2.5rem;
     text-align: center;
     font-size: 1.0rem;
+    pointer-events: none;
   }
 
   .icon-tabs,

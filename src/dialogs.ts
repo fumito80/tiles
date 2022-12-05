@@ -8,7 +8,7 @@ const dialogStyle = `
   }
 `;
 
-class DialogContent extends HTMLElement {
+export class DialogContent extends HTMLElement {
   private shadow: ShadowRoot;
   private $text: HTMLDivElement;
   private $cancelButton: HTMLButtonElement;
@@ -75,6 +75,4 @@ export default class ModalDialog extends HTMLDialogElement {
   }
 }
 
-customElements.define('dialog-content', DialogContent);
-customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
 export const dialog = $byTag('dialog') as ModalDialog;

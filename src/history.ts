@@ -272,13 +272,36 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       return newData;
     });
   }
-  selectDateAll($headerDate: HTMLElement, dispatch: Dispatch, preSelect = false) {
+  selectDateAll(
+    $headerDate: HTMLElement,
+    searching: boolean,
+    dispatch: Dispatch,
+    preSelect = false,
+  ) {
     if (this.preSelectAll) {
       this.preSelectAll = false;
       return;
     }
     this.preSelectAll = preSelect;
     const currentDate = $headerDate.textContent;
+    if (searching) {
+      const selecteds = this.getVScrollData()
+        .filter((row) => getLocaleDate(row.lastVisitTime) === currentDate && !row.headerDate);
+      const selectedIds = selecteds.map((row) => row.id);
+      const selected = !selecteds[0].selected;
+      this.applyData((data) => {
+        let [head, ...rest] = selectedIds;
+        return data.map((row) => {
+          const found = row.id! === head;
+          if (found) {
+            [head = '.', ...rest] = rest;
+          }
+          return found ? { ...row, selected } : row;
+        });
+      });
+      this.selectItems(dispatch);
+      return;
+    }
     this.applyData((data) => {
       const newData = [];
       let matched = false;
@@ -326,9 +349,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLElement;
     if (hasClass($target, 'header-date')) {
-      const { historyCollapseDate, multiSelPanes: { histories, all } = {} } = await states();
+      const {
+        searching, historyCollapseDate, multiSelPanes: { histories, all } = {},
+      } = await states();
       if (histories || all) {
-        this.selectDateAll($target, dispatch);
+        this.selectDateAll($target, searching, dispatch);
         if (all) {
           dispatch('multiSelPanes', { histories: true });
         }
@@ -394,7 +419,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       clearTimeout(this.#timerMultiSelect);
       this.#timerMultiSelect = setTimeout(
         async () => {
-          const { dragging, multiSelPanes } = await states();
+          const { dragging, multiSelPanes, searching } = await states();
           if (dragging) {
             if (multiSelPanes?.histories) {
               this.selectItem($history.id, true);
@@ -407,7 +432,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             return;
           }
           if (isHeader) {
-            this.selectDateAll($history, dispatch, true);
+            this.selectDateAll($history, searching, dispatch, true);
             return;
           }
           $history.preMultiSelect(!multiSelPanes?.histories);
@@ -487,6 +512,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   getVScrollData() {
     return this.vScrollData;
+  }
+  applyVScrollData(
+    fnApply: (data: MyHistoryItem[]) => MyHistoryItem[],
+  ) {
+    this.vScrollData = fnApply(this.vScrollData);
+    this.resetVScroll();
   }
   getHistoryById(elementId: string) {
     const id = elementId.replace('hst-', '');

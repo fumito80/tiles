@@ -15,6 +15,7 @@ import { Folders } from './folders';
 import { AppMain } from './app-main';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane, PopupMenu } from './multi-sel-pane';
+import ModalDialog, { DialogContent } from './dialogs';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -305,3 +306,5 @@ customElements.define('history-item', HistoryItem);
 customElements.define('bm-leaf', Leaf);
 customElements.define('multi-sel-pane', MultiSelPane);
 customElements.define('popup-menu', PopupMenu);
+customElements.define('dialog-content', DialogContent);
+customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
