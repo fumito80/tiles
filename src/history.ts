@@ -67,7 +67,7 @@ export class HistoryItem extends MutiSelectableItem {
     createNewTab(options, url);
   }
   async delete(url: string) {
-    setAnimationClass('hilite')(this);
+    setAnimationClass('hilite-fast')(this);
     return chrome.history.deleteUrl({ url });
   }
 }
@@ -229,7 +229,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const count = this.hookData(filter(propEq('selected', true))).length;
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
-  async deletesHandler($selecteds: HTMLElement[]) {
+  async deletesHandler($selecteds: HTMLElement[], store: Store) {
     const count = this.hookData((data) => data.filter(propEq('selected', true))).length;
     const ret = await dialog.confirm(getMessageDeleteSelecteds(count));
     if (!ret) {
@@ -239,12 +239,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
       .map(($history) => {
         const { url } = this.getHistoryById($history.id);
-        const [, id] = $history.id.split('-');
-        return [url, id] as [url: string, id: string];
+        return [url, $history] as [url: string, historyItem: HistoryItem];
       });
     Promise.all(promiseUrls)
-      .then((urls) => urls.map(([url, id]) => chrome.history.deleteUrl({ url }).then(() => id)))
+      .then((urls) => urls.map(([url, $history]) => $history.delete(url).then(() => $history.id)))
       .then((ids) => Promise.all(ids))
+      .then((ids) => ids.map((id) => id.replace('hst-', '')))
       .then((ids) => {
         this.applyData((histories) => {
           let [head, ...rest] = ids;
@@ -256,6 +256,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             return !found;
           });
         });
+        this.selectItems(store.dispatch);
       });
   }
   selectItem(elementId: string, selected: boolean) {
@@ -513,12 +514,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   getVScrollData() {
     return this.vScrollData;
   }
-  applyVScrollData(
-    fnApply: (data: MyHistoryItem[]) => MyHistoryItem[],
-  ) {
-    this.vScrollData = fnApply(this.vScrollData);
-    this.resetVScroll();
-  }
   getHistoryById(elementId: string) {
     const id = elementId.replace('hst-', '');
     return this.#histories.find(propEq('id', id))!;
@@ -637,7 +632,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
       }
       case 'open-incognito':
       case 'open-new-window': {
-        this.store.dispatch('openWindowFromHistory', className === 'open-incognito');
+        this.store.dispatch('openWindowFromHistory', className === 'open-incognito', true);
         break;
       }
       default:

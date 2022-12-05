@@ -192,6 +192,11 @@ button:not(.submit) {
   animation-timing-function: ease-out;
 }
 
+.hilite-fast {
+  animation-name: hilite-fade-out !important;
+  animation-duration: 0.3s !important;
+}
+
 // Item Common
 
 .leaf,

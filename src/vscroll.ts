@@ -63,7 +63,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
     pipe(
       toggleClass('selected', !!selected),
-      rmClass('hilite', 'header-date'),
+      rmClass('hilite-fast', 'header-date'),
       setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
       addAttr('title', htmlEscape(tooltip)),

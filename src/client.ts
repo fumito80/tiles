@@ -267,13 +267,13 @@ export async function recoverMinPaneWidth() {
   setLocal({ settings });
 }
 
-export function setAnimationClass(className: 'hilite' | 'remove-hilite') {
+export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast') {
   return pipe(
     rmClass(className),
     (el) => {
       // eslint-disable-next-line no-void
       void (el as HTMLElement).offsetWidth;
-      el?.addEventListener('animationend', () => rmClass('hilite')(el), { once: true });
+      el?.addEventListener('animationend', () => rmClass(className)(el), { once: true });
       return el;
     },
     addClass(className),
