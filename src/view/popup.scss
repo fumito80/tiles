@@ -416,7 +416,8 @@ window-header,
       opacity: 1;
 
       button {
-        display: none;
+        pointer-events: none;
+        // display: none;
         opacity: 0;
       }
     }

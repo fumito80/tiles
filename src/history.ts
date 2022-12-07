@@ -231,6 +231,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   async deletesHandler($selecteds: HTMLElement[], store: Store) {
     const count = this.hookData((data) => data.filter(propEq('selected', true))).length;
+    if (count === 0) {
+      return;
+    }
     const ret = await dialog.confirm(getMessageDeleteSelecteds(count));
     if (!ret) {
       return;

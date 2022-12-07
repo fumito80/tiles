@@ -40,7 +40,7 @@ export class DialogContent extends HTMLElement {
 }
 export default class ModalDialog extends HTMLDialogElement {
   private dialogContent: DialogContent;
-  private resolve!: (value?: unknown) => void;
+  private resolve!: (value?: boolean) => void;
   constructor() {
     super();
     this.dialogContent = $byTag('dialog-content');
@@ -63,8 +63,8 @@ export default class ModalDialog extends HTMLDialogElement {
     }
     this.dialogContent.setConfig(msg, cancel);
     this.showModal();
-    return new Promise((resolve) => {
-      this.resolve = resolve;
+    return new Promise<boolean>((resolve) => {
+      this.resolve = resolve as (value?: boolean) => void;
     });
   }
   async alert(msg: string) {

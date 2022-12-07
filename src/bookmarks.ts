@@ -216,6 +216,10 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     this.$leafMenu = $byClass('leaf-menu')!;
     setLeafMenu(this.$leafMenu, options);
   }
+  selectItems(dispatch: Dispatch, precount?: number) {
+    const count = precount ?? $$('.leafs .selected, .folders .selected').length;
+    dispatch('selectItems', { paneName: this.paneName, count }, true);
+  }
   selectWithShift($target: Leaf) {
     if (
       this.$lastClickedLeaf !== $target
@@ -243,13 +247,18 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     }
   }
   // eslint-disable-next-line class-methods-use-this
-  async deletesHandler($selecteds: HTMLElement[]) {
-    const selectes = $selecteds.filter(($el): $el is Leaf => $el instanceof Leaf);
-    const ret = await dialog.confirm(getMessageDeleteSelecteds(selectes.length));
+  async deletesHandler($selecteds: HTMLElement[], store: Store) {
+    if ($selecteds.length === 0) {
+      return;
+    }
+    const ret = await dialog.confirm(getMessageDeleteSelecteds($selecteds.length));
     if (!ret) {
       return;
     }
-    selectes.forEach(remeveBookmark);
+    const removes = $selecteds
+      .filter(($el): $el is Leaf => $el instanceof Leaf)
+      .map(remeveBookmark);
+    Promise.all(removes).then(() => this.selectItems(store.dispatch));
   }
   multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
     if (!multiSelect) {
@@ -277,6 +286,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
       }
       dispatch('multiSelPanes', { bookmarks: !multiSelPanes?.bookmarks });
       $leaf.preMultiSelect(!multiSelPanes?.bookmarks);
+      this.selectItems(dispatch);
     }, delayMultiSelect);
   }
   mouseupItem() {
@@ -305,6 +315,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         if (e.shiftKey) {
           this.selectWithShift($leaf);
         }
+        this.selectItems(dispatch);
         this.$lastClickedLeaf = $leaf;
         return;
       }

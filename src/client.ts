@@ -32,6 +32,7 @@ import {
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
+import { dialog } from './dialogs';
 
 // DOM operation
 
@@ -404,7 +405,12 @@ export function setAnimationFolder(className: string) {
 }
 
 export async function removeFolder($folder: HTMLElement) {
-  await cbToResolve(curry(chrome.bookmarks.removeTree)($folder.id));
+  const ret = await chrome.bookmarks.removeTree($folder.id)
+    .then(() => 'ok')
+    .catch((reason) => dialog.alert(reason.message));
+  if (ret !== 'ok') {
+    return;
+  }
   addChild($byClass('folder-menu')!)(document.body);
   pipe(
     addListener('animationend', () => {
@@ -663,12 +669,17 @@ export function setOpenPaths($folder: HTMLElement) {
 
 export async function remeveBookmark($leaf: Leaf) {
   await chrome.bookmarks.remove($leaf.id);
-  addChild($byClass('leaf-menu')!)($byClass('components')!);
-  pipe(
-    addListener('animationend', () => $$(cssid($leaf.id)).forEach(($el) => $el.remove()), { once: true }),
-    rmClass('hilite'),
-    setAnimationClass('remove-hilite'),
-  )($leaf);
+  return new Promise<void>((resolve) => {
+    addChild($byClass('leaf-menu')!)($byClass('components')!);
+    pipe(
+      addListener('animationend', () => {
+        $$(cssid($leaf.id)).forEach(($el) => $el.remove());
+        resolve();
+      }, { once: true }),
+      rmClass('hilite'),
+      setAnimationClass('remove-hilite'),
+    )($leaf);
+  });
 }
 
 export function getPrevTarget(...className: string[]) {

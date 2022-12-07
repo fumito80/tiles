@@ -531,7 +531,7 @@ export function maybePipeP<T>(
 export function maybePipeP(fn: any, ...fns: any[]) {
   return async (...values: any[]) => {
     const result = await fn(...values);
-    if (result == null) {
+    if (result == null || result === false) {
       return null;
     }
     if (fns.length === 0) {

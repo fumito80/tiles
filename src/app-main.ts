@@ -60,7 +60,7 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
 }
 
 async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
-  if (e.key === 'Shift') {
+  if (e.shiftKey && e.ctrlKey) {
     const { bookmarks, tabs, histories } = await states('multiSelPanes');
     if (bookmarks || tabs || histories) {
       return;

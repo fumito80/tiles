@@ -1,11 +1,12 @@
 import { Panes, State } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
-  addBookmark, addClass, addFolder, addStyle, hasClass, rmClass, rmStyle, showMenu,
+  addBookmark, addClass, addFolder, hasClass, rmClass, showMenu,
 } from './client';
 import {
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
+import { pick } from './common';
 
 export function getSelecteds() {
   return $$byClass('selected');
@@ -44,10 +45,16 @@ export class PopupMenu extends HTMLElement {
   }
 }
 
+function getElementWidth($el: HTMLElement) {
+  const styles = getComputedStyle($el);
+  const props = pick('width', 'marginLeft', 'marginRight', 'paddingLeft', 'paddingRight')(styles);
+  return Object.values(props)
+    .reduce((acc, value) => acc + Number.parseFloat(String(value)), 0) || 0;
+}
+
 export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   // eslint-disable-next-line no-use-before-define
   #header!: MulitiSelectablePaneHeader;
-  #maxWidth!: string;
   $count!: HTMLElement;
   $buttons!: HTMLButtonElement[];
   // eslint-disable-next-line no-use-before-define
@@ -71,36 +78,24 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       return;
     }
     if (all) {
-      this.$buttons.forEach(rmStyle('display'));
-      addClass('show')(this);
-      const { width } = this.getBoundingClientRect();
-      this.#maxWidth = `${String(Math.ceil(width))}px`;
-      addClass('pre')(this);
-      const rect = this.getBoundingClientRect();
-      this.style.setProperty('max-width', `${Math.ceil(rect.width)}px`);
-      this.$buttons.forEach(addStyle({ display: 'none' }));
+      this.$count.textContent = '';
+      addClass('show', 'pre')(this);
+      const { height } = getComputedStyle(this);
+      this.style.setProperty('max-width', height);
       return;
     }
     if (show) {
-      if (hasClass(this, 'pre')) {
-        this.style.setProperty('max-width', this.#maxWidth);
-      }
       rmClass('pre')(this);
       addClass('show')(this);
-      this.$buttons.forEach(rmStyle('display'));
     }
   }
   selectItems(count: number) {
     this.$count.textContent = String(count);
-    if (this.$buttons[0]?.style.display === 'none') {
-      const { maxWidth } = this.style;
-      this.style.removeProperty('max-width');
-      this.$buttons.forEach(rmStyle('display'));
-      const { width } = this.getBoundingClientRect();
-      this.$buttons.forEach(addStyle({ display: 'none' }));
-      this.style.setProperty('max-width', maxWidth);
-      this.#maxWidth = `${String(Math.ceil(width))}px`;
-    }
+    rmClass('pre')(this);
+    const maxWidth = ([...this.children] as HTMLElement[])
+      .map(getElementWidth)
+      .reduce((acc, width) => acc + width, 0);
+    this.style.setProperty('max-width', `${Math.ceil(maxWidth)}px`);
   }
   connect(store: Store) {
     store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));

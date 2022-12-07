@@ -203,8 +203,7 @@ export class OpenTab extends MutiSelectableItem {
     };
   }
   setTooltipPosition() {
-    const marginBottom = 3;
-    const marginTop = 3;
+    const margin = 4;
     const rect = this.getBoundingClientRect();
     const rectTT = this.$tooltip.getBoundingClientRect();
     const rectMain = this.$main.getBoundingClientRect();
@@ -213,11 +212,11 @@ export class OpenTab extends MutiSelectableItem {
       rectMain.width - rectMain.left - rectTT.width - 5,
     );
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
-    if (rect.bottom + rectTT.height + marginBottom > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - rectTT.height - marginTop}px`)(this.$tooltip);
+    if (rect.bottom + rectTT.height + margin > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - rectTT.height - margin}px`)(this.$tooltip);
       return;
     }
-    addStyle('top', `${rect.bottom + marginBottom}px`)(this.$tooltip);
+    addStyle('top', `${rect.bottom + margin}px`)(this.$tooltip);
   }
 }
 
@@ -465,6 +464,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         })
         .filter((id, i, ids) => ids.indexOf(id) === i)
         .forEach((windowId) => store.dispatch('windowAction', { type: 'closeTab', windowId }, true));
+      this.selectItems(store.dispatch);
     });
   }
   selectWithShift($target: OpenTab) {
@@ -517,6 +517,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
           $tab?.preMultiSelect(!multiSelPanes?.tabs);
           $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(!multiSelPanes?.tabs));
+          this.selectItems(dispatch);
         },
         delayMultiSelect,
       );
@@ -538,6 +539,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         if (e.shiftKey) {
           this.selectWithShift($tab);
         }
+        this.selectItems(dispatch);
         this.$lastClickedTab = $tab;
         return;
       }
@@ -546,11 +548,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
     const $window = isWindow($target);
     if ($window) {
-      const { tabs } = await states('multiSelPanes');
-      if (tabs || e.shiftKey) {
+      const { tabs, all } = await states('multiSelPanes');
+      if (tabs || all || e.shiftKey) {
         const openTabs = $window.getTabs();
         const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
         openTabs.map((tab) => tab.select(selectAll));
+        this.selectItems(dispatch);
         if (e.shiftKey) {
           dispatch('multiSelPanes', { tabs: true });
         }
@@ -559,10 +562,15 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       const [$tab1, ...rest] = $window.getTabs();
       if ($tab1.checkMultiSelect()) {
         rest.forEach(($tab2) => $tab2.checkMultiSelect());
+        this.selectItems(dispatch);
         return;
       }
       chrome.windows.update($window.windowId, { focused: true }, window.close);
     }
+  }
+  selectItems(dispatch: Dispatch, precount?: number) {
+    const count = precount ?? $$byClass('selected', this).length;
+    dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
   override actions() {
     return {
