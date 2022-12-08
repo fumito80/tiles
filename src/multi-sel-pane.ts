@@ -1,6 +1,7 @@
 import { Panes, State } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
+  addAttr,
   addBookmark, addClass, addFolder, hasClass, rmClass, showMenu,
 } from './client';
 import {
@@ -62,6 +63,8 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
     this.$count = $byClass('count-selected', this)!;
+    const $deletesButton = $byClass('del-multi-sel', this);
+    addAttr('title', header.multiDeletesTitle)($deletesButton);
     header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
       showMenu($menu, true)(e);
@@ -73,8 +76,9 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     const [, show] = Object.entries(value).find(([key]) => key === this.#header.paneName) || [];
     if (!show && !all) {
       this.$count.textContent = '';
-      rmClass('show', 'pre')(this);
-      this.style.removeProperty('max-width');
+      rmClass('show')(this);
+      const { height } = getComputedStyle(this);
+      this.style.setProperty('max-width', height);
       return;
     }
     if (all) {
@@ -89,7 +93,14 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       addClass('show')(this);
     }
   }
-  selectItems(count: number) {
+  selectItems(count: number, store: Store) {
+    this.$count.textContent = String(count);
+    if (count === 0) {
+      store.dispatch('multiSelPanes', {
+        bookmarks: false, tabs: false, histories: false, all: true,
+      }, true);
+      return;
+    }
     this.$count.textContent = String(count);
     rmClass('pre')(this);
     const maxWidth = ([...this.children] as HTMLElement[])
@@ -141,6 +152,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   private $mainMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
   abstract menuClickHandler(e: MouseEvent): void;
+  readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
@@ -155,11 +167,11 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     $popupMenu.init(this.menuClickHandler.bind(this));
     this.$multiSelPane.init(this, $popupMenu);
   }
-  selectItems(newValue: Store['actions']['selectItems']['initValue']) {
+  selectItems(newValue: Store['actions']['selectItems']['initValue'], store: Store) {
     if (newValue?.paneName !== this.paneName) {
       return;
     }
-    this.$multiSelPane.selectItems(newValue.count);
+    this.$multiSelPane.selectItems(newValue.count, store);
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -182,7 +194,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   connect(store: Store) {
     this.$multiSelPane.connect(store);
     this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store));
-    store.subscribe('selectItems', (changes) => this.selectItems(changes.newValue));
+    store.subscribe('selectItems', (changes) => this.selectItems(changes.newValue, store));
   }
 }
 

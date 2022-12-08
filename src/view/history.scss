@@ -126,6 +126,11 @@
       display: inline-block;
     }
   }
+
+  .collapse-history-date.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 // History date collapse mode

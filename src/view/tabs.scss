@@ -497,6 +497,28 @@ app-main:not(.searching) {
       border-radius: 6px;
       border-color: var(--item-hover-bg);
     }
+
+    &.selected>.outline {
+      &::before {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: white;
+        top: 1px;
+        left: 1px;
+        border-radius: 50%;
+      }
+
+      &::after {
+        content: '\e91c';
+        position: absolute;
+        font-family: 'glyphs';
+        font-size: 12px;
+        text-rendering: auto;
+        color: $common-marker;
+      }
+    }
   }
 
   .tabs-collapsed {

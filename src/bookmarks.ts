@@ -107,6 +107,7 @@ export class HeaderLeafs extends MulitiSelectablePaneHeader {
   readonly paneName = 'bookmarks';
   private $pinBookmark!: HTMLElement;
   private options!: Options;
+  readonly multiDeletesTitle = 'Delete selected bookmarks';
   override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, options: Options) {
     super.init(settings, $tmplMultiSelPane);
     this.$pinBookmark = $byClass('pin-bookmark', this)!;

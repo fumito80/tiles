@@ -178,6 +178,10 @@ app-main:not(.drag-start) {
       color: deepskyblue !important;
     }
   }
+
+  :not(.searching) .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
+    color: deepskyblue;
+  }
 }
 
 .theme-dark-frame {
@@ -453,6 +457,10 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
 }
 
 .theme-dark-pane .pane-header multi-sel-pane.show {
+  div {
+    color: $dark-font-color;
+  }
+
   button {
     >i {
       color: rgba(255, 255, 255, 0.5);

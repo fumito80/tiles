@@ -554,7 +554,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
         openTabs.map((tab) => tab.select(selectAll));
         this.selectItems(dispatch);
-        if (e.shiftKey) {
+        if (all || e.shiftKey) {
           dispatch('multiSelPanes', { tabs: true });
         }
         return;
@@ -624,6 +624,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
   private $buttonNextWin!: HTMLElement;
+  readonly multiDeletesTitle = 'Close selected tabs';
   override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
     super.init(settings, $tmplMultiSelPane);
     this.$buttonCollapse = $byClass('collapse-tabs', this)!;

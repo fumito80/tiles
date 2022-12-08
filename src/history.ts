@@ -617,11 +617,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
 export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
   readonly paneName = 'histories';
   private store!: Store;
+  readonly multiDeletesTitle = 'Delete selected histories';
   toggleCollapseIcon(collapsed: boolean) {
     toggleClass('date-collapsed', collapsed)(this);
   }
-  multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
-    const isMultiSelect = changes.histories;
+  multiSelPanes(newValue: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
+    const isMultiSelect = Object.entries(newValue).some((a) => !!a);
     $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
   }
   // eslint-disable-next-line class-methods-use-this

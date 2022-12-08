@@ -375,11 +375,12 @@ window-header,
     background-color: var(--pane-bg);
     transition: all 0.15s;
 
-    .count-selected:not(:empty) {
+    .count-selected {
       line-height: 1.1em;
       margin: 0 5px;
       display: flex;
       align-items: center;
+      color: $font-color;
     }
 
     button {
@@ -405,11 +406,6 @@ window-header,
       button {
         opacity: 1;
       }
-
-      ~.collapse-history-date.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
     }
 
     &.show.pre {
@@ -417,7 +413,6 @@ window-header,
 
       button {
         pointer-events: none;
-        // display: none;
         opacity: 0;
       }
     }
