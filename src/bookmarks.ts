@@ -283,6 +283,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     this.#timerMultiSelect = setTimeout(async () => {
       const { dragging, multiSelPanes } = await states();
       if (dragging) {
+        this.selectItems(dispatch);
         return;
       }
       dispatch('multiSelPanes', { bookmarks: !multiSelPanes?.bookmarks });

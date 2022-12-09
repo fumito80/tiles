@@ -622,7 +622,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
     toggleClass('date-collapsed', collapsed)(this);
   }
   multiSelPanes(newValue: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
-    const isMultiSelect = Object.entries(newValue).some((a) => !!a);
+    const isMultiSelect = Object.values(newValue).some((value) => !!value);
     $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
   }
   // eslint-disable-next-line class-methods-use-this
