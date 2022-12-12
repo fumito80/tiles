@@ -264,8 +264,8 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
     if (!multiSelect) {
       $$('.leafs .selected, .folders .selected')
-        .filter(($el): $el is Leaf => $el instanceof Leaf)
-        .forEach(($leaf) => $leaf.select(false));
+        .filter(($el): $el is Leaf => $el instanceof Leaf && $el.selected)
+        .forEach(($leaf) => $leaf.select(false, true));
       this.$lastClickedLeaf = undefined;
     }
   }
@@ -283,7 +283,9 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     this.#timerMultiSelect = setTimeout(async () => {
       const { dragging, multiSelPanes } = await states();
       if (dragging) {
-        this.selectItems(dispatch);
+        if (multiSelPanes?.bookmarks) {
+          this.selectItems(dispatch);
+        }
         return;
       }
       dispatch('multiSelPanes', { bookmarks: !multiSelPanes?.bookmarks });

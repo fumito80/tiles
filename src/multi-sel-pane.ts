@@ -135,8 +135,8 @@ export class MutiSelectableItem extends HTMLElement {
     this.isSelected = isBegin;
     this.classList.toggle('selected', isBegin);
   }
-  select(selected?: boolean) {
-    if (this.checkMultiSelect()) {
+  select(selected?: boolean, force = false) {
+    if (!force && this.checkMultiSelect()) {
       return this.isSelected;
     }
     const isSelected = selected ?? !this.classList.contains('selected');

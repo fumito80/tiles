@@ -498,7 +498,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       this.getWindows()
         .flatMap((win) => win.getTabs())
         .filter((tab) => tab.selected)
-        .forEach((tab) => tab.select(false));
+        .forEach((tab) => tab.select(false, true));
       this.$lastClickedTab = undefined;
     }
   }
@@ -512,7 +512,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         async () => {
           const { dragging, multiSelPanes } = await states();
           if (dragging) {
-            this.selectItems(dispatch);
+            if (multiSelPanes?.tabs) {
+              this.selectItems(dispatch);
+            }
             return;
           }
           dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
