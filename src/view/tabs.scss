@@ -36,9 +36,9 @@ open-tab {
       display: flex !important;
     }
 
-    >.unmatch {
-      display: none;
-    }
+    // >.unmatch {
+    //   display: none;
+    // }
 
     &.current-window {
       position: relative;
@@ -54,17 +54,23 @@ open-tab {
         background-color: var(--key-bg);
       }
     }
+
+    &:not(.tabs-collapsed) {
+      >.unmatch {
+        display: none;
+      }
+    }
   }
 
   >.empty {
     padding: 0;
   }
 
-  .tab-wrap {
-    >.tab {
-      pointer-events: none;
-    }
-  }
+  // .tab-wrap {
+  //   >.tab {
+  //     pointer-events: none;
+  //   }
+  // }
 }
 
 .pane-body.end.tabs {
@@ -261,11 +267,11 @@ window-header {
 
 app-main {
 
-  &.searching {
-    window-header {
-      display: none;
-    }
-  }
+  // &.searching open-window:not(.tabs-collapsed) {
+  //   window-header {
+  //     display: none;
+  //   }
+  // }
 
   .tab {
     visibility: inherit;
@@ -280,44 +286,66 @@ app-main {
     transition: width 0.15s;
   }
 
-  &:not(.searching) {
+  // &:not(.searching) {
 
-    open-window {
-      &.tabs-collapsed {
-        padding-bottom: 0;
+  open-window {
+    &.tabs-collapsed {
+      padding-bottom: 0;
 
-        >.tab-wrap {
-          width: 26px;
-          height: 26px;
-          margin: 2px;
-          padding-left: 0;
-          background-position-x: 5px;
-          border: 2px solid transparent;
-          border-radius: 4px;
+      >.tab-wrap {
+        width: 26px;
+        height: 26px;
+        margin: 2px;
+        padding-left: 0;
+        background-position-x: 5px;
+        border: 2px solid transparent;
+        border-radius: 4px;
 
-          >.tab {
-            visibility: hidden;
-          }
+        >.tab {
+          visibility: hidden;
+          margin-left: 25px;
+          text-indent: 0;
+        }
 
-          &:hover {
-            >i {
-              display: none;
-            }
+        &:hover {
+          >i {
+            display: none;
           }
         }
-      }
 
-      &:not(.tabs-collapsed) {
-        >window-header {
+        &.match {
+          width: -webkit-fill-available;
+          background-color: rgba(0, 0, 0, .05);
+
           >.tab {
-            opacity: 0;
+            visibility: inherit;
           }
-
-          background-image: none !important;
         }
       }
     }
+
+    // &:not(.tabs-collapsed) {
+    //   >window-header {
+    //     >.tab {
+    //       opacity: 0;
+    //     }
+
+    //     background-image: none !important;
+    //   }
+    // }
   }
+
+  &:not(.searching) open-window:not(.tabs-collapsed) {
+    >window-header {
+      >.tab {
+        opacity: 0;
+      }
+
+      background-image: none !important;
+    }
+  }
+
+  // }
 
   // Tooltip
 
@@ -337,7 +365,7 @@ app-main {
     }
   }
 
-  &:not(.searching):not(.drag-start) .tabs-collapsed {
+  &:not(.drag-start) .tabs-collapsed {
 
     .tab-wrap:not(.drag-source) {
       >.tooltip {
@@ -352,7 +380,7 @@ app-main {
         text-overflow: ellipsis;
       }
 
-      &:hover {
+      &:not(.match):hover {
         >.tooltip {
           display: block;
           animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
@@ -362,50 +390,68 @@ app-main {
   }
 }
 
-.drag-start {
-  .tabs-collapsed window-header:not(.drag-source)~open-tab:not(.match):not(.unmatch) {
+app-main.drag-start>.tabs {
+  .tabs-collapsed window-header:not(.drag-source)~open-tab {
+    &.match {
 
-    >.drop-top,
-    >.drop-bottom {
-      top: 0;
-      height: 100%;
-
-      &.drag-enter::before {
-        top: -2px;
-        height: calc(100% + 4px);
-        border-top: none;
-        border-color: #1A73E8;
-        border-left-width: 4px;
-        border-left-style: solid;
+      >.drop-top,
+      >.drop-bottom {
+        height: calc(100% + 8px);
       }
+
+      >.drop-top {
+        top: calc(-50% - 10px);
+      }
+
+      // >.drop-bottom {
+      //   top: calc(-50% - 0px);
+      // }
     }
 
-    >.drop-top {
-      left: calc(-50% - 11px);
-      width: calc(100% + 11px);
+    &:not(.match) {
 
-      &.drag-enter::before {
+      >.drop-top,
+      >.drop-bottom {
+        top: 0;
+        height: 100%;
+
+        &.drag-enter::before {
+          top: -2px;
+          height: calc(100% + 4px);
+          border-top: none;
+          border-color: #1A73E8;
+          border-left-width: 4px;
+          border-left-style: solid;
+        }
+      }
+
+      >.drop-top {
+        left: calc(-50% - 11px);
+        width: calc(100% + 11px);
+
+        &.drag-enter::before {
+          left: 50%;
+        }
+      }
+
+      >.drop-bottom {
         left: 50%;
+        width: calc(100% + 8px);
+
+        &.drag-enter::before {
+          left: 16px;
+        }
       }
-    }
 
-    >.drop-bottom {
-      left: 50%;
-      width: calc(100% + 8px);
-
-      &.drag-enter::before {
-        left: 16px;
+      >.drop-top.drag-enter::after,
+      >.drop-bottom.drag-enter::after {
+        content: '';
+        display: none;
       }
-    }
 
-    >.drop-top.drag-enter::after,
-    >.drop-bottom.drag-enter::after {
-      content: '';
-      display: none;
-    }
-
-    &:last-child>.drop-bottom {
-      width: 1000px;
+      &:last-child>.drop-bottom {
+        width: 1000px;
+      }
     }
   }
 
@@ -456,7 +502,7 @@ app-main {
   }
 }
 
-.searching,
+// .searching,
 .window:not(.tabs-collapsed) {
   .tab-wrap {
     background-position-x: 7px;
@@ -480,7 +526,7 @@ app-main {
   }
 }
 
-app-main:not(.searching) {
+app-main {
   .tabs-wrap>.tabs-collapsed>.tab-wrap {
     >.outline {
       content: '';
@@ -490,6 +536,10 @@ app-main:not(.searching) {
       border: 2px solid transparent;
       left: -4px;
       top: -4px;
+    }
+
+    &.match>.outline {
+      pointer-events: none;
     }
 
     &:hover>.outline,

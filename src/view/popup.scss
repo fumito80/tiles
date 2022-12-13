@@ -874,7 +874,7 @@ app-main::-webkit-scrollbar {
 .drag-start {
 
   .leaf:not(.search-path),
-  window-header:not(.drag-source)~open-tab:not(.match):not(.unmatch) {
+  window-header:not(.drag-source)~open-tab {
     overflow: visible;
 
     >.drop-top,
