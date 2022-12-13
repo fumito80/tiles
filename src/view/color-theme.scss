@@ -457,7 +457,7 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
 }
 
 .theme-dark-pane .pane-header multi-sel-pane.show {
-  div {
+  >div {
     color: $dark-font-color;
   }
 

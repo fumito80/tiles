@@ -51,16 +51,6 @@ function getSubTree(id: string) {
   });
 }
 
-function moveTab(sourceId: string, $dropTarget: HTMLElement, dispatch: Store['dispatch']) {
-  const $sourceTab = $byId(sourceId);
-  const $sourceWindow = $sourceTab.parentElement as Window;
-  $sourceWindow.reloadTabs(dispatch);
-  const $destWindow = $dropTarget.parentElement as Window;
-  if ($sourceWindow.id !== $destWindow?.id) {
-    $destWindow.reloadTabs(dispatch);
-  }
-}
-
 async function getTabInfo(preId: number | string) {
   return new Promise<chrome.tabs.Tab & {
     isCurrentWindow: boolean, incognito: boolean
@@ -141,7 +131,7 @@ async function dropWithTabs(
   }
   // bookmark to tabs
   const { windowId, ...rest } = await getTabInfo($dropTarget.id);
-  let index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
+  const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   if (sourceClass === 'leaf') {
     Promise.resolve(sourceIds.map(getBookmark))
       .then((tabs) => Promise.all(tabs))
@@ -176,35 +166,33 @@ async function dropWithTabs(
   }
   // move folder to tab
   if (sourceClass === 'marker') {
-    index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
     createTabsFromFolder(sourceId, windowId, index);
     return;
   }
   // move tab
-  Promise.resolve()
-    .then(() => (
-      sourceIds.reverse().map(async (tabId) => {
-        const sourceTab = await getTabInfo(tabId);
-        if (sourceTab.windowId === windowId) {
-          index = rest.index - (dropAreaClass === 'drop-bottom' ? 0 : 1);
-          if (rest.index < sourceTab.index) {
-            // move to right
-            index = rest.index;
-          }
-        } else {
-          index = rest.index + (dropAreaClass === 'drop-bottom' ? 1 : 0);
-        }
-        chrome.tabs.move([sourceTab.id!], { windowId, index }, () => {
-          if (chrome.runtime.lastError) {
-            dialog.alert(chrome.runtime.lastError.message!);
-            return;
-          }
-          moveTab(tabId, $dropTarget, dispatch);
+  Promise.all(sourceIds.map((id) => getTabInfo(id)))
+    .then((sourceTabs) => chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
+      const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
+      const [init, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
+        .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
+      const tabIds = init.concat(sourceTabIds, tail);
+      return chrome.tabs.move(tabIds, { windowId, index: 0 }).then(() => sourceTabs);
+    }))
+    .then((sourceTabs) => {
+      const sourceWindowIds = sourceIds
+        .map((id) => $byId(id).parentElement)
+        .filter((win): win is Window => win instanceof Window)
+        .filter((win, i, self) => self.indexOf(win) === i)
+        .map((win) => {
+          win.reloadTabs(dispatch);
+          return win.id;
         });
-        return sourceTab;
-      })
-    ))
-    .then((sourceTabs) => Promise.all(sourceTabs))
+      const $destWindow = $dropTarget.parentElement as Window;
+      if (!sourceWindowIds.includes($destWindow?.id)) {
+        $destWindow.reloadTabs(dispatch);
+      }
+      return sourceTabs;
+    })
     .then((sourceTabs) => sourceTabs.some((sourceTab) => {
       if (
         sourceTab.active
@@ -278,7 +266,7 @@ function checkDroppable(e: DragEvent) {
   }
   const isDropTargetSelected = hasClass($dropTarget, 'selected');
   const $nextTarget = getPrevTarget('leaf', 'tab-wrap')($dropTarget);
-  if (isDropTargetSelected || hasClass($nextTarget, 'selected')) {
+  if (isDropTargetSelected || (dropAreaClass === 'drop-top' && hasClass($nextTarget, 'selected'))) {
     return undefined;
   }
   const dragSource = whichClass(sourceClasses, $dragSource) || '';
