@@ -72,7 +72,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   #reFilter!: RegExp | null;
   #jumpDate!: string | undefined;
   #rowHeight!: number;
-  #timerMultiSelect!: number;
   #lastClickedId!: string | undefined;
   #histories!: MyHistoryItem[];
   private preSelectAll = false;
@@ -353,7 +352,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       if (histories || all) {
         this.selectDateAll($target, searching, dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true });
+          dispatch('multiSelPanes', { histories: true, all: false });
         }
       } else {
         dispatch('focusQuery');
@@ -394,7 +393,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
         this.selectItems(dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true });
+          dispatch('multiSelPanes', { histories: true, all: false });
         }
         this.#lastClickedId = $history.id;
         return;
@@ -414,26 +413,28 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
     if ($history instanceof HistoryItem) {
       const isHeader = hasClass($history, 'header-date');
-      clearTimeout(this.#timerMultiSelect);
-      this.#timerMultiSelect = setTimeout(
+      clearTimeout(this.timerMultiSelect);
+      this.timerMultiSelect = setTimeout(
         async () => {
           const { dragging, multiSelPanes, searching } = await states();
+          const histories = !multiSelPanes?.histories;
           if (dragging) {
-            if (multiSelPanes?.histories) {
+            if (!histories) {
               this.selectItem($history.id, true);
               this.selectItems(dispatch);
             }
             return;
           }
-          dispatch('multiSelPanes', { histories: !multiSelPanes?.histories });
-          if (multiSelPanes?.histories) {
+          dispatch('multiSelPanes', { histories, all: false });
+          if (!histories || multiSelPanes?.all) {
+            dispatch('multiSelPanes', { all: false });
             return;
           }
           if (isHeader) {
             this.selectDateAll($history, searching, dispatch, true);
             return;
           }
-          $history.preMultiSelect(!multiSelPanes?.histories);
+          $history.preMultiSelect(histories);
           dispatch('selectItems', { paneName: this.paneName, count: 1 }, true);
         },
         delayMultiSelect,
@@ -463,9 +464,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
       });
     }
-  }
-  mouseupItem() {
-    clearTimeout(this.#timerMultiSelect);
   }
   // V-Scroll
   async setVScroll(

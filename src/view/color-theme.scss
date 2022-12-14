@@ -156,15 +156,13 @@ app-main:not(.drag-start) {
     }
   }
 
-  // &:not(.searching)
-  // &.theme-dark-pane {
   .tabs-wrap>.tabs-collapsed {
 
     >.tab-wrap {
       background-color: $dark-icon-color;
 
       &.match {
-        background-color: rgba(255, 255, 255, .2);
+        background-color: rgba(255, 255, 255, .2) !important;
       }
 
       &.current-tab {
@@ -172,8 +170,6 @@ app-main:not(.drag-start) {
       }
     }
   }
-
-  // }
 
   multi-sel-pane.show {
     border: 1px solid rgba(255, 255, 255, 0.5);
@@ -183,7 +179,6 @@ app-main:not(.drag-start) {
     }
   }
 
-  // :not(.searching) 
   .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
