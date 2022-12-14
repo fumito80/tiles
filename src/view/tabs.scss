@@ -316,9 +316,24 @@ app-main {
         &.match {
           width: -webkit-fill-available;
           background-color: rgba(0, 0, 0, .05);
+          background-position-x: 25px;
+
+          &.current-tab {
+            background-color: transparent !important;
+          }
 
           >.tab {
+            z-index: 1;
             visibility: inherit;
+            margin-left: 0;
+
+            &::before {
+              content: '\e90c';
+              font-family: "glyphs";
+              font-size: 1.2em;
+              margin-right: 25px;
+              color: var(--key-bg);
+            }
           }
         }
       }
@@ -502,7 +517,6 @@ app-main.drag-start>.tabs {
   }
 }
 
-// .searching,
 .window:not(.tabs-collapsed) {
   .tab-wrap {
     background-position-x: 7px;
@@ -538,9 +552,9 @@ app-main {
       top: -4px;
     }
 
-    &.match>.outline {
-      pointer-events: none;
-    }
+    // &.match>.outline {
+    //   pointer-events: none;
+    // }
 
     &:hover>.outline,
     &.selected>.outline {

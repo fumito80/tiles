@@ -158,8 +158,8 @@ export class OpenTab extends MutiSelectableItem {
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
-    $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
+    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -238,8 +238,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   update(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
     $tab.textContent = tab.title!;
-    const tooltip = getTooltip(tab);
-    $tab.setAttribute('title', tooltip);
+    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }

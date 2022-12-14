@@ -284,6 +284,9 @@ window-header,
   transition: opacity 0.2s !important;
 
   .submit {
+    font-size: 1.3em;
+    position: absolute;
+    left: 0;
     display: flex;
     align-items: center;
     background-color: transparent;
@@ -300,6 +303,7 @@ window-header,
   .query {
     width: 100%;
     max-width: 90px;
+    margin-left: 24px;
     border: 0;
     outline: none;
     font-size: inherit;
