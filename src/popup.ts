@@ -7,7 +7,6 @@ import {
   Settings,
   State,
   ClientState,
-  BkgMessageTypes,
   StoredElements,
   PromiseInitTabs,
   InitailTabs,
@@ -199,16 +198,10 @@ async function bootstrap() {
   });
 }
 
-const promiseStore = bootstrap().then(init);
+bootstrap().then(init);
 
-async function resetHistory() {
-  return promiseStore.then((store) => store.dispatch('resetHistory', {}, true));
-}
-
-export const mapMessagesBtoP = {
-  [BkgMessageTypes.updateHistory]: resetHistory,
-};
-
+// messaging add-on for background to popup
+export const mapMessagesBtoP = {};
 setMessageListener(mapMessagesBtoP, true);
 
 // eslint-disable-next-line no-console

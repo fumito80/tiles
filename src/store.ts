@@ -43,7 +43,7 @@ export function makeAction<
   W extends EventListenerOptions = any,
   X extends boolean = false,
 >(
-  action: Action<T, U, S, V, W, X>,
+  action: Action<T, U, S, V, W, X> = {},
 ) {
   return { force: false, persistent: false, ...action };
 }
@@ -270,7 +270,9 @@ export function initComponents(
   $formSearch.connect(store);
   dragAndDropEvents.connect(store);
   // v-scroll initialize
-  store.dispatch('resetHistory', { initialize: true });
+  if (!isSearching) {
+    store.dispatch('resetHistory');
+  }
   return store;
 }
 

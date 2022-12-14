@@ -22,13 +22,6 @@ import { rowSetterHistory, VScrollRowSetter } from './vscroll';
 import { MulitiSelectablePaneBody, MulitiSelectablePaneHeader, MutiSelectableItem } from './multi-sel-pane';
 import { dialog } from './dialogs';
 
-type ResetParams = {
-  initialize?: boolean,
-  reFilter?: RegExp,
-  includeUrl?: boolean,
-  removedHistory?: boolean,
-};
-
 function getRowHeight() {
   const $tester = pipe(
     addChild(document.createElement('div')),
@@ -155,7 +148,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', false, true);
   }
-  async resetHistory({ initialize }: ResetParams = {}) {
+  async resetHistory() {
+    const initialize = !this.#histories;
     if (initialize) {
       this.#histories = await this.promiseInitHistory;
     }
@@ -193,7 +187,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.dispatchEvent(new Event('scroll'));
   }
   async restoreHistory() {
-    return this.resetHistory({ reFilter: this.#reFilter!, includeUrl: this.#includeUrl });
+    return this.resetHistory();
   }
   clearSearch(dispatch: Store['dispatch']) {
     this.#reFilter = null;
@@ -565,9 +559,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       openWindowFromHistory: makeAction({
         initValue: false, // incognito?
       }),
-      resetHistory: makeAction({
-        initValue: {} as ResetParams,
-      }),
+      resetHistory: makeAction(),
       clickHistory: makeAction({
         target: this,
         eventType: 'click',
@@ -595,7 +587,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     super.connect(store);
     store.subscribe('clickHistory', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
     store.subscribe('clearSearch', () => this.clearSearch(store.dispatch));
-    store.subscribe('resetHistory', (changes) => this.resetHistory(changes.newValue));
+    store.subscribe('resetHistory', this.resetHistory.bind(this));
     store.subscribe('historyCollapseDate', (changes) => this.collapseHistoryDate(changes.newValue));
     store.subscribe('changeIncludeUrl', (changes) => {
       this.#includeUrl = changes.newValue;
