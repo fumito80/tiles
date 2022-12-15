@@ -95,7 +95,6 @@ export const initialOptions = {
   fontSize: '0.9em',
   collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
-  searched: [] as string[],
 };
 
 export type Panes = typeof panes[number];
@@ -114,6 +113,7 @@ export const initialState = {
   },
   options: initialOptions,
   lastSearchWord: '',
+  queries: [] as string[],
 };
 
 export type State = typeof initialState;

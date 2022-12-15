@@ -423,8 +423,17 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 
   .query,
-  .icon-x {
-    color: $dark-font-color;
+  .clear-search>i {
+    color: $dark-font-color !important;
+  }
+
+  .clear-search:hover::after,
+  .clear-search:focus::after {
+    background-color: rgba(255, 255, 255, .3);
+  }
+
+  .clear-search:active::after {
+    background-color: rgba(255, 255, 255, .5);
   }
 }
 
@@ -434,8 +443,8 @@ app-main:not(.theme-dark-search).searching .form-query {
   }
 
   .query,
-  .icon-x {
-    color: $font-color;
+  .clear-search>i {
+    color: $font-color !important;
   }
 }
 

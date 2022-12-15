@@ -269,7 +269,7 @@ window-header,
 
 // Search
 
-.form-query {
+form.form-query {
   position: relative;
   display: flex;
   justify-content: flex-end;
@@ -300,11 +300,15 @@ window-header,
     background-color: transparent;
   }
 
-  .icon-x {
-    font-size: 1.4em;
-    margin-right: 2px;
-    cursor: pointer;
+  button.clear-search {
+    font-size: 1.3em;
+    margin-right: 1px;
     visibility: hidden;
+
+    &::after {
+      width: 1.2em;
+      height: 1.2em;
+    }
   }
 
   &.hidden {
@@ -420,7 +424,7 @@ window-header,
 
 .searching {
   .form-query {
-    .icon-x {
+    .clear-search {
       visibility: inherit;
     }
 
