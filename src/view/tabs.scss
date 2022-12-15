@@ -329,6 +329,10 @@ app-main {
         opacity: 0;
       }
 
+      .icon-incognito {
+        left: 3px;
+      }
+
       background-image: none !important;
     }
   }
@@ -511,10 +515,6 @@ app-main.drag-start>.tabs {
     &:not(.selected):hover>.icon-x {
       display: var(--show-close-tab, none);
     }
-  }
-
-  .icon-incognito {
-    left: 3px;
   }
 }
 
