@@ -199,6 +199,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
 }
 
 export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
+  protected timerMultiSelect!: number;
   abstract paneName: Panes;
   abstract deletesHandler(selectds: HTMLElement[], store: Store): void;
   actions() {
@@ -210,6 +211,9 @@ export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
         },
       }),
     };
+  }
+  mouseupItem() {
+    clearTimeout(this.timerMultiSelect);
   }
   connect(store: Store) {
     store.subscribe('deleteSelecteds', (changes) => {

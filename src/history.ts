@@ -60,8 +60,11 @@ export class HistoryItem extends MutiSelectableItem {
     createNewTab(options, url);
   }
   async delete(url: string) {
-    setAnimationClass('hilite-fast')(this);
+    this.setAnimation('hilite-fast');
     return chrome.history.deleteUrl({ url });
+  }
+  setAnimation(animationName: Parameters<typeof setAnimationClass>[0]) {
+    setAnimationClass(animationName)(this);
   }
 }
 
@@ -72,7 +75,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   #reFilter!: RegExp | null;
   #jumpDate!: string | undefined;
   #rowHeight!: number;
-  #timerMultiSelect!: number;
   #lastClickedId!: string | undefined;
   #histories!: MyHistoryItem[];
   private preSelectAll = false;
@@ -224,37 +226,31 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
   async deletesHandler($selecteds: HTMLElement[], store: Store) {
-    const count = this.hookData((data) => data.filter(propEq('selected', true))).length;
-    if (count === 0) {
+    const selecteds = this.hookData((data) => data.filter(propEq('selected', true)));
+    if (selecteds.length === 0) {
       return;
     }
-    const ret = await dialog.confirm(getMessageDeleteSelecteds(count));
+    const ret = await dialog.confirm(getMessageDeleteSelecteds(selecteds.length));
     if (!ret) {
       return;
     }
-    const promiseUrls = $selecteds
-      .filter(($el): $el is HistoryItem => $el instanceof HistoryItem)
-      .map(($history) => {
-        const { url } = this.getHistoryById($history.id);
-        return [url, $history] as [url: string, historyItem: HistoryItem];
-      });
-    Promise.all(promiseUrls)
-      .then((urls) => urls.map(([url, $history]) => $history.delete(url).then(() => $history.id)))
-      .then((ids) => Promise.all(ids))
-      .then((ids) => ids.map((id) => id.replace('hst-', '')))
-      .then((ids) => {
-        this.applyData((histories) => {
-          let [head, ...rest] = ids;
-          return histories.filter((row) => {
-            const found = row.id! === head;
-            if (found) {
-              [head = '.', ...rest] = rest;
-            }
-            return !found;
-          });
+    $selecteds.filter(($el): $el is HistoryItem => $el instanceof HistoryItem).forEach(($history) => $history.setAnimation('hilite-fast'));
+    const promiseIds = selecteds.map(
+      (selected) => chrome.history.deleteUrl({ url: selected.url! }).then(() => selected.id!),
+    );
+    Promise.all(promiseIds).then((ids) => {
+      this.applyData((histories) => {
+        let [head, ...rest] = ids;
+        return histories.filter((row) => {
+          const found = row.id! === head;
+          if (found) {
+            [head = '.', ...rest] = rest;
+          }
+          return !found;
         });
-        this.selectItems(store.dispatch);
       });
+      this.selectItems(store.dispatch);
+    });
   }
   selectItem(elementId: string, selected: boolean) {
     const [, id] = elementId.split('-');
@@ -353,7 +349,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       if (histories || all) {
         this.selectDateAll($target, searching, dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true });
+          dispatch('multiSelPanes', { histories: true, all: false });
         }
       } else {
         dispatch('focusQuery');
@@ -394,7 +390,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
         this.selectItems(dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true });
+          dispatch('multiSelPanes', { histories: true, all: false });
         }
         this.#lastClickedId = $history.id;
         return;
@@ -414,26 +410,28 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
     if ($history instanceof HistoryItem) {
       const isHeader = hasClass($history, 'header-date');
-      clearTimeout(this.#timerMultiSelect);
-      this.#timerMultiSelect = setTimeout(
+      clearTimeout(this.timerMultiSelect);
+      this.timerMultiSelect = setTimeout(
         async () => {
           const { dragging, multiSelPanes, searching } = await states();
+          const histories = !multiSelPanes?.histories;
           if (dragging) {
-            if (multiSelPanes?.histories) {
+            if (!histories) {
               this.selectItem($history.id, true);
               this.selectItems(dispatch);
             }
             return;
           }
-          dispatch('multiSelPanes', { histories: !multiSelPanes?.histories });
-          if (multiSelPanes?.histories) {
+          dispatch('multiSelPanes', { histories, all: false });
+          if (!histories || multiSelPanes?.all) {
+            dispatch('multiSelPanes', { all: false });
             return;
           }
           if (isHeader) {
             this.selectDateAll($history, searching, dispatch, true);
             return;
           }
-          $history.preMultiSelect(!multiSelPanes?.histories);
+          $history.preMultiSelect(histories);
           dispatch('selectItems', { paneName: this.paneName, count: 1 }, true);
         },
         delayMultiSelect,
@@ -463,9 +461,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
       });
     }
-  }
-  mouseupItem() {
-    clearTimeout(this.#timerMultiSelect);
   }
   // V-Scroll
   async setVScroll(

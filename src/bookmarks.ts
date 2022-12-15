@@ -211,7 +211,6 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   #options!: Options;
   $leafMenu!: HTMLElement;
   $lastClickedLeaf!: Leaf | undefined;
-  #timerMultiSelect!: number;
   init(options: Options) {
     this.#options = options;
     this.$leafMenu = $byClass('leaf-menu')!;
@@ -279,22 +278,24 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     if (!($leaf instanceof Leaf)) {
       return;
     }
-    clearTimeout(this.#timerMultiSelect);
-    this.#timerMultiSelect = setTimeout(async () => {
+    clearTimeout(this.timerMultiSelect);
+    this.timerMultiSelect = setTimeout(async () => {
       const { dragging, multiSelPanes } = await states();
+      const bookmarks = !multiSelPanes?.bookmarks;
       if (dragging) {
-        if (multiSelPanes?.bookmarks) {
+        if (!bookmarks) {
           this.selectItems(dispatch);
         }
         return;
       }
-      dispatch('multiSelPanes', { bookmarks: !multiSelPanes?.bookmarks });
-      $leaf.preMultiSelect(!multiSelPanes?.bookmarks);
+      dispatch('multiSelPanes', { bookmarks, all: false });
+      if (!bookmarks || multiSelPanes?.all) {
+        dispatch('multiSelPanes', { all: undefined });
+        return;
+      }
+      $leaf.preMultiSelect(bookmarks);
       this.selectItems(dispatch);
     }, delayMultiSelect);
-  }
-  mouseupItem() {
-    clearTimeout(this.#timerMultiSelect);
   }
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
@@ -314,13 +315,17 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
       if (bookmarks || all) {
         $leaf.select();
         if (all) {
-          dispatch('multiSelPanes', { bookmarks: true });
+          dispatch('multiSelPanes', { bookmarks: true, all: false });
         }
         if (e.shiftKey) {
           this.selectWithShift($leaf);
         }
         this.selectItems(dispatch);
         this.$lastClickedLeaf = $leaf;
+        return;
+      }
+      if (all == null) {
+        dispatch('multiSelPanes', { all: false });
         return;
       }
       $leaf.openOrFind(this.#options);

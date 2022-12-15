@@ -36,10 +36,6 @@ open-tab {
       display: flex !important;
     }
 
-    >.unmatch {
-      display: none;
-    }
-
     &.current-window {
       position: relative;
       margin-left: 8px;
@@ -54,16 +50,16 @@ open-tab {
         background-color: var(--key-bg);
       }
     }
+
+    &:not(.tabs-collapsed) {
+      >.unmatch {
+        display: none;
+      }
+    }
   }
 
   >.empty {
     padding: 0;
-  }
-
-  .tab-wrap {
-    >.tab {
-      pointer-events: none;
-    }
   }
 }
 
@@ -234,7 +230,7 @@ window-header {
     transition: opacity 0.15s;
   }
 
-  .icon-incognito.show+.tab {
+  .icon-incognito.show+.window-title {
     padding-left: 44px;
     text-indent: 0;
   }
@@ -261,13 +257,8 @@ window-header {
 
 app-main {
 
-  &.searching {
-    window-header {
-      display: none;
-    }
-  }
-
-  .tab {
+  .tab-title,
+  .window-title {
     visibility: inherit;
     transition: visibility 0.15s;
   }
@@ -280,42 +271,65 @@ app-main {
     transition: width 0.15s;
   }
 
-  &:not(.searching) {
+  open-window {
+    &.tabs-collapsed {
+      padding-bottom: 0;
 
-    open-window {
-      &.tabs-collapsed {
-        padding-bottom: 0;
+      >.tab-wrap {
+        width: 26px;
+        height: 26px;
+        margin: 2px;
+        padding-left: 0;
+        background-position-x: 5px;
+        border: 2px solid transparent;
+        border-radius: 4px;
 
-        >.tab-wrap {
-          width: 26px;
-          height: 26px;
-          margin: 2px;
-          padding-left: 0;
-          background-position-x: 5px;
-          border: 2px solid transparent;
-          border-radius: 4px;
+        >.tab-title {
+          visibility: hidden;
+          margin-left: 25px;
+          text-indent: 0;
+        }
 
-          >.tab {
-            visibility: hidden;
+        &:hover {
+          >i {
+            display: none;
           }
+        }
 
-          &:hover {
-            >i {
-              display: none;
+        &.match {
+          width: -webkit-fill-available;
+          background-color: rgba(0, 0, 0, .05);
+          background-position-x: 25px;
+
+          >.tab-title {
+            z-index: 1;
+            visibility: inherit;
+            margin-left: 0;
+
+            &::before {
+              content: '\e90c';
+              font-family: "glyphs";
+              font-size: 1.2em;
+              margin-right: 25px;
+              color: var(--key-bg);
             }
           }
-        }
-      }
 
-      &:not(.tabs-collapsed) {
-        >window-header {
-          >.tab {
-            opacity: 0;
+          &[data-initial]::before {
+            margin-left: 23px;
           }
-
-          background-image: none !important;
         }
       }
+    }
+  }
+
+  &:not(.searching) open-window:not(.tabs-collapsed) {
+    >window-header {
+      >.window-title {
+        opacity: 0;
+      }
+
+      background-image: none !important;
     }
   }
 
@@ -337,7 +351,7 @@ app-main {
     }
   }
 
-  &:not(.searching):not(.drag-start) .tabs-collapsed {
+  &:not(.drag-start) .tabs-collapsed {
 
     .tab-wrap:not(.drag-source) {
       >.tooltip {
@@ -352,7 +366,7 @@ app-main {
         text-overflow: ellipsis;
       }
 
-      &:hover {
+      &:not(.match):hover {
         >.tooltip {
           display: block;
           animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
@@ -362,50 +376,75 @@ app-main {
   }
 }
 
-.drag-start {
-  .tabs-collapsed window-header:not(.drag-source)~open-tab:not(.match):not(.unmatch) {
+app-main.drag-start>.tabs {
+  .tabs-collapsed window-header:not(.drag-source)~open-tab {
+    &.match {
 
-    >.drop-top,
-    >.drop-bottom {
-      top: 0;
-      height: 100%;
+      >.drop-top {
+        height: calc(100% + 10px);
+        top: calc(-50% - 10px);
+      }
 
-      &.drag-enter::before {
-        top: -2px;
-        height: calc(100% + 4px);
-        border-top: none;
-        border-color: #1A73E8;
-        border-left-width: 4px;
-        border-left-style: solid;
+      >.drop-bottom {
+        height: calc(100% + 7px);
+        top: 50%;
+      }
+
+      &:not(:last-of-type) {
+        >.drop-bottom {
+          display: none;
+        }
       }
     }
 
-    >.drop-top {
-      left: calc(-50% - 11px);
-      width: calc(100% + 11px);
+    &:not(.match) {
 
-      &.drag-enter::before {
+      >.drop-top,
+      >.drop-bottom {
+        top: 0;
+        height: 100%;
+
+        &.drag-enter::before {
+          top: -2px;
+          height: calc(100% + 4px);
+          border-top: none;
+          border-color: #1A73E8;
+          border-left-width: 4px;
+          border-left-style: solid;
+        }
+      }
+
+      >.drop-top {
+        left: calc(-50% - 11px);
+        width: calc(100% + 11px);
+
+        &.drag-enter::before {
+          left: 50%;
+        }
+      }
+
+      >.drop-bottom {
         left: 50%;
+        width: calc(100% + 8px);
+
+        &.drag-enter::before {
+          left: 16px;
+        }
+      }
+
+      >.drop-top.drag-enter::after,
+      >.drop-bottom.drag-enter::after {
+        content: '';
+        display: none;
+      }
+
+      &:last-child>.drop-bottom {
+        width: 1000px;
       }
     }
 
-    >.drop-bottom {
-      left: 50%;
-      width: calc(100% + 8px);
-
-      &.drag-enter::before {
-        left: 16px;
-      }
-    }
-
-    >.drop-top.drag-enter::after,
-    >.drop-bottom.drag-enter::after {
-      content: '';
+    &.unmatch+.match>.drop-top {
       display: none;
-    }
-
-    &:last-child>.drop-bottom {
-      width: 1000px;
     }
   }
 
@@ -420,7 +459,7 @@ app-main {
   max-width: 160px;
 
   &::before {
-    content: '\e90c';
+    content: '\e90f';
     left: 5px;
     position: absolute;
     font-family: glyphs;
@@ -430,11 +469,11 @@ app-main {
   .icon-incognito {
     margin-left: 24px;
 
-    +.tab {
+    +.window-title {
       text-indent: 2px;
     }
 
-    &:not(.show)+.tab {
+    &:not(.show)+.window-title {
       text-indent: 20px;
     }
   }
@@ -456,12 +495,11 @@ app-main {
   }
 }
 
-.searching,
 .window:not(.tabs-collapsed) {
   .tab-wrap {
     background-position-x: 7px;
 
-    .tab {
+    .tab-title {
       text-indent: 25px;
     }
 
@@ -480,7 +518,7 @@ app-main {
   }
 }
 
-app-main:not(.searching) {
+app-main {
   .tabs-wrap>.tabs-collapsed>.tab-wrap {
     >.outline {
       content: '';

@@ -5,7 +5,6 @@ import {
   cssid,
   whichClass,
   propEq,
-  // getHistoryById,
   decode,
   getChromeId,
   when,
@@ -24,7 +23,6 @@ import {
   $byClass,
   $byTag,
   hasClass,
-  // addBookmark,
   getBookmark,
   $$byClass,
   panes,
@@ -206,6 +204,7 @@ async function dropWithTabs(
       }
       return false;
     }))
+    .then(() => dispatch('re-search', 'tabs', true))
     .then(() => $byClass('tabs')!.dispatchEvent(new Event('mouseenter')));
 }
 

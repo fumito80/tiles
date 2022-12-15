@@ -158,8 +158,8 @@ export class OpenTab extends MutiSelectableItem {
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
-    $tab.setAttribute('title', tooltip);
     $tooltip.textContent = tooltip;
+    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -238,8 +238,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   update(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
     $tab.textContent = tab.title!;
-    const tooltip = getTooltip(tab);
-    $tab.setAttribute('title', tooltip);
+    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }
@@ -369,8 +368,8 @@ function isWindow($target: HTMLElement) {
   if ($target instanceof Window) {
     return $target;
   }
-  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'tab')) {
-    return $target.parentElement?.parentElement;
+  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'window-title')) {
+    return $target.parentElement.parentElement;
   }
   return undefined;
 }
@@ -389,7 +388,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   readonly paneName = 'tabs';
   #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
-  #timerMultiSelect!: number;
   $lastClickedTab!: OpenTab | undefined;
   init(
     $tmplOpenTab: OpenTab,
@@ -507,27 +505,29 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const $tab = isOpenTab($target);
     const $window = isWindow($target);
     if ($tab || $window) {
-      clearTimeout(this.#timerMultiSelect);
-      this.#timerMultiSelect = setTimeout(
+      clearTimeout(this.timerMultiSelect);
+      this.timerMultiSelect = setTimeout(
         async () => {
           const { dragging, multiSelPanes } = await states();
+          const tabs = !multiSelPanes?.tabs;
           if (dragging) {
-            if (multiSelPanes?.tabs) {
+            if (!tabs) {
               this.selectItems(dispatch);
             }
             return;
           }
-          dispatch('multiSelPanes', { tabs: !multiSelPanes?.tabs });
-          $tab?.preMultiSelect(!multiSelPanes?.tabs);
-          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(!multiSelPanes?.tabs));
+          dispatch('multiSelPanes', { tabs, all: false });
+          if (!tabs || multiSelPanes?.all) {
+            dispatch('multiSelPanes', { all: undefined });
+            return;
+          }
+          $tab?.preMultiSelect(tabs);
+          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(tabs));
           this.selectItems(dispatch);
         },
         delayMultiSelect,
       );
     }
-  }
-  mouseupItem() {
-    clearTimeout(this.#timerMultiSelect);
   }
   async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
@@ -537,13 +537,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       if (tabs || all) {
         $tab.select();
         if (all) {
-          dispatch('multiSelPanes', { tabs: true });
+          dispatch('multiSelPanes', { tabs: true, all: false });
         }
         if (e.shiftKey) {
           this.selectWithShift($tab);
         }
         this.selectItems(dispatch);
         this.$lastClickedTab = $tab;
+        return;
+      }
+      if (all == null) {
+        dispatch('multiSelPanes', { all: false });
         return;
       }
       $tab.gotoTab();
@@ -558,8 +562,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         openTabs.map((tab) => tab.select(selectAll));
         this.selectItems(dispatch);
         if (all || e.shiftKey) {
-          dispatch('multiSelPanes', { tabs: true });
+          dispatch('multiSelPanes', { tabs: true, all: false });
         }
+        return;
+      }
+      if (all == null) {
+        dispatch('multiSelPanes', { all: false });
         return;
       }
       const [$tab1, ...rest] = $window.getTabs();
@@ -584,7 +592,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           windowId: -1,
         },
       }),
-      search: {},
       clickTabs: makeAction({
         target: this,
         eventType: 'click',

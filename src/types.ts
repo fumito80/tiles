@@ -95,12 +95,13 @@ export const initialOptions = {
   fontSize: '0.9em',
   collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
+  searched: [] as string[],
 };
 
 export type Panes = typeof panes[number];
 export type MulitiSelectables = {
-  [key in Panes | 'all']?: boolean;
-};
+[key in Panes]?: boolean;
+} & { all: boolean | undefined };
 
 export const initialState = {
   htmlBookmarks: {} as HtmlBookmarks,

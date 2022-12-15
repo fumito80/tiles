@@ -34,13 +34,11 @@ app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap.selected,
-.searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap:hover,
-.searching:not(.drag-start) .tabs-wrap>open-window>.tab-wrap.selected,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
-app-main:not(.drag-start) .window.tabs-collapsed:not(:has(.outline:hover)):hover window-header,
-.window:not(:has(.outline:hover)) window-header:hover,
+app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover window-header,
+.window:not(:has(open-tab:hover)) window-header:hover,
 .tooltip,
 .draggable-clone,
 .draggable-clone>div,
@@ -105,7 +103,7 @@ app-main:not(.drag-start) {
   &.drag-start .tabs {
 
     .leaf:not(.search-path),
-    .tab-wrap:not(.match):not(.unmatch) {
+    .tab-wrap {
       >.drop-top {
 
         &.drag-enter::before {
@@ -158,15 +156,17 @@ app-main:not(.drag-start) {
     }
   }
 
-  &:not(.searching).theme-dark-pane {
-    .tabs-wrap>.tabs-collapsed {
+  .tabs-wrap>.tabs-collapsed {
 
-      >.tab-wrap {
-        background-color: $dark-icon-color;
+    >.tab-wrap {
+      background-color: $dark-icon-color;
 
-        &.current-tab {
-          background-color: var(--key-bg);
-        }
+      &.match {
+        background-color: rgba(255, 255, 255, .2) !important;
+      }
+
+      &.current-tab {
+        background-color: var(--key-bg);
       }
     }
   }
@@ -179,7 +179,7 @@ app-main:not(.drag-start) {
     }
   }
 
-  :not(.searching) .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
+  .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
 }
