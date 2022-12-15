@@ -450,6 +450,12 @@ app-main.drag-start>.tabs {
     &.unmatch+.match>.drop-top {
       display: none;
     }
+
+    &.unmatch:has(+.match) {
+      >.drop-bottom {
+        width: 1000px;
+      }
+    }
   }
 
   .new-window-plus>i {

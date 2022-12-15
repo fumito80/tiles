@@ -99,7 +99,7 @@ app-main:not(.drag-start) {
     background-color: $dark-shade-bg-color;
   }
 
-  &.drag-start,
+  &.drag-start .leafs,
   &.drag-start .tabs {
 
     .leaf:not(.search-path),
@@ -120,7 +120,7 @@ app-main:not(.drag-start) {
     }
   }
 
-  &.drag-start .leaf,
+  &.drag-start .leafs .leaf,
   &.drag-start window-header:not(.drag-source)~.tab-wrap {
 
     >.drop-top.drag-enter::after,
