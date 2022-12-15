@@ -103,7 +103,7 @@ app-main:not(.drag-start) {
   &.drag-start .tabs {
 
     .leaf:not(.search-path),
-    .tab-wrap:not(.match):not(.unmatch) {
+    .tab-wrap {
       >.drop-top {
 
         &.drag-enter::before {

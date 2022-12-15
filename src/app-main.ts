@@ -30,7 +30,7 @@ const excludeClasses = [
   'tab-wrap', 'outline',
   'collapse-tabs',
   'collapse-tab',
-  'window', 'tab',
+  'window', 'window-title', 'tab-title',
   'history', 'history-title',
   'tabs-menu-button',
   'folder-menu-button',
@@ -39,7 +39,11 @@ const excludeClasses = [
 
 async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
+  if ($target.hasAttribute('contenteditable')) {
+    return;
+  }
   if (hasClass($target, ...excludeClasses)) {
+    dispatch('focusQuery');
     return;
   }
   dispatch('multiSelPanes', {
@@ -51,9 +55,6 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
     return;
   }
   if (hasClass($target, 'main-menu-button')) {
-    return;
-  }
-  if ($target.hasAttribute('contenteditable')) {
     return;
   }
   dispatch('focusQuery');

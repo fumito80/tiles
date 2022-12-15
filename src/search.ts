@@ -1,4 +1,6 @@
-import { IPubSubElement, makeAction, Store } from './store';
+import {
+  Dispatch, IPubSubElement, makeAction, Store,
+} from './store';
 import { when } from './common';
 import {
   $, $byClass,
@@ -6,7 +8,7 @@ import {
   selectFolder,
   createNewTab,
 } from './client';
-import { Options } from './types';
+import { Options, Panes } from './types';
 
 export function getReFilter(value: string) {
   if (!value) {
@@ -20,6 +22,7 @@ export type SearchParams = {
 }
 
 export interface ISearchable {
+  paneName: Panes;
   search(params: SearchParams, dispatch: Store['dispatch']): void;
   clearSearch(dispatch: Store['dispatch']): void;
 }
@@ -89,7 +92,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       selectFolder($target, $byClass('leafs')!, this.#exclusiveOpenBmFolderTree);
     }
   }
-  search(newValue: string, dispatch: Store['dispatch']) {
+  search(newValue: string, dispatch: Dispatch) {
     const oldValue = this.#oldValue;
     if (oldValue.length <= 1 && newValue.length <= 1) {
       this.#oldValue = newValue;
@@ -122,6 +125,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
   }
+  reSearch(paneName: Panes, dispatch: Dispatch) {
+    const reFilter = getReFilter(this.$inputQuery.value)!;
+    const searchParams = { reFilter, searchSelector: 'tab-wrap', includeUrl: this.#includeUrl };
+    this.$searchTargets
+      .filter(($target) => $target.paneName === paneName)
+      .forEach((target) => target.search(searchParams, dispatch));
+  }
   multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
     if (changes?.all) {
       this.$inputQuery.focus();
@@ -150,6 +160,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       search: {
         initValue: '',
       },
+      're-search': {
+        initValue: '' as Panes,
+      },
     };
   }
   connect(store: Store) {
@@ -160,7 +173,8 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue, store.dispatch));
     store.subscribe('clearQuery', () => this.clearQuery(store.dispatch));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
     store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
+    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
+    store.subscribe('re-search', (changes) => this.reSearch(changes.newValue, store.dispatch));
   }
 }

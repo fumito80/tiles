@@ -4,7 +4,7 @@ import {
 } from './multi-sel-pane';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
@@ -368,8 +368,7 @@ function isWindow($target: HTMLElement) {
   if ($target instanceof Window) {
     return $target;
   }
-  if ($target.parentElement instanceof WindowHeader
-    && $target.parentElement.parentElement instanceof Window) {
+  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'window-title')) {
     return $target.parentElement.parentElement;
   }
   return undefined;
@@ -593,7 +592,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           windowId: -1,
         },
       }),
-      search: {},
       clickTabs: makeAction({
         target: this,
         eventType: 'click',

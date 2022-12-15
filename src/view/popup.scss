@@ -127,7 +127,7 @@ app-main {
   }
 }
 
-button:not(.submit) {
+button {
   outline: none;
   background-color: transparent;
   border-radius: 3px;
@@ -284,16 +284,7 @@ window-header,
   transition: opacity 0.2s !important;
 
   .submit {
-    font-size: 1.3em;
-    position: absolute;
-    left: 0;
-    display: flex;
-    align-items: center;
-    background-color: transparent;
-    border: 0;
-    padding: 1px 4px 1px 6px;
-    outline: 0;
-    color: rgba(0, 0, 0, 0.4);
+    margin-left: 5px;
 
     &::after {
       content: none;
@@ -303,7 +294,6 @@ window-header,
   .query {
     width: 100%;
     max-width: 90px;
-    margin-left: 24px;
     border: 0;
     outline: none;
     font-size: inherit;
@@ -1102,7 +1092,7 @@ app-main::-webkit-scrollbar {
     }
 
     &.tab-wrap {
-      >.tab {
+      >.tab-title {
         color: rgba(0, 0, 0, 0.6);
       }
     }
@@ -1129,7 +1119,7 @@ app-main::-webkit-scrollbar {
     }
 
     &.tabs-header {
-      >.tab {
+      >.window-title {
         color: rgba(0, 0, 0, 0.6);
       }
 
@@ -1145,7 +1135,8 @@ app-main::-webkit-scrollbar {
       &.leaf,
       &.marker>.title,
       &.history>div,
-      .tab {
+      .tab-title,
+      .window-title {
         color: rgba(255, 255, 255, 0.6) !important;
       }
 
@@ -1167,7 +1158,8 @@ app-main::-webkit-scrollbar {
   :not(.drag-source) {
 
     >.anchor,
-    >.tab {
+    >.tab-title,
+    >.window-title {
       pointer-events: none;
     }
   }
@@ -1231,7 +1223,8 @@ app-main::-webkit-scrollbar {
     display: none;
   }
 
-  [data-initial] .tab {
+  [data-initial] .window-title,
+  [data-initial] .tab-title {
     text-indent: 25px;
   }
 }

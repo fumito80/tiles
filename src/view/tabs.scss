@@ -230,7 +230,7 @@ window-header {
     transition: opacity 0.15s;
   }
 
-  .icon-incognito.show+.tab {
+  .icon-incognito.show+.window-title {
     padding-left: 44px;
     text-indent: 0;
   }
@@ -257,7 +257,8 @@ window-header {
 
 app-main {
 
-  .tab {
+  .tab-title,
+  .window-title {
     visibility: inherit;
     transition: visibility 0.15s;
   }
@@ -283,7 +284,7 @@ app-main {
         border: 2px solid transparent;
         border-radius: 4px;
 
-        >.tab {
+        >.tab-title {
           visibility: hidden;
           margin-left: 25px;
           text-indent: 0;
@@ -300,7 +301,7 @@ app-main {
           background-color: rgba(0, 0, 0, .05);
           background-position-x: 25px;
 
-          >.tab {
+          >.tab-title {
             z-index: 1;
             visibility: inherit;
             margin-left: 0;
@@ -324,7 +325,7 @@ app-main {
 
   &:not(.searching) open-window:not(.tabs-collapsed) {
     >window-header {
-      >.tab {
+      >.window-title {
         opacity: 0;
       }
 
@@ -379,13 +380,20 @@ app-main.drag-start>.tabs {
   .tabs-collapsed window-header:not(.drag-source)~open-tab {
     &.match {
 
-      >.drop-top,
-      >.drop-bottom {
-        height: calc(100% + 8px);
+      >.drop-top {
+        height: calc(100% + 10px);
+        top: calc(-50% - 10px);
       }
 
-      >.drop-top {
-        top: calc(-50% - 10px);
+      >.drop-bottom {
+        height: calc(100% + 7px);
+        top: 50%;
+      }
+
+      &:not(:last-of-type) {
+        >.drop-bottom {
+          display: none;
+        }
       }
     }
 
@@ -434,6 +442,10 @@ app-main.drag-start>.tabs {
         width: 1000px;
       }
     }
+
+    &.unmatch+.match>.drop-top {
+      display: none;
+    }
   }
 
   .new-window-plus>i {
@@ -447,7 +459,7 @@ app-main.drag-start>.tabs {
   max-width: 160px;
 
   &::before {
-    content: '\e90c';
+    content: '\e90f';
     left: 5px;
     position: absolute;
     font-family: glyphs;
@@ -457,11 +469,11 @@ app-main.drag-start>.tabs {
   .icon-incognito {
     margin-left: 24px;
 
-    +.tab {
+    +.window-title {
       text-indent: 2px;
     }
 
-    &:not(.show)+.tab {
+    &:not(.show)+.window-title {
       text-indent: 20px;
     }
   }
@@ -487,7 +499,7 @@ app-main.drag-start>.tabs {
   .tab-wrap {
     background-position-x: 7px;
 
-    .tab {
+    .tab-title {
       text-indent: 25px;
     }
 
