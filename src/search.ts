@@ -163,6 +163,11 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       're-search': {
         initValue: '' as Panes,
       },
+      // saveQuery: makeAction({
+      //   target: window as unknown as HTMLElement,
+      //   eventType: 'unload',
+      //   force: true,
+      // }),
     };
   }
   connect(store: Store) {

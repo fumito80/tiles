@@ -86,6 +86,16 @@ function addHistory() {
   timeoutRefreshHistoryTitle = setTimeout(setHtmlHistory, 2000);
 }
 
+function saveQuery() {
+  getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
+    if (!lastSearchWord) {
+      return;
+    }
+    const queries = [lastSearchWord, ...rest.queries?.filter((el) => el !== lastSearchWord) || []];
+    setLocal({ queries });
+  });
+}
+
 type InitStateKeys = keyof Pick<
   State,
   'settings' | 'clientState' | 'options' | 'lastSearchWord'
@@ -107,6 +117,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
+  regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
   setPopupStyle(options);
 }
 
@@ -163,7 +174,7 @@ export const mapMessagesPtoB = {
     })
   ),
   [CliMessageTypes.moveTabsNewWindow]: async (
-    { payload }: PayloadAction<{ tabId: number, incognito: boolean}[]>,
+    { payload }: PayloadAction<{ tabId: number, incognito: boolean }[]>,
   ): Promise<{ windowId: number, message?: string }> => {
     const [tab1, ...rest] = payload;
     const focused = rest.every((t) => t.incognito === tab1.incognito);
