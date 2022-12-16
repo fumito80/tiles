@@ -391,6 +391,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', ids.join(','));
     e.dataTransfer!.setData('application/source-class', className!);
+    e.dataTransfer!.effectAllowed = 'move';
     dispatch('dragging', true);
   }
   dragover(e: DragEvent) {
@@ -494,8 +495,13 @@ export default class DragAndDropEvents implements IPubSubElement {
         return;
       }
       // to bookmarks/folder
-      chrome.windows.get(windowId, { populate: true })
-        .then(({ tabs }) => addFolderFromTabs(tabs!, bookmarkDest, destId, position));
+      chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
+        if (dropPane === 'leafs') {
+          addBookmarksFromTabs(tabs!, bookmarkDest);
+          return;
+        }
+        addFolderFromTabs(tabs!, bookmarkDest, destId, position);
+      });
       return;
     }
     // bookmark/folder to new window
