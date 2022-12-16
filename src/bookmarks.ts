@@ -91,7 +91,7 @@ export class Leaf extends MutiSelectableItem {
   }
   async editBookmarkTitle() {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
-    const title = await editTitle($anchor, this.id, false, true).catch(() => null);
+    const title = await editTitle($anchor, this.id, false, true);
     if (!title) {
       return;
     }

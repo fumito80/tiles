@@ -39,7 +39,7 @@ const excludeClasses = [
 
 async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
-  if ($target.hasAttribute('contenteditable')) {
+  if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
     return;
   }
   if (hasClass($target, ...excludeClasses)) {

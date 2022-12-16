@@ -26,8 +26,13 @@ body {
   color: var(--key-bg) !important;
 }
 
-app-main.searching .form-query {
-  background-color: var(--searching-bg);
+app-main.searching {
+
+  .form-query,
+  .form-query .queries,
+  .queries::-webkit-scrollbar-track-piece {
+    background-color: var(--searching-bg);
+  }
 }
 
 app-main:not(.drag-start) .leaf:hover,
@@ -196,8 +201,12 @@ app-main:not(.drag-start) {
     color: lightgray;
   }
 
-  .form-query .query {
-    color: $dark-font-color;
+  .form-query {
+
+    .query,
+    .queries {
+      color: $dark-font-color;
+    }
   }
 
   .folders .title::before,
@@ -207,6 +216,7 @@ app-main:not(.drag-start) {
   }
 
   .form-query,
+  &:not(.searching) .queries>div,
   button:not(.submit):hover::after,
   button:not(.submit):focus::after {
     background-color: rgba(255, 255, 255, 0.3);
@@ -423,6 +433,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 
   .query,
+  .queries,
   .clear-search>i {
     color: $dark-font-color !important;
   }
@@ -443,6 +454,7 @@ app-main:not(.theme-dark-search).searching .form-query {
   }
 
   .query,
+  .queries,
   .clear-search>i {
     color: $font-color !important;
   }
