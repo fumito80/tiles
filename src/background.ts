@@ -91,7 +91,7 @@ function saveQuery() {
     if (!lastSearchWord) {
       return;
     }
-    const queries = [lastSearchWord, ...rest.queries?.filter((el) => el !== lastSearchWord) || []];
+    const queries = [lastSearchWord, ...rest.queries?.filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0) || []];
     setLocal({ queries });
   });
 }

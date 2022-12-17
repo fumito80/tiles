@@ -53,7 +53,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.addEventListener('submit', (e) => this.submitForm(e, options));
     this.$queries = $byClass('queries', this)!;
     this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
-    this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this));
+    this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
   }
   async clickQuery() {
     const shown = hasClass(this, 'show-queries');
@@ -62,7 +62,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       return undefined;
     }
     return getLocal('queries').then(({ queries }) => {
-      const html = queries.map((el) => `<div tabindex="0">${el}<i class="icon-x"></i></div>`).join('');
+      const value = this.$inputQuery.value.trim();
+      let targets = queries;
+      if (value) {
+        const reFilter = getReFilter(value)!;
+        targets = queries.filter((el) => reFilter.test(el));
+      }
+      const html = targets.map((el) => `<div tabindex="0">${el}<i class="icon-x"></i></div>`).join('');
       this.$queries.innerHTML = html;
       this.classList.add('show-queries');
     });
@@ -87,20 +93,28 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     if (!['ArrowDown', 'ArrowUp'].includes(e.key)) {
       return;
     }
+    e.preventDefault();
     if (!hasClass(this, 'show-queries')) {
       await this.clickQuery();
     }
+    this.$queries.scrollTop = 0;
     const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
     ($next as HTMLElement)?.focus();
   }
   keydownQueries(e: KeyboardEvent, dispatch: Dispatch) {
-    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
+    if (!['ArrowDown', 'ArrowUp', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       return;
     }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      this.clickQuery();
+      this.$inputQuery.focus();
+      return;
+    }
+    e.preventDefault();
     const $focused = $('.queries>div:focus', this);
     if ($focused && e.key === 'Enter') {
       this.setQuery({ target: $focused } as unknown as MouseEvent, dispatch);
-      this.clickQuery();
+      this.classList.remove('show-queries');
       this.$inputQuery.focus();
       return;
     }
@@ -156,10 +170,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
   }
   search(newValue: string, dispatch: Dispatch) {
+    this.classList.remove('show-queries');
     const oldValue = this.#oldValue;
-    if (oldValue.length <= 1 && newValue.length <= 1) {
+    // eslint-disable-next-line no-control-regex
+    const isSingleChar = newValue.length <= 1 && !/^[^\x01-\x7E\uFF61-\uFF9F]+$/.test(newValue);
+    if (oldValue.length <= 1 && isSingleChar) {
       this.#oldValue = newValue;
-      chrome.storage.local.set({ lastSearchWord: newValue });
+      chrome.storage.local.set({ lastSearchWord: '' });
       return;
     }
     if (this.$inputQuery.value !== newValue) {
@@ -169,12 +186,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
-    if (newValue.length <= 1) {
+    if (isSingleChar) {
       this.clearSearch(dispatch);
       dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
-      chrome.storage.local.set({ lastSearchWord: newValue });
+      chrome.storage.local.set({ lastSearchWord: '' });
       return;
     }
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
@@ -235,6 +252,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
         target: this.$queries,
         eventType: 'keydown',
         eventOnly: true,
+        listenerOptions: false,
       }),
     };
   }

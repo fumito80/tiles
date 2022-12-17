@@ -26,15 +26,6 @@ body {
   color: var(--key-bg) !important;
 }
 
-app-main.searching {
-
-  .form-query,
-  .form-query .queries,
-  .queries::-webkit-scrollbar-track-piece {
-    background-color: var(--searching-bg);
-  }
-}
-
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
@@ -216,7 +207,7 @@ app-main:not(.drag-start) {
   }
 
   .form-query,
-  &:not(.searching) .queries>div,
+  &:not(.searching) .queries-wrap::before,
   button:not(.submit):hover::after,
   button:not(.submit):focus::after {
     background-color: rgba(255, 255, 255, 0.3);
@@ -250,7 +241,8 @@ app-main:not(.drag-start) {
   }
 
   .folders::-webkit-scrollbar-thumb,
-  .tabs::-webkit-scrollbar-thumb {
+  .tabs::-webkit-scrollbar-thumb,
+  &:not(.searching) .queries::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, .3);
 
     &:hover {
@@ -445,6 +437,23 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
 
   .clear-search:active::after {
     background-color: rgba(255, 255, 255, .5);
+  }
+
+  .queries>div {
+
+    &:hover,
+    &:focus {
+      outline: none;
+      background-color: rgba(255, 255, 255, .2);
+    }
+  }
+
+  .queries::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, .3);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, .5);
+    }
   }
 }
 

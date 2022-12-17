@@ -324,76 +324,98 @@ form.form-query {
     pointer-events: none;
   }
 
-  .queries {
+  >button,
+  >input {
+    z-index: 4;
+  }
+
+  .queries-wrap {
     position: absolute;
     z-index: 3;
-    top: 100%;
+    top: 50%;
     left: 0;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-    background-color: var(--frame-bg);
     width: 100%;
-    max-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    transition: max-height .2s;
+    overflow-y: hidden;
+    border-bottom-left-radius: 0.9em;
+    border-bottom-right-radius: 0.9em;
+    background-color: var(--frame-bg);
 
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+    &::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
     }
 
-    &::-webkit-scrollbar-track-piece {
-      background-color: rgba(0, 0, 0, 0.1);
-    }
-
-    >div {
+    .queries {
       position: relative;
-      padding: 2px 5px;
+      z-index: 4;
+      margin-top: .8em;
       overflow-x: hidden;
-      text-overflow: ellipsis;
-      cursor: default;
+      overflow-y: auto;
+      max-height: 0;
+      transition: max-height .2s;
 
-      &:hover,
-      &:focus {
-        outline: none;
-        background-color: rgba(0, 0, 0, .2);
+      &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+
       }
 
-      &:hover {
-        .icon-x {
-          display: inline-block;
+      >div {
+        position: relative;
+        padding: 2px 5px;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        cursor: default;
+
+        &:hover,
+        &:focus {
+          outline: none;
+          background-color: rgba(0, 0, 0, .2);
         }
-      }
 
-      .icon-x {
-        position: absolute;
-        top: 3px;
-        right: 2px;
-        font-size: 1.2em;
-        display: none;
-        cursor: pointer;
-      }
+        &:hover {
+          .icon-x {
+            display: inline-block;
+          }
+        }
 
-      &:last-child {
-        padding-bottom: 4px;
+        .icon-x {
+          position: absolute;
+          top: 3px;
+          right: 2px;
+          font-size: 1.2em;
+          display: none;
+          cursor: pointer;
+        }
+
+        &:last-child {
+          padding-bottom: 5px;
+        }
       }
     }
   }
 
   &.show-queries {
-    border-radius: 5px;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-
     .queries {
       max-height: calc(100vh / 2);
     }
   }
 }
 
-app-main:not(.searching) .queries>div {
-  background-color: rgba(0, 0, 0, 0.1);
+app-main {
+  &.searching {
+
+    .form-query,
+    .queries-wrap::before {
+      background-color: var(--searching-bg);
+    }
+  }
+
+  &:not(.searching) .queries-wrap::before {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
 }
 
 .split-h {
@@ -515,7 +537,10 @@ app-main:not(.searching) .queries>div {
       cursor: pointer;
     }
 
-    background-image: var(--external-url-image, none);
+    .submit {
+      background-image: var(--external-url-image, none);
+      background-repeat: no-repeat;
+    }
   }
 }
 
