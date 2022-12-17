@@ -364,9 +364,9 @@ form.form-query {
 
       >div {
         position: relative;
+        display: flex;
+        align-items: center;
         padding: 2px 5px;
-        overflow-x: hidden;
-        text-overflow: ellipsis;
         cursor: default;
 
         &:hover,
@@ -381,9 +381,13 @@ form.form-query {
           }
         }
 
+        >span {
+          overflow-x: hidden;
+          text-overflow: ellipsis;
+        }
+
         .icon-x {
           position: absolute;
-          top: 3px;
           right: 2px;
           font-size: 1.2em;
           display: none;

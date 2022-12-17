@@ -68,7 +68,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
         const reFilter = getReFilter(value)!;
         targets = queries.filter((el) => reFilter.test(el));
       }
-      const html = targets.map((el) => `<div tabindex="0">${el}<i class="icon-x"></i></div>`).join('');
+      const html = targets.map((el) => `<div tabindex="0"><span>${el}</span><i class="icon-x"></i></div>`).join('');
       this.$queries.innerHTML = html;
       this.classList.add('show-queries');
     });
