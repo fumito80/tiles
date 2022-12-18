@@ -293,7 +293,7 @@ form.form-query {
 
   .query {
     width: 100%;
-    max-width: 90px;
+    max-width: 100px;
     border: 0;
     outline: none;
     font-size: inherit;
@@ -354,7 +354,7 @@ form.form-query {
       overflow-x: hidden;
       overflow-y: auto;
       max-height: 0;
-      transition: max-height .2s;
+      transition: max-height .1s;
 
       &::-webkit-scrollbar {
         width: 8px;
@@ -372,7 +372,7 @@ form.form-query {
         &:hover,
         &:focus {
           outline: none;
-          background-color: rgba(0, 0, 0, .2);
+          background-color: rgba(0, 0, 0, .1);
         }
 
         &:hover {
@@ -476,7 +476,7 @@ app-main {
     padding: 3px;
     border-radius: 100px;
     background-color: var(--pane-bg);
-    transition: all 0.15s;
+    transition: all 0.1s;
 
     .count-selected {
       line-height: 1.1em;

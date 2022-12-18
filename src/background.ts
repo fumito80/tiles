@@ -91,7 +91,12 @@ function saveQuery() {
     if (!lastSearchWord) {
       return;
     }
-    const queries = [lastSearchWord, ...rest.queries?.filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0) || []];
+    const queries = [
+      lastSearchWord,
+      ...rest.queries!
+        .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
+        .slice(0, 200),
+    ];
     setLocal({ queries });
   });
 }
