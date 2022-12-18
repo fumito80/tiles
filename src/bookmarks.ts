@@ -211,6 +211,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   #options!: Options;
   $leafMenu!: HTMLElement;
   $lastClickedLeaf!: Leaf | undefined;
+  private matchedTabLeafId!: string | undefined;
   init(options: Options) {
     this.#options = options;
     this.$leafMenu = $byClass('leaf-menu')!;
@@ -367,6 +368,19 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     $$byClass('search-path', this).forEach(rmClass('search-path'));
     $$byClass('path', this).forEach(rmClass('path'));
   }
+  wheelHighlightTab(e: WheelEvent, dispatch: Dispatch) {
+    const $leaf = (e.target as HTMLElement).parentElement;
+    if (!($leaf instanceof Leaf)) {
+      return;
+    }
+    if (this.matchedTabLeafId === $leaf.id) {
+      e.preventDefault();
+      dispatch('nextTabByWheel', '', true);
+    }
+  }
+  setWheelHighlightTab(newValue: string) {
+    this.matchedTabLeafId = newValue;
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -385,6 +399,26 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         eventType: 'mouseup',
         eventOnly: true,
       }),
+      mouseoverLeafs: makeAction({
+        target: this,
+        eventType: 'mouseover',
+        eventOnly: true,
+      }),
+      mouseoutLeafs: makeAction({
+        target: this,
+        eventType: 'mouseout',
+        eventOnly: true,
+      }),
+      wheelLeafs: makeAction({
+        target: this,
+        eventType: 'wheel',
+        eventOnly: true,
+        listenerOptions: false,
+      }),
+      nextTabByWheel: makeAction({
+        initValue: '',
+        force: true,
+      }),
     };
   }
   override connect(store: Store) {
@@ -397,5 +431,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     store.subscribe('clickFolders', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
     store.subscribe('mousedownFolders', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
+    store.subscribe('wheelLeafs', (_, e) => this.wheelHighlightTab(e, store.dispatch));
+    store.subscribe('setWheelHighlightTab', (changes) => this.setWheelHighlightTab(changes.newValue));
   }
 }

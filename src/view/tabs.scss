@@ -370,7 +370,8 @@ app-main {
         text-overflow: ellipsis;
       }
 
-      &:not(.match):hover {
+      &:not(.match):hover,
+      &:not(.match).highlight.focus {
         >.tooltip {
           display: block;
           animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
@@ -532,13 +533,13 @@ app-main {
       width: calc(100% + 4px);
       height: calc(100% + 4px);
       border: 2px solid transparent;
+      border-radius: 6px;
       left: -4px;
       top: -4px;
     }
 
     &:hover>.outline,
     &.selected>.outline {
-      border-radius: 6px;
       border-color: var(--item-hover-bg);
     }
 
@@ -562,6 +563,10 @@ app-main {
         text-rendering: auto;
         color: $common-marker;
       }
+    }
+
+    &.highlight>.outline {
+      border-color: $common-marker;
     }
   }
 

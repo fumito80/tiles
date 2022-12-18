@@ -15,6 +15,7 @@ import {
   Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
 import { PromiseInitTabs, State } from './types';
+import { Leaf } from './bookmarks';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
@@ -144,6 +145,7 @@ export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
   #incognito!: boolean;
   #active!: boolean;
+  #url!: string;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -155,6 +157,7 @@ export class OpenTab extends MutiSelectableItem {
     this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
     this.#active = tab.active;
+    this.#url = tab.url!;
     const [$tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
@@ -173,6 +176,9 @@ export class OpenTab extends MutiSelectableItem {
   }
   get isCurrent() {
     return this.#active;
+  }
+  get url() {
+    return this.#url;
   }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
@@ -214,9 +220,10 @@ export class OpenTab extends MutiSelectableItem {
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
     if (rect.bottom + rectTT.height + margin > document.body.offsetHeight) {
       addStyle('top', `${rect.top - rectTT.height - margin}px`)(this.$tooltip);
-      return;
+      return this;
     }
     addStyle('top', `${rect.bottom + margin}px`)(this.$tooltip);
+    return this;
   }
 }
 
@@ -389,6 +396,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #tabsWrap!: HTMLElement;
   #initPromise!: Promise<void>;
   $lastClickedTab!: OpenTab | undefined;
+  #timerMouseoverLeaf: number | undefined;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -423,12 +431,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     return [...this.#tabsWrap.children] as Window[];
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
-    $$byClass(searchSelector, this).forEach((el) => {
-      const tab = el.firstElementChild as HTMLElement;
+    $$byClass(searchSelector, this).forEach((tab) => {
+      if (!(tab instanceof OpenTab)) {
+        return;
+      }
       const isMatch = reFilter.test(tab.textContent!)
-        || (includeUrl && reFilter.test(extractUrl(el.style.backgroundImage)));
-      el.classList.toggle('match', isMatch);
-      el.classList.toggle('unmatch', !isMatch);
+        || (includeUrl && reFilter.test(tab.url));
+      tab.classList.toggle('match', isMatch);
+      tab.classList.toggle('unmatch', !isMatch);
     });
     this.getWindows().forEach(($win) => $win.searchDone());
   }
@@ -583,6 +593,52 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const count = precount ?? $$byClass('selected', this).length;
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
+  // eslint-disable-next-line class-methods-use-this
+  setFocus(tab: OpenTab) {
+    tab.classList.add('focus');
+    (tab as any).scrollIntoViewIfNeeded();
+    tab.setTooltipPosition();
+  }
+  mouseoverLeafs(e: MouseEvent, dispatch: Dispatch) {
+    const $leaf = (e.target as HTMLElement).parentElement;
+    if (!($leaf instanceof Leaf)) {
+      return;
+    }
+    clearTimeout(this.#timerMouseoverLeaf);
+    this.#timerMouseoverLeaf = setTimeout(() => {
+      const url = extractUrl($leaf.style.backgroundImage);
+      const [find1st] = this.getWindows()
+        .flatMap((win) => win.getTabs())
+        .filter((tab) => tab.url.startsWith(url))
+        .map(addClass('highlight'));
+      if (find1st) {
+        this.setFocus(find1st);
+        dispatch('setWheelHighlightTab', $leaf.id);
+      }
+    }, 500);
+  }
+  mouseoutLeafs(e: MouseEvent, dispatch: Dispatch) {
+    const $leaf = (e.target as HTMLElement).parentElement;
+    if (!($leaf instanceof Leaf)) {
+      return;
+    }
+    clearTimeout(this.#timerMouseoverLeaf);
+    this.getWindows()
+      .flatMap(($win) => $win.getTabs())
+      .forEach(rmClass('highlight', 'focus'));
+    dispatch('setWheelHighlightTab', undefined);
+  }
+  nextTabByWheel() {
+    const [head, ...tail] = this.getWindows()
+      .flatMap(($win) => $win.getTabs())
+      .filter(($el) => hasClass($el, 'highlight'));
+    if (tail.length === 0) {
+      return;
+    }
+    const foundIndex = [head, ...tail].findIndex(($el) => hasClass($el, 'focus'));
+    rmClass('focus')([head, ...tail][foundIndex]);
+    this.setFocus([head, ...tail][foundIndex + 1] || head);
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -610,6 +666,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       openTabsFromHistory: makeAction({
         force: true,
       }),
+      setWheelHighlightTab: makeAction({
+        initValue: undefined as string | undefined,
+      }),
     };
   }
   override connect(store: Store) {
@@ -624,6 +683,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
       store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
       store.subscribe('openTabsFromHistory', () => this.openTabsFromHistory(store.dispatch));
+      store.subscribe('mouseoverLeafs', (_, e) => this.mouseoverLeafs(e, store.dispatch));
+      store.subscribe('mouseoutLeafs', (_, e) => this.mouseoutLeafs(e, store.dispatch));
+      store.subscribe('nextTabByWheel', this.nextTabByWheel.bind(this));
     });
   }
 }
