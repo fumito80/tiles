@@ -22,6 +22,10 @@ i {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bookmark-find:before {
+  content: "\e900";
+}
+
 .icon-history:before {
   content: "\e90d";
 }

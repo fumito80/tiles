@@ -4,7 +4,7 @@ import {
 } from './multi-sel-pane';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
@@ -158,7 +158,7 @@ export class OpenTab extends MutiSelectableItem {
     this.setCurrentTab(tab);
     this.#active = tab.active;
     this.#url = tab.url!;
-    const [$tab,, $tooltip] = [...this.children];
+    const [, $tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tooltip.textContent = tooltip;
@@ -309,9 +309,6 @@ export class Window extends HTMLElement implements ISubscribeElement {
   get isCurrent() {
     return this.#isCurrent;
   }
-  searchDone() {
-    this.classList.toggle('empty', this.offsetHeight < 10);
-  }
   addTab(tab: chrome.tabs.Tab, dispatch: Store['dispatch']) {
     const $openTab = document.importNode(this.$tmplTab!, true);
     return $openTab.init(tab, this.#isSearching, dispatch);
@@ -430,17 +427,18 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   getWindows() {
     return [...this.#tabsWrap.children] as Window[];
   }
-  search({ reFilter, searchSelector, includeUrl }: SearchParams) {
-    $$byClass(searchSelector, this).forEach((tab) => {
+  search({ reFilter, searchSelector, includeUrl }: SearchParams, dispatch: Dispatch) {
+    const matches = $$byClass(searchSelector, this).filter((tab) => {
       if (!(tab instanceof OpenTab)) {
-        return;
+        return false;
       }
       const isMatch = reFilter.test(tab.textContent!)
         || (includeUrl && reFilter.test(tab.url));
       tab.classList.toggle('match', isMatch);
       tab.classList.toggle('unmatch', !isMatch);
+      return isMatch;
     });
-    this.getWindows().forEach(($win) => $win.searchDone());
+    dispatch('tabMatches', matches.length, true);
   }
   clearSearch() {
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
@@ -607,13 +605,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     clearTimeout(this.#timerMouseoverLeaf);
     this.#timerMouseoverLeaf = setTimeout(() => {
       const url = extractUrl($leaf.style.backgroundImage);
-      const [find1st] = this.getWindows()
+      const [find1st, ...rest] = this.getWindows()
         .flatMap((win) => win.getTabs())
         .filter((tab) => tab.url.startsWith(url))
         .map(addClass('highlight'));
       if (find1st) {
         this.setFocus(find1st);
-        dispatch('setWheelHighlightTab', $leaf.id);
+        const searches = [find1st, ...rest].length;
+        dispatch('setWheelHighlightTab', { leafId: $leaf.id, searches });
       }
     }, 500);
   }
@@ -626,18 +625,21 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.getWindows()
       .flatMap(($win) => $win.getTabs())
       .forEach(rmClass('highlight', 'focus'));
-    dispatch('setWheelHighlightTab', undefined);
+    dispatch('setWheelHighlightTab', { searches: undefined });
   }
-  nextTabByWheel() {
-    const [head, ...tail] = this.getWindows()
+  nextTabByWheel(dir: Store['actions']['nextTabByWheel']['initValue']) {
+    const highlights = this.getWindows()
       .flatMap(($win) => $win.getTabs())
       .filter(($el) => hasClass($el, 'highlight'));
-    if (tail.length === 0) {
+    if (highlights.length <= 1) {
       return;
     }
-    const foundIndex = [head, ...tail].findIndex(($el) => hasClass($el, 'focus'));
-    rmClass('focus')([head, ...tail][foundIndex]);
-    this.setFocus([head, ...tail][foundIndex + 1] || head);
+    const foundIndex = highlights.findIndex(($el) => hasClass($el, 'focus'));
+    const nextTab = dir === 'DN'
+      ? (highlights[foundIndex + 1] || highlights[0])
+      : (highlights[foundIndex - 1] || highlights.at(-1));
+    rmClass('focus')(highlights[foundIndex]);
+    this.setFocus(nextTab);
   }
   override actions() {
     return {
@@ -667,7 +669,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         force: true,
       }),
       setWheelHighlightTab: makeAction({
-        initValue: undefined as string | undefined,
+        initValue: {
+          leafId: undefined,
+          searches: undefined,
+        } as {
+          leafId?: string | undefined,
+          searches?: number | undefined,
+        },
+      }),
+      tabMatches: makeAction({
+        initValue: undefined as number | undefined,
+        force: true,
       }),
     };
   }
@@ -685,7 +697,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.subscribe('openTabsFromHistory', () => this.openTabsFromHistory(store.dispatch));
       store.subscribe('mouseoverLeafs', (_, e) => this.mouseoverLeafs(e, store.dispatch));
       store.subscribe('mouseoutLeafs', (_, e) => this.mouseoutLeafs(e, store.dispatch));
-      store.subscribe('nextTabByWheel', this.nextTabByWheel.bind(this));
+      store.subscribe('nextTabByWheel', (changes) => this.nextTabByWheel(changes.newValue));
     });
   }
 }
@@ -696,13 +708,18 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
   private $buttonNextWin!: HTMLElement;
+  private $searchesTabs!: HTMLElement;
+  private $searchesBms!: HTMLElement;
   readonly multiDeletesTitle = 'Close selected tabs';
   override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
     super.init(settings, $tmplMultiSelPane);
     this.$buttonCollapse = $byClass('collapse-tabs', this)!;
     this.$buttonPrevWin = $byClass('win-prev', this)!;
     this.$buttonNextWin = $byClass('win-next', this)!;
+    this.$searchesTabs = $byClass('searches-tabs', this)!;
+    this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.#collapsed = collapsed;
+    $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
     this.switchCollapseIcon(collapsed);
   }
   switchCollapseIcon(collapsed: boolean) {
@@ -719,6 +736,17 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
       }
       default:
     }
+  }
+  showBookmarkMatches(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
+    this.$searchesBms.classList.toggle('show', newValue?.searches != null);
+    setText(String(newValue?.searches ?? ''))($byClass('count-selected', this.$searchesBms));
+  }
+  showTabMatches(matches: number) {
+    this.$searchesTabs.classList.add('show');
+    setText(String(matches))($byClass('count-selected', this.$searchesTabs));
+  }
+  clearSearch() {
+    this.$searchesTabs.classList.remove('show');
   }
   override actions() {
     return {
@@ -738,5 +766,8 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
     this.$buttonPrevWin.addEventListener('click', () => store.dispatch('scrollPrevWindow', null, true));
     this.$buttonNextWin.addEventListener('click', () => store.dispatch('scrollNextWindow', null, true));
+    store.subscribe('setWheelHighlightTab', (changes) => this.showBookmarkMatches(changes.newValue));
+    store.subscribe('tabMatches', (changes) => this.showTabMatches(changes.newValue));
+    store.subscribe('clearSearch', this.clearSearch.bind(this));
   }
 }

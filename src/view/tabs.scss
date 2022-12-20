@@ -32,6 +32,7 @@ open-tab {
       margin-bottom: 0;
     }
 
+    >.highlight,
     >.match {
       display: flex !important;
     }
@@ -58,9 +59,9 @@ open-tab {
     }
   }
 
-  >.empty {
-    padding: 0;
-  }
+  // >.empty {
+  //   padding: 0;
+  // }
 }
 
 .pane-body.end.tabs {
@@ -122,6 +123,13 @@ open-tab {
 
   .multi-sel-menu-button {
     display: none;
+  }
+
+  .bookmark-find {
+    margin-left: 3px;
+    padding: 1px;
+    color: $common-marker;
+    font-size: 1.2em;
   }
 }
 
@@ -291,11 +299,12 @@ app-main {
         }
 
         &:hover {
-          >i {
+          >i.icon-x {
             display: none;
           }
         }
 
+        &.highlight,
         &.match {
           width: -webkit-fill-available;
           background-color: rgba(0, 0, 0, .05);
@@ -305,18 +314,49 @@ app-main {
             z-index: 1;
             visibility: inherit;
             margin-left: 0;
+          }
 
-            &::before {
-              content: '\e90c';
-              font-family: "glyphs";
-              font-size: 1.2em;
-              margin-right: 25px;
-              color: var(--key-bg);
-            }
+          >i::before {
+            content: '\e90e';
+            font-size: 1.2em;
+            margin-left: 3px;
+            margin-right: 25px;
+            color: $common-marker;
           }
 
           &[data-initial]::before {
             margin-left: 23px;
+          }
+        }
+
+        &.highlight {
+          &:not(.match)>i::before {
+            content: '\e900';
+            margin-right: 28px;
+            color: $common-marker;
+          }
+
+          &.match {
+
+            background-position-x: 40px;
+
+            &[data-initial]::before {
+              margin-left: 39px;
+            }
+
+            >i {
+              &::before {
+                margin-right: 0;
+              }
+
+              &::after {
+                content: '\e900';
+                font-family: "glyphs";
+                font-size: 1.2em;
+                color: $common-marker;
+                margin-right: 25px;
+              }
+            }
           }
         }
       }
@@ -370,8 +410,8 @@ app-main {
         text-overflow: ellipsis;
       }
 
-      &:not(.match):hover,
-      &:not(.match).highlight.focus {
+      // &:not(.match).highlight.focus,
+      &:not(.match):hover {
         >.tooltip {
           display: block;
           animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
@@ -383,6 +423,8 @@ app-main {
 
 app-main.drag-start>.tabs {
   .tabs-collapsed window-header:not(.drag-source)~open-tab {
+
+    &.highlight,
     &.match {
 
       >.drop-top {
@@ -448,10 +490,12 @@ app-main.drag-start>.tabs {
       }
     }
 
+    &:not(.highlight)+.highlight>.drop-top,
     &.unmatch+.match>.drop-top {
       display: none;
     }
 
+    &:not(.highlight):has(+.highlight),
     &.unmatch:has(+.match) {
       >.drop-bottom {
         width: 1000px;
@@ -539,6 +583,7 @@ app-main {
     }
 
     &:hover>.outline,
+    &.highlight.focus>.outline,
     &.selected>.outline {
       border-color: var(--item-hover-bg);
     }
@@ -563,10 +608,6 @@ app-main {
         text-rendering: auto;
         color: $common-marker;
       }
-    }
-
-    &.highlight>.outline {
-      border-color: $common-marker;
     }
   }
 
@@ -623,6 +664,25 @@ app-main {
       &.drag-enter {
         background-color: $drop-folder-bgcolor-light;
       }
+    }
+  }
+}
+
+.header-tabs.pane-header>.tabs-info {
+  position: absolute;
+  left: 2em;
+  z-index: 2;
+  display: flex;
+  gap: 1px;
+
+  >multi-sel-pane,
+  >.searches-tabs,
+  >.searches-bookmarks {
+    position: relative;
+    left: 0;
+
+    &:not(.show) {
+      padding: 0;
     }
   }
 }

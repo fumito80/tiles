@@ -43,7 +43,8 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover
 .drag-source,
 .drag-source::before,
 .leaf.selected,
-.history.selected {
+.history.selected,
+.window:not(.tabs-collapsed) open-tab.focus {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 

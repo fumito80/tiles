@@ -375,11 +375,11 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     }
     if (this.matchedTabLeafId === $leaf.id) {
       e.preventDefault();
-      dispatch('nextTabByWheel', '', true);
+      dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
     }
   }
-  setWheelHighlightTab(newValue: string) {
-    this.matchedTabLeafId = newValue;
+  setWheelHighlightTab(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
+    this.matchedTabLeafId = newValue?.leafId;
   }
   override actions() {
     return {
@@ -416,7 +416,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         listenerOptions: false,
       }),
       nextTabByWheel: makeAction({
-        initValue: '',
+        initValue: undefined as undefined | 'UP' | 'DN',
         force: true,
       }),
     };

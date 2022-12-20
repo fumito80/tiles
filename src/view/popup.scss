@@ -465,6 +465,9 @@ app-main {
     }
   }
 
+  >.tabs-info>.searches-tabs,
+  >.tabs-info>.searches-bookmarks,
+  >.tabs-info>multi-sel-pane,
   >multi-sel-pane {
     position: absolute;
     z-index: 2;
@@ -496,6 +499,7 @@ app-main {
       color: red;
     }
 
+    .icon-fa-search,
     .icon-check-all {
       color: $common-marker !important;
       padding: 1px;
@@ -518,6 +522,10 @@ app-main {
         pointer-events: none;
         opacity: 0;
       }
+    }
+
+    &:not(.show) {
+      max-width: 0;
     }
   }
 
