@@ -18,6 +18,11 @@ export function getReFilter(value: string) {
   return new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
 }
 
+function checkSingleChar(text: string) {
+  // eslint-disable-next-line no-control-regex
+  return text.length <= 1 && !/^[^\x01-\x7E\uFF61-\uFF9F]+$/.test(text);
+}
+
 export type SearchParams = {
   reFilter: RegExp, searchSelector: string, includeUrl: boolean,
 }
@@ -172,9 +177,8 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   search(newValue: string, dispatch: Dispatch) {
     this.classList.remove('show-queries');
     const oldValue = this.#oldValue;
-    // eslint-disable-next-line no-control-regex
-    const isSingleChar = newValue.length <= 1 && !/^[^\x01-\x7E\uFF61-\uFF9F]+$/.test(newValue);
-    if (oldValue.length <= 1 && isSingleChar) {
+    const isSingleChar = checkSingleChar(newValue);
+    if (isSingleChar && (oldValue.length === 0 || checkSingleChar(oldValue))) {
       this.#oldValue = newValue;
       chrome.storage.local.set({ lastSearchWord: '' });
       return;
