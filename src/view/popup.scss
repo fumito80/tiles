@@ -384,6 +384,7 @@ form.form-query {
         >span {
           overflow-x: hidden;
           text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .icon-x {

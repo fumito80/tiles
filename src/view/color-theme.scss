@@ -168,14 +168,6 @@ app-main:not(.drag-start) {
     }
   }
 
-  multi-sel-pane.show {
-    border: 1px solid rgba(255, 255, 255, 0.5);
-
-    .icon-check-all {
-      color: deepskyblue !important;
-    }
-  }
-
   .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
@@ -458,6 +450,18 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 }
 
+.theme-dark-search.searching .form-query,
+.theme-dark-frame:not(.searching) form.form-query {
+  .queries>div {
+
+    &:hover,
+    &:focus {
+      outline: none;
+      background-color: rgba(255, 255, 255, .2);
+    }
+  }
+}
+
 app-main:not(.theme-dark-search).searching .form-query {
   button>.icon-fa-search {
     color: rgba(0, 0, 0, 0.5);
@@ -469,6 +473,8 @@ app-main:not(.theme-dark-search).searching .form-query {
     color: $font-color !important;
   }
 }
+
+// header info & related
 
 app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
   button {
@@ -487,23 +493,46 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
   }
 }
 
-.theme-dark-pane .pane-header multi-sel-pane.show {
-  >div {
-    color: $dark-font-color;
+.theme-dark-pane {
+  .pane-header {
+
+    .searches-tabs.show,
+    .searches-bookmarks.show,
+    multi-sel-pane.show {
+      border: 1px solid rgba(255, 255, 255, 0.5);
+
+      >i {
+        color: deepskyblue !important;
+      }
+
+      >div {
+        color: $dark-font-color;
+      }
+
+      button {
+        >i {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        &:hover::after,
+        &:focus::after {
+          background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        &:active::after {
+          background-color: rgba(255, 255, 255, 0.5);
+        }
+      }
+    }
   }
 
-  button {
-    >i {
-      color: rgba(255, 255, 255, 0.5);
-    }
+  .tabs open-window.tabs-collapsed>open-tab {
 
-    &:hover::after,
-    &:focus::after {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-
-    &:active::after {
-      background-color: rgba(255, 255, 255, 0.5);
+    &.match,
+    &.highlight {
+      >i:first-child {
+        color: deepskyblue;
+      }
     }
   }
 }

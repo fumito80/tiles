@@ -312,12 +312,15 @@ app-main {
             margin-left: 0;
           }
 
-          >i::before {
-            content: '\e90e';
+          >i {
             font-size: 1.2em;
             margin-left: 3px;
             margin-right: 25px;
             color: $common-marker;
+
+            &::before {
+              content: '\e90e';
+            }
           }
 
           &[data-initial]::before {
@@ -326,14 +329,16 @@ app-main {
         }
 
         &.highlight {
-          &:not(.match)>i::before {
-            content: '\e900';
+          &:not(.match)>i {
             margin-right: 28px;
             color: $common-marker;
+
+            &::before {
+              content: '\e900';
+            }
           }
 
           &.match {
-
             background-position-x: 40px;
 
             &[data-initial]::before {
@@ -341,16 +346,11 @@ app-main {
             }
 
             >i {
-              &::before {
-                margin-right: 0;
-              }
+              color: $common-marker;
+              margin-right: 25px;
 
               &::after {
                 content: '\e900';
-                font-family: "glyphs";
-                font-size: 1.2em;
-                color: $common-marker;
-                margin-right: 25px;
               }
             }
           }

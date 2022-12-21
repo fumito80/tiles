@@ -4,17 +4,17 @@ import {
 } from './multi-sel-pane';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText, createNewTab,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, extractUrl, htmlEscape,
+  addListener, delayMultiSelect, extractDomain, htmlEscape,
   makeStyleIcon, pipe,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
   Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store,
 } from './store';
-import { PromiseInitTabs, State } from './types';
+import { Options, PromiseInitTabs, State } from './types';
 import { Leaf } from './bookmarks';
 
 export async function smoothSroll($target: HTMLElement, scrollTop: number) {
@@ -146,6 +146,8 @@ export class OpenTab extends MutiSelectableItem {
   #incognito!: boolean;
   #active!: boolean;
   #url!: string;
+  #focused = false;
+  #highlighted = false;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
@@ -180,11 +182,18 @@ export class OpenTab extends MutiSelectableItem {
   get url() {
     return this.#url;
   }
+  get focused() {
+    return this.#focused;
+  }
+  get highlighted() {
+    return this.#highlighted;
+  }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
     return this.parentElement as Window;
   }
   setCurrentTab(tab: chrome.tabs.Tab) {
+    this.#active = tab.active;
     this.classList.toggle('current-tab', tab.active);
   }
   gotoTab() {
@@ -225,6 +234,24 @@ export class OpenTab extends MutiSelectableItem {
     addStyle('top', `${rect.bottom + margin}px`)(this.$tooltip);
     return this;
   }
+  setFocus(focused: boolean) {
+    this.#focused = focused;
+    this.classList.toggle('focus', focused);
+    if (!focused) {
+      return;
+    }
+    (this as any).scrollIntoViewIfNeeded();
+    this.setTooltipPosition();
+  }
+  setHighlight(highlighted: boolean) {
+    this.#highlighted = highlighted;
+    this.classList.toggle('highlight', highlighted);
+    return this;
+  }
+  // active() {
+  //   chrome.tabs.update(this.tabId, { active: true })
+  //     .then((tab) => chrome.windows.update(tab.windowId!, { focused: true }));
+  // }
 }
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
@@ -394,15 +421,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #initPromise!: Promise<void>;
   $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
+  #options!: Options;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
-    collapseTabs: boolean,
+    options: Options,
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
   ) {
     this.setEvent();
     this.#tabsWrap = this.firstElementChild as HTMLElement;
+    this.#options = options;
     this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
       const $windows = initTabs.map((win) => {
         const $window = document.importNode($tmplWindow, true);
@@ -410,7 +439,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           win.windowId,
           $tmplOpenTab,
           win.tabs!,
-          collapseTabs,
+          options.collapseTabs,
           isSearching,
           win.windowId === currentWindowId,
         );
@@ -426,6 +455,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   getWindows() {
     return [...this.#tabsWrap.children] as Window[];
+  }
+  getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
+    return this.getWindows().flatMap(($win) => $win.getTabs()).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams, dispatch: Dispatch) {
     const matches = $$byClass(searchSelector, this).filter((tab) => {
@@ -501,9 +533,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   multiSelect({ tabs: multiSelect }: { tabs?: boolean }) {
     if (!multiSelect) {
-      this.getWindows()
-        .flatMap((win) => win.getTabs())
-        .filter((tab) => tab.selected)
+      this.getAllTabs((tab) => tab.selected)
         .forEach((tab) => tab.select(false, true));
       this.$lastClickedTab = undefined;
     }
@@ -591,55 +621,84 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const count = precount ?? $$byClass('selected', this).length;
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
-  // eslint-disable-next-line class-methods-use-this
-  setFocus(tab: OpenTab) {
-    tab.classList.add('focus');
-    (tab as any).scrollIntoViewIfNeeded();
-    tab.setTooltipPosition();
+  getTabFinder(srcUrl: string) {
+    const [, domainSrc] = extractDomain(srcUrl);
+    return this.#options.findTabsMatches === 'prefix'
+      ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
+      : (tab: OpenTab) => {
+        const [, domain] = extractDomain(tab.url);
+        return domain === domainSrc;
+      };
   }
-  mouseoverLeafs(e: MouseEvent, dispatch: Dispatch) {
+  mouseoverLeaf(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $leaf = (e.target as HTMLElement).parentElement;
-    if (!($leaf instanceof Leaf)) {
+    if (!($leaf instanceof Leaf && hasClass(e.target as HTMLElement, 'anchor'))) {
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
-    this.#timerMouseoverLeaf = setTimeout(() => {
-      const url = extractUrl($leaf.style.backgroundImage);
-      const [find1st, ...rest] = this.getWindows()
-        .flatMap((win) => win.getTabs())
-        .filter((tab) => tab.url.startsWith(url))
-        .map(addClass('highlight'));
+    this.#timerMouseoverLeaf = setTimeout(async () => {
+      const dragging = await states('dragging');
+      if (dragging) {
+        return;
+      }
+      const $anchor = $leaf.firstElementChild as HTMLAnchorElement;
+      const [, url] = $anchor.title?.split('\n') || [];
+      if (!url) {
+        return;
+      }
+      const [find1st, ...rest] = this
+        .getAllTabs(this.getTabFinder(url))
+        .map((tab) => tab.setHighlight(true));
       if (find1st) {
-        this.setFocus(find1st);
+        find1st.setFocus(true);
         const searches = [find1st, ...rest].length;
         dispatch('setWheelHighlightTab', { leafId: $leaf.id, searches });
       }
     }, 500);
   }
-  mouseoutLeafs(e: MouseEvent, dispatch: Dispatch) {
+  mouseoutLeaf(e: MouseEvent, dispatch: Dispatch) {
     const $leaf = (e.target as HTMLElement).parentElement;
     if (!($leaf instanceof Leaf)) {
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
-    this.getWindows()
-      .flatMap(($win) => $win.getTabs())
-      .forEach(rmClass('highlight', 'focus'));
+    this.getAllTabs().forEach(($tab) => {
+      $tab.setFocus(false);
+      $tab.setHighlight(false);
+    });
     dispatch('setWheelHighlightTab', { searches: undefined });
   }
   nextTabByWheel(dir: Store['actions']['nextTabByWheel']['initValue']) {
-    const highlights = this.getWindows()
-      .flatMap(($win) => $win.getTabs())
-      .filter(($el) => hasClass($el, 'highlight'));
+    const highlights = this.getAllTabs(($el) => $el.highlighted);
     if (highlights.length <= 1) {
       return;
     }
-    const foundIndex = highlights.findIndex(($el) => hasClass($el, 'focus'));
+    const foundIndex = highlights.findIndex(($el) => $el.focused);
     const nextTab = dir === 'DN'
       ? (highlights[foundIndex + 1] || highlights[0])
       : (highlights[foundIndex - 1] || highlights.at(-1));
-    rmClass('focus')(highlights[foundIndex]);
-    this.setFocus(nextTab);
+    highlights[foundIndex].setFocus(false);
+    nextTab.setFocus(true);
+  }
+  activateTab({ url, focused }: NonNullable<Store['actions']['activateTab']['initValue']>) {
+    let target: OpenTab | undefined;
+    if (focused) {
+      [target] = this.getAllTabs((tab) => tab.focused);
+    }
+    if (!focused || !target) {
+      const tabs = this.getAllTabs();
+      const findIndex = tabs.findIndex((tab) => tab.isCurrent && tab.getParentWindow().isCurrent);
+      const sorted = [
+        ...tabs.slice(findIndex + 1),
+        ...tabs.slice(0, findIndex + 1),
+      ];
+      target = sorted.find(this.getTabFinder(url));
+    }
+    if (!target) {
+      createNewTab(this.#options, url);
+      return;
+    }
+    target.gotoTab();
   }
   override actions() {
     return {
@@ -681,6 +740,15 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         initValue: undefined as number | undefined,
         force: true,
       }),
+      activateTab: makeAction({
+        initValue: {
+          url: '',
+          focused: true,
+        } as {
+          url: string,
+          focused?: boolean,
+        },
+      }),
     };
   }
   override connect(store: Store) {
@@ -695,9 +763,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
       store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelect(newValue));
       store.subscribe('openTabsFromHistory', () => this.openTabsFromHistory(store.dispatch));
-      store.subscribe('mouseoverLeafs', (_, e) => this.mouseoverLeafs(e, store.dispatch));
-      store.subscribe('mouseoutLeafs', (_, e) => this.mouseoutLeafs(e, store.dispatch));
+      store.subscribe('mouseoverLeafs', (_, e) => this.mouseoverLeaf(e, store.getStates, store.dispatch));
+      store.subscribe('mouseoutLeafs', (_, e) => this.mouseoutLeaf(e, store.dispatch));
+      store.subscribe('mouseoverFolders', (_, e) => this.mouseoverLeaf(e, store.getStates, store.dispatch));
+      store.subscribe('mouseoutFolders', (_, e) => this.mouseoutLeaf(e, store.dispatch));
       store.subscribe('nextTabByWheel', (changes) => this.nextTabByWheel(changes.newValue));
+      store.subscribe('activateTab', (changes) => this.activateTab(changes.newValue));
     });
   }
 }

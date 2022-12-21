@@ -233,7 +233,7 @@ export function initComponents(
   $tabs.init(
     $tmplOpenTab,
     $tmplWindow,
-    options.collapseTabs,
+    options,
     isSearching,
     promiseInitTabs,
   );

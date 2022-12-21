@@ -296,10 +296,17 @@ function checkDroppable(e: DragEvent) {
 
 function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch']) {
   const $source = $byId(sourceId);
-  const value = includeUrl
-    ? extractUrl($source.style.backgroundImage)
-    : $source.firstElementChild?.textContent!;
-  dispatch('search', value, true);
+  const [$title1, $title2, $title3] = [...$source.children] as HTMLElement[];
+  const value = when(includeUrl)
+    .then(() => {
+      let url = extractUrl($source.style.backgroundImage);
+      if (!url) {
+        [, url] = ($title1.title || $title2.title || $title3.title).split('\n') || [];
+      }
+      return url;
+    })
+    .else($title1.textContent || $title2.textContent);
+  dispatch('search', value!, true);
 }
 
 function getDraggableElement(

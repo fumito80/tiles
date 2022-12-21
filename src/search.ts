@@ -129,7 +129,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       return;
     }
     const $next = e.key === 'ArrowDown' ? $focused.nextElementSibling : $focused.previousElementSibling;
-    ($next as HTMLElement || this.$inputQuery)?.focus();
+    if (!($next instanceof HTMLElement)) {
+      this.$inputQuery.focus();
+      this.classList.remove('show-queries');
+      return;
+    }
+    $next.focus();
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
