@@ -58,11 +58,13 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
   #header!: MulitiSelectablePaneHeader;
   $count!: HTMLElement;
   $buttons!: HTMLButtonElement[];
+  $icon!: HTMLButtonElement;
   // eslint-disable-next-line no-use-before-define
   init(header: MulitiSelectablePaneHeader, $menu: HTMLElement) {
     this.#header = header;
     this.$buttons = $$byTag('button', this);
     this.$count = $byClass('count-selected', this)!;
+    this.$icon = $byClass('icon-check-all', this)!;
     const $deletesButton = $byClass('del-multi-sel', this);
     addAttr('title', header.multiDeletesTitle)($deletesButton);
     header.insertAdjacentElement('afterbegin', this);
@@ -77,15 +79,14 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     if (!show && !all) {
       this.$count.textContent = '';
       rmClass('show')(this);
-      const { height } = getComputedStyle(this);
-      this.style.setProperty('max-width', height);
+      this.style.setProperty('max-width', '0');
       return;
     }
     if (all) {
       this.$count.textContent = '';
       addClass('show', 'pre')(this);
-      const { height } = getComputedStyle(this);
-      this.style.setProperty('max-width', height);
+      const { height } = this.$icon.getBoundingClientRect();
+      this.style.setProperty('max-width', `${height}px`);
       return;
     }
     if (show) {

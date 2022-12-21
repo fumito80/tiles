@@ -204,5 +204,7 @@ bootstrap().then(init);
 export const mapMessagesBtoP = {};
 setMessageListener(mapMessagesBtoP, true);
 
+chrome.runtime.connect({ name: 'popup' });
+
 // eslint-disable-next-line no-console
 postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' }).then(console.info);

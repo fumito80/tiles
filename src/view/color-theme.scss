@@ -26,10 +26,6 @@ body {
   color: var(--key-bg) !important;
 }
 
-app-main.searching .form-query {
-  background-color: var(--searching-bg);
-}
-
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
@@ -47,7 +43,8 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover
 .drag-source,
 .drag-source::before,
 .leaf.selected,
-.history.selected {
+.history.selected,
+.window:not(.tabs-collapsed) open-tab.focus {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 
@@ -171,14 +168,6 @@ app-main:not(.drag-start) {
     }
   }
 
-  multi-sel-pane.show {
-    border: 1px solid rgba(255, 255, 255, 0.5);
-
-    .icon-check-all {
-      color: deepskyblue !important;
-    }
-  }
-
   .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
@@ -196,8 +185,12 @@ app-main:not(.drag-start) {
     color: lightgray;
   }
 
-  .form-query .query {
-    color: $dark-font-color;
+  .form-query {
+
+    .query,
+    .queries {
+      color: $dark-font-color;
+    }
   }
 
   .folders .title::before,
@@ -207,6 +200,7 @@ app-main:not(.drag-start) {
   }
 
   .form-query,
+  &:not(.searching) .queries-wrap::before,
   button:not(.submit):hover::after,
   button:not(.submit):focus::after {
     background-color: rgba(255, 255, 255, 0.3);
@@ -240,7 +234,8 @@ app-main:not(.drag-start) {
   }
 
   .folders::-webkit-scrollbar-thumb,
-  .tabs::-webkit-scrollbar-thumb {
+  .tabs::-webkit-scrollbar-thumb,
+  &:not(.searching) .queries::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, .3);
 
     &:hover {
@@ -423,6 +418,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 
   .query,
+  .queries,
   .clear-search>i {
     color: $dark-font-color !important;
   }
@@ -435,6 +431,35 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   .clear-search:active::after {
     background-color: rgba(255, 255, 255, .5);
   }
+
+  .queries>div {
+
+    &:hover,
+    &:focus {
+      outline: none;
+      background-color: rgba(255, 255, 255, .2);
+    }
+  }
+
+  .queries::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, .3);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, .5);
+    }
+  }
+}
+
+.theme-dark-search.searching .form-query,
+.theme-dark-frame:not(.searching) form.form-query {
+  .queries>div {
+
+    &:hover,
+    &:focus {
+      outline: none;
+      background-color: rgba(255, 255, 255, .2);
+    }
+  }
 }
 
 app-main:not(.theme-dark-search).searching .form-query {
@@ -443,10 +468,13 @@ app-main:not(.theme-dark-search).searching .form-query {
   }
 
   .query,
+  .queries,
   .clear-search>i {
     color: $font-color !important;
   }
 }
+
+// header info & related
 
 app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
   button {
@@ -465,23 +493,46 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
   }
 }
 
-.theme-dark-pane .pane-header multi-sel-pane.show {
-  >div {
-    color: $dark-font-color;
+.theme-dark-pane {
+  .pane-header {
+
+    .searches-tabs.show,
+    .searches-bookmarks.show,
+    multi-sel-pane.show {
+      border: 1px solid rgba(255, 255, 255, 0.5);
+
+      >i {
+        color: deepskyblue !important;
+      }
+
+      >div {
+        color: $dark-font-color;
+      }
+
+      button {
+        >i {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        &:hover::after,
+        &:focus::after {
+          background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        &:active::after {
+          background-color: rgba(255, 255, 255, 0.5);
+        }
+      }
+    }
   }
 
-  button {
-    >i {
-      color: rgba(255, 255, 255, 0.5);
-    }
+  .tabs open-window.tabs-collapsed>open-tab {
 
-    &:hover::after,
-    &:focus::after {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-
-    &:active::after {
-      background-color: rgba(255, 255, 255, 0.5);
+    &.match,
+    &.highlight {
+      >i:first-child {
+        color: deepskyblue;
+      }
     }
   }
 }

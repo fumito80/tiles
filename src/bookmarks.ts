@@ -5,8 +5,8 @@ import {
   setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
-  cbToResolve, cssid, curry3, extractUrl, getCurrentTab, setEvents, setFavicon, switches,
-  delayMultiSelect, extractDomain, prop,
+  cbToResolve, cssid, curry3, getCurrentTab, setEvents, setFavicon, switches,
+  delayMultiSelect, prop,
 } from './common';
 import { dialog } from './dialogs';
 import { dropBmInNewWindow } from './drag-drop';
@@ -19,6 +19,7 @@ import {
   ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
 import {
+  AbstractConstructor,
   MulitiSelectables, OpenBookmarkType, Options, State,
 } from './types';
 
@@ -32,11 +33,20 @@ export class Leaf extends MutiSelectableItem {
     setFavicon(url!)(this);
     this.updateTitle(title);
   }
-  openOrFind(options: Options) {
+  openOrFind(options: Options, dispatch: Dispatch) {
     if (this.checkMultiSelect()) {
       return;
     }
-    (options.findTabsFirst ? this.findInTabsBookmark : this.openBookmark).bind(this)(options);
+    if (options.findTabsFirst) {
+      dispatch('activateTab', { url: this.url, focused: true });
+      return;
+    }
+    this.openBookmark(options);
+  }
+  get url() {
+    const $anchor = this.firstElementChild as HTMLAnchorElement;
+    const [, url] = $anchor.title?.split('\n') || [];
+    return url;
   }
   async openBookmark(
     options: Options,
@@ -60,38 +70,9 @@ export class Leaf extends MutiSelectableItem {
       default:
     }
   }
-  async findInTabsBookmark(options: Options) {
-    const { url = '' } = await getBookmark(this.id);
-    const [schemeSrc, domainSrc] = extractDomain(url);
-    const finder = options.findTabsMatches === 'prefix'
-      ? (tab: chrome.tabs.Tab) => !!tab.url?.startsWith(url)
-      : (tab: chrome.tabs.Tab) => {
-        const [scheme, domain] = extractDomain(tab.url);
-        return domain === domainSrc && scheme === schemeSrc;
-      };
-    const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
-      chrome.tabs.query({}, (tabs) => {
-        chrome.windows.getCurrent((win) => {
-          const findIndex = tabs.findIndex((t) => t.active && t.windowId === win.id);
-          const sorted = [
-            ...tabs.slice(findIndex + 1),
-            ...tabs.slice(0, findIndex + 1),
-          ];
-          const firstTab = sorted.find(finder);
-          resolve(firstTab);
-        });
-      });
-    });
-    if (tab?.id == null) {
-      this.openBookmark(options);
-      return;
-    }
-    chrome.windows.update(tab.windowId, { focused: true });
-    chrome.tabs.update(tab.id, { active: true }, window.close);
-  }
   async editBookmarkTitle() {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
-    const title = await editTitle($anchor, this.id, false, true).catch(() => null);
+    const title = await editTitle($anchor, this.id, false, true);
     if (!title) {
       return;
     }
@@ -137,7 +118,7 @@ export class HeaderLeafs extends MulitiSelectablePaneHeader {
   }
 }
 
-function setLeafMenu($leafMenu: HTMLElement, options: Options) {
+function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatch) {
   setEvents([$leafMenu], {
     async click(e) {
       const $leaf = (e.target as HTMLElement)
@@ -147,7 +128,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
       }
       switch ((e.target as HTMLElement).dataset.value) {
         case 'find-in-tabs': {
-          $leaf.findInTabsBookmark(options);
+          dispatch('activateTab', { url: $leaf.url });
           break;
         }
         case 'open-new-tab':
@@ -206,7 +187,35 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options) {
   });
 }
 
-export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement, ISearchable {
+export function getBookmarksBase<TBase extends AbstractConstructor>(Base: TBase) {
+  abstract class Mixin extends Base {
+    matchedTabLeafId!: string | undefined;
+    wheelHighlightTab(e: WheelEvent, dispatch: Dispatch) {
+      const $leaf = (e.target as HTMLElement).parentElement;
+      if (!($leaf instanceof Leaf)) {
+        return;
+      }
+      if (this.matchedTabLeafId === $leaf.id) {
+        e.preventDefault();
+        dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
+      }
+    }
+    setWheelHighlightTab(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
+      this.matchedTabLeafId = newValue?.leafId;
+    }
+    connect(store: Store) {
+      if (super.connect) {
+        super.connect(store);
+      }
+      store.subscribe('setWheelHighlightTab', (changes) => this.setWheelHighlightTab(changes.newValue));
+    }
+  }
+  return Mixin;
+}
+
+export const Bookmarks = getBookmarksBase(MulitiSelectablePaneBody);
+
+export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
   readonly paneName = 'bookmarks';
   #options!: Options;
   $leafMenu!: HTMLElement;
@@ -214,7 +223,6 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
   init(options: Options) {
     this.#options = options;
     this.$leafMenu = $byClass('leaf-menu')!;
-    setLeafMenu(this.$leafMenu, options);
   }
   selectItems(dispatch: Dispatch, precount?: number) {
     const count = precount ?? $$('.leafs .selected, .folders .selected').length;
@@ -328,7 +336,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         dispatch('multiSelPanes', { all: false });
         return;
       }
-      $leaf.openOrFind(this.#options);
+      $leaf.openOrFind(this.#options, dispatch);
     }
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
@@ -347,10 +355,9 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         $$byClass('path', this).forEach(rmClass('path'));
         return $$byClass('leaf', this);
       });
-    targetBookmarks.reduce((acc, $leaf) => {
+    (targetBookmarks as Leaf[]).reduce((acc, $leaf) => {
       const $anchor = $leaf.firstElementChild as HTMLAnchorElement;
-      if (reFilter.test($anchor.textContent!)
-        || (includeUrl && reFilter.test(extractUrl($leaf.style.backgroundImage)))) {
+      if (reFilter.test($anchor.textContent!) || (includeUrl && reFilter.test($leaf.url))) {
         addClass('search-path')($leaf);
         if (acc === $leaf.parentElement) {
           return acc;
@@ -385,6 +392,29 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
         eventType: 'mouseup',
         eventOnly: true,
       }),
+      mouseoverLeafs: makeAction({
+        target: this,
+        eventType: 'mouseover',
+        eventOnly: true,
+      }),
+      mouseoutLeafs: makeAction({
+        target: this,
+        eventType: 'mouseout',
+        eventOnly: true,
+      }),
+      wheelLeafs: makeAction({
+        target: this,
+        eventType: 'wheel',
+        eventOnly: true,
+        listenerOptions: false,
+      }),
+      nextTabByWheel: makeAction({
+        initValue: undefined as undefined | 'UP' | 'DN',
+        force: true,
+      }),
+      openBookmarks: makeAction({
+        initValue: [] as string[],
+      }),
     };
   }
   override connect(store: Store) {
@@ -397,5 +427,7 @@ export class Leafs extends MulitiSelectablePaneBody implements ISubscribeElement
     store.subscribe('clickFolders', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
     store.subscribe('mousedownFolders', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
+    store.subscribe('wheelLeafs', (_, e) => this.wheelHighlightTab(e, store.dispatch));
+    setLeafMenu(this.$leafMenu, this.#options, store.dispatch);
   }
 }

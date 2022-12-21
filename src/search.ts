@@ -1,12 +1,13 @@
 import {
   Dispatch, IPubSubElement, makeAction, Store,
 } from './store';
-import { when } from './common';
+import { getLocal, setLocal, when } from './common';
 import {
   $, $byClass,
   rmClass, addAttr,
   selectFolder,
   createNewTab,
+  hasClass,
 } from './client';
 import { Options, Panes } from './types';
 
@@ -15,6 +16,11 @@ export function getReFilter(value: string) {
     return undefined;
   }
   return new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
+}
+
+function checkSingleChar(text: string) {
+  // eslint-disable-next-line no-control-regex
+  return text.length <= 1 && !/^[^\x01-\x7E\uFF61-\uFF9F]+$/.test(text);
 }
 
 export type SearchParams = {
@@ -35,6 +41,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   private $clear!: HTMLElement;
   private $leafs!: HTMLElement;
   private $searchTargets!: ISearchable[];
+  private $queries!: HTMLElement;
   init(
     $searchTargets: ISearchable[],
     includeUrl: boolean,
@@ -49,6 +56,85 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$leafs = $byClass('leafs')!;
     this.$inputQuery.value = lastSearchWord;
     this.addEventListener('submit', (e) => this.submitForm(e, options));
+    this.$queries = $byClass('queries', this)!;
+    this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
+    this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
+  }
+  async clickQuery() {
+    const shown = hasClass(this, 'show-queries');
+    if (shown) {
+      this.classList.remove('show-queries');
+      return undefined;
+    }
+    return getLocal('queries').then(({ queries }) => {
+      const value = this.$inputQuery.value.trim();
+      let targets = queries;
+      if (value) {
+        const reFilter = getReFilter(value)!;
+        targets = queries.filter((el) => reFilter.test(el));
+      }
+      const html = targets.map((el) => `<div tabindex="0"><span>${el}</span><i class="icon-x"></i></div>`).join('');
+      this.$queries.innerHTML = html;
+      this.classList.add('show-queries');
+    });
+  }
+  setQuery(e: MouseEvent, dispatch: Dispatch) {
+    const $el = e.target as HTMLElement;
+    if (hasClass($el, 'icon-x')) {
+      const query = $el.parentElement?.textContent!;
+      getLocal('queries')
+        .then(({ queries }) => {
+          const findIndex = queries.findIndex((el) => el === query);
+          return [...queries.slice(0, findIndex), ...queries.slice(findIndex + 1)];
+        })
+        .then((queries) => setLocal({ queries }))
+        .then(() => $el.parentElement?.remove());
+      return;
+    }
+    const query = $el.textContent;
+    this.search(query!, dispatch);
+  }
+  async keydownQuery(e: KeyboardEvent) {
+    if (!['ArrowDown', 'ArrowUp'].includes(e.key)) {
+      return;
+    }
+    e.preventDefault();
+    if (!hasClass(this, 'show-queries')) {
+      await this.clickQuery();
+    }
+    this.$queries.scrollTop = 0;
+    const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
+    ($next as HTMLElement)?.focus();
+  }
+  keydownQueries(e: KeyboardEvent, dispatch: Dispatch) {
+    if (!['ArrowDown', 'ArrowUp', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      this.clickQuery();
+      this.$inputQuery.focus();
+      return;
+    }
+    e.preventDefault();
+    const $focused = $('.queries>div:focus', this);
+    if ($focused && e.key === 'Enter') {
+      this.setQuery({ target: $focused } as unknown as MouseEvent, dispatch);
+      this.classList.remove('show-queries');
+      this.$inputQuery.focus();
+      return;
+    }
+    if (!$focused) {
+      const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
+      ($next as HTMLElement)?.focus();
+      return;
+    }
+    const $next = e.key === 'ArrowDown' ? $focused.nextElementSibling : $focused.previousElementSibling;
+    if (!($next instanceof HTMLElement)) {
+      this.$inputQuery.focus();
+      this.classList.remove('show-queries');
+      return;
+    }
+    $next.focus();
   }
   submitForm(e: Event, options: Options) {
     e.preventDefault();
@@ -63,6 +149,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     return false;
   }
   focusQuery() {
+    this.classList.remove('show-queries');
     this.$inputQuery.focus();
   }
   clearQuery(dispatch: Store['dispatch']) {
@@ -93,10 +180,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
   }
   search(newValue: string, dispatch: Dispatch) {
+    this.classList.remove('show-queries');
     const oldValue = this.#oldValue;
-    if (oldValue.length <= 1 && newValue.length <= 1) {
+    const isSingleChar = checkSingleChar(newValue);
+    if (isSingleChar && (oldValue.length === 0 || checkSingleChar(oldValue))) {
       this.#oldValue = newValue;
-      chrome.storage.local.set({ lastSearchWord: newValue });
+      chrome.storage.local.set({ lastSearchWord: '' });
       return;
     }
     if (this.$inputQuery.value !== newValue) {
@@ -106,12 +195,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
-    if (newValue.length <= 1) {
+    if (isSingleChar) {
       this.clearSearch(dispatch);
       dispatch('searching', false);
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
-      chrome.storage.local.set({ lastSearchWord: newValue });
+      chrome.storage.local.set({ lastSearchWord: '' });
       return;
     }
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
@@ -163,6 +252,17 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       're-search': {
         initValue: '' as Panes,
       },
+      setQuery: makeAction({
+        target: this.$queries,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      keydownQueries: makeAction({
+        target: this.$queries,
+        eventType: 'keydown',
+        eventOnly: true,
+        listenerOptions: false,
+      }),
     };
   }
   connect(store: Store) {
@@ -176,5 +276,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
     store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
     store.subscribe('re-search', (changes) => this.reSearch(changes.newValue, store.dispatch));
+    store.subscribe('setQuery', (_, e) => this.setQuery(e, store.dispatch));
+    store.subscribe('keydownQueries', (_, e) => this.keydownQueries(e, store.dispatch));
   }
 }

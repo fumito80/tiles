@@ -49,11 +49,20 @@
         </div>
         <div is="header-tabs" class="pane-header header-tabs">
             <i class="icon-tabs" title="OPEN TABS"></i>
+            <div class="tabs-info">
+                <div class="searches-tabs"><i class="icon-fa-search"></i>
+                    <div class="count-selected"></div>
+                </div>
+                <div class="searches-bookmarks"><i class="bookmark-find"></i>
+                    <div class="count-selected"></div>
+                </div>
+            </div>
             <button class="win-prev" type="button" title="Previous window"><i class="icon-arrow-up"></i></button>
             <button class="win-next" type="button" title="Next window"><i class="icon-arrow-down"></i></button>
-            <button class="collapse-tabs" type="button"><i class="icon-list"
-                    title="Show list view in all windows"></i><i class="icon-grid"
-                    title="Show icon view in all windows"></i></button>
+            <button class="focus-current-tab" type="button" title="Focus current tab"><i
+                    class="icon-current-tab"></i></button>
+            <button class="collapse-tabs" type="button" title="Switch icon/list view in all windows"><i
+                    class="icon-list"></i><i class="icon-grid"></i></button>
             <div class="query-wrap"></div>
             <div class="menu-button">
                 <button class="main-menu-button" type="button">
@@ -123,7 +132,10 @@
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
             <input type="text" class="query" name="query" autofocus="true">
-            <button class="clear-search"><i class="icon-x"></i></button>
+            <button class="clear-search" type="button"><i class="icon-x"></i></button>
+            <div class="queries-wrap">
+                <div class="queries"></div>
+            </div>
         </form>
         <div class="leaf-menu" role="menu">
             <div role="menuitem" data-value="find-in-tabs"><i class="icon-tab-find"></i>Find in tabs first</div>
@@ -176,6 +188,7 @@
             </window-header>
         </open-window>
         <open-tab draggable="true" class="tab-wrap">
+            <i></i>
             <div class="tab-title" title=""></div><i class="icon-x"></i>
             <div class="tooltip"></div>
             <div class="drop-top"></div>

@@ -1,11 +1,14 @@
 /* eslint-disable import/prefer-default-export */
 
+import { getBookmarksBase } from './bookmarks';
 import {
   $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
-import { IPubSubElement, makeAction, Store } from './store';
+import {
+  IPubSubElement, makeAction, Store,
+} from './store';
 import { Options } from './types';
 
 function onClickAngle($target: HTMLElement) {
@@ -50,7 +53,26 @@ setEvents($$byClass('folder-menu'), {
   },
 });
 
-export class Folders extends HTMLDivElement implements IPubSubElement {
+// export class Bookmarks extends HTMLDivElement {
+//   matchedTabLeafId!: string | undefined;
+//   wheelHighlightTab(e: WheelEvent, dispatch: Dispatch) {
+//     const $leaf = (e.target as HTMLElement).parentElement;
+//     if (!($leaf instanceof Leaf)) {
+//       return;
+//     }
+//     if (this.matchedTabLeafId === $leaf.id) {
+//       e.preventDefault();
+//       dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
+//     }
+//   }
+//   setWheelHighlightTab(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
+//     this.matchedTabLeafId = newValue?.leafId;
+//   }
+// }
+
+const Bookmarks = getBookmarksBase(HTMLDivElement);
+
+export class Folders extends Bookmarks implements IPubSubElement {
   #options!: Options;
   private $foldersMenu!: HTMLElement;
   init(options: Options) {
@@ -117,9 +139,27 @@ export class Folders extends HTMLDivElement implements IPubSubElement {
         eventType: 'mouseup',
         eventOnly: true,
       }),
+      mouseoverFolders: makeAction({
+        target: this,
+        eventType: 'mouseover',
+        eventOnly: true,
+      }),
+      mouseoutFolders: makeAction({
+        target: this,
+        eventType: 'mouseout',
+        eventOnly: true,
+      }),
+      wheelFolders: makeAction({
+        target: this,
+        eventType: 'wheel',
+        eventOnly: true,
+        listenerOptions: false,
+      }),
     };
   }
-  connect(store: Store) {
+  override connect(store: Store) {
+    super.connect(store);
     this.setEvents(store);
+    store.subscribe('wheelFolders', (_, e) => this.wheelHighlightTab(e, store.dispatch));
   }
 }

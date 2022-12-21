@@ -21,7 +21,6 @@ import {
   getLocal,
   setLocal,
   htmlEscape,
-  curry3,
   pipe,
   decode,
   pick,
@@ -440,7 +439,7 @@ export async function editTitle(
   if (!isBookmark) {
     addStyle({ width: '100%' })($title.parentElement);
   }
-  return new Promise<string | null>((resolve) => {
+  return new Promise<string | void>((resolve) => {
     setTimeout(() => {
       $title.focus();
       if (newFolder) {
@@ -468,12 +467,18 @@ export async function editTitle(
         rmStyle('text-overflow')($title);
         if (!title || title.trim() === '') {
           setText(currentTitle)($title);
-          return resolve(null);
+          return resolve();
         }
         if (title === currentTitle) {
-          return resolve(null);
+          return resolve();
         }
-        await cbToResolve(curry3(chrome.bookmarks.update)(folderId)({ title }));
+        const ret = await chrome.bookmarks.update(folderId, { title })
+          .catch((reason) => reason.message as string);
+        if (typeof ret === 'string') {
+          await dialog.alert(ret);
+          setText(currentTitle)($title);
+          return resolve();
+        }
         setAnimationFolder('hilite')($title.parentElement?.parentElement);
         return resolve(title);
       }, { once: true });
