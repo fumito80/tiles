@@ -85,7 +85,7 @@ export const initialOptions = {
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',
-  findTabsMatches: 'prefix' as 'domain' | 'prefix',
+  findTabsMatches: 'domain' as 'domain' | 'prefix',
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,
@@ -95,6 +95,8 @@ export const initialOptions = {
   fontSize: '0.9em',
   collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
+  bmAutoFindTabs: true,
+  bmAutoFindTabsDelay: '500',
 };
 
 export type Panes = typeof panes[number];

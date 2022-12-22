@@ -61,10 +61,13 @@ form label {
   position: relative;
   margin-top: 0.8rem;
   width: fit-content;
+  align-items: center;
+  white-space: nowrap;
 
   &.new::after {
     content: 'NEW!';
     position: absolute;
+    top: -5px;
     right: -3.2em;
     color: red;
     font-size: 0.8em;
@@ -76,13 +79,15 @@ form label {
 }
 
 input.bullet {
+  display: flex;
   height: 0;
   pointer-events: none;
 
   &::after {
     content: '-';
     text-align: center;
-    display: block;
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -421,5 +426,39 @@ label.theme {
 
   >i {
     color: $common-marker;
+  }
+}
+
+.item:has([name="bm-auto-find-tabs"]) {
+  pointer-events: none;
+
+  [name="bm-auto-find-tabs"] {
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+}
+
+.item:has([name="find-tabs-first"]:checked) {
+
+  ~.item:has([name="bm-auto-find-tabs"]) {
+    pointer-events: all;
+
+    >[name="bm-auto-find-tabs"] {
+      pointer-events: all;
+      visibility: unset;
+    }
+
+    &::before {
+      content: unset;
+    }
   }
 }

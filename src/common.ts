@@ -940,3 +940,28 @@ export function getHistoryDataByWorker() {
     };
   });
 }
+
+export async function getTabInfo(preId: number | string) {
+  return chrome.windows.getCurrent().then((currentWindow) => chrome.tabs.get(getChromeId(preId))
+    .then((tab) => chrome.windows.get(tab.windowId, { populate: true })
+      .then((win) => ({
+        ...tab,
+        isCurrentWindow: tab.windowId === currentWindow.id,
+        incognito: win.incognito,
+      }))));
+  // return new Promise<chrome.tabs.Tab & {
+  //   isCurrentWindow: boolean, incognito: boolean
+  // }>((resolve) => {
+  //   chrome.windows.getCurrent((currentWindow) => {
+  //     chrome.tabs.get(getChromeId(preId), (tab) => {
+  //       chrome.windows.get(tab.windowId, { populate: true }, (win) => {
+  //         resolve({
+  //           ...tab,
+  //           isCurrentWindow: tab.windowId === currentWindow.id,
+  //           incognito: win.incognito,
+  //         });
+  //       });
+  //     });
+  //   });
+  // });
+}

@@ -98,48 +98,55 @@ async function getStates(name?: string | number | symbol, cb: (a: any) => void =
 
 type ActionResult = ReturnType<typeof makeActionValue>;
 
-export function registerActions<T extends Actions<any>>(actions: T) {
+export function registerActions<T extends Actions<any>>(actions: T, options: Options) {
   const subscribers = {} as { [actionName: string]: Function[] };
-  const initPromises = Object.entries(actions).map(([name, {
-    target, eventType, eventProcesser, initValue, persistent, listenerOptions, eventOnly,
-  }]) => {
-    const actionName = prefixedAction(name);
-    if (target) {
-      const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
-      target.addEventListener(eventType, async (e: any) => {
-        if (eventOnly) {
-          subscribers[actionName]?.forEach((cb) => cb(undefined, e));
-          return true;
-        }
-        chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
-          const newValue = valueProcesser(e, (currentValue as ActionResult).value);
-          const forced = currentValue.forced + Number(actions[name].force);
-          const actionNewValue = makeActionValue(newValue, forced);
-          chrome.storage.session.set({ [actionName]: actionNewValue });
-        });
-        return true;
-      }, listenerOptions);
-    }
-    return new Promise<{ [key: string]: { persistent: boolean, eventOnly: boolean } }>(
-      (resolve) => {
-        chrome.storage.session.remove(actionName, () => {
-          if (persistent) {
-            chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
-              const actionValue = makeActionValue(value ?? initValue);
-              chrome.storage.session.set({ [actionName]: actionValue }, () => {
-                setTimeout(() => resolve({ [actionName]: { persistent, eventOnly } }), 0);
-              });
-            });
-            return;
+  const initPromises = Object.entries(actions)
+    .filter(([name]) => {
+      if (!options.bmAutoFindTabs || !options.findTabsFirst) {
+        return !['mouseoverLeafs', 'mouseoutLeafs', 'mouseoverFolders', 'mouseoutFolders'].includes(name);
+      }
+      return true;
+    })
+    .map(([name, {
+      target, eventType, eventProcesser, initValue, persistent, listenerOptions, eventOnly,
+    }]) => {
+      const actionName = prefixedAction(name);
+      if (target) {
+        const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
+        target.addEventListener(eventType, async (e: any) => {
+          if (eventOnly) {
+            subscribers[actionName]?.forEach((cb) => cb(undefined, e));
+            return true;
           }
-          const actionValue = makeActionValue(initValue);
-          chrome.storage.session.set({ [actionName]: actionValue }, () => {
-            resolve({ [actionName]: { persistent, eventOnly } });
+          chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
+            const newValue = valueProcesser(e, (currentValue as ActionResult).value);
+            const forced = currentValue.forced + Number(actions[name].force);
+            const actionNewValue = makeActionValue(newValue, forced);
+            chrome.storage.session.set({ [actionName]: actionNewValue });
           });
-        });
-      },
-    );
-  });
+          return true;
+        }, listenerOptions);
+      }
+      return new Promise<{ [key: string]: { persistent: boolean, eventOnly: boolean } }>(
+        (resolve) => {
+          chrome.storage.session.remove(actionName, () => {
+            if (persistent) {
+              chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
+                const actionValue = makeActionValue(value ?? initValue);
+                chrome.storage.session.set({ [actionName]: actionValue }, () => {
+                  setTimeout(() => resolve({ [actionName]: { persistent, eventOnly } }), 0);
+                });
+              });
+              return;
+            }
+            const actionValue = makeActionValue(initValue);
+            chrome.storage.session.set({ [actionName]: actionValue }, () => {
+              resolve({ [actionName]: { persistent, eventOnly } });
+            });
+          });
+        },
+      );
+    });
   const initPromise = Promise.all(initPromises).then((actionProps) => {
     const persistentsAction = actionProps
       .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
@@ -257,7 +264,7 @@ export function initComponents(
     ...$headerHistory.actions(),
     ...dragAndDropEvents.actions(),
   };
-  const store = registerActions(actions);
+  const store = registerActions(actions, options);
   // Coonect store
   $appMain.connect(store);
   $leafs.connect(store);

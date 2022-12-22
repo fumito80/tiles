@@ -101,8 +101,8 @@
           </div>
         </layout-panes>
         <label class="item">
-          <input type="checkbox" class="bullet" tabindex="-1">Xen mode ratio:&nbsp;
-          <select name="zoom-ratio">
+          <input type="checkbox" class="bullet" tabindex="-1">Xen mode ratio:
+          <select name="zoom-ratio" class="form-control ms-2">
             <option value="0.5">50%</option>
             <option value="0.6">60%</option>
             <option value="0.7">70%</option>
@@ -123,17 +123,25 @@
         </div>
         <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
           first</label>
-        <div class="d-flex gap-4 mt-1 ms-3">
-          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
+        <div class="d-flex gap-4 mt-2 ms-3">
           <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
+          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
         </div>
+        <label class="item new ms-3"><input type="checkbox" name="bm-auto-find-tabs">Mouse over a bookmark to highlight
+          the
+          tab
+          with the matching URL</label>
+        <label class="item ms-3 mt-2">
+          <input type="checkbox" class="bullet ms-3" tabindex="-1">Mouse over delay:
+          <input type="number" name="bm-auto-find-tabs-delay" min="0" class="form-control w-25 mx-2"
+            value="500">milliseconds
+        </label>
         <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search
             box
             press enter
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
-
         <div class="heading">Open tabs pane</div>
         <label class="item"><input type="checkbox" name="collapse-tabs">Icon view at startup</label>
         <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window

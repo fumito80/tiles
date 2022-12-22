@@ -375,6 +375,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #timerMouseoverLeaf: number | undefined;
   #options!: Options;
   #promiseSwitchTabEnd = Promise.resolve();
+  #bmAutoFindTabsDelay = 500;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -399,6 +400,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       });
       this.#tabsWrap.append(...$windows);
     });
+    this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
     return this;
   }
   setEvent() {
@@ -605,7 +607,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         const searches = [find1st, ...rest].length;
         dispatch('setWheelHighlightTab', { leafId: $leaf.id, searches });
       }
-    }, 500);
+    }, this.#bmAutoFindTabsDelay);
   }
   mouseoutLeaf(e: MouseEvent, dispatch: Dispatch) {
     const $leaf = (e.target as HTMLElement).parentElement;

@@ -12,6 +12,7 @@ import {
   extractUrl,
   setEvents,
   prop,
+  getTabInfo,
 } from './common';
 import {
   $, $$,
@@ -46,24 +47,6 @@ type SourceClass = (typeof sourceClasses)[number];
 function getSubTree(id: string) {
   return new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve) => {
     chrome.bookmarks.getSubTree(id, ([treeNode]) => resolve(treeNode));
-  });
-}
-
-async function getTabInfo(preId: number | string) {
-  return new Promise<chrome.tabs.Tab & {
-    isCurrentWindow: boolean, incognito: boolean
-  }>((resolve) => {
-    chrome.windows.getCurrent((currentWindow) => {
-      chrome.tabs.get(getChromeId(preId), (tab) => {
-        chrome.windows.get(tab.windowId, { populate: true }, (win) => {
-          resolve({
-            ...tab,
-            isCurrentWindow: tab.windowId === currentWindow.id,
-            incognito: win.incognito,
-          });
-        });
-      });
-    });
   });
 }
 
@@ -128,7 +111,7 @@ async function dropWithTabs(
     return;
   }
   // bookmark to tabs
-  const { windowId, ...rest } = await getTabInfo($dropTarget.id);
+  const { windowId, incognito, ...rest } = await getTabInfo($dropTarget.id);
   const index = rest.index + (dropAreaClass === 'drop-top' ? 0 : 1);
   if (sourceClass === 'leaf') {
     Promise.resolve(sourceIds.map(getBookmark))
@@ -168,15 +151,15 @@ async function dropWithTabs(
     return;
   }
   // move tab
-  Promise.all(sourceIds.map((id) => getTabInfo(id)))
-    .then((sourceTabs) => chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
-      const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
-      const [init, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
-        .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
-      const tabIds = init.concat(sourceTabIds, tail);
-      return chrome.tabs.move(tabIds, { windowId, index: 0 }).then(() => sourceTabs);
+  Promise
+    .all(sourceIds.map((id) => getTabInfo(id)))
+    .then((sourceTabs) => postMessage({
+      type: CliMessageTypes.moveTabs,
+      payload: {
+        sourceTabs, windowId, incognito, index,
+      },
     }))
-    .then((sourceTabs) => {
+    .then(() => {
       const sourceWindowIds = sourceIds
         .map((id) => $byId(id).parentElement)
         .filter((win): win is Window => win instanceof Window)
@@ -189,23 +172,9 @@ async function dropWithTabs(
       if (!sourceWindowIds.includes($destWindow?.id)) {
         $destWindow.reloadTabs(dispatch);
       }
-      return sourceTabs;
-    })
-    .then((sourceTabs) => sourceTabs.some((sourceTab) => {
-      if (
-        sourceTab.active
-        && sourceTab.isCurrentWindow
-        && sourceTab.windowId !== windowId
-        && sourceTab.incognito === rest.incognito
-      ) {
-        chrome.tabs.update(sourceTab.id!, { active: true });
-        chrome.windows.update(windowId, { focused: true });
-        return true;
-      }
-      return false;
-    }))
-    .then(() => dispatch('re-search', 'tabs', true))
-    .then(() => $byClass('tabs')!.dispatchEvent(new Event('mouseenter')));
+      dispatch('re-search', 'tabs', true);
+      $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
+    });
 }
 
 async function dropFromHistory(

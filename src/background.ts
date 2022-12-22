@@ -21,6 +21,7 @@ import {
   setPopupStyle,
   makeColorPalette,
   getHistoryData,
+  prop,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -206,6 +207,35 @@ export const mapMessagesPtoB = {
     }));
     return Promise.all(tabs).then(() => chrome.windows.update(windowId, { focused: true }));
   },
+  [CliMessageTypes.moveTabs]: (
+    {
+      payload: {
+        sourceTabs, windowId, incognito, index,
+      },
+    }: PayloadAction<{
+      sourceTabs: (chrome.tabs.Tab & { isCurrentWindow: boolean, incognito: boolean })[],
+      windowId: number, incognito: boolean, index?: number,
+    }>,
+  ) => chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
+    const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
+    const [head, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
+      .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
+    const tabIds = head.concat(sourceTabIds, tail);
+    return chrome.tabs.move(tabIds, { windowId, index: 0 }).then(() => sourceTabs);
+  })
+    .then((tabs) => tabs.some((sourceTab) => {
+      if (
+        sourceTab.active
+        && sourceTab.isCurrentWindow
+        && sourceTab.windowId !== windowId
+        && sourceTab.incognito === incognito
+      ) {
+        chrome.tabs.update(sourceTab.id!, { active: true });
+        chrome.windows.update(windowId, { focused: true });
+        return true;
+      }
+      return false;
+    })),
 };
 
 setMessageListener(mapMessagesPtoB);
