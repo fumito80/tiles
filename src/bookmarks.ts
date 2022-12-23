@@ -1,12 +1,10 @@
 import {
-  $, $$, $$byClass, $byClass,
-  addClass, rmClass, hasClass, addStyle,
-  addBookmark, getBookmark,
+  $, $$, $$byClass, $byClass, addClass, rmClass, hasClass, addStyle, addBookmark, getBookmark,
   setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
   cbToResolve, cssid, curry3, getCurrentTab, setEvents, setFavicon, switches,
-  delayMultiSelect, prop,
+  delayMultiSelect, prop, setLocal, getLocal,
 } from './common';
 import { dialog } from './dialogs';
 import { dropBmInNewWindow } from './drag-drop';
@@ -19,8 +17,7 @@ import {
   ISubscribeElement, makeAction, Store, Dispatch, States,
 } from './store';
 import {
-  AbstractConstructor,
-  MulitiSelectables, OpenBookmarkType, Options, State,
+  AbstractConstructor, MulitiSelectables, OpenBookmarkType, Options, State,
 } from './types';
 
 export class Leaf extends MutiSelectableItem {
@@ -121,12 +118,12 @@ export class HeaderLeafs extends MulitiSelectablePaneHeader {
 function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatch) {
   setEvents([$leafMenu], {
     async click(e) {
-      const $leaf = (e.target as HTMLElement)
-        ?.parentElement?.previousElementSibling?.parentElement;
+      const $leaf = (e.target as HTMLElement).closest('bm-leaf');
       if (!($leaf instanceof Leaf)) {
         return;
       }
-      switch ((e.target as HTMLElement).dataset.value) {
+      const { value } = (e.target as HTMLElement).dataset;
+      switch (value) {
         case 'find-in-tabs': {
           dispatch('activateTab', { url: $leaf.url });
           break;
@@ -150,12 +147,12 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
         case 'edit-url': {
           const { url = '', title } = await getBookmark($leaf.id);
           // eslint-disable-next-line no-alert
-          const value = prompt(`[Edit URL]\n${title}`, url);
-          if (value == null) {
+          const result = prompt(`[Edit URL]\n${title}`, url);
+          if (result == null) {
             break;
           }
-          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: value }));
-          $leaf.updateAnchor({ title, url: value });
+          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: result }));
+          $leaf.updateAnchor({ title, url: result });
           setAnimationClass('hilite')($leaf);
           break;
         }
@@ -175,6 +172,18 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
             ($leaf as any).scrollIntoViewIfNeeded();
             setAnimationClass('hilite')($leaf);
           }, 100);
+          break;
+        }
+        case 'bm-find-domain':
+        case 'bm-find-prefix': {
+          getLocal('bmFindTabMatchMode').then((matchMode) => {
+            const mode = value === 'bm-find-domain' ? 'domain' : 'prefix';
+            const bmFindTabMatchMode = {
+              ...matchMode.bmFindTabMatchMode,
+              [$leaf.id]: mode,
+            } as const;
+            setLocal({ bmFindTabMatchMode });
+          });
           break;
         }
         default:

@@ -3,7 +3,7 @@
 import { MulitiSelectables, Options } from './types';
 import {
   setEvents, addListener,
-  last, getColorWhiteness, lightColorWhiteness, camelToSnake,
+  last, getColorWhiteness, lightColorWhiteness, camelToSnake, getLocal, pipe,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -16,10 +16,13 @@ import {
   resizeHeightHandler,
   getEndPaneMinWidth,
   showMenu,
+  rmClass,
+  addClass,
 } from './client';
 import {
   Dispatch, IPubSubElement, makeAction, States, Store,
 } from './store';
+import { Leaf } from './bookmarks';
 
 const excludeClasses = [
   'anchor',
@@ -37,7 +40,7 @@ const excludeClasses = [
   'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
-async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
+async function clickAppMain(e: MouseEvent, options: Options, dispatch: Dispatch) {
   const $target = e.target as HTMLElement;
   if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
     return;
@@ -50,6 +53,14 @@ async function clickAppMain(e: MouseEvent, dispatch: Dispatch) {
     bookmarks: false, tabs: false, histories: false, all: false,
   });
   if (hasClass($target, 'leaf-menu-button')) {
+    if (options.findTabsFirst && options.bmAutoFindTabs) {
+      const { bmFindTabMatchMode = {} } = await getLocal('bmFindTabMatchMode');
+      const $leaf = $target.parentElement;
+      if ($leaf instanceof Leaf) {
+        const findMode = bmFindTabMatchMode[$leaf.id] || options.findTabsMatches;
+        pipe(rmClass('domain', 'prefix'), addClass(findMode))($leaf);
+      }
+    }
     showMenu('leaf-menu')(e);
     dispatch('multiSelPanes', { bookmarks: false, all: false });
     return;
@@ -81,7 +92,9 @@ async function keyup(e: KeyboardEvent, states: States, dispatch: Dispatch) {
 }
 
 export class AppMain extends HTMLElement implements IPubSubElement {
+  #options!: Options;
   init(options: Options, isSearching: boolean) {
+    this.#options = options;
     this.classList.toggle('searching', isSearching);
     const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
       .colorPalette
@@ -166,7 +179,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   connect(store: Store) {
     store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(changes.newValue, store.dispatch));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    store.subscribe('clickAppMain', (_, e) => clickAppMain(e, store.dispatch));
+    store.subscribe('clickAppMain', (_, e) => clickAppMain(e, this.#options, store.dispatch));
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
     store.subscribe('keydownMain', (_, e) => keydown(e, store.getStates, store.dispatch));
     store.subscribe('keyupMain', (_, e) => keyup(e, store.getStates, store.dispatch));

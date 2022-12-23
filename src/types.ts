@@ -116,6 +116,7 @@ export const initialState = {
   options: initialOptions,
   lastSearchWord: '',
   queries: [] as string[],
+  bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
 };
 
 export type State = typeof initialState;

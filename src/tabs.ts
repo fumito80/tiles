@@ -7,7 +7,7 @@ import {
   rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText, createNewTab,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, htmlEscape,
+  addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
   makeStyleIcon, pipe,
 } from './common';
 import { ISearchable, SearchParams } from './search';
@@ -574,14 +574,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const count = precount ?? $$byClass('selected', this).length;
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
-  getTabFinder(srcUrl: string) {
-    const [, domainSrc] = extractDomain(srcUrl);
-    return this.#options.findTabsMatches === 'prefix'
-      ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
-      : (tab: OpenTab) => {
-        const [, domain] = extractDomain(tab.url);
-        return domain === domainSrc;
-      };
+  getTabFinder(srcUrl: string, bmId = '') {
+    return getLocal('bmFindTabMatchMode').then(({ bmFindTabMatchMode = {} }) => {
+      const [, domainSrc] = extractDomain(srcUrl);
+      const mode = bmFindTabMatchMode[bmId] || this.#options.findTabsMatches;
+      return mode === 'prefix'
+        ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
+        : (tab: OpenTab) => {
+          const [, domain] = extractDomain(tab.url);
+          return domain === domainSrc;
+        };
+    });
   }
   mouseoverLeaf(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $leaf = (e.target as HTMLElement).parentElement;
@@ -599,9 +602,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       if (!url) {
         return;
       }
-      const [find1st, ...rest] = this
-        .getAllTabs(this.getTabFinder(url))
-        .map((tab) => tab.setHighlight(true));
+      const finder = await this.getTabFinder(url, $leaf.id);
+      const [find1st, ...rest] = this.getAllTabs(finder).map((tab) => tab.setHighlight(true));
       if (find1st) {
         find1st.setFocus(true);
         const searches = [find1st, ...rest].length;
@@ -633,7 +635,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     highlights[foundIndex].setFocus(false);
     nextTab.setFocus(true);
   }
-  activateTab({ url, focused }: NonNullable<Store['actions']['activateTab']['initValue']>) {
+  async activateTab({ url, focused }: NonNullable<Store['actions']['activateTab']['initValue']>) {
     let target: OpenTab | undefined;
     if (focused) {
       [target] = this.getAllTabs((tab) => tab.focused);
@@ -645,7 +647,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         ...tabs.slice(findIndex + 1),
         ...tabs.slice(0, findIndex + 1),
       ];
-      target = sorted.find(this.getTabFinder(url));
+      target = sorted.find(await this.getTabFinder(url));
     }
     if (!target) {
       createNewTab(this.#options, url);

@@ -27,6 +27,7 @@ import {
   prop,
   last,
   addListener,
+  when,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -647,6 +648,7 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
     if ($target.parentElement !== $menu.parentElement) {
       $target.insertAdjacentElement('afterend', $menu);
     }
+    rmClass('menu-right')($menu);
     const rect = $target.getBoundingClientRect();
     const { width, height } = $menu.getBoundingClientRect();
     if (relativePos) {
@@ -655,9 +657,12 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
       }
       return;
     }
-    const left = (rect.left + rect.width - 5) <= width
-      ? `${rect.left}px`
-      : `${rect.left - width + rect.width}px`;
+    const left = when((rect.left + rect.width - 5) <= width)
+      .then(() => {
+        addClass('menu-right')($menu);
+        return `${rect.left}px`;
+      })
+      .else(`${rect.left - width + rect.width}px`);
     const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
       ? `${rect.top - height}px`
       : `${rect.top + rect.height}px`;

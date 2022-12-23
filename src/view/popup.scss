@@ -1789,6 +1789,91 @@ app-main:not(.searching):not(.drag-start) .tab-wrap {
   }
 }
 
+// Bookmark find tabs
+
+bm-leaf {
+  &.domain>.leaf-menu {
+    .bm-find-domain {
+      display: block;
+    }
+
+    [data-value="bm-find-prefix"] .icon-check-solid {
+      visibility: hidden;
+    }
+  }
+
+  &.prefix>.leaf-menu {
+    .bm-find-prefix {
+      display: block;
+    }
+
+    [data-value="bm-find-domain"] .icon-check-solid {
+      visibility: hidden;
+    }
+  }
+
+  &:not(.prefix):not(.domain) {
+    .bm-find-tab-mode {
+      display: none;
+
+      +hr {
+        display: none;
+      }
+    }
+  }
+}
+
+[role=menu] {
+  .menu-parent {
+    position: relative;
+    padding-right: 0;
+
+    &::after {
+      content: '';
+      border: 5px solid transparent;
+      border-left: 7px solid #888;
+      margin-left: 5px;
+    }
+
+    .menu-tree {
+      display: block;
+      top: -5px;
+      right: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+
+      >div>i {
+        width: auto;
+        margin-right: 8px;
+        color: $common-marker;
+      }
+    }
+
+    &:hover {
+      background-color: transparent;
+
+      >.menu-tree {
+        opacity: 1;
+        pointer-events: inherit;
+      }
+    }
+
+  }
+
+  &.menu-right .menu-parent .menu-tree {
+    left: 100%;
+  }
+
+  .bm-find-tab-menu>div {
+    padding-left: 8px;
+  }
+
+  .bm-find-tab-mode>span {
+    display: none;
+  }
+}
+
 @import "./tabs";
 @import "./history";
 @import "./color-theme";
