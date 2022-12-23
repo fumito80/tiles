@@ -7,8 +7,8 @@ import {
   rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText, createNewTab,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
-  makeStyleIcon, pipe,
+  addListener, delayMultiSelect, extractDomain, find, getLocal, htmlEscape,
+  makeStyleIcon, pipe, when,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -17,7 +17,7 @@ import {
 import { Options, PromiseInitTabs, State } from './types';
 import { Leaf } from './bookmarks';
 
-export async function smoothSroll($target: HTMLElement, scrollTop: number) {
+export async function smoothSroll<T extends HTMLElement>($target: T, scrollTop: number) {
   const $tabsWrap = $target.parentElement! as HTMLElement;
   const $parent = $tabsWrap.parentElement! as HTMLElement;
   const translateY = -(Math.min(
@@ -25,14 +25,14 @@ export async function smoothSroll($target: HTMLElement, scrollTop: number) {
     $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
   ));
   if (Math.abs(translateY) <= 1) {
-    return undefined;
+    return Promise.resolve($target);
   }
-  const promise = new Promise<void>((resolve) => {
+  const promise = new Promise<T>((resolve) => {
     $tabsWrap.addEventListener('transitionend', () => {
       rmClass('scroll-ease-in-out')($tabsWrap);
       rmStyle('transform')($tabsWrap);
       Object.assign($parent, { scrollTop });
-      resolve();
+      resolve($target);
     }, { once: true });
   });
   addClass('scroll-ease-in-out')($tabsWrap);
@@ -659,7 +659,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if (this.scrollHeight === this.offsetHeight) {
       return;
     }
-    this.#promiseSwitchTabEnd = this.#promiseSwitchTabEnd.then(() => new Promise((resolve) => {
+    this.#promiseSwitchTabEnd = this.#promiseSwitchTabEnd.then(() => new Promise<any>((resolve) => {
       const tabsTop = isNext ? Math.ceil(this.scrollTop) : Math.floor(this.scrollTop) - 1;
       const tabsBottom = this.scrollTop + this.offsetHeight;
       const $current = ([...this.firstElementChild!.children] as HTMLElement[])
@@ -681,7 +681,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           || (!isNext && isBottomIn && winTop <= tabsTop)
           || (winTop <= tabsTop && winBottom >= tabsBottom));
       if (!$current) {
-        resolve();
+        resolve(undefined);
         return;
       }
       const { $win, winTop, winBottom } = $current;
@@ -690,15 +690,21 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         $target = (isNext ? $win.nextElementSibling : $win) as HTMLElement;
       }
       if (!$target) {
-        resolve();
+        resolve(undefined);
         return;
       }
       smoothSroll($target, $target.offsetTop).then(resolve);
     }));
   }
   focusCurrentTab() {
-    const $currentWindow = this.getWindows().find((win) => win.isCurrent)!;
-    smoothSroll($currentWindow, $currentWindow.offsetTop);
+    const $currentWindow = pipe(find((win) => win.isCurrent), rmClass('hilite'))(this.getWindows());
+    const scrollTop = when($currentWindow.offsetHeight > this.offsetHeight)
+      .then($currentWindow.offsetTop)
+      .else(() => {
+        const diff = (this.offsetHeight - $currentWindow.offsetHeight) / 2;
+        return Math.max(0, $currentWindow.offsetTop - diff);
+      });
+    smoothSroll($currentWindow, scrollTop).then(addClass('hilite'));
   }
   override actions() {
     return {

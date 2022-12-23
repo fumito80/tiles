@@ -227,6 +227,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     const isMultiSelect = Object.values(changes).some((type) => type);
     this.classList.toggle('hidden', isMultiSelect);
+    // this.$inputQuery.disabled = isMultiSelect;
   }
   actions() {
     return {

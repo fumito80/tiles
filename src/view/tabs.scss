@@ -57,6 +57,11 @@ open-tab {
         display: none;
       }
     }
+
+    &.hilite {
+      animation-name: hilite-fade-out !important;
+      animation-duration: .25s !important;
+    }
   }
 }
 
@@ -75,21 +80,14 @@ open-tab {
   }
 
   button {
-    display: flex;
-    margin-top: 1px;
-  }
-
-  .win-prev,
-  .win-next {
-    margin-right: 5px;
-  }
-
-  .focus-current-tab {
     margin-left: 10px;
+  }
+
+  .win-next {
+    margin-left: 0;
   }
 
   .collapse-tabs {
-    margin-left: 10px;
     margin-right: 10px;
   }
 
