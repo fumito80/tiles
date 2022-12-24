@@ -193,11 +193,6 @@ export class OpenTab extends MutiSelectableItem {
   setFocus(focused: boolean) {
     this.#focused = focused;
     this.classList.toggle('focus', focused);
-    if (!focused) {
-      return;
-    }
-    (this as any).scrollIntoViewIfNeeded();
-    this.setTooltipPosition();
   }
   setHighlight(highlighted: boolean) {
     this.#highlighted = highlighted;
@@ -586,6 +581,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         };
     });
   }
+  scrollToFocused($target: OpenTab) {
+    const $parentWindow = $target.getParentWindow();
+    const currentTop = $parentWindow.offsetTop + $target.offsetTop;
+    if (currentTop >= this.scrollTop
+      && currentTop + $target.offsetHeight <= this.scrollTop + this.offsetHeight) {
+      return;
+    }
+    const scrollTop = currentTop - this.offsetHeight / 2 + $target.offsetHeight / 2;
+    smoothSroll($parentWindow, Math.max(0, scrollTop));
+  }
   mouseoverLeaf(e: MouseEvent, states: States, dispatch: Dispatch) {
     const $leaf = (e.target as HTMLElement).parentElement;
     if (!($leaf instanceof Leaf && hasClass(e.target as HTMLElement, 'anchor'))) {
@@ -603,10 +608,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         return;
       }
       const finder = await this.getTabFinder(url, $leaf.id);
-      const [find1st, ...rest] = this.getAllTabs(finder).map((tab) => tab.setHighlight(true));
-      if (find1st) {
-        find1st.setFocus(true);
-        const searches = [find1st, ...rest].length;
+      const [$find1st, ...rest] = this.getAllTabs((tab) => !hasClass(tab, 'unmatch')).filter(finder).map((tab) => tab.setHighlight(true));
+      if ($find1st) {
+        $find1st.setFocus(true);
+        this.scrollToFocused($find1st);
+        const searches = [$find1st, ...rest].length;
         dispatch('setWheelHighlightTab', { leafId: $leaf.id, searches });
       }
     }, this.#bmAutoFindTabsDelay);
@@ -629,11 +635,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     const foundIndex = highlights.findIndex(($el) => $el.focused);
-    const nextTab = dir === 'DN'
+    const $nextTab = dir === 'DN'
       ? (highlights[foundIndex + 1] || highlights[0])
       : (highlights[foundIndex - 1] || highlights.at(-1));
     highlights[foundIndex].setFocus(false);
-    nextTab.setFocus(true);
+    $nextTab.setFocus(true);
+    this.scrollToFocused($nextTab);
   }
   async activateTab({ url, focused }: NonNullable<Store['actions']['activateTab']['initValue']>) {
     let target: OpenTab | undefined;

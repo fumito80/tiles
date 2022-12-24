@@ -19,6 +19,7 @@ open-tab {
   }
 
   open-window {
+    position: relative;
     display: flow-root;
     border-radius: $pane-radius;
     border: 2px solid transparent;
@@ -38,7 +39,7 @@ open-tab {
     }
 
     &.current-window {
-      position: relative;
+      // position: relative;
       margin-left: 8px;
 
       &::before {
