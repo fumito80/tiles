@@ -269,16 +269,27 @@ export async function recoverMinPaneWidth() {
 }
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast') {
-  return pipe(
-    rmClass(className),
-    (el) => {
-      // eslint-disable-next-line no-void
-      void (el as HTMLElement).offsetWidth;
-      el?.addEventListener('animationend', () => rmClass(className)(el), { once: true });
+  return (el: Element | undefined) => {
+    if (!el) {
       return el;
-    },
-    addClass(className),
-  );
+    }
+    rmClass(className)(el);
+    const { animationDuration } = getComputedStyle(el);
+    const hasAnime = animationDuration !== '0s';
+    // eslint-disable-next-line no-void
+    void (el as HTMLElement).offsetWidth;
+    el?.addEventListener('animationend', () => {
+      if (hasAnime) {
+        addStyle({ 'animation-duration': '0s' })(el);
+        el.addEventListener('animationend', () => {
+          setTimeout(() => rmStyle('animation-duration')(el), 100);
+        }, { once: true });
+      }
+      rmClass(className)(el);
+    }, { once: true });
+    addClass(className)(el);
+    return el;
+  };
 }
 
 export async function createNewTab(options: Options, url: string) {

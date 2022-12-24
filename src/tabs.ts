@@ -7,7 +7,7 @@ import {
   rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText, createNewTab,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, find, getLocal, htmlEscape,
+  addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
   makeStyleIcon, pipe, when,
 } from './common';
 import { ISearchable, SearchParams } from './search';
@@ -697,14 +697,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }));
   }
   focusCurrentTab() {
-    const $currentWindow = pipe(find((win) => win.isCurrent), rmClass('hilite'))(this.getWindows());
+    const $currentWindow = this.getWindows().find((win) => win.isCurrent) as any;
     const scrollTop = when($currentWindow.offsetHeight > this.offsetHeight)
       .then($currentWindow.offsetTop)
       .else(() => {
         const diff = (this.offsetHeight - $currentWindow.offsetHeight) / 2;
         return Math.max(0, $currentWindow.offsetTop - diff);
       });
-    smoothSroll($currentWindow, scrollTop).then(addClass('hilite'));
+    smoothSroll($currentWindow, scrollTop).then(setAnimationClass('hilite'));
   }
   override actions() {
     return {

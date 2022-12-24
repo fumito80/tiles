@@ -59,10 +59,15 @@ open-tab {
     }
 
     &.hilite {
-      animation-name: hilite-fade-out !important;
-      animation-duration: .25s !important;
+      animation-name: hilite-fade-out;
+      animation-duration: .3s;
+      animation-timing-function: ease-out;
     }
   }
+}
+
+.theme-dark-pane open-window.hilite {
+  animation-duration: .2s;
 }
 
 .pane-body.end.tabs {
