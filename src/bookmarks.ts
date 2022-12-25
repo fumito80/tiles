@@ -14,7 +14,7 @@ import {
 } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
-  ISubscribeElement, makeAction, Store, Dispatch, States,
+  ISubscribeElement, makeAction, Store, Dispatch, States, GetStates, Changes,
 } from './store';
 import {
   AbstractConstructor, MulitiSelectables, OpenBookmarkType, Options, State,
@@ -199,7 +199,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
 export function getBookmarksBase<TBase extends AbstractConstructor>(Base: TBase) {
   abstract class Mixin extends Base {
     matchedTabLeafId!: string | undefined;
-    wheelHighlightTab(e: WheelEvent, dispatch: Dispatch) {
+    wheelHighlightTab(_: any, e: WheelEvent, __: any, dispatch: Dispatch) {
       const $leaf = (e.target as HTMLElement).parentElement;
       if (!($leaf instanceof Leaf)) {
         return;
@@ -209,14 +209,14 @@ export function getBookmarksBase<TBase extends AbstractConstructor>(Base: TBase)
         dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
       }
     }
-    setWheelHighlightTab(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
+    setWheelHighlightTab({ newValue }: { newValue: Changes<'setWheelHighlightTab'>['initValue'] }) {
       this.matchedTabLeafId = newValue?.leafId;
     }
     connect(store: Store) {
       if (super.connect) {
         super.connect(store);
       }
-      store.subscribe('setWheelHighlightTab', (changes) => this.setWheelHighlightTab(changes.newValue));
+      store.subscribe('setWheelHighlightTab', this.setWheelHighlightTab.bind(this));
     }
   }
   return Mixin;
@@ -264,7 +264,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     }
   }
   // eslint-disable-next-line class-methods-use-this
-  async deletesHandler($selecteds: HTMLElement[], store: Store) {
+  async deletesHandler($selecteds: HTMLElement[], dispatch: Dispatch) {
     if ($selecteds.length === 0) {
       return;
     }
@@ -275,9 +275,9 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     const removes = $selecteds
       .filter(($el): $el is Leaf => $el instanceof Leaf)
       .map(remeveBookmark);
-    Promise.all(removes).then(() => this.selectItems(store.dispatch));
+    Promise.all(removes).then(() => this.selectItems(dispatch));
   }
-  multiSelectLeafs({ bookmarks: multiSelect }: MulitiSelectables) {
+  multiSelectLeafs({ newValue: { bookmarks: multiSelect } }: { newValue: MulitiSelectables }) {
     if (!multiSelect) {
       $$('.leafs .selected, .folders .selected')
         .filter(($el): $el is Leaf => $el instanceof Leaf && $el.selected)
@@ -285,7 +285,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       this.$lastClickedLeaf = undefined;
     }
   }
-  mousedownItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+  mousedownItem(e: MouseEvent, getStates: GetStates, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
     if (hasClass($target, 'leaf-menu-button')) {
       addStyle({ top: '-1000px' })(this.$leafMenu);
@@ -297,7 +297,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     }
     clearTimeout(this.timerMultiSelect);
     this.timerMultiSelect = setTimeout(async () => {
-      const { dragging, multiSelPanes } = await states();
+      const { dragging, multiSelPanes } = await getStates();
       const bookmarks = !multiSelPanes?.bookmarks;
       if (dragging) {
         if (!bookmarks) {
@@ -314,7 +314,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       this.selectItems(dispatch);
     }, delayMultiSelect);
   }
-  async clickItem(e: MouseEvent, states: States, dispatch: Dispatch) {
+  async clickItem(_: any, e: MouseEvent, states: States, dispatch: Dispatch) {
     const $target = e.target as HTMLDivElement;
     if ($target.hasAttribute('contenteditable')) {
       return;
@@ -328,7 +328,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     }
     const $leaf = $target instanceof Leaf ? $target : $target.parentElement;
     if ($leaf instanceof Leaf) {
-      const { bookmarks, all } = await states('multiSelPanes');
+      const { bookmarks, all } = states.multiSelPanes!;
       if (bookmarks || all) {
         $leaf.select();
         if (all) {
@@ -395,11 +395,13 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
         target: this,
         eventType: 'mousedown',
         eventOnly: true,
+        noStates: true,
       }),
       mouseupLeafs: makeAction({
         target: this,
         eventType: 'mouseup',
         eventOnly: true,
+        noStates: true,
       }),
       mouseoverLeafs: makeAction({
         target: this,
@@ -429,14 +431,14 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
   override connect(store: Store) {
     super.connect(store);
     store.subscribe('clearSearch', this.clearSearch.bind(this));
-    store.subscribe('clickLeafs', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
-    store.subscribe('mousedownLeafs', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
+    store.subscribe('clickLeafs', this.clickItem.bind(this));
+    store.subscribe('mousedownLeafs', (_, e, __, dispatch) => this.mousedownItem(e, store.getStates, dispatch));
     store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
-    store.subscribe('multiSelPanes', ({ newValue }) => this.multiSelectLeafs(newValue));
-    store.subscribe('clickFolders', (_, e) => this.clickItem(e, store.getStates, store.dispatch));
-    store.subscribe('mousedownFolders', (_, e) => this.mousedownItem(e, store.getStates, store.dispatch));
+    store.subscribe('multiSelPanes', this.multiSelectLeafs.bind(this));
+    store.subscribe('clickFolders', this.clickItem.bind(this));
+    store.subscribe('mousedownFolders', (_, e, __, dispatch) => this.mousedownItem(e, store.getStates, dispatch));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
-    store.subscribe('wheelLeafs', (_, e) => this.wheelHighlightTab(e, store.dispatch));
+    store.subscribe('wheelLeafs', this.wheelHighlightTab.bind(this));
     setLeafMenu(this.$leafMenu, this.#options, store.dispatch);
   }
 }

@@ -5,6 +5,8 @@ import {
   addBookmark, addClass, addFolder, hasClass, rmClass, showMenu,
 } from './client';
 import {
+  Changes,
+  Dispatch,
   IPubSubElement, ISubscribeElement, makeAction, Store,
 } from './store';
 import { pick } from './common';
@@ -73,9 +75,13 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       e.stopImmediatePropagation();
     }, true);
   }
-  show(value: { leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean }) {
-    const { all } = value;
-    const [, show] = Object.entries(value).find(([key]) => key === this.#header.paneName) || [];
+  show({ newValue }: {
+    newValue: {
+      leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean,
+    }
+  }) {
+    const { all } = newValue;
+    const [, show] = Object.entries(newValue).find(([key]) => key === this.#header.paneName) || [];
     if (!show && !all) {
       this.$count.textContent = '';
       rmClass('show')(this);
@@ -94,10 +100,10 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       addClass('show')(this);
     }
   }
-  selectItems(count: number, store: Store) {
+  selectItems(count: number, dispatch: Dispatch) {
     this.$count.textContent = String(count);
     if (count === 0) {
-      store.dispatch('multiSelPanes', {
+      dispatch('multiSelPanes', {
         bookmarks: false, tabs: false, histories: false, all: true,
       }, true);
       return;
@@ -110,7 +116,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.style.setProperty('max-width', `${Math.ceil(maxWidth)}px`);
   }
   connect(store: Store) {
-    store.subscribe('multiSelPanes', ({ newValue }) => this.show(newValue));
+    store.subscribe('multiSelPanes', this.show.bind(this));
     $byClass('del-multi-sel', this)?.addEventListener('click', (e) => {
       store.dispatch('deleteSelecteds', this.#header.paneName, true);
       e.stopImmediatePropagation();
@@ -168,11 +174,11 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     $popupMenu.init(this.menuClickHandler.bind(this));
     this.$multiSelPane.init(this, $popupMenu);
   }
-  selectItems(newValue: Store['actions']['selectItems']['initValue'], store: Store) {
+  selectItems({ newValue }: { newValue: Changes<'selectItems'>['initValue'] }, _: any, __: any, dispatch: Dispatch) {
     if (newValue?.paneName !== this.paneName) {
       return;
     }
-    this.$multiSelPane.selectItems(newValue.count, store);
+    this.$multiSelPane.selectItems(newValue.count, dispatch);
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -195,14 +201,14 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   connect(store: Store) {
     this.$multiSelPane.connect(store);
     this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store));
-    store.subscribe('selectItems', (changes) => this.selectItems(changes.newValue, store));
+    store.subscribe('selectItems', this.selectItems.bind(this));
   }
 }
 
 export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
   protected timerMultiSelect!: number;
   abstract paneName: Panes;
-  abstract deletesHandler(selectds: HTMLElement[], store: Store): void;
+  abstract deletesHandler(selectds: HTMLElement[], dispatch: Dispatch): void;
   actions() {
     return {
       selectItems: makeAction({
@@ -213,14 +219,15 @@ export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
       }),
     };
   }
+  preDeletesHandler({ newValue }: { newValue: Panes }, _: any, __: any, dispatch: Dispatch) {
+    if (newValue === this.paneName) {
+      this.deletesHandler(getSelecteds(), dispatch);
+    }
+  }
   mouseupItem() {
     clearTimeout(this.timerMultiSelect);
   }
   connect(store: Store) {
-    store.subscribe('deleteSelecteds', (changes) => {
-      if (changes.newValue === this.paneName) {
-        this.deletesHandler(getSelecteds(), store);
-      }
-    });
+    store.subscribe('deleteSelecteds', this.preDeletesHandler.bind(this));
   }
 }

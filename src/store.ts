@@ -24,6 +24,7 @@ type Action<
   T extends boolean,
   U extends EventListenerOptions,
   V extends boolean = false,
+  W extends boolean = false,
 > = {
   initValue?: R;
   target?: HTMLElement;
@@ -33,6 +34,7 @@ type Action<
   persistent?: T,
   listenerOptions?: U,
   eventOnly?: V,
+  noStates?: W,
 };
 
 export function makeAction<
@@ -42,18 +44,21 @@ export function makeAction<
   V extends boolean = false,
   W extends EventListenerOptions = any,
   X extends boolean = false,
+  Y extends boolean = false,
 >(
-  action: Action<T, U, S, V, W, X> = {},
+  action: Action<T, U, S, V, W, X, Y> = {},
 ) {
-  return { force: false, persistent: false, ...action };
+  return {
+    force: false, persistent: false, noStates: false, ...action,
+  };
 }
 
-type ActionValue<T> = T extends Action<any, infer R, any, any, any, any> ? R : never;
+type ActionValue<T> = T extends Action<any, infer R, any, any, any, any, any> ? R : never;
 
-type ActionEventType<T> = T extends Action<infer R, any, any, any, any, any> ? R : never;
+type ActionEventType<T> = T extends Action<infer R, any, any, any, any, any, any> ? R : never;
 
 type Actions<T> = {
-  [K in keyof T]: T[K] extends Action<any, any, any, any, any, any> ? T : never;
+  [K in keyof T]: T[K] extends Action<any, any, any, any, any, any, any> ? T : never;
 }
 
 const actionPrefix = 'action-';
@@ -108,14 +113,16 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       return true;
     })
     .map(([name, {
-      target, eventType, eventProcesser, initValue, persistent, listenerOptions, eventOnly,
+      target, eventType, eventProcesser, initValue,
+      persistent, listenerOptions, eventOnly, noStates,
     }]) => {
       const actionName = prefixedAction(name);
       if (target) {
         const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
         target.addEventListener(eventType, async (e: any) => {
           if (eventOnly) {
-            subscribers[actionName]?.forEach((cb) => cb(undefined, e));
+            const states = noStates ? undefined : await getStates();
+            subscribers[actionName]?.forEach((cb) => cb(undefined, e, states, dispatcher));
             return true;
           }
           chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
@@ -127,27 +134,32 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
           return true;
         }, listenerOptions);
       }
-      return new Promise<{ [key: string]: { persistent: boolean, eventOnly: boolean } }>(
+      return new Promise<
+        { [key: string]: { persistent: boolean, eventOnly: boolean, noStates: boolean } }
+      >(
         (resolve) => {
           chrome.storage.session.remove(actionName, () => {
             if (persistent) {
               chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
                 const actionValue = makeActionValue(value ?? initValue);
                 chrome.storage.session.set({ [actionName]: actionValue }, () => {
-                  setTimeout(() => resolve({ [actionName]: { persistent, eventOnly } }), 0);
+                  setTimeout(
+                    () => resolve({ [actionName]: { persistent, eventOnly, noStates } }),
+                    0,
+                  );
                 });
               });
               return;
             }
             const actionValue = makeActionValue(initValue);
             chrome.storage.session.set({ [actionName]: actionValue }, () => {
-              resolve({ [actionName]: { persistent, eventOnly } });
+              resolve({ [actionName]: { persistent, eventOnly, noStates } });
             });
           });
         },
       );
     });
-  const initPromise = Promise.all(initPromises).then((actionProps) => {
+  const initPromise = Promise.all(initPromises).then(async (actionProps) => {
     const persistentsAction = actionProps
       .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
     chrome.storage.onChanged.addListener((storage, areaName) => {
@@ -155,7 +167,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         return;
       }
       Object.entries(storage).forEach(async ([actionName, changes]) => {
-        const { persistent, eventOnly } = persistentsAction[actionName];
+        const { persistent, eventOnly, noStates } = persistentsAction[actionName];
         if (eventOnly) {
           return;
         }
@@ -164,18 +176,28 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         if (persistent) {
           chrome.storage.local.set({ [actionName]: newValue });
         }
-        subscribers[actionName]?.forEach((cb) => cb({ oldValue, newValue }));
+        const states = noStates ? undefined : await getStates();
+        subscribers[actionName]?.forEach(
+          (cb) => cb({ oldValue, newValue }, undefined, states, dispatcher),
+        );
       });
     });
+    const states = await getStates();
     Object.entries(actions)
       .filter(([, { persistent }]) => persistent)
       .map(async ([name]) => {
         const actionName = prefixedAction(name);
-        chrome.storage.session.get(actionName, ({ [actionName]: { value } }) => {
-          subscribers[actionName]?.forEach(
-            (cb) => cb({ oldValue: null, newValue: value, isInit: true }),
-          );
-        });
+        chrome.storage.session.get(actionName)
+          .then(({ [actionName]: { value } }) => {
+            subscribers[actionName]?.forEach(
+              (cb) => cb(
+                { oldValue: null, newValue: value, isInit: true },
+                undefined,
+                states,
+                dispatcher,
+              ),
+            );
+          });
       });
   });
   return {
@@ -188,6 +210,10 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       cb: (
         changes: { oldValue: V, newValue: V, isInit: boolean },
         e: W extends keyof HTMLElementEventType ? HTMLElementEventType[W] : never,
+        states: { [key in keyof T]: T[key]['initValue'] },
+        dispatch: <Y extends keyof T>(
+          dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+        ) => void,
       ) => void,
     ) {
       const actionName = prefixedAction(name);
@@ -286,7 +312,13 @@ export function initComponents(
 export type Store = ReturnType<typeof initComponents>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
-export type States = Store['getStates'];
+export type ActionValues = Store['actions'];
+export type ActionNames = keyof Store['actions'];
+export type GetStates = Store['getStates'];
+export type States = Parameters<Parameters<Subscribe>[1]>[2];
+// export type Changes<T extends ActionNames> = Parameters<Parameters<Subscribe>[1]>[0];
+export type Changes<T extends ActionNames> = ActionValues[T];
+
 export interface IPublishElement {
   actions(): Actions<any>;
 }

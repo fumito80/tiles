@@ -40,40 +40,9 @@ const excludeClasses = [
   'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
-async function clickAppMain(e: MouseEvent, options: Options, dispatch: Dispatch) {
-  const $target = e.target as HTMLElement;
-  if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
-    return;
-  }
-  if (hasClass($target, ...excludeClasses)) {
-    dispatch('focusQuery');
-    return;
-  }
-  dispatch('multiSelPanes', {
-    bookmarks: false, tabs: false, histories: false, all: false,
-  });
-  if (hasClass($target, 'leaf-menu-button')) {
-    if (options.findTabsFirst && options.bmAutoFindTabs) {
-      const { bmFindTabMatchMode = {} } = await getLocal('bmFindTabMatchMode');
-      const $leaf = $target.parentElement;
-      if ($leaf instanceof Leaf) {
-        const findMode = bmFindTabMatchMode[$leaf.id] || options.findTabsMatches;
-        pipe(rmClass('domain', 'prefix'), addClass(findMode))($leaf);
-      }
-    }
-    showMenu('leaf-menu')(e);
-    dispatch('multiSelPanes', { bookmarks: false, all: false });
-    return;
-  }
-  if (hasClass($target, 'main-menu-button')) {
-    return;
-  }
-  dispatch('focusQuery');
-}
-
-async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+async function keydown(_: any, e: KeyboardEvent, states: States, dispatch: Dispatch) {
   if (e.shiftKey && e.ctrlKey) {
-    const { bookmarks, tabs, histories } = await states('multiSelPanes');
+    const { bookmarks, tabs, histories } = states.multiSelPanes!;
     if (bookmarks || tabs || histories) {
       return;
     }
@@ -81,9 +50,9 @@ async function keydown(e: KeyboardEvent, states: States, dispatch: Dispatch) {
   }
 }
 
-async function keyup(e: KeyboardEvent, states: States, dispatch: Dispatch) {
+async function keyup(_: any, e: KeyboardEvent, states: States, dispatch: Dispatch) {
   if (e.key === 'Shift') {
-    const { all } = await states('multiSelPanes');
+    const { all } = states.multiSelPanes!;
     if (!all) {
       return;
     }
@@ -145,9 +114,44 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
-  setIncludeUrl(includeUrl: boolean, dispatch: Dispatch) {
-    toggleClass('checked-include-url', includeUrl)(this);
-    dispatch('changeIncludeUrl', includeUrl, true);
+  setIncludeUrl(
+    { newValue }: { newValue: boolean },
+    _: any,
+    __: any,
+    dispatch: Dispatch,
+  ) {
+    toggleClass('checked-include-url', newValue)(this);
+    dispatch('changeIncludeUrl', newValue, true);
+  }
+  async clickAppMain(_: any, e: MouseEvent, __: any, dispatch: Dispatch) {
+    const $target = e.target as HTMLElement;
+    if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
+      return;
+    }
+    if (hasClass($target, ...excludeClasses)) {
+      dispatch('focusQuery');
+      return;
+    }
+    dispatch('multiSelPanes', {
+      bookmarks: false, tabs: false, histories: false, all: false,
+    });
+    if (hasClass($target, 'leaf-menu-button')) {
+      if (this.#options.findTabsFirst && this.#options.bmAutoFindTabs) {
+        const { bmFindTabMatchMode = {} } = await getLocal('bmFindTabMatchMode');
+        const $leaf = $target.parentElement;
+        if ($leaf instanceof Leaf) {
+          const findMode = bmFindTabMatchMode[$leaf.id] || this.#options.findTabsMatches;
+          pipe(rmClass('domain', 'prefix'), addClass(findMode))($leaf);
+        }
+      }
+      showMenu('leaf-menu')(e);
+      dispatch('multiSelPanes', { bookmarks: false, all: false });
+      return;
+    }
+    if (hasClass($target, 'main-menu-button')) {
+      return;
+    }
+    dispatch('focusQuery');
   }
   actions() {
     return {
@@ -177,11 +181,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     };
   }
   connect(store: Store) {
-    store.subscribe('setIncludeUrl', (changes) => this.setIncludeUrl(changes.newValue, store.dispatch));
+    store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    store.subscribe('clickAppMain', (_, e) => clickAppMain(e, this.#options, store.dispatch));
+    store.subscribe('clickAppMain', this.clickAppMain.bind(this));
     store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
-    store.subscribe('keydownMain', (_, e) => keydown(e, store.getStates, store.dispatch));
-    store.subscribe('keyupMain', (_, e) => keyup(e, store.getStates, store.dispatch));
+    store.subscribe('keydownMain', keydown);
+    store.subscribe('keyupMain', keyup);
   }
 }

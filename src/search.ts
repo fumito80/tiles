@@ -1,4 +1,5 @@
 import {
+  Changes,
   Dispatch, IPubSubElement, makeAction, Store,
 } from './store';
 import { getLocal, setLocal, when } from './common';
@@ -30,7 +31,7 @@ export type SearchParams = {
 export interface ISearchable {
   paneName: Panes;
   search(params: SearchParams, dispatch: Store['dispatch']): void;
-  clearSearch(dispatch: Store['dispatch']): void;
+  clearSearch(_: any, __: any, ___: any, dispatch: Store['dispatch']): void;
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
@@ -78,7 +79,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.classList.add('show-queries');
     });
   }
-  setQuery(e: MouseEvent, dispatch: Dispatch) {
+  setQuery(_: any, e: MouseEvent, __: any, dispatch: Dispatch) {
     const $el = e.target as HTMLElement;
     if (hasClass($el, 'icon-x')) {
       const query = $el.parentElement?.textContent!;
@@ -106,7 +107,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
     ($next as HTMLElement)?.focus();
   }
-  keydownQueries(e: KeyboardEvent, dispatch: Dispatch) {
+  keydownQueries(_: any, e: KeyboardEvent, __: any, dispatch: Dispatch) {
     if (!['ArrowDown', 'ArrowUp', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       return;
     }
@@ -118,7 +119,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     e.preventDefault();
     const $focused = $('.queries>div:focus', this);
     if ($focused && e.key === 'Enter') {
-      this.setQuery({ target: $focused } as unknown as MouseEvent, dispatch);
+      this.setQuery(undefined, { target: $focused } as unknown as MouseEvent, undefined, dispatch);
       this.classList.remove('show-queries');
       this.$inputQuery.focus();
       return;
@@ -152,20 +153,22 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.classList.remove('show-queries');
     this.$inputQuery.focus();
   }
-  clearQuery(dispatch: Store['dispatch']) {
+  clearQuery(_: any, __: any, ___: any, dispatch: Dispatch) {
     if (this.$inputQuery.value === '') {
       return;
     }
     this.search('', dispatch);
     this.#oldValue = '';
-    this.$searchTargets.forEach((target) => target.clearSearch(dispatch));
+    this.$searchTargets.forEach(
+      (target) => target.clearSearch(undefined, undefined, undefined, dispatch),
+    );
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
     dispatch('searching', false);
     this.clearSearch(dispatch);
     this.$inputQuery.focus();
   }
-  resetQuery(includeUrl: boolean, dispatch: Store['dispatch']) {
+  resetQuery({ newValue: includeUrl }: { newValue: boolean }, _: any, __: any, dispatch: Dispatch) {
     this.#includeUrl = includeUrl;
     this.#oldValue = '';
     this.search(this.$inputQuery.value, dispatch);
@@ -214,14 +217,14 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
   }
-  reSearch(paneName: Panes, dispatch: Dispatch) {
+  reSearch({ newValue: paneName }: { newValue: Panes }, _: any, __: any, dispatch: Dispatch) {
     const reFilter = getReFilter(this.$inputQuery.value)!;
     const searchParams = { reFilter, searchSelector: 'tab-wrap', includeUrl: this.#includeUrl };
     this.$searchTargets
       .filter(($target) => $target.paneName === paneName)
       .forEach((target) => target.search(searchParams, dispatch));
   }
-  multiSelPanes(changes: NonNullable<Store['actions']['multiSelPanes']['initValue']>) {
+  multiSelPanes({ newValue: changes }: { newValue: NonNullable<Changes<'multiSelPanes'>['initValue']> }) {
     if (changes?.all) {
       this.$inputQuery.focus();
     }
@@ -271,13 +274,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       const { value } = (e.target as HTMLInputElement);
       this.search(value, store.dispatch);
     });
-    store.subscribe('changeIncludeUrl', (changes) => this.resetQuery(changes.newValue, store.dispatch));
-    store.subscribe('clearQuery', () => this.clearQuery(store.dispatch));
+    store.subscribe('changeIncludeUrl', this.resetQuery.bind(this));
+    store.subscribe('clearQuery', this.clearQuery.bind(this));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('multiSelPanes', (changes) => this.multiSelPanes(changes.newValue));
-    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
-    store.subscribe('re-search', (changes) => this.reSearch(changes.newValue, store.dispatch));
-    store.subscribe('setQuery', (_, e) => this.setQuery(e, store.dispatch));
-    store.subscribe('keydownQueries', (_, e) => this.keydownQueries(e, store.dispatch));
+    store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
+    store.subscribe('search', (changes, _, __, dispatch) => this.search(changes.newValue || this.$inputQuery.value, dispatch));
+    store.subscribe('re-search', this.reSearch.bind(this));
+    store.subscribe('setQuery', this.setQuery.bind(this));
+    store.subscribe('keydownQueries', this.keydownQueries.bind(this));
   }
 }

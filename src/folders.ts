@@ -160,6 +160,6 @@ export class Folders extends Bookmarks implements IPubSubElement {
   override connect(store: Store) {
     super.connect(store);
     this.setEvents(store);
-    store.subscribe('wheelFolders', (_, e) => this.wheelHighlightTab(e, store.dispatch));
+    store.subscribe('wheelFolders', this.wheelHighlightTab.bind(this));
   }
 }

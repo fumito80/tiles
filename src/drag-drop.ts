@@ -36,7 +36,7 @@ import {
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
 import {
-  Dispatch, IPubSubElement, makeAction, States, Store,
+  Dispatch, GetStates, IPubSubElement, makeAction, Store,
 } from './store';
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
@@ -328,7 +328,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
     setEvents([$appMain], dragAndDropEvents, undefined, this);
   }
-  dragstart(e: DragEvent, dispatch: Dispatch) {
+  dragstart(_: any, e: DragEvent, __: any, dispatch: Dispatch) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
     if (!className) {
@@ -392,7 +392,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       }
     }
   }
-  dragend(e: DragEvent, dispatch: Dispatch) {
+  dragend(_: any, e: DragEvent, __: any, dispatch: Dispatch) {
     $$byClass('drag-source').forEach(rmClass('drag-source'));
     setHTML('')($byClass('draggable-clone')!);
     if (e.dataTransfer?.dropEffect === 'none') {
@@ -402,7 +402,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     dispatch('dragging', false);
   }
-  async drop(e: DragEvent, states: States, dispatch: Dispatch) {
+  async drop(e: DragEvent, dispatch: Dispatch, getStates: GetStates) {
     const $dropArea = e.target as HTMLElement;
     const sourceIdCsv = e.dataTransfer?.getData('application/source-id')!;
     const sourceIds = sourceIdCsv.split(',');
@@ -410,7 +410,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
-      states('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, dispatch));
+      getStates('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, dispatch));
       dispatch('multiSelPanes', { all: false });
       return;
     }
@@ -497,22 +497,25 @@ export default class DragAndDropEvents implements IPubSubElement {
         target: this.$appMain,
         eventType: 'dragstart',
         eventOnly: true,
+        noStates: true,
       }),
       drop: makeAction({
         target: this.$appMain,
         eventType: 'drop',
         eventOnly: true,
+        noStates: true,
       }),
       dragend: makeAction({
         target: this.$appMain,
         eventType: 'dragend',
         eventOnly: true,
+        noStates: true,
       }),
     };
   }
   connect(store: Store) {
-    store.subscribe('dragstart', (_, e) => this.dragstart(e, store.dispatch));
-    store.subscribe('drop', (_, e) => this.drop(e, store.getStates, store.dispatch));
-    store.subscribe('dragend', (_, e) => this.dragend(e, store.dispatch));
+    store.subscribe('dragstart', this.dragstart.bind(this));
+    store.subscribe('drop', (_, e, __, dispatch) => this.drop(e, dispatch, store.getStates));
+    store.subscribe('dragend', this.dragend.bind(this));
   }
 }
