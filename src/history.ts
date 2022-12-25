@@ -519,9 +519,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
         const results = [] as chrome.history.HistoryItem[];
         const sorted = hs.sort((a, b) => Number(a.id) - Number(b.id));
-        for (let [id, ...rest] = ids, i = 0; rest.length > 0; [id, ...rest] = rest, i += 1) {
+        for (let [id, ...rest] = ids, i = 0; id != null && i < sorted.length; i += 1) {
           if (sorted[i].id === id) {
             results.push(sorted[i]);
+            [id, ...rest] = rest;
           }
         }
         return results;
