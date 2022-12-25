@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
 import {
-  CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, State,
+  CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, pastMSec, State,
 } from './types';
 import {
   Dispatch, IPubSubElement, makeAction, States, Store,
@@ -13,7 +13,7 @@ import {
   getMessageDeleteSelecteds,
 } from './client';
 import {
-  delayMultiSelect, filter, getLocaleDate, isDateEq, pick, pipe,
+  delayMultiSelect, filter, getLocaleDate, isDateEq, map, pick, pipe,
   postMessage, propEq, setLocal, whichClass,
 } from './common';
 import { ISearchable, SearchParams } from './search';
@@ -115,13 +115,13 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       (data) => data.filter((el) => el.selected || ids.includes(el.id!)).map((el) => el.id!),
     );
   }
-  getSelectedUrls(dragElementIds: string[] = []) {
+  async getSelectedUrls(dragElementIds: string[] = []) {
     const selecteds = this.getSelecteds(dragElementIds);
-    return selecteds.map((id) => this.getHistoryById(id!)).map(({ url }) => url!);
+    return this.getHistoriesByIds(selecteds).then(map(({ url }) => url!));
   }
   async openHistories(args: Store['actions']['openHistories']['initValue']) {
     const { windowId, index, incognito } = args!;
-    const urls = this.getSelectedUrls(args?.elementIds!);
+    const urls = await this.getSelectedUrls(args?.elementIds!);
     if (!windowId) {
       chrome.windows.create({ url: urls, incognito });
       return;
@@ -131,19 +131,20 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   async addBookmarks(args: Store['actions']['addBookmarksHistories']['initValue']) {
     const { bookmarkDest } = args!;
     const selecteds = this.getSelecteds(args?.elementIds!);
-    (bookmarkDest.index == null ? selecteds : selecteds.reverse())
-      .map((id) => this.getHistoryById(id!))
-      .forEach(({ url, title }) => {
+    const ids = bookmarkDest.index == null ? selecteds : selecteds.reverse();
+    this.getHistoriesByIds(ids).then((hs) => {
+      hs.forEach(({ url, title }) => {
         addBookmark(
           bookmarkDest.parentId,
           { url, title: title || url?.substring(0, 50), ...bookmarkDest },
           true,
         );
       });
+    });
   }
   openWindowFromHistory(incognito: boolean) {
-    const urls = this.getSelectedUrls();
-    chrome.windows.create({ url: urls, incognito }, window.close);
+    this.getSelectedUrls()
+      .then((urls) => chrome.windows.create({ url: urls, incognito }, window.close));
   }
   search({ reFilter, includeUrl }: SearchParams, dispatch: Store['dispatch']) {
     this.#reFilter = reFilter;
@@ -363,7 +364,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const $history = $target.parentElement;
     if ($history instanceof HistoryItem) {
       if (hasClass($target, 'icon-x')) {
-        const { url } = this.getHistoryById($history.id);
+        const [{ url }] = await this.getHistoriesByIds([$history.id]);
         $history.delete(url!).then(() => {
           const [, id] = $history.id.split('-');
           this.applyData((data) => {
@@ -395,7 +396,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         this.#lastClickedId = $history.id;
         return;
       }
-      const { url } = this.getHistoryById($history.id);
+      const [{ url }] = await this.getHistoriesByIds([$history.id]);
       $history.open(url!, this.#options);
     }
   }
@@ -506,9 +507,26 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   getVScrollData() {
     return this.vScrollData;
   }
-  getHistoryById(elementId: string) {
-    const id = elementId.replace('hst-', '');
-    return this.#histories.find(propEq('id', id))!;
+  // eslint-disable-next-line class-methods-use-this
+  async getHistoriesByIds(elementIds: string[]) {
+    const ids = elementIds.map((el) => el.replace('hst-', '')).sort();
+    const startTime = Date.now() - pastMSec;
+    return chrome.history.search({ text: '', startTime, maxResults: 99999 })
+      .then((hs) => {
+        if (ids.length === 1) {
+          const h = hs.find((el) => el.id === ids[0])! ?? {};
+          return [h];
+        }
+        const results = [] as chrome.history.HistoryItem[];
+        const sorted = hs.sort((a, b) => Number(a.id) - Number(b.id));
+        for (let [id, ...rest] = ids, i = 0; rest.length > 0; [id, ...rest] = rest, i += 1) {
+          if (sorted[i].id === id) {
+            results.push(sorted[i]);
+          }
+        }
+        return results;
+      });
+    // return this.#histories.find(propEq('id', id))!;
   }
   getRowsPadding() {
     const $rows = $byClass('rows', this)!;

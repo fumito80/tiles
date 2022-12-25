@@ -35,7 +35,7 @@ export class Leaf extends MutiSelectableItem {
       return;
     }
     if (options.findTabsFirst) {
-      dispatch('activateTab', { url: this.url, focused: true });
+      dispatch('activateTab', { url: this.url, focused: true, bookmarkId: this.id });
       return;
     }
     this.openBookmark(options);
@@ -125,7 +125,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
       const { value } = (e.target as HTMLElement).dataset;
       switch (value) {
         case 'find-in-tabs': {
-          dispatch('activateTab', { url: $leaf.url });
+          dispatch('activateTab', { url: $leaf.url, bookmarkId: $leaf.id });
           break;
         }
         case 'open-new-tab':

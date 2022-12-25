@@ -120,7 +120,7 @@ export class OpenTab extends MutiSelectableItem {
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tooltip.textContent = tooltip;
-    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
+    $tab.setAttribute('title', `${tab.title}\n${htmlEscape(tab.url!.substring(0, 1024))}`);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -642,7 +642,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $nextTab.setFocus(true);
     this.scrollToFocused($nextTab);
   }
-  async activateTab({ url, focused }: NonNullable<Store['actions']['activateTab']['initValue']>) {
+  async activateTab({ url, focused, bookmarkId }: NonNullable<Store['actions']['activateTab']['initValue']>) {
     let target: OpenTab | undefined;
     if (focused) {
       [target] = this.getAllTabs((tab) => tab.focused);
@@ -657,7 +657,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       target = sorted.find(await this.getTabFinder(url));
     }
     if (!target) {
-      createNewTab(this.#options, url);
+      chrome.bookmarks.get(bookmarkId).then(([bm]) => createNewTab(this.#options, bm.url!));
       return;
     }
     target.gotoTab();
@@ -757,8 +757,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         initValue: {
           url: '',
           focused: true,
+          bookmarkId: '',
         } as {
           url: string,
+          bookmarkId: string,
           focused?: boolean,
         },
       }),
