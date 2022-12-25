@@ -2,7 +2,6 @@ $font-color: #222222;
 $hover-color: #e8e8e9;
 $drop-folder-bgcolor: rgba(255, 255, 255, 0.5);
 $drop-folder-bgcolor-light: rgba(0, 0, 0, 0.4);
-$hilite-bgcolor: #feefc3;
 $draggable-bgcolor: rgba(0, 123, 255, 0.7);
 $common-marker: #1a73e8;
 $pane-radius: 5px;
@@ -41,8 +40,8 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
 
 @keyframes hilite-fade-out {
   from {
-    background-color: $hilite-bgcolor;
-    color: $font-color;
+    background-color: var(--item-hover-bg);
+    color: (--item-hover-color);
   }
 }
 
@@ -73,12 +72,9 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
 }
 
 @keyframes hilite-fade-in {
-  from {
-    background-color: transparent;
-  }
-
   to {
-    background-color: $hilite-bgcolor;
+    background-color: var(--item-hover-bg);
+    color: (--item-hover-color);
   }
 }
 

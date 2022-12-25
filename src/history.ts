@@ -527,7 +527,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
         return results;
       });
-    // return this.#histories.find(propEq('id', id))!;
   }
   getRowsPadding() {
     const $rows = $byClass('rows', this)!;
