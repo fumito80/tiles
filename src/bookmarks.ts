@@ -14,7 +14,7 @@ import {
 } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {
-  ISubscribeElement, makeAction, Store, Dispatch, States, GetStates, Changes,
+  ISubscribeElement, makeAction, Store, Dispatch, States, Changes, StoreSub,
 } from './store';
 import {
   AbstractConstructor, MulitiSelectables, OpenBookmarkType, Options, State,
@@ -199,14 +199,14 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
 export function getBookmarksBase<TBase extends AbstractConstructor>(Base: TBase) {
   abstract class Mixin extends Base {
     matchedTabLeafId!: string | undefined;
-    wheelHighlightTab(_: any, e: WheelEvent, __: any, dispatch: Dispatch) {
+    wheelHighlightTab(_: any, e: WheelEvent, __: any, store: StoreSub) {
       const $leaf = (e.target as HTMLElement).parentElement;
       if (!($leaf instanceof Leaf)) {
         return;
       }
       if (this.matchedTabLeafId === $leaf.id) {
         e.preventDefault();
-        dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
+        store.dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
       }
     }
     setWheelHighlightTab({ newValue }: { newValue: Changes<'setWheelHighlightTab'>['initValue'] }) {
@@ -285,7 +285,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       this.$lastClickedLeaf = undefined;
     }
   }
-  mousedownItem(e: MouseEvent, getStates: GetStates, dispatch: Dispatch) {
+  mousedownItem(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLDivElement;
     if (hasClass($target, 'leaf-menu-button')) {
       addStyle({ top: '-1000px' })(this.$leafMenu);
@@ -297,24 +297,24 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     }
     clearTimeout(this.timerMultiSelect);
     this.timerMultiSelect = setTimeout(async () => {
-      const { dragging, multiSelPanes } = await getStates();
+      const { dragging, multiSelPanes } = await store.getStates();
       const bookmarks = !multiSelPanes?.bookmarks;
       if (dragging) {
         if (!bookmarks) {
-          this.selectItems(dispatch);
+          this.selectItems(store.dispatch);
         }
         return;
       }
-      dispatch('multiSelPanes', { bookmarks, all: false });
+      store.dispatch('multiSelPanes', { bookmarks, all: false });
       if (!bookmarks || multiSelPanes?.all) {
-        dispatch('multiSelPanes', { all: undefined });
+        store.dispatch('multiSelPanes', { all: undefined });
         return;
       }
       $leaf.preMultiSelect(bookmarks);
-      this.selectItems(dispatch);
+      this.selectItems(store.dispatch);
     }, delayMultiSelect);
   }
-  async clickItem(_: any, e: MouseEvent, states: States, dispatch: Dispatch) {
+  async clickItem(_: any, e: MouseEvent, states: States, store: StoreSub) {
     const $target = e.target as HTMLDivElement;
     if ($target.hasAttribute('contenteditable')) {
       return;
@@ -332,20 +332,20 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       if (bookmarks || all) {
         $leaf.select();
         if (all) {
-          dispatch('multiSelPanes', { bookmarks: true, all: false });
+          store.dispatch('multiSelPanes', { bookmarks: true, all: false });
         }
         if (e.shiftKey) {
           this.selectWithShift($leaf);
         }
-        this.selectItems(dispatch);
+        this.selectItems(store.dispatch);
         this.$lastClickedLeaf = $leaf;
         return;
       }
       if (all == null) {
-        dispatch('multiSelPanes', { all: false });
+        store.dispatch('multiSelPanes', { all: false });
         return;
       }
-      $leaf.openOrFind(this.#options, dispatch);
+      $leaf.openOrFind(this.#options, store.dispatch);
     }
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
@@ -432,11 +432,11 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     super.connect(store);
     store.subscribe('clearSearch', this.clearSearch.bind(this));
     store.subscribe('clickLeafs', this.clickItem.bind(this));
-    store.subscribe('mousedownLeafs', (_, e, __, dispatch) => this.mousedownItem(e, store.getStates, dispatch));
+    store.subscribe('mousedownLeafs', this.mousedownItem.bind(this));
     store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
     store.subscribe('multiSelPanes', this.multiSelectLeafs.bind(this));
     store.subscribe('clickFolders', this.clickItem.bind(this));
-    store.subscribe('mousedownFolders', (_, e, __, dispatch) => this.mousedownItem(e, store.getStates, dispatch));
+    store.subscribe('mousedownFolders', this.mousedownItem.bind(this));
     store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
     store.subscribe('wheelLeafs', this.wheelHighlightTab.bind(this));
     setLeafMenu(this.$leafMenu, this.#options, store.dispatch);

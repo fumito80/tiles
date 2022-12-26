@@ -5,7 +5,7 @@ import {
 } from './types';
 import {
   Changes,
-  Dispatch, GetStates, IPubSubElement, makeAction, States, Store,
+  Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
 } from './store';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
@@ -193,9 +193,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   async restoreHistory() {
     return this.resetHistory();
   }
-  clearSearch(_: any, __: any, ___: any, dispatch: Dispatch) {
+  clearSearch(_: any, __: any, ___: any, store: StoreSub) {
     this.#reFilter = null;
-    dispatch('historyCollapseDate', false, true);
+    store.dispatch('historyCollapseDate', false, true);
   }
   async collapseHistoryDate({ newValue: collapsed }: { newValue: boolean }) {
     if (collapsed) {
@@ -342,22 +342,22 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       return newDate;
     });
   }
-  async clickItem(_: any, e: MouseEvent, states: States, dispatch: Dispatch) {
+  async clickItem(_: any, e: MouseEvent, states: States, store: StoreSub) {
     const $target = e.target as HTMLElement;
     if (hasClass($target, 'header-date')) {
       const {
         searching, historyCollapseDate, multiSelPanes: { histories, all } = {},
       } = states;
       if (histories || all) {
-        this.selectDateAll($target, searching, dispatch);
+        this.selectDateAll($target, searching, store.dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true, all: false });
+          store.dispatch('multiSelPanes', { histories: true, all: false });
         }
       } else {
-        dispatch('focusQuery');
+        store.dispatch('focusQuery');
       }
       if (historyCollapseDate) {
-        this.jumpHistoryDate($target.textContent!, dispatch);
+        this.jumpHistoryDate($target.textContent!, store.dispatch);
         return;
       }
       return;
@@ -390,9 +390,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
           const selected = $history.select();
           this.selectItem($history.id, selected);
         }
-        this.selectItems(dispatch);
+        this.selectItems(store.dispatch);
         if (all) {
-          dispatch('multiSelPanes', { histories: true, all: false });
+          store.dispatch('multiSelPanes', { histories: true, all: false });
         }
         this.#lastClickedId = $history.id;
         return;
@@ -407,7 +407,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       this.#lastClickedId = undefined;
     }
   }
-  mousedownItem(e: MouseEvent, getStates: GetStates, dispatch: Dispatch) {
+  mousedownItem(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
     const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
     if ($history instanceof HistoryItem) {
@@ -415,26 +415,26 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       clearTimeout(this.timerMultiSelect);
       this.timerMultiSelect = setTimeout(
         async () => {
-          const { dragging, multiSelPanes, searching } = await getStates();
+          const { dragging, multiSelPanes, searching } = await store.getStates();
           const histories = !multiSelPanes?.histories;
           if (dragging) {
             if (!histories) {
               this.selectItem($history.id, true);
-              this.selectItems(dispatch);
+              this.selectItems(store.dispatch);
             }
             return;
           }
-          dispatch('multiSelPanes', { histories, all: false });
+          store.dispatch('multiSelPanes', { histories, all: false });
           if (!histories || multiSelPanes?.all) {
-            dispatch('multiSelPanes', { all: false });
+            store.dispatch('multiSelPanes', { all: false });
             return;
           }
           if (isHeader) {
-            this.selectDateAll($history, searching, dispatch, true);
+            this.selectDateAll($history, searching, store.dispatch, true);
             return;
           }
           $history.preMultiSelect(histories);
-          dispatch('selectItems', { paneName: this.paneName, count: 1 }, true);
+          store.dispatch('selectItems', { paneName: this.paneName, count: 1 }, true);
         },
         delayMultiSelect,
       );
@@ -611,7 +611,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         this.resetVScroll();
       }
     });
-    store.subscribe('mousedownHistory', (_, e, __, dispatch) => this.mousedownItem(e, store.getStates, dispatch));
+    store.subscribe('mousedownHistory', this.mousedownItem.bind(this));
     store.subscribe('mouseupHistory', this.mouseupItem.bind(this));
     store.subscribe('multiSelPanes', this.multiSelect.bind(this));
     store.subscribe('openHistories', this.openHistories.bind(this));

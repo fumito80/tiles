@@ -36,7 +36,7 @@ import {
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
 import {
-  Dispatch, GetStates, IPubSubElement, makeAction, Store,
+  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
 } from './store';
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
@@ -328,7 +328,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
     setEvents([$appMain], dragAndDropEvents, undefined, this);
   }
-  dragstart(_: any, e: DragEvent, __: any, dispatch: Dispatch) {
+  dragstart(_: any, e: DragEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
     const className = whichClass(sourceClasses, $target);
     if (!className) {
@@ -340,7 +340,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       .then([[$target.firstElementChild as HTMLElement], [$target.id]] as const)
       .else(() => {
         const $selecteds = $$byClass('selected');
-        const $reselecteds = resetMultiSelect($target, $selecteds, dispatch) || $$byClass('selected');
+        const $reselecteds = resetMultiSelect($target, $selecteds, store.dispatch) || $$byClass('selected');
         return [$reselecteds, $reselecteds.map(($el) => $el.id)] as const;
       });
     const $main = $byTag('app-main')!;
@@ -368,7 +368,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     e.dataTransfer!.setData('application/source-id', ids.join(','));
     e.dataTransfer!.setData('application/source-class', className!);
     e.dataTransfer!.effectAllowed = 'move';
-    dispatch('dragging', true);
+    store.dispatch('dragging', true);
   }
   dragover(e: DragEvent) {
     if (checkDroppable(e)) {
@@ -392,7 +392,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       }
     }
   }
-  dragend(_: any, e: DragEvent, __: any, dispatch: Dispatch) {
+  dragend(_: any, e: DragEvent, __: any, store: StoreSub) {
     $$byClass('drag-source').forEach(rmClass('drag-source'));
     setHTML('')($byClass('draggable-clone')!);
     if (e.dataTransfer?.dropEffect === 'none') {
@@ -400,9 +400,9 @@ export default class DragAndDropEvents implements IPubSubElement {
       const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
       $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
-    dispatch('dragging', false);
+    store.dispatch('dragging', false);
   }
-  async drop(e: DragEvent, dispatch: Dispatch, getStates: GetStates) {
+  async drop(_: any, e: DragEvent, __: any, store: StoreSub) {
     const $dropArea = e.target as HTMLElement;
     const sourceIdCsv = e.dataTransfer?.getData('application/source-id')!;
     const sourceIds = sourceIdCsv.split(',');
@@ -410,8 +410,8 @@ export default class DragAndDropEvents implements IPubSubElement {
     const sourceClass = e.dataTransfer?.getData('application/source-class')! as SourceClass;
     const dropAreaClass = whichClass(dropAreaClasses, $dropArea)!;
     if (dropAreaClass === 'query') {
-      getStates('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, dispatch));
-      dispatch('multiSelPanes', { all: false });
+      store.getStates('setIncludeUrl').then((includeUrl) => search(sourceId, includeUrl, store.dispatch));
+      store.dispatch('multiSelPanes', { all: false });
       return;
     }
     const $dropTarget = $dropArea.parentElement?.id
@@ -439,11 +439,11 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     // from history
     if (sourceClass === 'history') {
-      await dropFromHistory($dropTarget, sourceIds, dropAreaClass, bookmarkDest, dispatch);
-      dispatch('multiSelPanes', { all: false });
+      await dropFromHistory($dropTarget, sourceIds, dropAreaClass, bookmarkDest, store.dispatch);
+      store.dispatch('multiSelPanes', { all: false });
       return;
     }
-    dispatch('multiSelPanes', { all: false });
+    store.dispatch('multiSelPanes', { all: false });
     // from tabs to bookmarks/folder
     const position = positions[dropAreaClass];
     const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
@@ -459,7 +459,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     // from tabs to window of tabs
     if (sourceClass === 'tab-wrap' || isDroppedTab) {
-      dropWithTabs($dropTarget, sourceIds, sourceClass, dropAreaClass, dispatch);
+      dropWithTabs($dropTarget, sourceIds, sourceClass, dropAreaClass, store.dispatch);
       return;
     }
     // from window of tabs
@@ -515,7 +515,7 @@ export default class DragAndDropEvents implements IPubSubElement {
   }
   connect(store: Store) {
     store.subscribe('dragstart', this.dragstart.bind(this));
-    store.subscribe('drop', (_, e, __, dispatch) => this.drop(e, dispatch, store.getStates));
+    store.subscribe('drop', this.drop.bind(this));
     store.subscribe('dragend', this.dragend.bind(this));
   }
 }

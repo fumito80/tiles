@@ -7,7 +7,7 @@ import {
 import {
   Changes,
   Dispatch,
-  IPubSubElement, ISubscribeElement, makeAction, Store,
+  IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
 } from './store';
 import { pick } from './common';
 
@@ -174,11 +174,11 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     $popupMenu.init(this.menuClickHandler.bind(this));
     this.$multiSelPane.init(this, $popupMenu);
   }
-  selectItems({ newValue }: { newValue: Changes<'selectItems'>['initValue'] }, _: any, __: any, dispatch: Dispatch) {
+  selectItems({ newValue }: { newValue: Changes<'selectItems'>['initValue'] }, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
       return;
     }
-    this.$multiSelPane.selectItems(newValue.count, dispatch);
+    this.$multiSelPane.selectItems(newValue.count, store.dispatch);
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -219,9 +219,9 @@ export abstract class MulitiSelectablePaneBody extends HTMLDivElement {
       }),
     };
   }
-  preDeletesHandler({ newValue }: { newValue: Panes }, _: any, __: any, dispatch: Dispatch) {
+  preDeletesHandler({ newValue }: { newValue: Panes }, _: any, __: any, store: StoreSub) {
     if (newValue === this.paneName) {
-      this.deletesHandler(getSelecteds(), dispatch);
+      this.deletesHandler(getSelecteds(), store.dispatch);
     }
   }
   mouseupItem() {

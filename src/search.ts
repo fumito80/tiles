@@ -1,6 +1,6 @@
 import {
   Changes,
-  Dispatch, IPubSubElement, makeAction, Store,
+  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
 } from './store';
 import { getLocal, setLocal, when } from './common';
 import {
@@ -31,7 +31,7 @@ export type SearchParams = {
 export interface ISearchable {
   paneName: Panes;
   search(params: SearchParams, dispatch: Store['dispatch']): void;
-  clearSearch(_: any, __: any, ___: any, dispatch: Store['dispatch']): void;
+  clearSearch(_: any, __: any, ___: any, store: StoreSub): void;
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
@@ -79,7 +79,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.classList.add('show-queries');
     });
   }
-  setQuery(_: any, e: MouseEvent, __: any, dispatch: Dispatch) {
+  setQuery(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $el = e.target as HTMLElement;
     if (hasClass($el, 'icon-x')) {
       const query = $el.parentElement?.textContent!;
@@ -93,7 +93,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       return;
     }
     const query = $el.textContent;
-    this.search(query!, dispatch);
+    this.search(query!, store.dispatch);
   }
   async keydownQuery(e: KeyboardEvent) {
     if (!['ArrowDown', 'ArrowUp'].includes(e.key)) {
@@ -107,7 +107,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
     ($next as HTMLElement)?.focus();
   }
-  keydownQueries(_: any, e: KeyboardEvent, __: any, dispatch: Dispatch) {
+  keydownQueries(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
     if (!['ArrowDown', 'ArrowUp', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       return;
     }
@@ -119,7 +119,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     e.preventDefault();
     const $focused = $('.queries>div:focus', this);
     if ($focused && e.key === 'Enter') {
-      this.setQuery(undefined, { target: $focused } as unknown as MouseEvent, undefined, dispatch);
+      this.setQuery(undefined, { target: $focused } as unknown as MouseEvent, undefined, store);
       this.classList.remove('show-queries');
       this.$inputQuery.focus();
       return;
@@ -153,25 +153,25 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.classList.remove('show-queries');
     this.$inputQuery.focus();
   }
-  clearQuery(_: any, __: any, ___: any, dispatch: Dispatch) {
+  clearQuery(_: any, __: any, ___: any, store: StoreSub) {
     if (this.$inputQuery.value === '') {
       return;
     }
-    this.search('', dispatch);
+    this.search('', store.dispatch);
     this.#oldValue = '';
     this.$searchTargets.forEach(
-      (target) => target.clearSearch(undefined, undefined, undefined, dispatch),
+      (target) => target.clearSearch(undefined, undefined, undefined, store),
     );
     this.$inputQuery.value = '';
     addAttr('value', '')(this.$inputQuery);
-    dispatch('searching', false);
-    this.clearSearch(dispatch);
+    store.dispatch('searching', false);
+    this.clearSearch(store.dispatch);
     this.$inputQuery.focus();
   }
-  resetQuery({ newValue: includeUrl }: { newValue: boolean }, _: any, __: any, dispatch: Dispatch) {
+  resetQuery({ newValue: includeUrl }: { newValue: boolean }, _: any, __: any, store: StoreSub) {
     this.#includeUrl = includeUrl;
     this.#oldValue = '';
-    this.search(this.$inputQuery.value, dispatch);
+    this.search(this.$inputQuery.value, store.dispatch);
   }
   clearSearch(dispatch: Store['dispatch']) {
     dispatch('clearSearch');
@@ -217,12 +217,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
   }
-  reSearch({ newValue: paneName }: { newValue: Panes }, _: any, __: any, dispatch: Dispatch) {
+  reSearch({ newValue: paneName }: { newValue: Panes }, _: any, __: any, store: StoreSub) {
     const reFilter = getReFilter(this.$inputQuery.value)!;
     const searchParams = { reFilter, searchSelector: 'tab-wrap', includeUrl: this.#includeUrl };
     this.$searchTargets
       .filter(($target) => $target.paneName === paneName)
-      .forEach((target) => target.search(searchParams, dispatch));
+      .forEach((target) => target.search(searchParams, store.dispatch));
   }
   multiSelPanes({ newValue: changes }: { newValue: NonNullable<Changes<'multiSelPanes'>['initValue']> }) {
     if (changes?.all) {
@@ -278,7 +278,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     store.subscribe('clearQuery', this.clearQuery.bind(this));
     store.subscribe('focusQuery', this.focusQuery.bind(this));
     store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
-    store.subscribe('search', (changes, _, __, dispatch) => this.search(changes.newValue || this.$inputQuery.value, dispatch));
+    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
     store.subscribe('re-search', this.reSearch.bind(this));
     store.subscribe('setQuery', this.setQuery.bind(this));
     store.subscribe('keydownQueries', this.keydownQueries.bind(this));

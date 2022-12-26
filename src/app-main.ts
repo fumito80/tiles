@@ -20,7 +20,7 @@ import {
   addClass,
 } from './client';
 import {
-  Dispatch, IPubSubElement, makeAction, States, Store,
+  IPubSubElement, makeAction, States, Store, StoreSub,
 } from './store';
 import { Leaf } from './bookmarks';
 
@@ -40,23 +40,23 @@ const excludeClasses = [
   'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
-async function keydown(_: any, e: KeyboardEvent, states: States, dispatch: Dispatch) {
+async function keydown(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
   if (e.shiftKey && e.ctrlKey) {
     const { bookmarks, tabs, histories } = states.multiSelPanes!;
     if (bookmarks || tabs || histories) {
       return;
     }
-    dispatch('multiSelPanes', { all: true });
+    store.dispatch('multiSelPanes', { all: true });
   }
 }
 
-async function keyup(_: any, e: KeyboardEvent, states: States, dispatch: Dispatch) {
+async function keyup(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
   if (e.key === 'Shift') {
     const { all } = states.multiSelPanes!;
     if (!all) {
       return;
     }
-    dispatch('multiSelPanes', { all: false });
+    store.dispatch('multiSelPanes', { all: false });
   }
 }
 
@@ -118,21 +118,21 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     { newValue }: { newValue: boolean },
     _: any,
     __: any,
-    dispatch: Dispatch,
+    store: StoreSub,
   ) {
     toggleClass('checked-include-url', newValue)(this);
-    dispatch('changeIncludeUrl', newValue, true);
+    store.dispatch('changeIncludeUrl', newValue, true);
   }
-  async clickAppMain(_: any, e: MouseEvent, __: any, dispatch: Dispatch) {
+  async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
     if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
       return;
     }
     if (hasClass($target, ...excludeClasses)) {
-      dispatch('focusQuery');
+      store.dispatch('focusQuery');
       return;
     }
-    dispatch('multiSelPanes', {
+    store.dispatch('multiSelPanes', {
       bookmarks: false, tabs: false, histories: false, all: false,
     });
     if (hasClass($target, 'leaf-menu-button')) {
@@ -145,13 +145,13 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         }
       }
       showMenu('leaf-menu')(e);
-      dispatch('multiSelPanes', { bookmarks: false, all: false });
+      store.dispatch('multiSelPanes', { bookmarks: false, all: false });
       return;
     }
     if (hasClass($target, 'main-menu-button')) {
       return;
     }
-    dispatch('focusQuery');
+    store.dispatch('focusQuery');
   }
   actions() {
     return {
@@ -184,7 +184,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
     store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
     store.subscribe('clickAppMain', this.clickAppMain.bind(this));
-    store.subscribe('dragging', (changes) => this.classList.toggle('drag-start', changes.newValue));
+    store.subscribe('dragging', (changes) => toggleClass('drag-start', changes.newValue)(this));
     store.subscribe('keydownMain', keydown);
     store.subscribe('keyupMain', keyup);
   }

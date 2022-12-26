@@ -76,7 +76,7 @@ function makeActionValue<T>(value: T, forced = 0) {
   return { forced, value };
 }
 
-function dispatcher(name: string | number | symbol, newValue: any, force = false) {
+function dispatch(name: string | number | symbol, newValue: any, force = false) {
   const actionName = prefixedAction(name);
   chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
     const forced = (currentValue?.forced || 0) + Number(force || newValue === undefined);
@@ -122,7 +122,9 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         target.addEventListener(eventType, async (e: any) => {
           if (eventOnly) {
             const states = noStates ? undefined : await getStates();
-            subscribers[actionName]?.forEach((cb) => cb(undefined, e, states, dispatcher));
+            subscribers[actionName]?.forEach(
+              (cb) => cb(undefined, e, states, { getStates, dispatch }),
+            );
             return true;
           }
           chrome.storage.session.get(actionName, ({ [actionName]: currentValue }) => {
@@ -178,7 +180,12 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         }
         const states = noStates ? undefined : await getStates();
         subscribers[actionName]?.forEach(
-          (cb) => cb({ oldValue, newValue }, undefined, states, dispatcher),
+          (cb) => cb(
+            { oldValue, newValue },
+            undefined,
+            states,
+            { getStates, dispatch },
+          ),
         );
       });
     });
@@ -194,7 +201,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
                 { oldValue: null, newValue: value, isInit: true },
                 undefined,
                 states,
-                dispatcher,
+                { getStates, dispatch },
               ),
             );
           });
@@ -211,9 +218,16 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         changes: { oldValue: V, newValue: V, isInit: boolean },
         e: W extends keyof HTMLElementEventType ? HTMLElementEventType[W] : never,
         states: { [key in keyof T]: T[key]['initValue'] },
-        dispatch: <Y extends keyof T>(
-          dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
-        ) => void,
+        store: {
+          // getStates: any,
+          getStates: <X extends keyof T | undefined = undefined>(
+            stateName?: X,
+            cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
+          ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
+          dispatch: <Y extends keyof T>(
+            dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+          ) => void,
+        },
       ) => void,
     ) {
       const actionName = prefixedAction(name);
@@ -224,7 +238,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       newValue?: ActionValue<T[U]>,
       force = false,
     ) {
-      initPromise.then(() => dispatcher(name, newValue, force));
+      initPromise.then(() => dispatch(name, newValue, force));
     },
     getStates<U extends keyof T | undefined = undefined>(
       name?: U,
@@ -318,6 +332,7 @@ export type GetStates = Store['getStates'];
 export type States = Parameters<Parameters<Subscribe>[1]>[2];
 // export type Changes<T extends ActionNames> = Parameters<Parameters<Subscribe>[1]>[0];
 export type Changes<T extends ActionNames> = ActionValues[T];
+export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
 
 export interface IPublishElement {
   actions(): Actions<any>;
