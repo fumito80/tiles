@@ -53,23 +53,6 @@ setEvents($$byClass('folder-menu'), {
   },
 });
 
-// export class Bookmarks extends HTMLDivElement {
-//   matchedTabLeafId!: string | undefined;
-//   wheelHighlightTab(e: WheelEvent, dispatch: Dispatch) {
-//     const $leaf = (e.target as HTMLElement).parentElement;
-//     if (!($leaf instanceof Leaf)) {
-//       return;
-//     }
-//     if (this.matchedTabLeafId === $leaf.id) {
-//       e.preventDefault();
-//       dispatch('nextTabByWheel', e.deltaY > 0 ? 'DN' : 'UP', true);
-//     }
-//   }
-//   setWheelHighlightTab(newValue: Store['actions']['setWheelHighlightTab']['initValue']) {
-//     this.matchedTabLeafId = newValue?.leafId;
-//   }
-// }
-
 const Bookmarks = getBookmarksBase(HTMLDivElement);
 
 export class Folders extends Bookmarks implements IPubSubElement {
@@ -154,12 +137,13 @@ export class Folders extends Bookmarks implements IPubSubElement {
         eventType: 'wheel',
         eventOnly: true,
         listenerOptions: false,
+        noStates: true,
       }),
     };
   }
   override connect(store: Store) {
     super.connect(store);
     this.setEvents(store);
-    store.subscribe('wheelFolders', this.wheelHighlightTab.bind(this));
+    // store.subscribe('wheelFolders', this.wheelHighlightTab.bind(this));
   }
 }

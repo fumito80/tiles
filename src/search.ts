@@ -1,6 +1,6 @@
 import {
   Changes,
-  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
+  Dispatch, IPublishElement, makeAction, Store, StoreSub,
 } from './store';
 import { getLocal, setLocal, when } from './common';
 import {
@@ -34,7 +34,7 @@ export interface ISearchable {
   clearSearch(_: any, __: any, ___: any, store: StoreSub): void;
 }
 
-export class FormSearch extends HTMLFormElement implements IPubSubElement {
+export class FormSearch extends HTMLFormElement implements IPublishElement {
   #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
@@ -60,6 +60,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$queries = $byClass('queries', this)!;
     this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
     this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
+  }
+  inputQuery(_: any, e: Event, __: any, store: StoreSub) {
+    const { value } = (e.target as HTMLInputElement);
+    this.search(value, store.dispatch);
+  }
+  reSearchAll(changes: Changes<'search'>, _: any, __: any, store: StoreSub) {
+    this.search(changes.newValue || this.$inputQuery.value, store.dispatch);
   }
   async clickQuery() {
     const shown = hasClass(this, 'show-queries');
@@ -224,13 +231,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       .filter(($target) => $target.paneName === paneName)
       .forEach((target) => target.search(searchParams, store.dispatch));
   }
-  multiSelPanes({ newValue: changes }: { newValue: NonNullable<Changes<'multiSelPanes'>['initValue']> }) {
+  multiSelPanes({ newValue: changes }: Changes<'multiSelPanes'>) {
     if (changes?.all) {
       this.$inputQuery.focus();
     }
     const isMultiSelect = Object.values(changes).some((type) => type);
     this.classList.toggle('hidden', isMultiSelect);
-    // this.$inputQuery.disabled = isMultiSelect;
   }
   actions() {
     return {
@@ -269,18 +275,19 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       }),
     };
   }
-  connect(store: Store) {
-    store.subscribe('inputQuery', (_, e) => {
-      const { value } = (e.target as HTMLInputElement);
-      this.search(value, store.dispatch);
-    });
-    store.subscribe('changeIncludeUrl', this.resetQuery.bind(this));
-    store.subscribe('clearQuery', this.clearQuery.bind(this));
-    store.subscribe('focusQuery', this.focusQuery.bind(this));
-    store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
-    store.subscribe('search', (changes) => this.search(changes.newValue || this.$inputQuery.value, store.dispatch));
-    store.subscribe('re-search', this.reSearch.bind(this));
-    store.subscribe('setQuery', this.setQuery.bind(this));
-    store.subscribe('keydownQueries', this.keydownQueries.bind(this));
-  }
+  // connect(store: Store) {
+  //   store.subscribe('inputQuery', (_, e) => {
+  //     const { value } = (e.target as HTMLInputElement);
+  //     this.search(value, store.dispatch);
+  //   });
+  //   store.subscribe('changeIncludeUrl', this.resetQuery.bind(this));
+  //   store.subscribe('clearQuery', this.clearQuery.bind(this));
+  //   store.subscribe('focusQuery', this.focusQuery.bind(this));
+  //   store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
+  //   store.subscribe('search', (changes) => this.search(changes.newValue ||
+  //  this.$inputQuery.value, store.dispatch));
+  //   store.subscribe('re-search', this.reSearch.bind(this));
+  //   store.subscribe('setQuery', this.setQuery.bind(this));
+  //   store.subscribe('keydownQueries', this.keydownQueries.bind(this));
+  // }
 }

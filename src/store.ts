@@ -2,20 +2,14 @@ import {
   EventListenerOptions,
   HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
-import { $, $byClass, $byTag } from './client';
 import {
-  HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
-} from './tabs';
+  $, $byClass, $byTag, toggleClass,
+} from './client';
+import { OpenTab, Window } from './tabs';
 import { FormSearch } from './search';
-import { HeaderHistory, History, HistoryItem } from './history';
-import {
-  HeaderLeafs, Leaf, Leafs,
-} from './bookmarks';
-import { Folders } from './folders';
-import { AppMain } from './app-main';
 import DragAndDropEvents from './drag-drop';
-import { MultiSelPane, PopupMenu } from './multi-sel-pane';
-import ModalDialog, { DialogContent } from './dialogs';
+import { MultiSelPane } from './multi-sel-pane';
+import { keydownApp, keyupApp } from './app-main';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -161,6 +155,12 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         },
       );
     });
+  type StoreActions = typeof actions;
+  type ActionNames = keyof StoreActions;
+  type InitValue<X extends ActionNames> = ActionValue<StoreActions[X]>;
+  type Changes<X extends ActionNames> = {
+    newValue: InitValue<X>, oldValue: InitValue<X>, isInit: boolean
+  };
   const initPromise = Promise.all(initPromises).then(async (actionProps) => {
     const persistentsAction = actionProps
       .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
@@ -219,7 +219,6 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         e: W extends keyof HTMLElementEventType ? HTMLElementEventType[W] : never,
         states: { [key in keyof T]: T[key]['initValue'] },
         store: {
-          // getStates: any,
           getStates: <X extends keyof T | undefined = undefined>(
             stateName?: X,
             cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
@@ -229,6 +228,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
           ) => void,
         },
       ) => void,
+      // binder?: HTMLElement,
     ) {
       const actionName = prefixedAction(name);
       subscribers[actionName] = [...(subscribers[actionName] || []), cb];
@@ -247,6 +247,32 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       return getStates(name, cb) as any;
     },
     actions,
+    matrix<
+      // eslint-disable-next-line no-use-before-define
+      A extends IPublishElement | IPubSubElement,
+      B extends keyof ReturnType<A['actions']>,
+      C extends ReturnType<A['actions']>[B],
+    >(
+      srcElement: A,
+      actionName: B,
+      ...subscribeMethods: ((
+        changes: Changes<B>,
+        e: HTMLElementEventType[ActionEventType<C>],
+        states: { [key in keyof T]: T[key]['initValue'] },
+        store: {
+          getStates: <X extends keyof T | undefined = undefined>(
+            stateName?: X,
+            cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
+          ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
+          dispatch: <Y extends keyof T>(
+            dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+          ) => void,
+        },
+      ) => any)[]
+      // binder?: HTMLElement,
+    ) {
+      subscribeMethods.forEach((subscribeMethod) => this.subscribe(actionName, subscribeMethod));
+    },
   };
 }
 
@@ -304,18 +330,116 @@ export function initComponents(
     ...$headerHistory.actions(),
     ...dragAndDropEvents.actions(),
   };
+  // Dispatch store
   const store = registerActions(actions, options);
-  // Coonect store
-  $appMain.connect(store);
+
+  // $appMain.connect(store);
+  store.matrix($appMain, 'clickAppMain', $appMain.clickAppMain.bind($appMain));
+  store.matrix($appMain, 'keydownMain', keydownApp);
+  store.matrix($appMain, 'keyupMain', keyupApp);
+  store.matrix(
+    $headerLeafs,
+    'setIncludeUrl',
+    $appMain.setIncludeUrl.bind($appMain),
+    $history.setIncludeUrl.bind($history),
+  );
+  store.matrix($formSearch, 'searching', (changes) => toggleClass('searching', changes.newValue)($appMain));
+  store.matrix(dragAndDropEvents, 'dragging', (changes) => toggleClass('drag-start', changes.newValue)($appMain));
+
   $leafs.connect(store);
+  store.matrix($leafs, 'clickLeafs', $leafs.clickItem.bind($leafs));
+  store.matrix($leafs, 'mousedownLeafs', $leafs.mousedownItem.bind($leafs));
+  store.matrix($leafs, 'mouseupLeafs', $leafs.mouseupItem.bind($leafs));
+  store.matrix($leafs, 'wheelLeafs', $leafs.wheelHighlightTab.bind($leafs));
+  store.matrix(
+    $formSearch,
+    'clearSearch',
+    $leafs.clearSearch.bind($leafs),
+    $headerTabs.clearSearch.bind($headerTabs),
+    $tabs.clearSearch.bind($tabs),
+    $history.clearSearch.bind($history),
+  );
+  store.matrix(
+    $appMain,
+    'multiSelPanes',
+    $leafs.multiSelectLeafs.bind($leafs),
+    $tabs.multiSelect.bind($tabs),
+    $headerHistory.multiSelPanes.bind($headerHistory),
+    $history.multiSelect.bind($history),
+    $formSearch.multiSelPanes.bind($formSearch),
+  );
+  store.matrix($folders, 'clickFolders', $leafs.clickItem.bind($leafs));
+  store.matrix($folders, 'mousedownFolders', $leafs.mousedownItem.bind($leafs));
+  store.matrix($folders, 'mouseupFolders', $leafs.mouseupItem.bind($leafs));
+
   $headerLeafs.connect(store);
+
   $folders.connect(store);
+  store.matrix($folders, 'wheelFolders', $folders.wheelHighlightTab.bind($folders));
+
   $headerTabs.connect(store);
+  store.matrix($headerTabs, 'collapseWindowsAll', $headerTabs.switchCollapseIcon.bind($headerTabs));
+  store.matrix($tabs, 'setWheelHighlightTab', $headerTabs.showBookmarkMatches.bind($headerTabs));
+  store.matrix($tabs, 'tabMatches', $headerTabs.showTabMatches.bind($headerTabs));
+  // store.matrix('clearSearch', $headerTabs.clearSearch.bind($headerTabs));
+
   $tabs.connect(store);
+  store.matrix($headerTabs, 'scrollNextWindow', $tabs.switchTabWindow.bind($tabs));
+  store.matrix($headerTabs, 'scrollPrevWindow', $tabs.switchTabWindow.bind($tabs));
+  // store.matrix($tabs, 'clearSearch', $tabs.clearSearch.bind($tabs));
+  store.matrix($tabs, 'clickTabs', $tabs.clickItem.bind($tabs));
+  store.matrix($tabs, 'mousedownTabs', $tabs.mousedownItem.bind($tabs));
+  store.matrix($tabs, 'mouseupTabs', $tabs.mouseupItem.bind($tabs));
+  // store.matrix($tabs, 'multiSelPanes', $tabs.multiSelect.bind($tabs));
+  store.matrix($tabs, 'openTabsFromHistory', $tabs.openTabsFromHistory.bind($tabs));
+  store.matrix($leafs, 'mouseoverLeafs', $tabs.mouseoverLeaf.bind($tabs));
+  store.matrix($leafs, 'mouseoutLeafs', $tabs.mouseoutLeaf.bind($tabs));
+  store.matrix($folders, 'mouseoverFolders', $tabs.mouseoverLeaf.bind($tabs));
+  store.matrix($folders, 'mouseoutFolders', $tabs.mouseoutLeaf.bind($tabs));
+  store.matrix($leafs, 'nextTabByWheel', $tabs.nextTabByWheel.bind($tabs));
+  store.matrix($tabs, 'activateTab', $tabs.activateTab.bind($tabs));
+  store.matrix($headerTabs, 'focusCurrentTab', $tabs.focusCurrentTab.bind($tabs));
+
   $headerHistory.connect(store);
+  store.matrix($headerHistory, 'historyCollapseDate', $headerHistory.toggleCollapseIcon.bind($headerHistory), $history.collapseHistoryDate.bind($history));
+  // store.matrix($appMain, 'multiSelPanes', $headerHistory.multiSelPanes.bind($headerHistory));
+
   $history.connect(store);
-  $formSearch.connect(store);
-  dragAndDropEvents.connect(store);
+  store.matrix($history, 'clickHistory', $history.clickItem.bind($history));
+  // store.matrix($history, 'clearSearch', $history.clearSearch.bind($history));
+  store.matrix($history, 'resetHistory', $history.resetHistory.bind($history));
+  // store.matrix($history, 'historyCollapseDate', $history.collapseHistoryDate.bind($history));
+  // store.matrix($formSearch, 'changeIncludeUrl', (changes) => {
+  //   this.#includeUrl = changes.newValue;
+  // });
+  // store.matrix($headerLeafs, 'setIncludeUrl', (changes) => {
+  //   if (!changes.isInit) {
+  //     this.resetVScroll();
+  //   }
+  // });
+  store.matrix($history, 'mousedownHistory', $history.mousedownItem.bind($history));
+  store.matrix($history, 'mouseupHistory', $history.mouseupItem.bind($history));
+  // store.matrix($history, 'multiSelPanes', $history.multiSelect.bind($history));
+  store.matrix($history, 'openHistories', $history.openHistories.bind($history));
+  store.matrix($history, 'addBookmarksHistories', $history.addBookmarks.bind($history));
+  store.matrix($history, 'openWindowFromHistory', $history.openWindowFromHistory.bind($history));
+
+  // $formSearch.connect(store);
+  store.matrix($formSearch, 'inputQuery', $formSearch.inputQuery.bind($formSearch));
+  store.matrix($formSearch, 'changeIncludeUrl', $formSearch.resetQuery.bind($formSearch));
+  store.matrix($formSearch, 'clearQuery', $formSearch.clearQuery.bind($formSearch));
+  store.matrix($formSearch, 'focusQuery', $formSearch.focusQuery.bind($formSearch));
+  // store.matrix($formSearch, 'multiSelPanes', $formSearch.multiSelPanes.bind($formSearch));
+  store.matrix($formSearch, 'search', $formSearch.reSearchAll.bind($formSearch));
+  store.matrix($formSearch, 're-search', $formSearch.reSearch.bind($formSearch));
+  store.matrix($formSearch, 'setQuery', $formSearch.setQuery.bind($formSearch));
+  store.matrix($formSearch, 'keydownQueries', $formSearch.keydownQueries.bind($formSearch));
+
+  // dragAndDropEvents.connect(store);
+  store.matrix(dragAndDropEvents, 'dragstart', dragAndDropEvents.dragstart.bind(dragAndDropEvents));
+  store.matrix(dragAndDropEvents, 'drop', dragAndDropEvents.drop.bind(dragAndDropEvents));
+  store.matrix(dragAndDropEvents, 'dragend', dragAndDropEvents.dragend.bind(dragAndDropEvents));
+
   // v-scroll initialize
   if (!isSearching) {
     store.dispatch('resetHistory');
@@ -324,15 +448,17 @@ export function initComponents(
 }
 
 export type Store = ReturnType<typeof initComponents>;
+export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
-export type ActionValues = Store['actions'];
-export type ActionNames = keyof Store['actions'];
+export type StoreActions = Store['actions'];
 export type GetStates = Store['getStates'];
 export type States = Parameters<Parameters<Subscribe>[1]>[2];
-// export type Changes<T extends ActionNames> = Parameters<Parameters<Subscribe>[1]>[0];
-export type Changes<T extends ActionNames> = ActionValues[T];
-export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
+export type ActionNames = keyof Store['actions'];
+export type InitValue<T extends ActionNames> = ActionValue<StoreActions[T]>;
+export type Changes<T extends ActionNames> = {
+  newValue: InitValue<T>, oldValue: InitValue<T>, isInit: boolean,
+};
 
 export interface IPublishElement {
   actions(): Actions<any>;
@@ -345,22 +471,3 @@ export interface ISubscribeElement {
 export interface IPubSubElement extends IPublishElement {
   connect(store: Store): void;
 }
-
-customElements.define('app-main', AppMain);
-customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
-customElements.define('body-leafs', Leafs, { extends: 'div' });
-customElements.define('body-folders', Folders, { extends: 'div' });
-customElements.define('open-tab', OpenTab);
-customElements.define('open-window', Window);
-customElements.define('window-header', WindowHeader);
-customElements.define('body-tabs', Tabs, { extends: 'div' });
-customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
-customElements.define('form-search', FormSearch, { extends: 'form' });
-customElements.define('body-history', History, { extends: 'div' });
-customElements.define('header-history', HeaderHistory, { extends: 'div' });
-customElements.define('history-item', HistoryItem);
-customElements.define('bm-leaf', Leaf);
-customElements.define('multi-sel-pane', MultiSelPane);
-customElements.define('popup-menu', PopupMenu);
-customElements.define('dialog-content', DialogContent);
-customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });

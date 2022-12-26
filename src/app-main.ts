@@ -20,7 +20,7 @@ import {
   addClass,
 } from './client';
 import {
-  IPubSubElement, makeAction, States, Store, StoreSub,
+  makeAction, States, StoreSub,
 } from './store';
 import { Leaf } from './bookmarks';
 
@@ -40,7 +40,7 @@ const excludeClasses = [
   'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
-async function keydown(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+export async function keydownApp(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
   if (e.shiftKey && e.ctrlKey) {
     const { bookmarks, tabs, histories } = states.multiSelPanes!;
     if (bookmarks || tabs || histories) {
@@ -50,7 +50,7 @@ async function keydown(_: any, e: KeyboardEvent, states: States, store: StoreSub
   }
 }
 
-async function keyup(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+export async function keyupApp(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
   if (e.key === 'Shift') {
     const { all } = states.multiSelPanes!;
     if (!all) {
@@ -60,7 +60,7 @@ async function keyup(_: any, e: KeyboardEvent, states: States, store: StoreSub) 
   }
 }
 
-export class AppMain extends HTMLElement implements IPubSubElement {
+export class AppMain extends HTMLElement {
   #options!: Options;
   init(options: Options, isSearching: boolean) {
     this.#options = options;
@@ -180,12 +180,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }),
     };
   }
-  connect(store: Store) {
-    store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
-    store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-    store.subscribe('clickAppMain', this.clickAppMain.bind(this));
-    store.subscribe('dragging', (changes) => toggleClass('drag-start', changes.newValue)(this));
-    store.subscribe('keydownMain', keydown);
-    store.subscribe('keyupMain', keyup);
-  }
+  // connect(store: Store) {
+  //   store.subscribe('clickAppMain', this.clickAppMain.bind(this));
+  //   store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
+  //   store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
+  //   store.subscribe('dragging', (changes) => toggleClass('drag-start', changes.newValue)(this));
+  //   store.subscribe('keydownMain', keydownApp);
+  //   store.subscribe('keyupMain', keyupApp);
+  // }
 }

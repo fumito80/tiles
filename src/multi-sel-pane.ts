@@ -174,7 +174,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     $popupMenu.init(this.menuClickHandler.bind(this));
     this.$multiSelPane.init(this, $popupMenu);
   }
-  selectItems({ newValue }: { newValue: Changes<'selectItems'>['initValue'] }, _: any, __: any, store: StoreSub) {
+  selectItems({ newValue }: Changes<'selectItems'>, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
       return;
     }

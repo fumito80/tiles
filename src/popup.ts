@@ -41,6 +41,15 @@ import {
 } from './client';
 import { initComponents } from './store';
 import { AppMain } from './app-main';
+import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
+import { Folders } from './folders';
+import {
+  HeaderTabs, OpenTab, Tabs, Window, WindowHeader,
+} from './tabs';
+import { FormSearch } from './search';
+import { HeaderHistory, History, HistoryItem } from './history';
+import { MultiSelPane, PopupMenu } from './multi-sel-pane';
+import ModalDialog, { DialogContent } from './dialogs';
 
 type Options = State['options'];
 
@@ -208,3 +217,22 @@ chrome.runtime.connect({ name: 'popup' });
 
 // eslint-disable-next-line no-console
 postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' }).then(console.info);
+
+customElements.define('app-main', AppMain);
+customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
+customElements.define('body-leafs', Leafs, { extends: 'div' });
+customElements.define('body-folders', Folders, { extends: 'div' });
+customElements.define('open-tab', OpenTab);
+customElements.define('open-window', Window);
+customElements.define('window-header', WindowHeader);
+customElements.define('body-tabs', Tabs, { extends: 'div' });
+customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
+customElements.define('form-search', FormSearch, { extends: 'form' });
+customElements.define('body-history', History, { extends: 'div' });
+customElements.define('header-history', HeaderHistory, { extends: 'div' });
+customElements.define('history-item', HistoryItem);
+customElements.define('bm-leaf', Leaf);
+customElements.define('multi-sel-pane', MultiSelPane);
+customElements.define('popup-menu', PopupMenu);
+customElements.define('dialog-content', DialogContent);
+customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });

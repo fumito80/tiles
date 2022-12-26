@@ -36,7 +36,7 @@ import {
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
 import {
-  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
+  Dispatch, IPublishElement, makeAction, Store, StoreSub,
 } from './store';
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
@@ -317,7 +317,7 @@ function resetMultiSelect($target: HTMLElement, $selecteds: HTMLElement[], dispa
   return undefined;
 }
 
-export default class DragAndDropEvents implements IPubSubElement {
+export default class DragAndDropEvents implements IPublishElement {
   $appMain: HTMLElement;
   timerDragEnterFolder = 0;
   constructor($appMain: HTMLElement) {
@@ -513,9 +513,9 @@ export default class DragAndDropEvents implements IPubSubElement {
       }),
     };
   }
-  connect(store: Store) {
-    store.subscribe('dragstart', this.dragstart.bind(this));
-    store.subscribe('drop', this.drop.bind(this));
-    store.subscribe('dragend', this.dragend.bind(this));
-  }
+  // connect(store: Store) {
+  //   store.subscribe('dragstart', this.dragstart.bind(this));
+  //   store.subscribe('drop', this.drop.bind(this));
+  //   store.subscribe('dragend', this.dragend.bind(this));
+  // }
 }

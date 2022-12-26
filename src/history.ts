@@ -120,7 +120,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const selecteds = this.getSelecteds(dragElementIds);
     return this.getHistoriesByIds(selecteds).then(map(({ url }) => url!));
   }
-  async openHistories({ newValue }: { newValue: Changes<'openHistories'>['initValue'] }) {
+  async openHistories({ newValue }: Changes<'openHistories'>) {
     const { windowId, index, incognito } = newValue!;
     const urls = await this.getSelectedUrls(newValue?.elementIds!);
     if (!windowId) {
@@ -129,7 +129,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     }
     postMessage({ type: CliMessageTypes.openUrls, payload: { urls, windowId, index } });
   }
-  async addBookmarks({ newValue }: { newValue: Changes<'addBookmarksHistories'>['initValue'] }) {
+  async addBookmarks({ newValue }: Changes<'addBookmarksHistories'>) {
     const { bookmarkDest } = newValue!;
     const selecteds = this.getSelecteds(newValue?.elementIds!);
     const ids = bookmarkDest.index == null ? selecteds : selecteds.reverse();
@@ -547,6 +547,14 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.scrollTop = scrollTop;
     this.dispatchEvent(new Event('scroll'));
   }
+  setIncludeUrl(changes: { isInit: boolean }) {
+    if (!changes.isInit) {
+      this.resetVScroll();
+    }
+  }
+  changeIncludeUrl(changes: Changes<'changeIncludeUrl'>) {
+    this.#includeUrl = changes.newValue;
+  }
   // Store
   override actions() {
     return {
@@ -597,27 +605,27 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }),
     };
   }
-  override connect(store: Store) {
-    super.connect(store);
-    store.subscribe('clickHistory', this.clickItem.bind(this));
-    store.subscribe('clearSearch', this.clearSearch.bind(this));
-    store.subscribe('resetHistory', this.resetHistory.bind(this));
-    store.subscribe('historyCollapseDate', this.collapseHistoryDate.bind(this));
-    store.subscribe('changeIncludeUrl', (changes) => {
-      this.#includeUrl = changes.newValue;
-    });
-    store.subscribe('setIncludeUrl', (changes) => {
-      if (!changes.isInit) {
-        this.resetVScroll();
-      }
-    });
-    store.subscribe('mousedownHistory', this.mousedownItem.bind(this));
-    store.subscribe('mouseupHistory', this.mouseupItem.bind(this));
-    store.subscribe('multiSelPanes', this.multiSelect.bind(this));
-    store.subscribe('openHistories', this.openHistories.bind(this));
-    store.subscribe('addBookmarksHistories', this.addBookmarks.bind(this));
-    store.subscribe('openWindowFromHistory', this.openWindowFromHistory.bind(this));
-  }
+  // override connect(store: Store) {
+  //   super.connect(store);
+  //   store.subscribe('clickHistory', this.clickItem.bind(this));
+  //   store.subscribe('clearSearch', this.clearSearch.bind(this));
+  //   store.subscribe('resetHistory', this.resetHistory.bind(this));
+  //   store.subscribe('historyCollapseDate', this.collapseHistoryDate.bind(this));
+  //   store.subscribe('changeIncludeUrl', (changes) => {
+  //     this.#includeUrl = changes.newValue;
+  //   });
+  //   store.subscribe('setIncludeUrl', (changes) => {
+  //     if (!changes.isInit) {
+  //       this.resetVScroll();
+  //     }
+  //   });
+  //   store.subscribe('mousedownHistory', this.mousedownItem.bind(this));
+  //   store.subscribe('mouseupHistory', this.mouseupItem.bind(this));
+  //   store.subscribe('multiSelPanes', this.multiSelect.bind(this));
+  //   store.subscribe('openHistories', this.openHistories.bind(this));
+  //   store.subscribe('addBookmarksHistories', this.addBookmarks.bind(this));
+  //   store.subscribe('openWindowFromHistory', this.openWindowFromHistory.bind(this));
+  // }
 }
 
 export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
@@ -627,7 +635,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   toggleCollapseIcon({ newValue: collapsed }: { newValue: boolean }) {
     toggleClass('date-collapsed', collapsed)(this);
   }
-  multiSelPanes({ newValue }: { newValue: NonNullable<Changes<'multiSelPanes'>['initValue']> }) {
+  multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
     const isMultiSelect = Object.values(newValue).some((value) => !!value);
     $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
   }
@@ -661,8 +669,8 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   }
   override connect(store: Store) {
     super.connect(store);
-    store.subscribe('historyCollapseDate', this.toggleCollapseIcon.bind(this));
-    store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
+    // store.subscribe('historyCollapseDate', this.toggleCollapseIcon.bind(this));
+    // store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
     this.store = store;
   }
 }
