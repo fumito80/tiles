@@ -97,6 +97,7 @@ export const initialOptions = {
   exclusiveOpenBmFolderTree: true,
   bmAutoFindTabs: true,
   bmAutoFindTabsDelay: '500',
+  restoreSearching: true,
 };
 
 export type Panes = typeof panes[number];

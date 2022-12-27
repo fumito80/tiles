@@ -175,7 +175,7 @@ function init([{
   settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   const promiseInitHistory = getHistoryDataByWorker();
-  const isSearching = lastSearchWord.length > 1;
+  const isSearching = options.restoreSearching && lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
   const components = initComponents(
     compos,

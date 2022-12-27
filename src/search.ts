@@ -54,7 +54,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$inputQuery = $byClass<HTMLInputElement>('query', this)!;
     this.$clear = $byClass('clear-search', this)!;
     this.$leafs = $byClass('leafs')!;
-    this.$inputQuery.value = lastSearchWord;
+    this.$inputQuery.value = options.restoreSearching ? lastSearchWord : '';
     this.addEventListener('submit', (e) => this.submitForm(e, options));
     this.$queries = $byClass('queries', this)!;
     this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
