@@ -12,9 +12,8 @@ import {
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
-  Changes,
-  Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
-} from './store';
+  Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
+} from './popup';
 import {
   MulitiSelectables, Options, PromiseInitTabs, State,
 } from './types';
@@ -776,21 +775,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     super.connect(store);
     this.#initPromise.then(() => {
       this.getWindows().forEach(($window) => $window.connect(store));
-      // store.subscribe('scrollNextWindow', this.switchTabWindow.bind(this));
-      // store.subscribe('scrollPrevWindow', this.switchTabWindow.bind(this));
-      // store.subscribe('clearSearch', this.clearSearch.bind(this));
-      // store.subscribe('clickTabs', this.clickItem.bind(this));
-      // store.subscribe('mousedownTabs', this.mousedownItem.bind(this));
-      // store.subscribe('mouseupTabs', this.mouseupItem.bind(this));
-      // store.subscribe('multiSelPanes', this.multiSelect.bind(this));
-      // store.subscribe('openTabsFromHistory', this.openTabsFromHistory.bind(this));
-      // store.subscribe('mouseoverLeafs', this.mouseoverLeaf.bind(this));
-      // store.subscribe('mouseoutLeafs', this.mouseoutLeaf.bind(this));
-      // store.subscribe('mouseoverFolders', this.mouseoverLeaf.bind(this));
-      // store.subscribe('mouseoutFolders', this.mouseoutLeaf.bind(this));
-      // store.subscribe('nextTabByWheel', this.nextTabByWheel.bind(this));
-      // store.subscribe('activateTab', this.activateTab.bind(this));
-      // store.subscribe('focusCurrentTab', this.focusCurrentTab.bind(this));
     });
   }
 }
@@ -867,11 +851,4 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
       }),
     };
   }
-  // override connect(store: Store) {
-  //   super.connect(store);
-  //   store.subscribe('collapseWindowsAll', this.switchCollapseIcon.bind(this));
-  //   store.subscribe('setWheelHighlightTab', this.showBookmarkMatches.bind(this));
-  //   store.subscribe('tabMatches', this.showTabMatches.bind(this));
-  //   store.subscribe('clearSearch', this.clearSearch.bind(this));
-  // }
 }

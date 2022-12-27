@@ -50,7 +50,11 @@ import { HeaderHistory, History, HistoryItem } from './history';
 import { MultiSelPane, PopupMenu } from './multi-sel-pane';
 import ModalDialog, { DialogContent } from './dialogs';
 import { storeMapping } from './store-mapping';
-import { initComponents } from './store';
+import {
+  ActionValue, initComponents, IPublishElement, makeAction,
+} from './store';
+
+export { makeAction, IPublishElement };
 
 type Options = State['options'];
 
@@ -173,7 +177,7 @@ function init([{
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
-  const { store, ...rest } = initComponents(
+  const components = initComponents(
     compos,
     options,
     settings,
@@ -183,7 +187,7 @@ function init([{
     lastSearchWord,
     isSearching,
   );
-  storeMapping(store, rest);
+  const store = storeMapping(options, components);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState, isSearching);
@@ -242,3 +246,24 @@ customElements.define('multi-sel-pane', MultiSelPane);
 customElements.define('popup-menu', PopupMenu);
 customElements.define('dialog-content', DialogContent);
 customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
+
+export type Store = ReturnType<typeof init>;
+export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
+export type Dispatch = Store['dispatch'];
+export type Subscribe = Store['subscribe'];
+export type StoreActions = Store['actions'];
+export type GetStates = Store['getStates'];
+export type States = Parameters<Parameters<Subscribe>[1]>[2];
+export type ActionNames = keyof Store['actions'];
+export type InitValue<T extends ActionNames> = ActionValue<StoreActions[T]>;
+export type Changes<T extends ActionNames> = {
+  newValue: InitValue<T>, oldValue: InitValue<T>, isInit: boolean,
+};
+
+export interface ISubscribeElement {
+  connect(store: Store): void;
+}
+
+export interface IPubSubElement extends IPublishElement {
+  connect(store: Store): void;
+}

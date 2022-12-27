@@ -20,10 +20,10 @@ import {
   addClass,
 } from './client';
 import {
-  Changes,
+  makeAction, Changes,
   IPubSubElement,
-  makeAction, States, StoreSub,
-} from './store';
+  States, StoreSub,
+} from './popup';
 import { Leaf } from './bookmarks';
 
 const excludeClasses = [
@@ -189,12 +189,5 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     };
   }
   // eslint-disable-next-line class-methods-use-this
-  connect() {
-  //   store.subscribe('clickAppMain', this.clickAppMain.bind(this));
-  //   store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
-  //   store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
-  //   store.subscribe('dragging', (changes) => toggleClass('drag-start', changes.newValue)(this));
-  //   store.subscribe('keydownMain', keydownApp);
-  //   store.subscribe('keyupMain', keyupApp);
-  }
+  connect() {}
 }

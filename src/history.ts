@@ -1,12 +1,9 @@
-/* eslint-disable max-classes-per-file */
-
 import {
   CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, pastMSec, State,
 } from './types';
 import {
-  Changes,
-  Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
-} from './store';
+  Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
+} from './popup';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
@@ -605,27 +602,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }),
     };
   }
-  // override connect(store: Store) {
-  //   super.connect(store);
-  //   store.subscribe('clickHistory', this.clickItem.bind(this));
-  //   store.subscribe('clearSearch', this.clearSearch.bind(this));
-  //   store.subscribe('resetHistory', this.resetHistory.bind(this));
-  //   store.subscribe('historyCollapseDate', this.collapseHistoryDate.bind(this));
-  //   store.subscribe('changeIncludeUrl', (changes) => {
-  //     this.#includeUrl = changes.newValue;
-  //   });
-  //   store.subscribe('setIncludeUrl', (changes) => {
-  //     if (!changes.isInit) {
-  //       this.resetVScroll();
-  //     }
-  //   });
-  //   store.subscribe('mousedownHistory', this.mousedownItem.bind(this));
-  //   store.subscribe('mouseupHistory', this.mouseupItem.bind(this));
-  //   store.subscribe('multiSelPanes', this.multiSelect.bind(this));
-  //   store.subscribe('openHistories', this.openHistories.bind(this));
-  //   store.subscribe('addBookmarksHistories', this.addBookmarks.bind(this));
-  //   store.subscribe('openWindowFromHistory', this.openWindowFromHistory.bind(this));
-  // }
 }
 
 export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
@@ -669,8 +645,6 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   }
   override connect(store: Store) {
     super.connect(store);
-    // store.subscribe('historyCollapseDate', this.toggleCollapseIcon.bind(this));
-    // store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
     this.store = store;
   }
 }

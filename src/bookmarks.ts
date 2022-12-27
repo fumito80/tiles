@@ -15,7 +15,7 @@ import {
 import { ISearchable, SearchParams } from './search';
 import {
   ISubscribeElement, makeAction, Store, Dispatch, States, Changes, StoreSub,
-} from './store';
+} from './popup';
 import {
   AbstractConstructor, MulitiSelectables, OpenBookmarkType, Options, State,
 } from './types';
@@ -431,15 +431,6 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
   }
   override connect(store: Store) {
     super.connect(store);
-    // store.subscribe('clearSearch', this.clearSearch.bind(this));
-    // store.subscribe('clickLeafs', this.clickItem.bind(this));
-    // store.subscribe('mousedownLeafs', this.mousedownItem.bind(this));
-    // store.subscribe('mouseupLeafs', this.mouseupItem.bind(this));
-    // store.subscribe('multiSelPanes', this.multiSelectLeafs.bind(this));
-    // store.subscribe('clickFolders', this.clickItem.bind(this));
-    // store.subscribe('mousedownFolders', this.mousedownItem.bind(this));
-    // store.subscribe('mouseupFolders', this.mouseupItem.bind(this));
-    // store.subscribe('wheelLeafs', this.wheelHighlightTab.bind(this));
     setLeafMenu(this.$leafMenu, this.#options, store.dispatch);
   }
 }

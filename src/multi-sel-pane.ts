@@ -5,10 +5,8 @@ import {
   addBookmark, addClass, addFolder, hasClass, rmClass, showMenu,
 } from './client';
 import {
-  Changes,
-  Dispatch,
-  IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
-} from './store';
+  Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
+} from './popup';
 import { pick } from './common';
 
 export function getSelecteds() {

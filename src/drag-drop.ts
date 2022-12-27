@@ -37,7 +37,7 @@ import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
 import {
   Dispatch, IPubSubElement, makeAction, Store, StoreSub,
-} from './store';
+} from './popup';
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
 
@@ -514,9 +514,4 @@ export default class DragAndDropEvents implements IPubSubElement {
     };
   }
   connect() {}
-  // connect(store: Store) {
-  //   store.subscribe('dragstart', this.dragstart.bind(this));
-  //   store.subscribe('drop', this.drop.bind(this));
-  //   store.subscribe('dragend', this.dragend.bind(this));
-  // }
 }

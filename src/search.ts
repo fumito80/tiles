@@ -1,7 +1,6 @@
 import {
-  Changes,
-  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
-} from './store';
+  Changes, Dispatch, IPubSubElement, makeAction, Store, StoreSub,
+} from './popup';
 import { getLocal, setLocal, when } from './common';
 import {
   $, $byClass,
@@ -277,19 +276,4 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   }
   // eslint-disable-next-line class-methods-use-this
   connect() {}
-  // connect(store: Store) {
-  //   store.subscribe('inputQuery', (_, e) => {
-  //     const { value } = (e.target as HTMLInputElement);
-  //     this.search(value, store.dispatch);
-  //   });
-  //   store.subscribe('changeIncludeUrl', this.resetQuery.bind(this));
-  //   store.subscribe('clearQuery', this.clearQuery.bind(this));
-  //   store.subscribe('focusQuery', this.focusQuery.bind(this));
-  //   store.subscribe('multiSelPanes', this.multiSelPanes.bind(this));
-  //   store.subscribe('search', (changes) => this.search(changes.newValue ||
-  //  this.$inputQuery.value, store.dispatch));
-  //   store.subscribe('re-search', this.reSearch.bind(this));
-  //   store.subscribe('setQuery', this.setQuery.bind(this));
-  //   store.subscribe('keydownQueries', this.keydownQueries.bind(this));
-  // }
 }

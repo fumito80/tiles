@@ -6,8 +6,9 @@ import DragAndDropEvents from './drag-drop';
 import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { FormSearch } from './search';
-import { Store } from './store';
+import { registerActions } from './store';
 import { HeaderTabs, Tabs } from './tabs';
+import { Options } from './types';
 
 type Components = {
   $appMain: AppMain,
@@ -22,7 +23,7 @@ type Components = {
   dragAndDropEvents: DragAndDropEvents,
 };
 
-export function storeMapping(store: Store, {
+export function storeMapping(options: Options, {
   $appMain,
   $headerLeafs,
   $leafs,
@@ -34,6 +35,22 @@ export function storeMapping(store: Store, {
   $formSearch,
   dragAndDropEvents,
 }: Components) {
+  // Register actions
+  const actions = {
+    ...$appMain.actions(),
+    ...$leafs.actions(),
+    ...$headerLeafs.actions(),
+    ...$folders.actions(),
+    ...$headerTabs.actions(),
+    ...$tabs.actions(),
+    ...$formSearch.actions(),
+    ...$history.actions(),
+    ...$headerHistory.actions(),
+    ...dragAndDropEvents.actions(),
+  };
+  // Dispatch store
+  const store = registerActions(actions, options);
+
   store.subscribeContext($appMain)
     .map($appMain, 'clickAppMain', $appMain.clickAppMain)
     .map($appMain, 'keydownMain', $appMain.keydown)
