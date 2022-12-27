@@ -377,7 +377,9 @@ export function resizeSplitHandler(
 ) {
   return (e: MouseEvent) => {
     const className = whichClass(splitterClasses, $splitter)!;
-    const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, 100);
+    const isTabs = hasClass($targetPane, 'tabs');
+    const minWidth = isTabs ? 220 : 100;
+    const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, minWidth);
     if (document.body.offsetWidth < (width + subWidth)) {
       return;
     }

@@ -308,6 +308,7 @@ export function initComponents(
     options,
     isSearching,
     promiseInitTabs,
+    settings.windowOrderAsc,
   );
   $leafs.init(options);
   $folders.init(options);

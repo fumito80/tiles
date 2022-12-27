@@ -45,6 +45,7 @@ export const initialSettings = {
     dark: '',
     other: '',
   },
+  windowOrderAsc: false,
 };
 
 export type Settings = typeof initialSettings;

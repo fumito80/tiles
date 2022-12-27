@@ -135,6 +135,25 @@ open-tab {
     color: $common-marker;
     font-size: 1.2em;
   }
+
+  .new-window-plus {
+    display: none;
+    transition: all 0.05s ease-in-out;
+  }
+
+  &.window-order-asc {
+    .new-window-plus {
+      display: flex;
+    }
+
+    ~.tabs>.new-window {
+      display: none;
+    }
+
+    >.tab-order-asc {
+      transform: rotate(180deg);
+    }
+  }
 }
 
 // Tabs collapse
@@ -668,6 +687,12 @@ app-main {
         background-color: $drop-folder-bgcolor-light;
       }
     }
+  }
+
+  .header-tabs .new-window-plus {
+    /* max-width: 200px; */
+    height: 80%;
+    width: 100%;
   }
 }
 

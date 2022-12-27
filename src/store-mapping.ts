@@ -101,24 +101,26 @@ export function storeMapping(options: Options, {
     .map([$folders, 'wheelFolders'], $folders.wheelHighlightTab);
 
   store.subscribeContext($headerTabs)
-    .map([$headerTabs, 'collapseWindowsAll'], $headerTabs.switchCollapseIcon)
+    .map([$headerTabs, 'collapseWindowsAll'], $headerTabs.toggleTabCollapsed)
     .map([$tabs, 'setWheelHighlightTab'], $headerTabs.showBookmarkMatches)
-    .map([$tabs, 'tabMatches'], $headerTabs.showTabMatches);
+    .map([$tabs, 'tabMatches'], $headerTabs.showTabMatches)
+    .map([$headerTabs, 'toggleTabOrderHeader'], $headerTabs.toggleTabOrder);
 
   store.subscribeContext($tabs)
     .map([$headerTabs, 'scrollNextWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'scrollPrevWindow'], $tabs.switchTabWindow)
+    .map([$headerTabs, 'focusCurrentTab'], $tabs.focusCurrentTab)
+    .map([$tabs, 'toggleTabOrder'], $tabs.toggleTabOrder)
     .map([$tabs, 'clickTabs'], $tabs.clickItem)
     .map([$tabs, 'mousedownTabs'], $tabs.mousedownItem)
     .map([$tabs, 'mouseupTabs'], $tabs.mouseupItem)
     .map([$tabs, 'openTabsFromHistory'], $tabs.openTabsFromHistory)
+    .map([$tabs, 'activateTab'], $tabs.activateTab)
     .map([$leafs, 'mouseoverLeafs'], $tabs.mouseoverLeaf)
     .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeaf)
-    .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
-    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf)
     .map([$leafs, 'nextTabByWheel'], $tabs.nextTabByWheel)
-    .map([$tabs, 'activateTab'], $tabs.activateTab)
-    .map([$headerTabs, 'focusCurrentTab'], $tabs.focusCurrentTab);
+    .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
+    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
   store.subscribeContext($headerHistory);
 

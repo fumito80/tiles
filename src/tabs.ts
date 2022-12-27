@@ -8,7 +8,7 @@ import {
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
-  makeStyleIcon, pipe, when,
+  makeStyleIcon, pipe, setLocal, when,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -373,18 +373,22 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #options!: Options;
   #promiseSwitchTabEnd = Promise.resolve();
   #bmAutoFindTabsDelay = 500;
+  #tabOrderAsc!: boolean;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
     options: Options,
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
+    tabOrderAsc: boolean,
   ) {
     this.setEvent();
     this.#tabsWrap = this.firstElementChild as HTMLElement;
     this.#options = options;
+    this.#tabOrderAsc = tabOrderAsc;
     this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
-      const $windows = initTabs.map((win) => {
+      const ordered = tabOrderAsc ? initTabs.reverse() : initTabs;
+      const $windows = ordered.map((win) => {
         const $window = document.importNode($tmplWindow, true);
         return $window.init(
           win.windowId,
@@ -716,6 +720,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       });
     smoothSroll($currentWindow, scrollTop).then(setAnimationClass('hilite'));
   }
+  toggleTabOrder() {
+    this.getWindows().forEach((win) => {
+      this.#tabsWrap.insertAdjacentElement('afterbegin', win);
+    });
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -769,6 +778,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           focused?: boolean,
         },
       }),
+      toggleTabOrder: makeAction({
+        initValue: this.#tabOrderAsc,
+      }),
     };
   }
   override connect(store: Store) {
@@ -787,6 +799,8 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $buttonNextWin!: HTMLElement;
   private $searchesTabs!: HTMLElement;
   private $searchesBms!: HTMLElement;
+  private $tabOrderAsc!: HTMLElement;
+  // private $newWindowPlus!: HTMLElement;
   readonly multiDeletesTitle = 'Close selected tabs';
   override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
     super.init(settings, $tmplMultiSelPane);
@@ -795,13 +809,26 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$buttonNextWin = $byClass('win-next', this)!;
     this.$searchesTabs = $byClass('searches-tabs', this)!;
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
+    this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
+    // this.$newWindowPlus = $byClass('new-window-plus', this)!;
     this.#collapsed = collapsed;
+    toggleClass('window-order-asc', settings.windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
-    this.switchCollapseIcon({ newValue: collapsed });
+    this.toggleTabCollapsed({ newValue: collapsed });
+    $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
-  switchCollapseIcon({ newValue: collapsed }: { newValue: boolean }) {
+  toggleTabCollapsed({ newValue: collapsed }: { newValue: boolean }) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
     this.$buttonCollapse.blur();
+  }
+  toggleTabOrder(_: any, __: any, ___: any, store: StoreSub) {
+    getLocal('settings').then(({ settings }) => {
+      const windowOrderAsc = !settings.windowOrderAsc;
+      toggleClass('window-order-asc', windowOrderAsc)(this);
+      this.$tabOrderAsc.blur();
+      setLocal({ settings: { ...settings, windowOrderAsc } });
+      store.dispatch('toggleTabOrder', windowOrderAsc);
+    });
   }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
@@ -846,6 +873,11 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
       }),
       focusCurrentTab: makeAction({
         target: $byClass('focus-current-tab', this)!,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      toggleTabOrderHeader: makeAction({
+        target: this.$tabOrderAsc,
         eventType: 'click',
         eventOnly: true,
       }),
