@@ -193,6 +193,23 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
     mousedown(e) {
       e.preventDefault();
     },
+    mouseover(e) {
+      const { value = '' } = (e.target as HTMLElement).dataset;
+      if (value === 'bm-find-domain' || value === 'bm-find-prefix') {
+        const $leaf = (e.target as HTMLElement).closest('bm-leaf');
+        if (!($leaf instanceof Leaf)) {
+          return;
+        }
+        const { url } = $leaf;
+        dispatch('mouseoverMenuTabsFind', { menu: value, url }, true);
+      }
+    },
+    mouseout(e) {
+      const { value = '' } = (e.target as HTMLElement).dataset;
+      if (value === 'bm-find-domain' || value === 'bm-find-prefix') {
+        dispatch('mouseoutMenuTabsFind', undefined, true);
+      }
+    },
   });
 }
 
@@ -427,6 +444,13 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       openBookmarks: makeAction({
         initValue: [] as string[],
       }),
+      mouseoverMenuTabsFind: makeAction({
+        initValue: {
+          menu: undefined as undefined | 'bm-find-domain' | 'bm-find-prefix',
+          url: '',
+        },
+      }),
+      mouseoutMenuTabsFind: {},
     };
   }
   override connect(store: Store) {

@@ -94,7 +94,7 @@ function saveQuery() {
     }
     const queries = [
       lastSearchWord,
-      ...rest.queries!
+      ...(rest.queries || [])
         .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
         .slice(0, 200),
     ];

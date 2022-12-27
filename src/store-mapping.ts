@@ -119,6 +119,8 @@ export function storeMapping(options: Options, {
     .map([$leafs, 'mouseoverLeafs'], $tabs.mouseoverLeaf)
     .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeaf)
     .map([$leafs, 'nextTabByWheel'], $tabs.nextTabByWheel)
+    .map([$leafs, 'mouseoverMenuTabsFind'], $tabs.mouseoverMenuTabsFind)
+    .map([$leafs, 'mouseoutMenuTabsFind'], $tabs.clearFocus)
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 

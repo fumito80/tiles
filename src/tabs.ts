@@ -575,16 +575,29 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const count = precount ?? $$byClass('selected', this).length;
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
-  getTabFinder(srcUrl: string, bmId = '') {
+  findTabs(finder: (tab: OpenTab) => boolean, dispatch: Dispatch, leafId?: string) {
+    const [$find1st, ...rest] = this.getAllTabs((tab) => !hasClass(tab, 'unmatch')).filter(finder).map((tab) => tab.setHighlight(true));
+    if ($find1st) {
+      $find1st.setFocus(true);
+      this.scrollToFocused($find1st);
+    }
+    const searches = [$find1st, ...rest].length;
+    dispatch('setWheelHighlightTab', { leafId, searches });
+  }
+  // eslint-disable-next-line class-methods-use-this
+  getModeTabFinder(srcUrl: string, mode: string) {
+    const [, domainSrc] = extractDomain(srcUrl);
+    return mode === 'prefix'
+      ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
+      : (tab: OpenTab) => {
+        const [, domain] = extractDomain(tab.url);
+        return domain === domainSrc;
+      };
+  }
+  async getTabFinder(srcUrl: string, bmId = '') {
     return getLocal('bmFindTabMatchMode').then(({ bmFindTabMatchMode = {} }) => {
-      const [, domainSrc] = extractDomain(srcUrl);
       const mode = bmFindTabMatchMode[bmId] || this.#options.findTabsMatches;
-      return mode === 'prefix'
-        ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
-        : (tab: OpenTab) => {
-          const [, domain] = extractDomain(tab.url);
-          return domain === domainSrc;
-        };
+      return this.getModeTabFinder(srcUrl, mode);
     });
   }
   scrollToFocused($target: OpenTab) {
@@ -608,19 +621,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       if (dragging) {
         return;
       }
-      const $anchor = $leaf.firstElementChild as HTMLAnchorElement;
-      const [, url] = $anchor.title?.split('\n') || [];
-      if (!url) {
-        return;
-      }
-      const finder = await this.getTabFinder(url, $leaf.id);
-      const [$find1st, ...rest] = this.getAllTabs((tab) => !hasClass(tab, 'unmatch')).filter(finder).map((tab) => tab.setHighlight(true));
-      if ($find1st) {
-        $find1st.setFocus(true);
-        this.scrollToFocused($find1st);
-        const searches = [$find1st, ...rest].length;
-        store.dispatch('setWheelHighlightTab', { leafId: $leaf.id, searches });
-      }
+      const finder = await this.getTabFinder($leaf.url, $leaf.id);
+      this.findTabs(finder, store.dispatch, $leaf.id);
     }, this.#bmAutoFindTabsDelay);
   }
   mouseoutLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
@@ -629,6 +631,13 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
+    this.clearFocus(undefined, undefined, undefined, store);
+  }
+  mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
+    const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
+    this.findTabs(finder, store.dispatch);
+  }
+  clearFocus(_: any, __: any, ___: any, store: StoreSub) {
     this.getAllTabs().forEach(($tab) => {
       $tab.setFocus(false);
       $tab.setHighlight(false);

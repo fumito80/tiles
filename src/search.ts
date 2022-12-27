@@ -73,7 +73,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.classList.remove('show-queries');
       return undefined;
     }
-    return getLocal('queries').then(({ queries }) => {
+    return getLocal('queries').then(({ queries = [] }) => {
       const value = this.$inputQuery.value.trim();
       let targets = queries;
       if (value) {
