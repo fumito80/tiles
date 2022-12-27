@@ -137,22 +137,29 @@ open-tab {
   }
 
   .new-window-plus {
-    display: none;
-    transition: all 0.05s ease-in-out;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease-in-out;
   }
 
   &.window-order-asc {
     .new-window-plus {
       display: flex;
+      opacity: 1;
+      pointer-events: all;
     }
 
     ~.tabs>.new-window {
       display: none;
     }
 
-    >.tab-order-asc {
-      transform: rotate(180deg);
+    >.tab-order-asc>i {
+      transform: scale(1, -1);
     }
+  }
+
+  .tab-order-asc>i {
+    transition: transform .2s;
   }
 }
 
@@ -530,29 +537,35 @@ app-main.drag-start>.tabs {
   }
 }
 
-.draggable-clone window-header {
-  background-position-x: 24px;
-  padding-left: 22px;
-  max-width: 160px;
+.draggable-clone {
+  window-header {
+    background-position-x: 24px;
+    padding-left: 22px;
+    max-width: 160px;
 
-  &::before {
-    content: '\e90f';
-    left: 5px;
-    position: absolute;
-    font-family: glyphs;
-    color: $dark-font-color;
+    &::before {
+      content: '\e90f';
+      left: 5px;
+      position: absolute;
+      font-family: glyphs;
+      color: $dark-font-color;
+    }
+
+    .icon-incognito {
+      margin-left: 24px;
+
+      +.window-title {
+        text-indent: 2px;
+      }
+
+      &:not(.show)+.window-title {
+        text-indent: 20px;
+      }
+    }
   }
 
-  .icon-incognito {
-    margin-left: 24px;
-
-    +.window-title {
-      text-indent: 2px;
-    }
-
-    &:not(.show)+.window-title {
-      text-indent: 20px;
-    }
+  >open-tab {
+    display: flex;
   }
 }
 
@@ -679,20 +692,34 @@ app-main {
     >.new-window-plus {
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.1);
-      border-radius: 5px;
-      transition: all 0.05s ease-in-out;
-
-      &.drag-enter {
-        background-color: $drop-folder-bgcolor-light;
-      }
     }
   }
 
-  .header-tabs .new-window-plus {
-    /* max-width: 200px; */
-    height: 80%;
-    width: 100%;
+  .new-window-plus {
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.1);
+    transition: all 0.05s ease-in-out;
+
+    &.drag-enter {
+      background-color: $drop-folder-bgcolor-light;
+    }
+  }
+
+  .header-tabs {
+    .new-window-plus {
+      position: absolute;
+      left: 1.5em;
+      right: 10px;
+      width: auto;
+      height: 80%;
+    }
+
+    &.window-order-asc {
+      button:not(.new-window-plus) {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
   }
 }
 

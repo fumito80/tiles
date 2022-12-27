@@ -580,9 +580,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if ($find1st) {
       $find1st.setFocus(true);
       this.scrollToFocused($find1st);
+      const searches = [$find1st, ...rest].length;
+      dispatch('setWheelHighlightTab', { leafId, searches });
     }
-    const searches = [$find1st, ...rest].length;
-    dispatch('setWheelHighlightTab', { leafId, searches });
   }
   // eslint-disable-next-line class-methods-use-this
   getModeTabFinder(srcUrl: string, mode: string) {
