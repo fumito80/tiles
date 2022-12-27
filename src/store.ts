@@ -244,39 +244,12 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     ): U extends keyof T ? Promise<ActionValue<T[U]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }> {
       return getStates(name, cb) as any;
     },
-    matrix<
-      // eslint-disable-next-line no-use-before-define
-      A extends IPublishElement | IPubSubElement,
-      B extends keyof ReturnType<A['actions']>,
-      C extends ReturnType<A['actions']>[B],
-    >(
-      srcElement: A,
-      actionName: B,
-      ...subscribeMethods: ((
-        changes: Changes<B>,
-        e: HTMLElementEventType[ActionEventType<C>],
-        states: { [key in keyof T]: T[key]['initValue'] },
-        store: {
-          getStates: <X extends keyof T | undefined = undefined>(
-            stateName?: X,
-            cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
-          ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
-          dispatch: <Y extends keyof T>(
-            dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
-          ) => void,
-        },
-      ) => any)[]
-    ) {
-      subscribeMethods.forEach((subscribeMethod) => this.subscribe(actionName, subscribeMethod));
-    },
-    // eslint-disable-next-line no-use-before-define
     subscribeContext(source?: ISubscribeElement) {
-      // eslint-disable-next-line no-use-before-define
       source?.connect(this as unknown as Store);
       // eslint-disable-next-line no-use-before-define
       const map = <A extends IPublishElement | IPubSubElement, B extends keyof ReturnType<A['actions']>>(
-        srcElement: A,
-        actionName: B,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        [srcElement, actionName]: [A, B],
         ...subscribeMethods: ((
           changes: Changes<B>,
           e: HTMLElementEventType[ActionEventType<ReturnType<A['actions']>[B]>],
