@@ -39,7 +39,6 @@ import {
   toggleElement,
   $byTag,
 } from './client';
-import { initComponents } from './store';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
 import { Folders } from './folders';
@@ -50,6 +49,8 @@ import { FormSearch } from './search';
 import { HeaderHistory, History, HistoryItem } from './history';
 import { MultiSelPane, PopupMenu } from './multi-sel-pane';
 import ModalDialog, { DialogContent } from './dialogs';
+import { storeMapping } from './store-mapping';
+import { initComponents } from './store';
 
 type Options = State['options'];
 
@@ -172,7 +173,7 @@ function init([{
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
-  const store = initComponents(
+  const { store, ...rest } = initComponents(
     compos,
     options,
     settings,
@@ -182,6 +183,7 @@ function init([{
     lastSearchWord,
     isSearching,
   );
+  storeMapping(store, rest);
   setOptions(settings, options);
   setBookmarks(htmlBookmarks);
   setBookmarksState(clientState, isSearching);
@@ -189,6 +191,10 @@ function init([{
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setExternalUrl(options);
   setCloseApp();
+  if (!isSearching) {
+    // v-scroll initialize
+    store.dispatch('resetHistory');
+  }
   return store;
 }
 

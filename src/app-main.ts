@@ -20,6 +20,8 @@ import {
   addClass,
 } from './client';
 import {
+  Changes,
+  IPubSubElement,
   makeAction, States, StoreSub,
 } from './store';
 import { Leaf } from './bookmarks';
@@ -40,27 +42,7 @@ const excludeClasses = [
   'open-new-tab', 'open-new-window', 'open-incognito',
 ];
 
-export async function keydownApp(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
-  if (e.shiftKey && e.ctrlKey) {
-    const { bookmarks, tabs, histories } = states.multiSelPanes!;
-    if (bookmarks || tabs || histories) {
-      return;
-    }
-    store.dispatch('multiSelPanes', { all: true });
-  }
-}
-
-export async function keyupApp(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
-  if (e.key === 'Shift') {
-    const { all } = states.multiSelPanes!;
-    if (!all) {
-      return;
-    }
-    store.dispatch('multiSelPanes', { all: false });
-  }
-}
-
-export class AppMain extends HTMLElement {
+export class AppMain extends HTMLElement implements IPubSubElement {
   #options!: Options;
   init(options: Options, isSearching: boolean) {
     this.#options = options;
@@ -113,6 +95,32 @@ export class AppMain extends HTMLElement {
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
+  }
+  // eslint-disable-next-line class-methods-use-this
+  async keydown(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+    if (e.shiftKey && e.ctrlKey) {
+      const { bookmarks, tabs, histories } = states.multiSelPanes!;
+      if (bookmarks || tabs || histories) {
+        return;
+      }
+      store.dispatch('multiSelPanes', { all: true });
+    }
+  }
+  // eslint-disable-next-line class-methods-use-this
+  async keyup(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+    if (e.key === 'Shift') {
+      const { all } = states.multiSelPanes!;
+      if (!all) {
+        return;
+      }
+      store.dispatch('multiSelPanes', { all: false });
+    }
+  }
+  searching(changes: Changes<'searching'>) {
+    toggleClass('searching', changes.newValue)(this);
+  }
+  dragging(changes: Changes<'dragging'>) {
+    toggleClass('drag-start', changes.newValue)(this);
   }
   setIncludeUrl(
     { newValue }: { newValue: boolean },
@@ -180,12 +188,13 @@ export class AppMain extends HTMLElement {
       }),
     };
   }
-  // connect(store: Store) {
+  // eslint-disable-next-line class-methods-use-this
+  connect() {
   //   store.subscribe('clickAppMain', this.clickAppMain.bind(this));
   //   store.subscribe('setIncludeUrl', this.setIncludeUrl.bind(this));
   //   store.subscribe('searching', (changes) => toggleClass('searching', changes.newValue)(this));
   //   store.subscribe('dragging', (changes) => toggleClass('drag-start', changes.newValue)(this));
   //   store.subscribe('keydownMain', keydownApp);
   //   store.subscribe('keyupMain', keyupApp);
-  // }
+  }
 }

@@ -1,6 +1,6 @@
 import {
   Changes,
-  Dispatch, IPublishElement, makeAction, Store, StoreSub,
+  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
 } from './store';
 import { getLocal, setLocal, when } from './common';
 import {
@@ -34,7 +34,7 @@ export interface ISearchable {
   clearSearch(_: any, __: any, ___: any, store: StoreSub): void;
 }
 
-export class FormSearch extends HTMLFormElement implements IPublishElement {
+export class FormSearch extends HTMLFormElement implements IPubSubElement {
   #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
@@ -275,6 +275,8 @@ export class FormSearch extends HTMLFormElement implements IPublishElement {
       }),
     };
   }
+  // eslint-disable-next-line class-methods-use-this
+  connect() {}
   // connect(store: Store) {
   //   store.subscribe('inputQuery', (_, e) => {
   //     const { value } = (e.target as HTMLInputElement);

@@ -2,14 +2,11 @@ import {
   EventListenerOptions,
   HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
-import {
-  $, $byClass, $byTag, toggleClass,
-} from './client';
+import { $, $byClass, $byTag } from './client';
 import { OpenTab, Window } from './tabs';
 import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
-import { keydownApp, keyupApp } from './app-main';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -208,6 +205,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       });
   });
   return {
+    actions,
     subscribe<
       U extends keyof T,
       V extends ActionValue<T[U]>,
@@ -246,7 +244,6 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     ): U extends keyof T ? Promise<ActionValue<T[U]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }> {
       return getStates(name, cb) as any;
     },
-    actions,
     matrix<
       // eslint-disable-next-line no-use-before-define
       A extends IPublishElement | IPubSubElement,
@@ -269,9 +266,38 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
           ) => void,
         },
       ) => any)[]
-      // binder?: HTMLElement,
     ) {
       subscribeMethods.forEach((subscribeMethod) => this.subscribe(actionName, subscribeMethod));
+    },
+    // eslint-disable-next-line no-use-before-define
+    subscribeContext(source?: ISubscribeElement) {
+      // eslint-disable-next-line no-use-before-define
+      source?.connect(this as unknown as Store);
+      // eslint-disable-next-line no-use-before-define
+      const map = <A extends IPublishElement | IPubSubElement, B extends keyof ReturnType<A['actions']>>(
+        srcElement: A,
+        actionName: B,
+        ...subscribeMethods: ((
+          changes: Changes<B>,
+          e: HTMLElementEventType[ActionEventType<ReturnType<A['actions']>[B]>],
+          states: { [key in keyof T]: T[key]['initValue'] },
+          store: {
+            getStates: <X extends keyof T | undefined = undefined>(
+              stateName?: X,
+              cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
+            ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
+            dispatch: <Y extends keyof T>(
+              dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+            ) => void,
+          },
+        ) => any)[]
+      ) => {
+        subscribeMethods.forEach(
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source)),
+        );
+        return { map };
+      };
+      return { map };
     },
   };
 }
@@ -333,121 +359,124 @@ export function initComponents(
   // Dispatch store
   const store = registerActions(actions, options);
 
-  // $appMain.connect(store);
-  store.matrix($appMain, 'clickAppMain', $appMain.clickAppMain.bind($appMain));
-  store.matrix($appMain, 'keydownMain', keydownApp);
-  store.matrix($appMain, 'keyupMain', keyupApp);
-  store.matrix(
-    $headerLeafs,
-    'setIncludeUrl',
-    $appMain.setIncludeUrl.bind($appMain),
-    $history.setIncludeUrl.bind($history),
-  );
-  store.matrix($formSearch, 'searching', (changes) => toggleClass('searching', changes.newValue)($appMain));
-  store.matrix(dragAndDropEvents, 'dragging', (changes) => toggleClass('drag-start', changes.newValue)($appMain));
+  // store.subscribeContext($appMain)
+  //   .map($appMain, 'clickAppMain', $appMain.clickAppMain)
+  //   .map($appMain, 'keydownMain', $appMain.keydown)
+  //   .map($appMain, 'keyupMain', $appMain.keyup)
+  //   .map($formSearch, 'searching', $appMain.searching)
+  //   .map(dragAndDropEvents, 'dragging', $appMain.dragging);
 
-  $leafs.connect(store);
-  store.matrix($leafs, 'clickLeafs', $leafs.clickItem.bind($leafs));
-  store.matrix($leafs, 'mousedownLeafs', $leafs.mousedownItem.bind($leafs));
-  store.matrix($leafs, 'mouseupLeafs', $leafs.mouseupItem.bind($leafs));
-  store.matrix($leafs, 'wheelLeafs', $leafs.wheelHighlightTab.bind($leafs));
-  store.matrix(
-    $formSearch,
-    'clearSearch',
-    $leafs.clearSearch.bind($leafs),
-    $headerTabs.clearSearch.bind($headerTabs),
-    $tabs.clearSearch.bind($tabs),
-    $history.clearSearch.bind($history),
-  );
-  store.matrix(
+  // store.subscribeContext()
+  //   .map(
+  //     $headerLeafs,
+  //     'setIncludeUrl',
+  //     $appMain.setIncludeUrl.bind($appMain),
+  //     $history.setIncludeUrl.bind($history),
+  //   )
+  //   .map(
+  //     $formSearch,
+  //     'clearSearch',
+  //     $leafs.clearSearch.bind($leafs),
+  //     $headerTabs.clearSearch.bind($headerTabs),
+  //     $tabs.clearSearch.bind($tabs),
+  //     $history.clearSearch.bind($history),
+  //   )
+  //   .map(
+  //     $appMain,
+  //     'multiSelPanes',
+  //     $leafs.multiSelectLeafs.bind($leafs),
+  //     $tabs.multiSelect.bind($tabs),
+  //     $headerHistory.multiSelPanes.bind($headerHistory),
+  //     $history.multiSelect.bind($history),
+  //     $formSearch.multiSelPanes.bind($formSearch),
+  //   )
+  //   .map(
+  //     $headerHistory,
+  //     'historyCollapseDate',
+  //     $headerHistory.toggleCollapseIcon.bind($headerHistory),
+  //     $history.collapseHistoryDate.bind($history),
+  //   );
+
+  // store.subscribeContext($leafs)
+  //   .map($leafs, 'clickLeafs', $leafs.clickItem)
+  //   .map($leafs, 'mousedownLeafs', $leafs.mousedownItem)
+  //   .map($leafs, 'mouseupLeafs', $leafs.mouseupItem)
+  //   .map($leafs, 'wheelLeafs', $leafs.wheelHighlightTab)
+  //   .map($folders, 'clickFolders', $leafs.clickItem)
+  //   .map($folders, 'mousedownFolders', $leafs.mousedownItem)
+  //   .map($folders, 'mouseupFolders', $leafs.mouseupItem);
+
+  // store.subscribeContext($headerLeafs);
+
+  // store.subscribeContext($folders)
+  //   .map($folders, 'wheelFolders', $folders.wheelHighlightTab);
+
+  // store.subscribeContext($headerTabs)
+  //   .map($headerTabs, 'collapseWindowsAll', $headerTabs.switchCollapseIcon)
+  //   .map($tabs, 'setWheelHighlightTab', $headerTabs.showBookmarkMatches)
+  //   .map($tabs, 'tabMatches', $headerTabs.showTabMatches);
+
+  // store.subscribeContext($tabs)
+  //   .map($headerTabs, 'scrollNextWindow', $tabs.switchTabWindow)
+  //   .map($headerTabs, 'scrollPrevWindow', $tabs.switchTabWindow)
+  //   .map($tabs, 'clickTabs', $tabs.clickItem)
+  //   .map($tabs, 'mousedownTabs', $tabs.mousedownItem)
+  //   .map($tabs, 'mouseupTabs', $tabs.mouseupItem)
+  //   .map($tabs, 'openTabsFromHistory', $tabs.openTabsFromHistory)
+  //   .map($leafs, 'mouseoverLeafs', $tabs.mouseoverLeaf)
+  //   .map($leafs, 'mouseoutLeafs', $tabs.mouseoutLeaf)
+  //   .map($folders, 'mouseoverFolders', $tabs.mouseoverLeaf)
+  //   .map($folders, 'mouseoutFolders', $tabs.mouseoutLeaf)
+  //   .map($leafs, 'nextTabByWheel', $tabs.nextTabByWheel)
+  //   .map($tabs, 'activateTab', $tabs.activateTab)
+  //   .map($headerTabs, 'focusCurrentTab', $tabs.focusCurrentTab);
+
+  // store.subscribeContext($headerHistory);
+
+  // store.subscribeContext($history)
+  //   .map($history, 'clickHistory', $history.clickItem)
+  //   .map($history, 'resetHistory', $history.resetHistory)
+  //   .map($history, 'mousedownHistory', $history.mousedownItem)
+  //   .map($history, 'mouseupHistory', $history.mouseupItem)
+  //   .map($history, 'openHistories', $history.openHistories)
+  //   .map($history, 'addBookmarksHistories', $history.addBookmarks)
+  //   .map($history, 'openWindowFromHistory', $history.openWindowFromHistory);
+
+  // store.subscribeContext($formSearch)
+  //   .map($formSearch, 'inputQuery', $formSearch.inputQuery)
+  //   .map($formSearch, 'changeIncludeUrl', $formSearch.resetQuery)
+  //   .map($formSearch, 'clearQuery', $formSearch.clearQuery)
+  //   .map($formSearch, 'focusQuery', $formSearch.focusQuery)
+  //   .map($formSearch, 'search', $formSearch.reSearchAll)
+  //   .map($formSearch, 're-search', $formSearch.reSearch)
+  //   .map($formSearch, 'setQuery', $formSearch.setQuery)
+  //   .map($formSearch, 'keydownQueries', $formSearch.keydownQueries);
+
+  // store.subscribeContext(dragAndDropEvents)
+  //   .map(dragAndDropEvents, 'dragstart', dragAndDropEvents.dragstart)
+  //   .map(dragAndDropEvents, 'drop', dragAndDropEvents.drop)
+  //   .map(dragAndDropEvents, 'dragend', dragAndDropEvents.dragend);
+
+  // // v-scroll initialize
+  // if (!isSearching) {
+  //   store.dispatch('resetHistory');
+  // }
+  return {
+    store,
     $appMain,
-    'multiSelPanes',
-    $leafs.multiSelectLeafs.bind($leafs),
-    $tabs.multiSelect.bind($tabs),
-    $headerHistory.multiSelPanes.bind($headerHistory),
-    $history.multiSelect.bind($history),
-    $formSearch.multiSelPanes.bind($formSearch),
-  );
-  store.matrix($folders, 'clickFolders', $leafs.clickItem.bind($leafs));
-  store.matrix($folders, 'mousedownFolders', $leafs.mousedownItem.bind($leafs));
-  store.matrix($folders, 'mouseupFolders', $leafs.mouseupItem.bind($leafs));
-
-  $headerLeafs.connect(store);
-
-  $folders.connect(store);
-  store.matrix($folders, 'wheelFolders', $folders.wheelHighlightTab.bind($folders));
-
-  $headerTabs.connect(store);
-  store.matrix($headerTabs, 'collapseWindowsAll', $headerTabs.switchCollapseIcon.bind($headerTabs));
-  store.matrix($tabs, 'setWheelHighlightTab', $headerTabs.showBookmarkMatches.bind($headerTabs));
-  store.matrix($tabs, 'tabMatches', $headerTabs.showTabMatches.bind($headerTabs));
-  // store.matrix('clearSearch', $headerTabs.clearSearch.bind($headerTabs));
-
-  $tabs.connect(store);
-  store.matrix($headerTabs, 'scrollNextWindow', $tabs.switchTabWindow.bind($tabs));
-  store.matrix($headerTabs, 'scrollPrevWindow', $tabs.switchTabWindow.bind($tabs));
-  // store.matrix($tabs, 'clearSearch', $tabs.clearSearch.bind($tabs));
-  store.matrix($tabs, 'clickTabs', $tabs.clickItem.bind($tabs));
-  store.matrix($tabs, 'mousedownTabs', $tabs.mousedownItem.bind($tabs));
-  store.matrix($tabs, 'mouseupTabs', $tabs.mouseupItem.bind($tabs));
-  // store.matrix($tabs, 'multiSelPanes', $tabs.multiSelect.bind($tabs));
-  store.matrix($tabs, 'openTabsFromHistory', $tabs.openTabsFromHistory.bind($tabs));
-  store.matrix($leafs, 'mouseoverLeafs', $tabs.mouseoverLeaf.bind($tabs));
-  store.matrix($leafs, 'mouseoutLeafs', $tabs.mouseoutLeaf.bind($tabs));
-  store.matrix($folders, 'mouseoverFolders', $tabs.mouseoverLeaf.bind($tabs));
-  store.matrix($folders, 'mouseoutFolders', $tabs.mouseoutLeaf.bind($tabs));
-  store.matrix($leafs, 'nextTabByWheel', $tabs.nextTabByWheel.bind($tabs));
-  store.matrix($tabs, 'activateTab', $tabs.activateTab.bind($tabs));
-  store.matrix($headerTabs, 'focusCurrentTab', $tabs.focusCurrentTab.bind($tabs));
-
-  $headerHistory.connect(store);
-  store.matrix($headerHistory, 'historyCollapseDate', $headerHistory.toggleCollapseIcon.bind($headerHistory), $history.collapseHistoryDate.bind($history));
-  // store.matrix($appMain, 'multiSelPanes', $headerHistory.multiSelPanes.bind($headerHistory));
-
-  $history.connect(store);
-  store.matrix($history, 'clickHistory', $history.clickItem.bind($history));
-  // store.matrix($history, 'clearSearch', $history.clearSearch.bind($history));
-  store.matrix($history, 'resetHistory', $history.resetHistory.bind($history));
-  // store.matrix($history, 'historyCollapseDate', $history.collapseHistoryDate.bind($history));
-  // store.matrix($formSearch, 'changeIncludeUrl', (changes) => {
-  //   this.#includeUrl = changes.newValue;
-  // });
-  // store.matrix($headerLeafs, 'setIncludeUrl', (changes) => {
-  //   if (!changes.isInit) {
-  //     this.resetVScroll();
-  //   }
-  // });
-  store.matrix($history, 'mousedownHistory', $history.mousedownItem.bind($history));
-  store.matrix($history, 'mouseupHistory', $history.mouseupItem.bind($history));
-  // store.matrix($history, 'multiSelPanes', $history.multiSelect.bind($history));
-  store.matrix($history, 'openHistories', $history.openHistories.bind($history));
-  store.matrix($history, 'addBookmarksHistories', $history.addBookmarks.bind($history));
-  store.matrix($history, 'openWindowFromHistory', $history.openWindowFromHistory.bind($history));
-
-  // $formSearch.connect(store);
-  store.matrix($formSearch, 'inputQuery', $formSearch.inputQuery.bind($formSearch));
-  store.matrix($formSearch, 'changeIncludeUrl', $formSearch.resetQuery.bind($formSearch));
-  store.matrix($formSearch, 'clearQuery', $formSearch.clearQuery.bind($formSearch));
-  store.matrix($formSearch, 'focusQuery', $formSearch.focusQuery.bind($formSearch));
-  // store.matrix($formSearch, 'multiSelPanes', $formSearch.multiSelPanes.bind($formSearch));
-  store.matrix($formSearch, 'search', $formSearch.reSearchAll.bind($formSearch));
-  store.matrix($formSearch, 're-search', $formSearch.reSearch.bind($formSearch));
-  store.matrix($formSearch, 'setQuery', $formSearch.setQuery.bind($formSearch));
-  store.matrix($formSearch, 'keydownQueries', $formSearch.keydownQueries.bind($formSearch));
-
-  // dragAndDropEvents.connect(store);
-  store.matrix(dragAndDropEvents, 'dragstart', dragAndDropEvents.dragstart.bind(dragAndDropEvents));
-  store.matrix(dragAndDropEvents, 'drop', dragAndDropEvents.drop.bind(dragAndDropEvents));
-  store.matrix(dragAndDropEvents, 'dragend', dragAndDropEvents.dragend.bind(dragAndDropEvents));
-
-  // v-scroll initialize
-  if (!isSearching) {
-    store.dispatch('resetHistory');
-  }
-  return store;
+    $leafs,
+    $headerLeafs,
+    $folders,
+    $headerTabs,
+    $tabs,
+    $formSearch,
+    $history,
+    $headerHistory,
+    dragAndDropEvents,
+  };
 }
 
-export type Store = ReturnType<typeof initComponents>;
+export type Store = Pick<ReturnType<typeof initComponents>, 'store'>['store'];
 export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
 export type Dispatch = Store['dispatch'];
 export type Subscribe = Store['subscribe'];
