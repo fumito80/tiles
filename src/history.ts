@@ -398,8 +398,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       $history.open(url!, this.#options);
     }
   }
-  multiSelect({ newValue: multiSelect }: { newValue: MulitiSelectables }) {
-    if (!multiSelect) {
+  multiSelect({ newValue: { histories } }: { newValue: MulitiSelectables }) {
+    if (!histories) {
       this.applyData((data) => data.map((row) => ({ ...row, selected: false })));
       this.#lastClickedId = undefined;
     }

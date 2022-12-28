@@ -5,6 +5,13 @@ const dialogStyle = `
     float: right;
     margin-top: 10px;
     margin-left: 8px;
+    position: relative;
+    border: 0;
+    border-radius: 0.2rem;
+    padding: 3px 8px;
+  }
+  button:last-child {
+    background-color: #CCE5FF;
   }
 `;
 

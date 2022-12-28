@@ -374,6 +374,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #promiseSwitchTabEnd = Promise.resolve();
   #bmAutoFindTabsDelay = 500;
   #tabOrderAsc!: boolean;
+  #lastScrollTop = 0;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -418,13 +419,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       if (!(tab instanceof OpenTab)) {
         return false;
       }
-      const isMatch = reFilter.test(tab.textContent!)
-        || (includeUrl && reFilter.test(tab.url));
-      tab.classList.toggle('match', isMatch);
-      tab.classList.toggle('unmatch', !isMatch);
+      const isMatch = reFilter.test(tab.textContent!) || (includeUrl && reFilter.test(tab.url));
+      pipe(toggleClass('match', isMatch), toggleClass('unmatch', !isMatch))(tab);
       return isMatch;
     });
     dispatch('tabMatches', matches.length, true);
+    if (matches.length > 0) {
+      this.scrollToFocused(matches[0] as OpenTab);
+    }
   }
   clearSearch() {
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
@@ -576,8 +578,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
   findTabs(finder: (tab: OpenTab) => boolean, dispatch: Dispatch, leafId?: string) {
-    const [$find1st, ...rest] = this.getAllTabs((tab) => !hasClass(tab, 'unmatch')).filter(finder).map((tab) => tab.setHighlight(true));
+    const [$find1st, ...rest] = this
+      .getAllTabs((tab) => !hasClass(tab, 'unmatch'))
+      .filter(finder);
     if ($find1st) {
+      this.#lastScrollTop = this.scrollTop;
+      // const animes = [$find1st, ...rest].map((tab) => new Promise((resolve) => {
+      //   tab.addEventListener('transitionend', resolve, { once: true });
+      // }));
+      [$find1st, ...rest].map((tab) => tab.setHighlight(true));
+      // Promise.all(animes).then(() => this.scrollToFocused($find1st));
       $find1st.setFocus(true);
       this.scrollToFocused($find1st);
       const searches = [$find1st, ...rest].length;
@@ -626,12 +636,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }, this.#bmAutoFindTabsDelay);
   }
   mouseoutLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
+    if (!$byClass('highlight', this)) {
+      return;
+    }
     const $leaf = (e.target as HTMLElement).parentElement;
     if (!($leaf instanceof Leaf)) {
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
     this.clearFocus(undefined, undefined, undefined, store);
+    smoothSroll(this.getWindows()[0], this.#lastScrollTop);
   }
   mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
     const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
@@ -669,7 +683,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         ...tabs.slice(findIndex + 1),
         ...tabs.slice(0, findIndex + 1),
       ];
-      target = sorted.find(await this.getTabFinder(url));
+      target = sorted.find(await this.getTabFinder(url, bookmarkId));
     }
     if (!target) {
       chrome.bookmarks.get(bookmarkId).then(([bm]) => createNewTab(this.#options, bm.url!));

@@ -59,6 +59,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$queries = $byClass('queries', this)!;
     this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
     this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
+    this.$queries.addEventListener('keydown', (e) => e.preventDefault(), false);
   }
   inputQuery(_: any, e: Event, __: any, store: StoreSub) {
     const { value } = (e.target as HTMLInputElement);

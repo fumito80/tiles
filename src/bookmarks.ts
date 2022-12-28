@@ -4,7 +4,7 @@ import {
 } from './client';
 import {
   cbToResolve, cssid, curry3, getCurrentTab, setEvents, setFavicon, switches,
-  delayMultiSelect, prop, setLocal, getLocal,
+  delayMultiSelect, prop, setLocal, getLocal, htmlEscape,
 } from './common';
 import { dialog } from './dialogs';
 import { dropBmInNewWindow } from './drag-drop';
@@ -21,14 +21,14 @@ import {
 } from './types';
 
 export class Leaf extends MutiSelectableItem {
-  updateTitle(title: string) {
+  updateTitle(title: string, url: string) {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
-    $anchor.setAttribute('title', title);
+    $anchor.setAttribute('title', `${htmlEscape(title)}\n${htmlEscape(url.substring(0, 1024))}`);
     $anchor.textContent = title;
   }
   updateAnchor({ title, url }: Pick<chrome.bookmarks.BookmarkTreeNode, 'title' | 'url'>) {
     setFavicon(url!)(this);
-    this.updateTitle(title);
+    this.updateTitle(title, url!);
   }
   openOrFind(options: Options, dispatch: Dispatch) {
     if (this.checkMultiSelect()) {
@@ -73,9 +73,9 @@ export class Leaf extends MutiSelectableItem {
     if (!title) {
       return;
     }
-    this.updateTitle(title);
+    this.updateTitle(title, this.url);
     if (this.closest('.folders')) {
-      ($(`.leafs ${cssid(this.id)}`) as Leaf).updateTitle(title);
+      ($(`.leafs ${cssid(this.id)}`) as Leaf).updateTitle(title, this.url);
     }
     setAnimationClass('hilite')(this);
   }
@@ -294,8 +294,8 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
       .map(remeveBookmark);
     Promise.all(removes).then(() => this.selectItems(dispatch));
   }
-  multiSelectLeafs({ newValue: { bookmarks: multiSelect } }: { newValue: MulitiSelectables }) {
-    if (!multiSelect) {
+  multiSelectLeafs({ newValue: { bookmarks } }: { newValue: MulitiSelectables }) {
+    if (!bookmarks) {
       $$('.leafs .selected, .folders .selected')
         .filter(($el): $el is Leaf => $el instanceof Leaf && $el.selected)
         .forEach(($leaf) => $leaf.select(false, true));

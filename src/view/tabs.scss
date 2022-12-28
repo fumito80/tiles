@@ -39,7 +39,6 @@ open-tab {
     }
 
     &.current-window {
-      // position: relative;
       margin-left: 8px;
 
       &::before {
@@ -86,7 +85,20 @@ open-tab {
   }
 
   button {
-    margin-left: 10px;
+
+    &.tab-order-asc,
+    &.focus-current-tab,
+    &.collapse-tabs,
+    &.win-prev {
+      margin-left: 10px;
+    }
+
+    &.tab-order-asc,
+    &.focus-current-tab {
+      >i {
+        transform: scale(1.1, 1.1);
+      }
+    }
   }
 
   .win-next {
@@ -154,7 +166,7 @@ open-tab {
     }
 
     >.tab-order-asc>i {
-      transform: scale(1, -1);
+      transform: scale(1.1, -1.1);
     }
   }
 
@@ -336,6 +348,7 @@ app-main {
 
         &.highlight,
         &.match {
+          // width: calc(100% - 8px);
           width: -webkit-fill-available;
           background-color: rgba(0, 0, 0, .05);
           background-position-x: 25px;

@@ -2,7 +2,7 @@
 
 import { getBookmarksBase } from './bookmarks';
 import {
-  $, $$byClass, $byClass, addBookmark, addFolder, addStyle, editTitle, hasClass,
+  $, $$byClass, $byClass, addAttr, addBookmark, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
@@ -34,7 +34,11 @@ setEvents($$byClass('folder-menu'), {
       }
       case 'edit': {
         const $title = $('.title > div', $folder)!;
-        editTitle($title, $folder.id);
+        const title = await editTitle($title, $folder.id);
+        if (!title) {
+          return;
+        }
+        addAttr('title', title)($title.parentElement);
         break;
       }
       case 'open-all':
