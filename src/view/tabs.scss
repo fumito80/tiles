@@ -747,3 +747,7 @@ app-main {
     }
   }
 }
+
+app-main:not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) button.new-window-plus {
+  display: none;
+}

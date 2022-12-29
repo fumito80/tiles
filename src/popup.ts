@@ -223,10 +223,10 @@ bootstrap().then(init);
 export const mapMessagesBtoP = {};
 setMessageListener(mapMessagesBtoP, true);
 
-chrome.runtime.connect({ name: 'popup' });
-
-// eslint-disable-next-line no-console
-postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' }).then(console.info);
+postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' })
+  // eslint-disable-next-line no-console
+  .then(console.info)
+  .then(() => chrome.runtime.connect({ name: 'popup' }));
 
 customElements.define('app-main', AppMain);
 customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });

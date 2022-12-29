@@ -171,6 +171,12 @@ app-main:not(.drag-start) {
   .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
+
+  &:not(.theme-dark-key) {
+    .tabs-collapsed>.current-tab>.tab-title {
+      color: $font-color;
+    }
+  }
 }
 
 .theme-dark-frame {
@@ -406,19 +412,9 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 }
 
-app-main:not(.theme-dark-key) {
-  .tabs-collapsed .tab-title {
-    color: $font-color;
-  }
-}
-
 .theme-dark-key {
   .folders .open>.marker>.title::before {
     color: $dark-folder-color !important;
-  }
-
-  .tabs-collapsed .tab-title {
-    color: $dark-font-color;
   }
 }
 

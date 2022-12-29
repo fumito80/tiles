@@ -375,6 +375,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #bmAutoFindTabsDelay = 500;
   #tabOrderAsc!: boolean;
   #lastScrollTop: number | undefined;
+  #promiseSmoothScroll!: Promise<any>;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -606,15 +607,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return this.getModeTabFinder(srcUrl, mode);
     });
   }
-  scrollToFocused($target: OpenTab) {
+  async scrollToFocused($target: OpenTab) {
     const $parentWindow = $target.getParentWindow();
+    await this.#promiseSmoothScroll;
     const currentTop = $parentWindow.offsetTop + $target.offsetTop;
     if (currentTop >= this.scrollTop
       && currentTop + $target.offsetHeight <= this.scrollTop + this.offsetHeight) {
       return;
     }
     const scrollTop = currentTop - this.offsetHeight / 2 + $target.offsetHeight / 2;
-    smoothSroll($parentWindow, Math.max(0, scrollTop));
+    this.#promiseSmoothScroll = smoothSroll($parentWindow, Math.max(0, scrollTop));
   }
   mouseoverLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $leaf = (e.target as HTMLElement).parentElement;
@@ -631,7 +633,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       this.findTabs(finder, store.dispatch, $leaf.id);
     }, this.#bmAutoFindTabsDelay);
   }
-  mouseoutLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
+  async mouseoutLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $leaf = (e.target as HTMLElement).parentElement;
     if (!($leaf instanceof Leaf)) {
       return;
@@ -641,7 +643,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     this.clearFocus(undefined, undefined, undefined, store);
-    smoothSroll(this.getWindows()[0], this.#lastScrollTop);
+    await this.#promiseSmoothScroll;
+    this.#promiseSmoothScroll = smoothSroll(this.getWindows()[0], this.#lastScrollTop);
     this.#lastScrollTop = undefined;
   }
   mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
@@ -744,6 +747,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.getWindows().forEach((win) => {
       this.#tabsWrap.insertAdjacentElement('afterbegin', win);
     });
+    this.scrollTop = 0;
   }
   override actions() {
     return {
