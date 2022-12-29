@@ -925,13 +925,17 @@ export function getChromeId(preId: number | string) {
 
 export function getHistoryData(maxResults = 99999) {
   const startTime = Date.now() - pastMSec;
-  return chrome.history.search({ text: '', startTime, maxResults });
+  const histories = chrome.history.search({ text: '', startTime, maxResults });
+  const sessions = new Promise<chrome.sessions.Session[]>((resolve) => {
+    chrome.sessions.getRecentlyClosed(resolve);
+  });
+  return [histories, sessions] as const;
 }
 
 export function getHistoryDataByWorker() {
   const worker = new Worker('./worker-history.js');
-  getHistoryData().then((histories) => {
-    worker.postMessage(histories);
+  Promise.all(getHistoryData()).then(([histories, sessions]) => {
+    worker.postMessage([histories, sessions]);
   });
   return new Promise<MyHistoryItem[]>((resolve) => {
     worker.onmessage = (event) => {

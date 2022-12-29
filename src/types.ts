@@ -61,7 +61,7 @@ export type HtmlBookmarks = {
 }
 
 export type MyHistoryItem = Partial<
-  chrome.history.HistoryItem & { headerDate: boolean, selected: boolean }
+  chrome.history.HistoryItem & { headerDate: boolean, selected: boolean, sessionId: string }
 >;
 
 export type ColorPalette = [

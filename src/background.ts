@@ -65,10 +65,11 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData()
+  // const historiesOrSessions = await getHistoryData();
+  const historiesOrSessions = await Promise.all(getHistoryData())
     .then(addHeadersHistory)
     .then((data) => data.slice(0, historyHtmlCount));
-  const html = histories.map(makeHtmlHistory).join('');
+  const html = historiesOrSessions.map(makeHtmlHistory).join('');
   const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
   return setLocal({ htmlHistory });
 }
@@ -85,6 +86,13 @@ let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
 function addHistory() {
   clearTimeout(timeoutRefreshHistoryTitle);
   timeoutRefreshHistoryTitle = setTimeout(setHtmlHistory, 2000);
+}
+
+let timeoutChangeSession: ReturnType<typeof setTimeout>;
+
+async function onSessionChanged() {
+  clearTimeout(timeoutChangeSession);
+  timeoutChangeSession = setTimeout(setHtmlHistory, 500);
 }
 
 function saveQuery() {
@@ -123,6 +131,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
+  regsterChromeEvents(onSessionChanged)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
   setPopupStyle(options);
 }

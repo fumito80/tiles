@@ -27,6 +27,21 @@
           filter: opacity(0.7);
         }
       }
+
+      &.session {
+        background-position-x: 1.6em;
+
+        &::before {
+          content: '\e914';
+          font-family: "glyphs";
+          font-size: 1.3em;
+          width: 1.2em;
+        }
+
+        .icon-x {
+          display: none;
+        }
+      }
     }
 
     >.history:empty {
