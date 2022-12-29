@@ -424,11 +424,13 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
         target: this,
         eventType: 'mouseover',
         eventOnly: true,
+        noStates: true,
       }),
       mouseoutLeafs: makeAction({
         target: this,
         eventType: 'mouseout',
         eventOnly: true,
+        noStates: true,
       }),
       wheelLeafs: makeAction({
         target: this,

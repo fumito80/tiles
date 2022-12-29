@@ -120,21 +120,25 @@ export class Folders extends Bookmarks implements IPubSubElement {
         target: this,
         eventType: 'mousedown',
         eventOnly: true,
+        noStates: true,
       }),
       mouseupFolders: makeAction({
         target: this,
         eventType: 'mouseup',
         eventOnly: true,
+        noStates: true,
       }),
       mouseoverFolders: makeAction({
         target: this,
         eventType: 'mouseover',
         eventOnly: true,
+        noStates: true,
       }),
       mouseoutFolders: makeAction({
         target: this,
         eventType: 'mouseout',
         eventOnly: true,
+        noStates: true,
       }),
       wheelFolders: makeAction({
         target: this,

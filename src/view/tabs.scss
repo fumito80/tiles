@@ -92,13 +92,6 @@ open-tab {
     &.win-prev {
       margin-left: 10px;
     }
-
-    &.tab-order-asc,
-    &.focus-current-tab {
-      >i {
-        transform: scale(1.1, 1.1);
-      }
-    }
   }
 
   .win-next {
@@ -166,7 +159,7 @@ open-tab {
     }
 
     >.tab-order-asc>i {
-      transform: scale(1.1, -1.1);
+      transform: scale(1, -1);
     }
   }
 
@@ -721,7 +714,7 @@ app-main {
   .header-tabs {
     .new-window-plus {
       position: absolute;
-      left: 1.5em;
+      left: 2em;
       right: 10px;
       width: auto;
       height: 80%;

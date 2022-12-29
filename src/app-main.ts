@@ -20,9 +20,7 @@ import {
   addClass,
 } from './client';
 import {
-  makeAction, Changes,
-  IPubSubElement,
-  States, StoreSub,
+  makeAction, Changes, IPubSubElement, StoreSub,
 } from './popup';
 import { Leaf } from './bookmarks';
 
@@ -97,9 +95,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
   }
   // eslint-disable-next-line class-methods-use-this
-  async keydown(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+  async keydown(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
     if (e.shiftKey && e.ctrlKey) {
-      const { bookmarks, tabs, histories } = states.multiSelPanes!;
+      const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');
       if (bookmarks || tabs || histories) {
         return;
       }
@@ -107,9 +105,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
   }
   // eslint-disable-next-line class-methods-use-this
-  async keyup(_: any, e: KeyboardEvent, states: States, store: StoreSub) {
+  async keyup(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
     if (e.key === 'Shift') {
-      const { all } = states.multiSelPanes!;
+      const { all } = await store.getStates('multiSelPanes');
       if (!all) {
         return;
       }
@@ -180,11 +178,13 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         target: this,
         eventType: 'keydown',
         eventOnly: true,
+        noStates: true,
       }),
       keyupMain: makeAction({
         target: this,
         eventType: 'keyup',
         eventOnly: true,
+        noStates: true,
       }),
     };
   }

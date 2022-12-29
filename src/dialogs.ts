@@ -10,8 +10,20 @@ const dialogStyle = `
     border-radius: 0.2rem;
     padding: 3px 8px;
   }
+  button:hover {
+    background-color: #d6d6d6;
+  }
+  button:active {
+    background-color: #bdbdbd;
+  }
   button:last-child {
     background-color: #CCE5FF;
+  }
+  button:last-child:hover {
+    background-color: #99cbff;
+  }
+  button:last-child:active {
+    background-color: #66b1ff;
   }
 `;
 
