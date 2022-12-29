@@ -29,7 +29,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url, title, lastVisitTime, headerDate, id, selected,
+      url, title, lastVisitTime, headerDate, id, selected, sessionId,
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -48,7 +48,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addStyle({ transform })($currentDate);
       }
       pipe(
-        rmClass('selected'),
+        rmClass('selected', 'session'),
         setHTML(getLocaleDate(lastVisitTime)!),
         rmStyle('background-image'),
         addClass('header-date'),
@@ -62,6 +62,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
     const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
     const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
     pipe(
+      toggleClass('session', !!sessionId),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
       setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),

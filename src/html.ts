@@ -35,7 +35,7 @@ export function makeNode({
 }
 
 export function makeHistory({
-  url, title, lastVisitTime, headerDate, id, headerStyle = '',
+  url, title, lastVisitTime, headerDate, id, sessionId, headerStyle = '',
 }: MyHistoryItem & { headerStyle?: string }) {
   if (headerDate) {
     const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -43,8 +43,9 @@ export function makeHistory({
   }
   const style = makeStyleIcon(url);
   const text = title || url;
+  const session = sessionId ? ' session' : '';
   return `
-    <history-item class="history" draggable="true" id="hst-${id}" style="${style}">
+    <history-item class="history${session}" draggable="true" id="hst-${id}" style="${style}">
       <div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>
     </history-item>
   `;
