@@ -1621,7 +1621,7 @@ app-main:not(.disable-zoom-history) {
 
 .zoom-center {
   .pane-header:first-child {
-    >i:first-child~* {
+    >i:first-of-type~* {
       display: none !important;
     }
   }
