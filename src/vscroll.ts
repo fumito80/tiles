@@ -84,7 +84,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       toggleClass('session-tab', isSessionTab),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
-      setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
+      setHTML(`<i class="icon-fa-angle-right"></i><div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
       addAttr('title', htmlEscape(tooltip)),
       addAttr('id', elementId),

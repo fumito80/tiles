@@ -22,18 +22,10 @@ function getSessionItem({ window, tab, lastModified }: chrome.sessions.Session):
 export default function addHeadersHistory(
   [historyItems, sessions]: [chrome.history.HistoryItem[], chrome.sessions.Session[]],
 ) {
-  // const sessionsToHistories = sessions.reduce(
-  //   (acc, { window, tab, lastModified }) => {
-  //     if (lastModified === 0) {
-  //       return acc;
-  //     }
-  //     return tab
-  //       ? [...acc, getSessionItem(lastModified)(tab)]
-  //       : [...acc, ...window?.tabs?.map(getSessionItem(lastModified)) || []];
-  //   },
-  //   [] as MyHistoryItem[],
-  // );
-  const sorted = sessions.map(getSessionItem).concat(historyItems)
+  const sorted = sessions
+    .filter((session) => session.lastModified !== 0)
+    .map(getSessionItem)
+    .concat(historyItems)
     .sort((a, b) => b.lastVisitTime! - a.lastVisitTime!);
   const histories = [] as MyHistoryItem[];
   for (let i = 0, prevLastVisitDate = ''; i < sorted.length; i += 1) {
