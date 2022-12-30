@@ -29,7 +29,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url, title, lastVisitTime, headerDate, id, selected, sessionId,
+      url, title, lastVisitTime, headerDate, id, selected, isSession, sessionWindow,
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -57,18 +57,37 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       )($row);
       return;
     }
-    const text = title || url;
-    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
+    // const elementId = isSession ? `session-${id}` : `hst-${id}`;
+    // const text = title || url;
     const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
-    const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
+    const backgroundImageUrl = `url(${preFaviconUrl}${pageUrl})`;
+    const {
+      elementId, text, isSessionWindow, isSessionTab, backgroundImage,
+    } = isSession
+      ? {
+        elementId: `session-${id}`,
+        text: `${sessionWindow ? `${sessionWindow.length} tabs` : title || url}`,
+        isSessionWindow: !!sessionWindow,
+        isSessionTab: !sessionWindow,
+        backgroundImage: sessionWindow ? 'none' : backgroundImageUrl,
+      }
+      : {
+        elementId: `hst-${id}`,
+        text: title || url,
+        isSessionWindow: false,
+        isSessionTab: false,
+        backgroundImage: backgroundImageUrl,
+      };
+    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
     pipe(
-      toggleClass('session', !!sessionId),
+      toggleClass('session-window', isSessionWindow),
+      toggleClass('session-tab', isSessionTab),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
       setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
       addAttr('title', htmlEscape(tooltip)),
-      addAttr('id', `hst-${id}`),
+      addAttr('id', elementId),
     )($row);
   };
 }

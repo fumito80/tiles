@@ -35,17 +35,32 @@ export function makeNode({
 }
 
 export function makeHistory({
-  url, title, lastVisitTime, headerDate, id, sessionId, headerStyle = '',
+  url, title, lastVisitTime, headerDate, id, isSession, sessionWindow, headerStyle = '',
 }: MyHistoryItem & { headerStyle?: string }) {
   if (headerDate) {
     const lastVisitDate = getLocaleDate(lastVisitTime);
     return `<history-item class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</history-item>`;
   }
-  const style = makeStyleIcon(url);
-  const text = title || url;
-  const session = sessionId ? ' session' : '';
+  // const style = makeStyleIcon(url);
+  const {
+    elementId, text, addClassName, style,
+  } = isSession
+    ? {
+      elementId: `session-${id}`,
+      text: `${sessionWindow ? `${sessionWindow.length} tabs` : title || url}`,
+      addClassName: sessionWindow ? ' session-window' : ' session-tab',
+      style: sessionWindow ? '' : makeStyleIcon(url),
+    }
+    : {
+      elementId: `hst-${id}`,
+      text: title || url,
+      addClassName: '',
+      style: makeStyleIcon(url),
+    };
+  // const text = title || url;
+  // const addClassName = isSession ? (sessionWindow ? ' session-window' : ' session-tab') : '';
   return `
-    <history-item class="history${session}" draggable="true" id="hst-${id}" style="${style}">
+    <history-item class="history${addClassName}" draggable="true" id="${elementId}" style="${style}">
       <div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>
     </history-item>
   `;
