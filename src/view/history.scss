@@ -28,15 +28,22 @@
         }
       }
 
+      >.icon-fa-angle-right {
+        display: none;
+      }
+
       &.session-window,
       &.session-tab {
-        background-position-x: 1.6em;
 
         &::before {
           content: '\e914';
           font-family: "glyphs";
           font-size: 1.3em;
-          margin-left: 1px;
+          margin-left: 1.3em;
+        }
+
+        >.history-title {
+          text-indent: 2px;
         }
 
         .icon-x {
@@ -49,8 +56,11 @@
           content: '\e91d';
         }
 
-        >.history-title {
-          text-indent: 0;
+        >.icon-fa-angle-right {
+          display: inline-flex;
+          position: absolute;
+          left: 4px;
+          // font-size: 16px;
         }
       }
     }
@@ -159,11 +169,20 @@
   }
 }
 
-// History date collapse mode
-
-.collapse-history-date.init {
-  visibility: hidden;
+.recently-closed-only>i {
+  transform: scale(1.1);
 }
+
+.recently-closed-only,
+.collapse-history-date {
+  margin-right: 10px;
+
+  .init {
+    visibility: hidden;
+  }
+}
+
+// History date collapse mode
 
 app-main:not(.disable-zoom-history) {
 
@@ -175,9 +194,7 @@ app-main:not(.disable-zoom-history) {
 
     .collapse-history-date {
       display: flex;
-      margin-left: auto;
     }
-
   }
 
   &.zoom-fade-out {

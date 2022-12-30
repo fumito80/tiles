@@ -61,6 +61,7 @@ export function makeHistory({
   // const addClassName = isSession ? (sessionWindow ? ' session-window' : ' session-tab') : '';
   return `
     <history-item class="history${addClassName}" draggable="true" id="${elementId}" style="${style}">
+      <i class="icon-fa-angle-right"></i>
       <div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>
     </history-item>
   `;

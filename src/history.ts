@@ -62,7 +62,7 @@ export class HistoryItem extends MutiSelectableItem {
     return chrome.history.deleteUrl({ url });
   }
   get isSession() {
-    return this.classList.contains('session');
+    return hasClass(this, 'session-window', 'session-tab');
   }
   setAnimation(animationName: Parameters<typeof setAnimationClass>[0]) {
     setAnimationClass(animationName)(this);
