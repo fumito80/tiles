@@ -61,6 +61,9 @@ export class HistoryItem extends MutiSelectableItem {
     this.setAnimation('hilite-fast');
     return chrome.history.deleteUrl({ url });
   }
+  get isSession() {
+    return this.classList.contains('session');
+  }
   setAnimation(animationName: Parameters<typeof setAnimationClass>[0]) {
     setAnimationClass(animationName)(this);
   }
@@ -392,6 +395,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
           store.dispatch('multiSelPanes', { histories: true, all: false });
         }
         this.#lastClickedId = $history.id;
+        return;
+      }
+      if ($history.isSession) {
+        const [, sessionId] = $history.id.split('session-');
+        chrome.sessions.restore(sessionId);
         return;
       }
       const [{ url }] = await this.getHistoriesByIds([$history.id]);

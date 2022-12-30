@@ -23,23 +23,34 @@
           display: none;
         }
 
-        &:active {
+        rtu &:active {
           filter: opacity(0.7);
         }
       }
 
-      &.session {
+      &.session-window,
+      &.session-tab {
         background-position-x: 1.6em;
 
         &::before {
           content: '\e914';
           font-family: "glyphs";
           font-size: 1.3em;
-          width: 1.2em;
+          margin-left: 1px;
         }
 
         .icon-x {
           display: none;
+        }
+      }
+
+      &.session-window {
+        &::before {
+          content: '\e91d';
+        }
+
+        >.history-title {
+          text-indent: 0;
         }
       }
     }
