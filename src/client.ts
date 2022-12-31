@@ -25,7 +25,7 @@ import {
   decode,
   pick,
   prop,
-  last,
+  // last,
   addListener,
   when,
 } from './common';
@@ -232,14 +232,14 @@ export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
 }
 
 export function getEndPaneMinWidth($endPane: HTMLElement) {
-  const queryWrapMinWidth = 65;
+  const queryWrapMinWidth = 70;
   const minWidth = [...$endPane.children]
     .filter((el) => !hasClass(el, 'query-wrap'))
     .map((el) => getComputedStyle(el))
     .map(pick('width', 'marginLeft', 'marginRight'))
     .reduce(
       (acc, props) => Object.values(props).reduce(
-        (sum, prop1) => sum + Number.parseFloat(prop1),
+        (sum, prop1) => sum + (Number.parseFloat(prop1) || 0),
         acc,
       ),
       queryWrapMinWidth,
@@ -248,22 +248,30 @@ export function getEndPaneMinWidth($endPane: HTMLElement) {
 }
 
 export async function recoverMinPaneWidth() {
-  const $endHeaderPane = last($$byClass('pane-header'))!;
-  const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-  const saved = await getLocal('settings');
-  const { pane1, pane2, pane3 } = saved.settings.paneWidth;
-  if ((pane1 + pane2 + pane3 + 16 + endPaneMinWidth) <= document.body.offsetWidth) {
+  const $headerPanes = $$byClass('pane-header');
+  const headersWidth = $headerPanes.reduce((acc, $el) => acc + $el.offsetWidth, 0);
+  const overWidth = headersWidth + 4 - document.body.offsetWidth;
+  if (overWidth <= 0) {
     return;
   }
+  const saved = await getLocal('settings');
+  const { pane1: pane1width, pane2: pane2width, pane3: pane3width } = saved.settings.paneWidth;
+  const [pane3, pane2, pane1] = [pane3width, pane2width, pane1width].map((w, i) => {
+    if (hasClass($headerPanes[i], 'header-tabs', 'header-histories')) {
+      return w < $headerPanes[i].offsetWidth ? $headerPanes[i].offsetWidth - 4 : w;
+    }
+    return w;
+  });
   const [maxWidthPane] = Object.entries(saved.settings.paneWidth)
     .map(([className, width]) => ({ className, width }))
     .sort((a, b) => b.width - a.width);
   const { className } = maxWidthPane;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { [className]: _, ...rest } = saved.settings.paneWidth as Model;
-  const restWidth = Object.values(rest).reduce((acc, value) => acc + value, 0);
-  const altWidth = document.body.offsetWidth - (endPaneMinWidth + restWidth + 16);
-  await setSplitWidth({ [className]: Math.floor(altWidth) });
+  await setSplitWidth({
+    pane1,
+    pane2,
+    pane3,
+    [className]: maxWidthPane.width - overWidth,
+  });
   const settings = getNewPaneWidth(saved);
   setLocal({ settings });
 }
@@ -374,13 +382,14 @@ export function resizeSplitHandler(
   $splitter: HTMLElement,
   subWidth: number,
   adjustMouseX: number,
+  endPaneMinWidth: number,
 ) {
   return (e: MouseEvent) => {
     const className = whichClass(splitterClasses, $splitter)!;
     const isTabs = hasClass($targetPane, 'tabs');
     const minWidth = isTabs ? 220 : 100;
     const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, minWidth);
-    if (document.body.offsetWidth < (width + subWidth)) {
+    if (document.body.offsetWidth < (width + subWidth + endPaneMinWidth)) {
       return;
     }
     setSplitWidth({ [className]: width });

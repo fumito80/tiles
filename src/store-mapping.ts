@@ -52,32 +52,35 @@ export function storeMapping(options: Options, {
   const store = registerActions(actions, options);
 
   // Dispatch actions
-  store.subscribeContext()
-    .map(
-      [$headerLeafs, 'setIncludeUrl'],
-      $appMain.setIncludeUrl.bind($appMain),
-      $history.setIncludeUrl.bind($history),
-    )
-    .map(
-      [$formSearch, 'clearSearch'],
-      $leafs.clearSearch.bind($leafs),
-      $headerTabs.clearSearch.bind($headerTabs),
-      $tabs.clearSearch.bind($tabs),
-      $history.clearSearch.bind($history),
-    )
-    .map(
-      [$appMain, 'multiSelPanes'],
-      $leafs.multiSelectLeafs.bind($leafs),
-      $tabs.multiSelect.bind($tabs),
-      $headerHistory.multiSelPanes.bind($headerHistory),
-      $history.multiSelect.bind($history),
-      $formSearch.multiSelPanes.bind($formSearch),
-    )
-    .map(
-      [$headerHistory, 'historyCollapseDate'],
-      $headerHistory.toggleCollapseIcon.bind($headerHistory),
-      $history.collapseHistoryDate.bind($history),
-    );
+
+  // Broadcast type
+
+  store.actionContext($headerLeafs, 'setIncludeUrl').map(
+    $appMain.setIncludeUrl.bind($appMain),
+    $history.setIncludeUrl.bind($history),
+  );
+
+  store.actionContext($formSearch, 'clearSearch').map(
+    $leafs.clearSearch.bind($leafs),
+    $headerTabs.clearSearch.bind($headerTabs),
+    $tabs.clearSearch.bind($tabs),
+    $history.clearSearch.bind($history),
+  );
+
+  store.actionContext($appMain, 'multiSelPanes').map(
+    $leafs.multiSelectLeafs.bind($leafs),
+    $tabs.multiSelect.bind($tabs),
+    $headerHistory.multiSelPanes.bind($headerHistory),
+    $history.multiSelect.bind($history),
+    $formSearch.multiSelPanes.bind($formSearch),
+  );
+
+  store.actionContext($headerHistory, 'historyCollapseDate').map(
+    $headerHistory.toggleCollapseIcon.bind($headerHistory),
+    $history.collapseHistoryDate.bind($history),
+  );
+
+  // focus subscribe unit
 
   store.subscribeContext($appMain)
     .map([$appMain, 'clickAppMain'], $appMain.clickAppMain)

@@ -9,6 +9,7 @@ import {
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
   addBookmark,
   getMessageDeleteSelecteds,
+  recoverMinPaneWidth,
 } from './client';
 import {
   delayMultiSelect, filter, getLocaleDate, isDateEq, map, pick, pipe,
@@ -174,6 +175,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.setVScroll(rowSetterHistory, data);
     if (initialize) {
       $$byClass('init').forEach(rmClass('init'));
+      setTimeout(recoverMinPaneWidth, 500);
     }
     if (this.#reFilter || !initialize) {
       [...this.$rows?.children || []].forEach(

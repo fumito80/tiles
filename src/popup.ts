@@ -35,7 +35,6 @@ import {
   addChild,
   setHTML,
   $$byClass, $byClass,
-  recoverMinPaneWidth,
   toggleElement,
   $byTag,
 } from './client';
@@ -68,7 +67,7 @@ function setOptions(settings: Settings, options: Options) {
     addStyle('height', `${settings.height}px`),
   )(document.body);
 
-  setSplitWidth(settings.paneWidth).then(recoverMinPaneWidth);
+  setSplitWidth(settings.paneWidth);
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);

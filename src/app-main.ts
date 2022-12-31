@@ -68,9 +68,15 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
         const subWidth = $paneBodies
           .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
-          .reduce((acc, el) => acc + el.offsetWidth, endPaneMinWidth);
+          .reduce((acc, el) => acc + el.offsetWidth, 0);
         const adjustMouseX = e.clientX - $splitter.offsetLeft;
-        const handler = resizeSplitHandler($targetPane, $splitter, subWidth + 16, adjustMouseX);
+        const handler = resizeSplitHandler(
+          $targetPane,
+          $splitter,
+          subWidth + 18,
+          adjustMouseX,
+          endPaneMinWidth,
+        );
         setSplitterHandler(handler);
       })($splitter);
     });

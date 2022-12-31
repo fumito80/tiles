@@ -244,6 +244,30 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     ): U extends keyof T ? Promise<ActionValue<T[U]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }> {
       return getStates(name, cb) as any;
     },
+    // eslint-disable-next-line no-use-before-define, @typescript-eslint/no-unused-vars
+    actionContext<A extends IPublishElement, B extends keyof ReturnType<A['actions']>>(source: A, actionName: B) {
+      const map = (
+        ...subscribeMethods: ((
+          changes: Changes<B>,
+          e: HTMLElementEventType[ActionEventType<ReturnType<A['actions']>[B]>],
+          states: { [key in keyof T]: T[key]['initValue'] },
+          store: {
+            getStates: <X extends keyof T | undefined = undefined>(
+              stateName?: X,
+              cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
+            ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
+            dispatch: <Y extends keyof T>(
+              dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+            ) => void,
+          },
+        ) => any)[]
+      ) => {
+        subscribeMethods.forEach(
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod),
+        );
+      };
+      return { map };
+    },
     subscribeContext(source?: ISubscribeElement) {
       source?.connect(this as unknown as Store);
       // eslint-disable-next-line no-use-before-define
