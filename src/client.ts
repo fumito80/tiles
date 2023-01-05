@@ -276,7 +276,7 @@ export async function recoverMinPaneWidth() {
   setLocal({ settings });
 }
 
-export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast') {
+export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in') {
   return (el: Element | undefined) => {
     if (!el) {
       return el;

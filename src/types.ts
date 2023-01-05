@@ -65,6 +65,8 @@ export type MyHistoryItem = Partial<
     headerDate: boolean,
     selected: boolean,
     isSession?: boolean,
+    isChildSession?: boolean,
+    isOpenSessionWindow?: boolean,
     sessionWindow?: chrome.history.HistoryItem[],
   }
 >;

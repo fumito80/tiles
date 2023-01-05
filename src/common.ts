@@ -418,6 +418,18 @@ export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9>(
   fn8: (a: R7) => R8,
   fn9: (a: R8) => R9,
 ): (...a: T) => R9;
+export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
+  fn1: (...a: T) => R1,
+  fn2: (a: R1) => R2,
+  fn3: (a: R2) => R3,
+  fn4: (a: R3) => R4,
+  fn5: (a: R4) => R5,
+  fn6: (a: R5) => R6,
+  fn7: (a: R6) => R7,
+  fn8: (a: R7) => R8,
+  fn9: (a: R8) => R9,
+  fn10: (a: R9) => R10,
+): (...a: T) => R9;
 export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12>(
   fn1: (...a: T) => R1,
   fn2: (a: R1) => R2,
@@ -781,6 +793,9 @@ export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
 }
 
 export function getLocaleDate(dateOrSerial?: Date | number) {
+  if (dateOrSerial === 0) {
+    return 'Undated';
+  }
   if (dateOrSerial == null) {
     return (new Date()).toLocaleDateString();
   }
@@ -923,12 +938,12 @@ export function getChromeId(preId: number | string) {
   return Number(id);
 }
 
+type getRecentlyClosed = () => Promise<chrome.sessions.Session[]>;
+
 export function getHistoryData(maxResults = 99999) {
   const startTime = Date.now() - pastMSec;
   const histories = chrome.history.search({ text: '', startTime, maxResults });
-  const sessions = new Promise<chrome.sessions.Session[]>((resolve) => {
-    chrome.sessions.getRecentlyClosed(resolve);
-  });
+  const sessions = (chrome.sessions.getRecentlyClosed as getRecentlyClosed)();
   return [histories, sessions] as const;
 }
 

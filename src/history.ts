@@ -35,12 +35,12 @@ function getRowHeight() {
   return rowHeight;
 }
 
-function searchHistory(source: MyHistoryItem[], reFilter: RegExp, includeUrl: boolean) {
+function filterHistory(source: MyHistoryItem[], fnFilter: (el: MyHistoryItem) => boolean) {
   const [results] = source.reduce(([result, prevHeaderDate], el) => {
     if (el.headerDate) {
       return [result, el];
     }
-    if (!reFilter.test(el.title || el.url || '') && !(includeUrl && reFilter.test(el.url || ''))) {
+    if (fnFilter(el)) {
       return [result, prevHeaderDate];
     }
     if (!prevHeaderDate) {
@@ -148,7 +148,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.getSelectedUrls()
       .then((urls) => chrome.windows.create({ url: urls, incognito }, window.close));
   }
-  search({ reFilter, includeUrl }: SearchParams, dispatch: Store['dispatch']) {
+  search({ reFilter, includeUrl }: SearchParams, dispatch: Dispatch) {
     this.#reFilter = reFilter;
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', false, true);
@@ -171,7 +171,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     if (queryValue) {
       data = this.searchCache.get(queryValue);
       if (!data) {
-        data = searchHistory(histories, this.#reFilter!, this.#includeUrl);
+        data = filterHistory(
+          histories,
+          (el) => !this.#reFilter!.test(el.title || el.url || '') && !(this.#includeUrl && this.#reFilter!.test(el.url || '')),
+        );
         this.searchCache.set(this.#reFilter!.source, data);
       }
     }
@@ -192,22 +195,31 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     }
     this.dispatchEvent(new Event('scroll'));
   }
-  async restoreHistory() {
-    return this.resetHistory();
-  }
   clearSearch(_: any, __: any, ___: any, store: StoreSub) {
     this.#reFilter = null;
     store.dispatch('historyCollapseDate', false, true);
   }
-  async collapseHistoryDate({ newValue: collapsed }: { newValue: boolean }) {
-    if (collapsed) {
-      const histories = this.getVScrollData();
-      const data = histories.filter((item) => item.headerDate);
-      this.setVScroll(rowSetterHistory, data, false);
+  async toggleRecentlyClosed({ newValue: shown }: Changes<'toggleRecentlyClosed'>) {
+    if (shown) {
+      const vData = filterHistory(this.getVScrollData(), (el) => !el.isSession);
+      this.setVScroll(rowSetterHistory, vData, false);
       this.setScrollTop(0);
       return;
     }
-    await this.restoreHistory();
+    await this.resetHistory();
+    if (this.#jumpDate) {
+      this.jumpDate();
+      this.#jumpDate = undefined;
+    }
+  }
+  async collapseHistoryDate({ newValue: collapsed }: Changes<'historyCollapseDate'>) {
+    if (collapsed) {
+      const vData = this.getVScrollData().filter((item) => item.headerDate);
+      this.setVScroll(rowSetterHistory, vData, false);
+      this.setScrollTop(0);
+      return;
+    }
+    await this.resetHistory();
     if (this.#jumpDate) {
       this.jumpDate();
       this.#jumpDate = undefined;
@@ -366,6 +378,32 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     }
     const $history = $target.parentElement;
     if ($history instanceof HistoryItem) {
+      if ($history.isSession && hasClass($target, 'icon-fa-angle-right')) {
+        const [, id] = $history.id.split('-');
+        let isOpenClosedWindow = false;
+        const vData = ((data) => {
+          const findIndex = data.findIndex(propEq('id', id));
+          const closedWindow = data[findIndex];
+          isOpenClosedWindow = !closedWindow.isOpenSessionWindow;
+          if (isOpenClosedWindow) {
+            const innerTabs = closedWindow.sessionWindow!
+              .map((t) => ({ ...t, isSession: true, isChildSession: true }));
+            return data.slice(0, findIndex)
+              .concat({ ...closedWindow, isOpenSessionWindow: true })
+              .concat(innerTabs)
+              .concat(data.slice(findIndex + 1));
+          }
+          return data.slice(0, findIndex)
+            .concat({ ...closedWindow, isOpenSessionWindow: false })
+            .concat(data.slice(findIndex + closedWindow.sessionWindow!.length + 1));
+        })(this.getVScrollData());
+        $history.classList.toggle('open-closed-window', isOpenClosedWindow);
+        const { scrollTop } = this;
+        this.setVScroll(rowSetterHistory, vData, false);
+        this.setScrollTop(scrollTop);
+        $$byClass('child-session', this).map(setAnimationClass('fade-in'));
+        return;
+      }
       if (hasClass($target, 'icon-x')) {
         const [{ url }] = await this.getHistoriesByIds([$history.id]);
         $history.delete(url!).then(() => {
@@ -465,7 +503,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         this.$draggableClone.innerHTML = html.join('');
         if (cloneCount > 0) {
           const $div = this.$draggableClone.appendChild(document.createElement('div'));
-          $div.textContent = `... and ${selecteds.length - cloneCount} other items`;
+          $div.textContent = `... and ${selecteds.length - cloneCount} more items`;
           addStyle({ padding: '2px' })($div);
         }
       });
@@ -621,6 +659,9 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   toggleCollapseIcon({ newValue: collapsed }: { newValue: boolean }) {
     toggleClass('date-collapsed', collapsed)(this);
   }
+  toggleRecentlyClosed({ newValue: shown }: { newValue: boolean }) {
+    toggleClass('show-recently-closed', shown)(this);
+  }
   multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
     const isMultiSelect = Object.values(newValue).some((value) => !!value);
     $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
@@ -648,6 +689,12 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
       historyCollapseDate: makeAction({
         initValue: false,
         target: $byClass('collapse-history-date', this),
+        eventType: 'click',
+        eventProcesser: (_, currentValue) => !currentValue,
+      }),
+      toggleRecentlyClosed: makeAction({
+        initValue: false,
+        target: $byClass('toggle-recently-closed', this),
         eventType: 'click',
         eventProcesser: (_, currentValue) => !currentValue,
       }),

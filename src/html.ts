@@ -41,24 +41,20 @@ export function makeHistory({
     const lastVisitDate = getLocaleDate(lastVisitTime);
     return `<history-item class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</history-item>`;
   }
-  // const style = makeStyleIcon(url);
   const {
-    elementId, text, addClassName, style,
+    elementId, addClassName, style,
   } = isSession
     ? {
       elementId: `session-${id}`,
-      text: `${sessionWindow ? `${sessionWindow.length} tabs` : title || url}`,
       addClassName: sessionWindow ? ' session-window' : ' session-tab',
       style: sessionWindow ? '' : makeStyleIcon(url),
     }
     : {
       elementId: `hst-${id}`,
-      text: title || url,
       addClassName: '',
       style: makeStyleIcon(url),
     };
-  // const text = title || url;
-  // const addClassName = isSession ? (sessionWindow ? ' session-window' : ' session-tab') : '';
+  const text = title || url;
   return `
     <history-item class="history${addClassName}" draggable="true" id="${elementId}" style="${style}">
       <i class="icon-fa-angle-right"></i>
