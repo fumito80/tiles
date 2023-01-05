@@ -15,10 +15,6 @@ $dark-shade-bg-color: rgba(0, 0, 0, 0.6);
 $dark-folder-color: rgba(255, 255, 255, 0.8);
 $dark-icon-color: rgba(255, 255, 255, 0.5);
 
-:root {
-  --xen-mode-transition: all 0.05s ease-in-out;
-}
-
 @import "./glyphs";
 
 @keyframes fade-in {

@@ -286,7 +286,7 @@ function getDraggableElement(
   $dragTargets.some(($el, i) => {
     if (itemHeight * i > 120) {
       const $div = addChild(document.createElement('div'))($draggableClone);
-      $div.textContent = `... and ${$dragTargets.length - i} other items`;
+      $div.textContent = `... and ${$dragTargets.length - i} more items`;
       addStyle({ padding: '2px' })($div);
       return true;
     }

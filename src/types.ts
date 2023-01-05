@@ -23,14 +23,21 @@ export type MapMessagesBtoP = typeof mapMessagesBtoP;
 export const historyHtmlCount = 32;
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
+export const defaultWidth = {
+  leafs: 200,
+  tabs: 325,
+  histories: 100,
+  folders: 150,
+};
+
 export const initialSettings = {
   postPage: false,
   width: 800,
   height: 500,
   paneWidth: {
-    pane1: 200,
-    pane2: 325,
-    pane3: 100,
+    pane1: defaultWidth.leafs,
+    pane2: defaultWidth.tabs,
+    pane3: defaultWidth.histories,
   },
   bodyColor: '#222222',
   tabs: true,

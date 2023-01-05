@@ -37,6 +37,7 @@ import {
   $$byClass, $byClass,
   toggleElement,
   $byTag,
+  recoverMinPaneWidth,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -68,6 +69,7 @@ function setOptions(settings: Settings, options: Options) {
   )(document.body);
 
   setSplitWidth(settings.paneWidth);
+  recoverMinPaneWidth();
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);

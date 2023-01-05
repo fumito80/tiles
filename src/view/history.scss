@@ -136,7 +136,7 @@
 // History date collapse mode
 
 .collapse-history-date.init {
-  display: none;
+  visibility: hidden;
 }
 
 app-main:not(.disable-zoom-history) {

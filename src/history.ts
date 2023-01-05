@@ -9,7 +9,6 @@ import {
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
   addBookmark,
   getMessageDeleteSelecteds,
-  recoverMinPaneWidth,
 } from './client';
 import {
   delayMultiSelect, filter, getLocaleDate, isDateEq, map, pick, pipe,
@@ -175,7 +174,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.setVScroll(rowSetterHistory, data);
     if (initialize) {
       $$byClass('init').forEach(rmClass('init'));
-      setTimeout(recoverMinPaneWidth, 500);
     }
     if (this.#reFilter || !initialize) {
       [...this.$rows?.children || []].forEach(
@@ -457,7 +455,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         this.$draggableClone.innerHTML = html.join('');
         if (cloneCount > 0) {
           const $div = this.$draggableClone.appendChild(document.createElement('div'));
-          $div.textContent = `... and ${selecteds.length - cloneCount} other items`;
+          $div.textContent = `... and ${selecteds.length - cloneCount} more items`;
           addStyle({ padding: '2px' })($div);
         }
       });
