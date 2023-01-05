@@ -969,3 +969,7 @@ export async function getTabInfo(preId: number | string) {
         incognito: win.incognito,
       }))));
 }
+
+export const messages = {
+  cantSelectMultiple: 'Can\'t select multiple recently closed tab.',
+};

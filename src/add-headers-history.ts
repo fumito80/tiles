@@ -15,7 +15,7 @@ function getSessionItem({ window, tab, lastModified }: chrome.sessions.Session):
     id: window!.sessionId!,
     isSession: true,
     sessionWindow: window!.tabs!.map((t) => getSessionTab(t)),
-    title: `${window!.tabs!.length} tabs - ${window!.tabs![0].title} and more tabs`,
+    title: `${window!.tabs!.length} tabs - ${window!.tabs!.map((t) => t.title).join(', ')}`,
     lastVisitTime,
   };
 }

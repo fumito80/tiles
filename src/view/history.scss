@@ -28,40 +28,40 @@
         }
       }
 
-      >.icon-fa-angle-right {
-        display: none;
-      }
+      // >.icon-fa-angle-right {
+      //   display: none;
+      // }
 
-      &.session-window,
-      &.session-tab {
+      // &.session-window,
+      // &.session-tab {
 
-        &::before {
-          content: '\e914';
-          font-family: "glyphs";
-          font-size: 1.3em;
-          margin-left: 1.3em;
-        }
+      //   &::before {
+      //     content: '\e914';
+      //     font-family: "glyphs";
+      //     font-size: 1.3em;
+      //     margin-left: 1.3em;
+      //   }
 
-        >.history-title {
-          text-indent: 2px;
-        }
+      //   >.history-title {
+      //     text-indent: 2px;
+      //   }
 
-        .icon-x {
-          display: none;
-        }
-      }
+      //   .icon-x {
+      //     display: none;
+      //   }
+      // }
 
-      &.session-window {
-        &::before {
-          content: '\e91d';
-        }
+      // &.session-window {
+      //   &::before {
+      //     content: '\e91d';
+      //   }
 
-        >.icon-fa-angle-right {
-          display: inline-block;
-          position: absolute;
-          left: 4px;
-        }
-      }
+      //   >.icon-fa-angle-right {
+      //     display: inline-block;
+      //     position: absolute;
+      //     left: 4px;
+      //   }
+      // }
 
       &.open-closed-window {
         >.icon-fa-angle-right {
@@ -162,10 +162,6 @@
 }
 
 .header-histories {
-  .icon-history {
-    font-size: 1.1em;
-  }
-
   &:not(.date-collapsed) {
     .icon-calendar-plus-solid {
       display: none;
@@ -176,7 +172,7 @@
     }
   }
 
-  .collapse-history-date.hidden {
+  >button.hidden {
     opacity: 0;
     pointer-events: none;
   }
@@ -246,4 +242,44 @@ app-main:not(.disable-zoom-history) {
 
 .theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
   color: deepskyblue;
+}
+
+// Recently closed tabs
+
+.history {
+
+  >.icon-fa-angle-right {
+    display: none;
+  }
+
+  &.session-window,
+  &.session-tab {
+
+    &::before {
+      content: '\e914';
+      font-family: "glyphs";
+      font-size: 1.3em;
+      margin-left: 1.3em;
+    }
+
+    >.history-title {
+      text-indent: 2px;
+    }
+
+    .icon-x {
+      display: none;
+    }
+  }
+
+  &.session-window {
+    &::before {
+      content: '\e91d';
+    }
+
+    >.icon-fa-angle-right {
+      display: inline-block;
+      position: absolute;
+      left: 4px;
+    }
+  }
 }

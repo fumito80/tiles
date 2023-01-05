@@ -9,10 +9,11 @@ import {
   createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
   addBookmark,
   getMessageDeleteSelecteds,
+  $$byTag,
 } from './client';
 import {
-  delayMultiSelect, filter, getLocaleDate, isDateEq, map, pick, pipe,
-  postMessage, propEq, setLocal, whichClass,
+  delayMultiSelect, filter, getLocaleDate, isDateEq, map, messages, pick, pipe,
+  postMessage, propEq, setLocal, when, whichClass,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
@@ -111,18 +112,23 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#rowHeight = rowHeight;
   }
   getSelecteds(dragElementIds: string[]) {
-    const ids = dragElementIds.map((el) => el.replace('hst-', ''));
+    const ids = dragElementIds.map((el) => el.split('-').at(1));
     return this.hookData(
-      (data) => data.filter((el) => el.selected || ids.includes(el.id!)).map((el) => el.id!),
+      (data) => data.filter((el) => el.selected || ids.includes(el.id!)),
     );
   }
   async getSelectedUrls(dragElementIds: string[] = []) {
     const selecteds = this.getSelecteds(dragElementIds);
-    return this.getHistoriesByIds(selecteds).then(map(({ url }) => url!));
+    return this.getHistoriesByIds(selecteds.map((el) => el.id!)).then(map(({ url }) => url!));
   }
   async openHistories({ newValue }: Changes<'openHistories'>) {
+    const selecteds = this.getSelecteds(newValue?.elementIds!);
+    if (selecteds[0].isSession) {
+      chrome.sessions.restore(selecteds[0].id);
+      return;
+    }
+    const urls = await this.getSelectedUrls(selecteds.map((el) => el.id!));
     const { windowId, index, incognito } = newValue!;
-    const urls = await this.getSelectedUrls(newValue?.elementIds!);
     if (!windowId) {
       chrome.windows.create({ url: urls, incognito });
       return;
@@ -132,15 +138,21 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   async addBookmarks({ newValue }: Changes<'addBookmarksHistories'>) {
     const { bookmarkDest } = newValue!;
     const selecteds = this.getSelecteds(newValue?.elementIds!);
-    const ids = bookmarkDest.index == null ? selecteds : selecteds.reverse();
-    this.getHistoriesByIds(ids).then((hs) => {
-      hs.forEach(({ url, title }) => {
-        addBookmark(
-          bookmarkDest.parentId,
-          { url, title: title || url?.substring(0, 50), ...bookmarkDest },
-          true,
-        );
-      });
+    const items = await when(!!selecteds[0].isSession)
+      .then(() => (chrome.sessions.getRecentlyClosed as () => Promise<chrome.sessions.Session[]>)()
+        .then(
+          (sessions) => sessions
+            .filter(({ tab, window }) => (tab || window)!.sessionId === selecteds[0].id)
+            .flatMap(({ tab, window }) => tab || window?.tabs!),
+        ))
+      .else(() => this.getHistoriesByIds(selecteds.map((el) => el.id!)));
+    const urls = bookmarkDest.index == null ? items : items.reverse();
+    urls.forEach(({ url, title }) => {
+      addBookmark(
+        bookmarkDest.parentId,
+        { url, title: title || url?.substring(0, 50), ...bookmarkDest },
+        urls.length !== 1,
+      );
     });
   }
   openWindowFromHistory({ newValue: incognito }: { newValue: boolean }) {
@@ -422,6 +434,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       const { histories, all } = states.multiSelPanes!;
       if (histories || all) {
+        if (hasClass($history, 'session-tab', 'session-window')) {
+          dialog.alert(messages.cantSelectMultiple);
+          return;
+        }
         if (e.shiftKey && this.#lastClickedId && this.#lastClickedId !== $target.id) {
           this.selectWithShift($history, this.#lastClickedId);
         } else {
@@ -467,6 +483,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             }
             return;
           }
+          if (hasClass($history, 'session-tab', 'session-window')) {
+            dialog.alert(messages.cantSelectMultiple);
+            return;
+          }
           store.dispatch('multiSelPanes', { histories, all: false });
           if (!histories || multiSelPanes?.all) {
             store.dispatch('multiSelPanes', { all: false });
@@ -486,7 +506,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       // pre making draggable clones
       this.hookData((data) => {
-        const cunnretId = $history.id.replace('hst-', '');
+        const [, cunnretId] = $history.id.split('-');
         const selecteds = data.filter((el) => el.selected || el.id === cunnretId);
         const html = [] as string[];
         let cloneCount = 0;
@@ -556,12 +576,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const ids = elementIds.map((el) => el.replace('hst-', '')).sort();
     const startTime = Date.now() - pastMSec;
     return chrome.history.search({ text: '', startTime, maxResults: 99999 })
-      .then((hs) => {
+      .then((hs): MyHistoryItem[] => {
         if (ids.length === 1) {
           const h = hs.find((el) => el.id === ids[0])! ?? {};
           return [h];
         }
-        const results = [] as chrome.history.HistoryItem[];
+        const results = [];
         const sorted = hs.sort((a, b) => Number(a.id) - Number(b.id));
         for (let [id, ...rest] = ids, i = 0; id != null && i < sorted.length; i += 1) {
           if (sorted[i].id === id) {
@@ -662,7 +682,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   }
   multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
     const isMultiSelect = Object.values(newValue).some((value) => !!value);
-    $byClass('collapse-history-date', this)?.classList.toggle('hidden', isMultiSelect);
+    $$byTag('button', this).forEach(toggleClass('hidden', isMultiSelect));
   }
   // eslint-disable-next-line class-methods-use-this
   menuClickHandler(e: MouseEvent) {

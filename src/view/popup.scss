@@ -425,7 +425,7 @@ app-main {
     justify-content: center;
     align-items: center;
     border: 0;
-    font-size: 1.2em;
+    font-size: 1.0rem;
 
     &:focus {
       pointer-events: none;
@@ -1307,7 +1307,8 @@ app-main::-webkit-scrollbar {
 
   >div,
   >bm-leaf,
-  >open-tab {
+  >open-tab,
+  >history-item {
     margin-left: 2px !important;
     padding-right: 8px !important;
 
@@ -1402,10 +1403,6 @@ app-main::-webkit-scrollbar {
 
   .icon-tabs {
     font-size: 1.3em;
-  }
-
-  .icon-bookmarks {
-    transform: scale(1.2, 1.1);
   }
 
   .menu-button {
@@ -1721,6 +1718,7 @@ dialog {
   }
 
   >i {
+    font-size: 1.0rem;
     margin-left: 6px;
     margin-right: auto;
   }

@@ -159,7 +159,11 @@ async function dropWithTabs(
         sourceTabs, windowId, incognito, index,
       },
     }))
-    .then(() => {
+    .then((message) => {
+      if (typeof message === 'string') {
+        dialog.alert(message);
+        return;
+      }
       const sourceWindowIds = sourceIds
         .map((id) => $byId(id).parentElement)
         .filter((win): win is Window => win instanceof Window)
@@ -243,6 +247,9 @@ function checkDroppable(e: DragEvent) {
   }
   const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dragSource === 'marker' && dropPane === 'leafs') {
+    return undefined;
+  }
+  if (dropPane === 'tabs' && hasClass($dragSource, 'session-tab', 'session-window')) {
     return undefined;
   }
   const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);

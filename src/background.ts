@@ -225,26 +225,34 @@ export const mapMessagesPtoB = {
       sourceTabs: (chrome.tabs.Tab & { isCurrentWindow: boolean, incognito: boolean })[],
       windowId: number, incognito: boolean, index?: number,
     }>,
-  ) => chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
-    const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
-    const [head, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
-      .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
-    const tabIds = head.concat(sourceTabIds, tail);
-    return chrome.tabs.move(tabIds, { windowId, index: 0 }).then(() => sourceTabs);
-  })
-    .then((tabs) => tabs.some((sourceTab) => {
-      if (
-        sourceTab.active
-        && sourceTab.isCurrentWindow
-        && sourceTab.windowId !== windowId
-        && sourceTab.incognito === incognito
-      ) {
-        chrome.tabs.update(sourceTab.id!, { active: true });
-        chrome.windows.update(windowId, { focused: true });
-        return true;
+  ) => chrome.windows.get(windowId, { populate: true })
+    .then(async ({ tabs }) => {
+      const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
+      const [head, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
+        .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
+      const tabIds = head.concat(sourceTabIds, tail);
+      return chrome.tabs.move(tabIds, { windowId, index: 0 })
+        .then(() => sourceTabs)
+        .catch((reason) => reason.message as string);
+    })
+    .then((tabsOrMessage) => {
+      if (typeof tabsOrMessage === 'string') {
+        return tabsOrMessage;
       }
-      return false;
-    })),
+      return tabsOrMessage.some((sourceTab) => {
+        if (
+          sourceTab.active
+          && sourceTab.isCurrentWindow
+          && sourceTab.windowId !== windowId
+          && sourceTab.incognito === incognito
+        ) {
+          chrome.tabs.update(sourceTab.id!, { active: true });
+          chrome.windows.update(windowId, { focused: true });
+          return true;
+        }
+        return false;
+      });
+    }),
 };
 
 setMessageListener(mapMessagesPtoB);
