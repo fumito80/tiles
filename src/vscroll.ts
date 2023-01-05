@@ -29,7 +29,16 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url, title, lastVisitTime, headerDate, id, selected, isSession, sessionWindow,
+      url,
+      title,
+      lastVisitTime,
+      headerDate,
+      id,
+      selected,
+      isSession,
+      sessionWindow,
+      isChildSession,
+      isOpenSessionWindow,
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -48,7 +57,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addStyle({ transform })($currentDate);
       }
       pipe(
-        rmClass('selected', 'session'),
+        rmClass('selected', 'hilite-fast', 'session-tab', 'session-window', 'child-session', 'open-closed-window'),
         setHTML(getLocaleDate(lastVisitTime)!),
         rmStyle('background-image'),
         addClass('header-date'),
@@ -57,31 +66,34 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       )($row);
       return;
     }
-    // const elementId = isSession ? `session-${id}` : `hst-${id}`;
-    // const text = title || url;
+    const text = title || url;
     const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
     const backgroundImageUrl = `url(${preFaviconUrl}${pageUrl})`;
     const {
-      elementId, text, isSessionWindow, isSessionTab, backgroundImage,
+      elementId,
+      isSessionWindow = false,
+      isSessionTab = false,
+      backgroundImage,
+      tooltipUrl = '',
     } = isSession
       ? {
         elementId: `session-${id}`,
-        text: `${sessionWindow ? `${sessionWindow.length} tabs` : title || url}`,
         isSessionWindow: !!sessionWindow,
         isSessionTab: !sessionWindow,
         backgroundImage: sessionWindow ? 'none' : backgroundImageUrl,
+        tooltipUrl: sessionWindow ? '' : `\n${url}`,
       }
       : {
         elementId: `hst-${id}`,
-        text: title || url,
-        isSessionWindow: false,
-        isSessionTab: false,
         backgroundImage: backgroundImageUrl,
+        tooltipUrl: `\n${url}`,
       };
-    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
+    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}${tooltipUrl}`;
     pipe(
       toggleClass('session-window', isSessionWindow),
       toggleClass('session-tab', isSessionTab),
+      toggleClass('child-session', !!isChildSession),
+      toggleClass('open-closed-window', !!isOpenSessionWindow),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
       setHTML(`<i class="icon-fa-angle-right"></i><div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),

@@ -57,11 +57,24 @@
         }
 
         >.icon-fa-angle-right {
-          display: inline-flex;
+          display: inline-block;
           position: absolute;
           left: 4px;
-          // font-size: 16px;
         }
+      }
+
+      &.open-closed-window {
+        >.icon-fa-angle-right {
+          transform: rotate(90deg);
+        }
+      }
+
+      &.child-session {
+        margin-left: 1.6em;
+      }
+
+      &.fade-in {
+        animation: fade-in 0.15s ease-in-out;
       }
     }
 
@@ -167,13 +180,27 @@
     opacity: 0;
     pointer-events: none;
   }
+
+  &.show-recently-closed {
+    .toggle-recently-closed .icon-recently-closed-tab {
+      transform: unset;
+
+      &::before {
+        content: '\e90d';
+      }
+    }
+  }
 }
 
-.recently-closed-only>i {
-  transform: scale(1.1);
+.toggle-recently-closed {
+  margin-left: 10px;
+
+  >i {
+    transform: scale(1.1);
+  }
 }
 
-.recently-closed-only,
+.toggle-recently-closed,
 .collapse-history-date {
   margin-right: 10px;
 

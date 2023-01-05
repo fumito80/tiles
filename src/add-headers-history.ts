@@ -15,6 +15,7 @@ function getSessionItem({ window, tab, lastModified }: chrome.sessions.Session):
     id: window!.sessionId!,
     isSession: true,
     sessionWindow: window!.tabs!.map((t) => getSessionTab(t)),
+    title: `${window!.tabs!.length} tabs - ${window!.tabs![0].title} and more tabs`,
     lastVisitTime,
   };
 }
@@ -23,7 +24,7 @@ export default function addHeadersHistory(
   [historyItems, sessions]: [chrome.history.HistoryItem[], chrome.sessions.Session[]],
 ) {
   const sorted = sessions
-    .filter((session) => session.lastModified !== 0)
+    // .filter((session) => session.lastModified !== 0)
     .map(getSessionItem)
     .concat(historyItems)
     .sort((a, b) => b.lastVisitTime! - a.lastVisitTime!);

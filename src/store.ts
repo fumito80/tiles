@@ -7,7 +7,7 @@ import { OpenTab, Window } from './tabs';
 import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
-import { IPubSubElement, ISubscribeElement, Store } from './popup';
+import { IPubSubElement, ISubscribeElement } from './popup';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -245,6 +245,32 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       return getStates(name, cb) as any;
     },
     // eslint-disable-next-line no-use-before-define, @typescript-eslint/no-unused-vars
+    context<A extends IPubSubElement>(source: A) {
+      const map = <B extends keyof ReturnType<A['actions']>>(
+        actionName: B,
+        ...subscribeMethods: ((
+          changes: Changes<B>,
+          e: HTMLElementEventType[ActionEventType<ReturnType<A['actions']>[B]>],
+          states: { [key in keyof T]: T[key]['initValue'] },
+          store: {
+            getStates: <X extends keyof T | undefined = undefined>(
+              stateName?: X,
+              cbState?: (value: X extends keyof T ? ActionValue<T[X]> : never) => void,
+            ) => X extends keyof T? Promise<ActionValue<T[X]>> : Promise<{ [key in keyof T]: T[key]['initValue'] }>,
+            dispatch: <Y extends keyof T>(
+              dispatchName: Y, newValue?: ActionValue<T[Y]>, force?: boolean,
+            ) => void,
+          },
+        ) => any)[]
+      ) => {
+        subscribeMethods.forEach(
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source)),
+        );
+        return { map };
+      };
+      return { map };
+    },
+    // eslint-disable-next-line no-use-before-define, @typescript-eslint/no-unused-vars
     actionContext<A extends IPublishElement, B extends keyof ReturnType<A['actions']>>(source: A, actionName: B) {
       const map = (
         ...subscribeMethods: ((
@@ -269,7 +295,6 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       return { map };
     },
     subscribeContext(source?: ISubscribeElement) {
-      source?.connect(this as unknown as Store);
       // eslint-disable-next-line no-use-before-define
       const map = <A extends IPublishElement | IPubSubElement, B extends keyof ReturnType<A['actions']>>(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
