@@ -164,7 +164,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', false, true);
   }
-  async resetHistory() {
+  async resetHistory(_: any, __: any, { toggleRecentlyClosed }: States) {
     const initialize = !this.#histories;
     if (initialize) {
       this.#histories = await this.promiseInitHistory;
@@ -177,19 +177,25 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       const headerDateHtml = makeHistory({ ...headerDate });
       this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
     }
-    const queryValue = this.#reFilter?.source;
-    let data: MyHistoryItem[] | undefined = histories;
-    if (queryValue) {
-      data = this.searchCache.get(queryValue);
-      if (!data) {
-        data = filterHistory(
-          histories,
+    const recentlyClosedFiltered: MyHistoryItem[] = toggleRecentlyClosed
+      ? filterHistory(histories, (el) => !el.isSession)
+      : histories;
+    const queryValue = this.#reFilter?.source.toLowerCase();
+    const filtered = when(!queryValue)
+      .then(recentlyClosedFiltered)
+      .when(this.searchCache.has(queryValue!) && !toggleRecentlyClosed)
+      .then(() => this.searchCache.get(queryValue!) || [])
+      .else(() => {
+        const searched = filterHistory(
+          recentlyClosedFiltered,
           (el) => !this.#reFilter!.test(el.title || el.url || '') && !(this.#includeUrl && this.#reFilter!.test(el.url || '')),
         );
-        this.searchCache.set(this.#reFilter!.source, data);
-      }
-    }
-    this.setVScroll(rowSetterHistory, data);
+        if (!toggleRecentlyClosed) {
+          this.searchCache.set(queryValue!, searched);
+        }
+        return searched;
+      });
+    this.setVScroll(rowSetterHistory, filtered);
     if (initialize) {
       $$byClass('init').forEach(rmClass('init'));
     }
@@ -209,27 +215,17 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#reFilter = null;
     store.dispatch('historyCollapseDate', false, true);
   }
-  async toggleRecentlyClosed({ newValue: shown }: Changes<'toggleRecentlyClosed'>) {
-    if (shown) {
-      const vData = filterHistory(this.getVScrollData(), (el) => !el.isSession);
-      this.setVScroll(rowSetterHistory, vData, false);
-      this.setScrollTop(0);
-      return;
-    }
-    await this.resetHistory();
-    if (this.#jumpDate) {
-      this.jumpDate();
-      this.#jumpDate = undefined;
-    }
+  toggleRecentlyClosed(_: any, __: any, states: States) {
+    this.resetHistory(undefined, undefined, states);
   }
-  async collapseHistoryDate({ newValue: collapsed }: Changes<'historyCollapseDate'>) {
+  async collapseHistoryDate({ newValue: collapsed }: Changes<'historyCollapseDate'>, _: any, states: States) {
     if (collapsed) {
       const vData = this.getVScrollData().filter((item) => item.headerDate);
       this.setVScroll(rowSetterHistory, vData, false);
       this.setScrollTop(0);
       return;
     }
-    await this.resetHistory();
+    await this.resetHistory(undefined, undefined, states);
     if (this.#jumpDate) {
       this.jumpDate();
       this.#jumpDate = undefined;
