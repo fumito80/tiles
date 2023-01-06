@@ -28,41 +28,6 @@
         }
       }
 
-      // >.icon-fa-angle-right {
-      //   display: none;
-      // }
-
-      // &.session-window,
-      // &.session-tab {
-
-      //   &::before {
-      //     content: '\e914';
-      //     font-family: "glyphs";
-      //     font-size: 1.3em;
-      //     margin-left: 1.3em;
-      //   }
-
-      //   >.history-title {
-      //     text-indent: 2px;
-      //   }
-
-      //   .icon-x {
-      //     display: none;
-      //   }
-      // }
-
-      // &.session-window {
-      //   &::before {
-      //     content: '\e91d';
-      //   }
-
-      //   >.icon-fa-angle-right {
-      //     display: inline-block;
-      //     position: absolute;
-      //     left: 4px;
-      //   }
-      // }
-
       &.open-closed-window {
         >.icon-fa-angle-right {
           transform: rotate(90deg);
@@ -75,6 +40,16 @@
 
       &.fade-in {
         animation: fade-in 0.15s ease-in-out;
+      }
+
+      >.time {
+        font-size: 0.9em;
+        padding: 0 3px;
+        opacity: .7;
+      }
+
+      &:hover .time {
+        display: none;
       }
     }
 
@@ -266,8 +241,14 @@ app-main:not(.disable-zoom-history) {
       text-indent: 2px;
     }
 
-    .icon-x {
-      display: none;
+    &:hover>.time {
+      display: block !important;
+      color: var(--item-hover-color);
+      opacity: 1;
+    }
+
+    >.icon-x {
+      display: none !important;
     }
   }
 
@@ -282,4 +263,20 @@ app-main:not(.disable-zoom-history) {
       left: 4px;
     }
   }
+}
+
+// Display time
+
+.disable-zoom-history .history .time,
+app-main:not(.disable-zoom-history).zoom-pane .history .time {
+  display: block;
+}
+
+.zoom-center .history .time,
+app-main:not(.disable-zoom-history) .history .time {
+  display: none;
+}
+
+.draggable-clone .time {
+  display: none;
 }

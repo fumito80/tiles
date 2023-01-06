@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  makeStyleIcon, htmlEscape, getLocaleDate,
+  makeStyleIcon, htmlEscape, getLocaleDate, getShortTime,
 } from './common';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
@@ -55,10 +55,12 @@ export function makeHistory({
       style: makeStyleIcon(url),
     };
   const text = title || url;
+  const date = new Date(lastVisitTime!);
+  const time = getShortTime(date);
   return `
     <history-item class="history${addClassName}" draggable="true" id="${elementId}" style="${style}">
       <i class="icon-fa-angle-right"></i>
-      <div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>
+      <div class="history-title">${htmlEscape(text!)}</div><div class="time">${time}</div><i class="icon-x"></i>
     </history-item>
   `;
 }

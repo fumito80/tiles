@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape,
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape, getShortTime,
 } from './common';
 import {
   $, addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, toggleClass,
@@ -88,7 +88,10 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         backgroundImage: backgroundImageUrl,
         tooltipUrl: `\n${url}`,
       };
-    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}${tooltipUrl}`;
+    const [dateValue, time] = lastVisitTime
+      ? ((date) => [`\n${date.toLocaleString()}`, getShortTime(date)])(new Date(lastVisitTime!))
+      : ['', ''];
+    const tooltip = `${text}${dateValue}${tooltipUrl}`;
     pipe(
       toggleClass('session-window', isSessionWindow),
       toggleClass('session-tab', isSessionTab),
@@ -96,7 +99,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       toggleClass('open-closed-window', !!isOpenSessionWindow),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
-      setHTML(`<i class="icon-fa-angle-right"></i><div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
+      setHTML(`<i class="icon-fa-angle-right"></i><div class="history-title">${htmlEscape(text!)}</div><div class="time">${time}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
       addAttr('title', htmlEscape(tooltip)),
       addAttr('id', elementId),

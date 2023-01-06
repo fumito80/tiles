@@ -970,6 +970,10 @@ export async function getTabInfo(preId: number | string) {
       }))));
 }
 
+export function getShortTime(dt: Date) {
+  return new Intl.DateTimeFormat([], { timeStyle: 'short' }).format(dt);
+}
+
 export const messages = {
   cantSelectMultiple: 'Can\'t select multiple recently closed tab.',
 };
