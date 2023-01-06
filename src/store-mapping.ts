@@ -88,7 +88,7 @@ export function storeMapping(options: Options, components: Components) {
 
   store.actionContext($headerHistory, 'toggleRecentlyClosed').map(
     $headerHistory.toggleRecentlyClosed.bind($headerHistory),
-    $history.toggleRecentlyClosed.bind($history),
+    $history.resetHistory.bind($history),
   );
 
   // focus subscribe unit

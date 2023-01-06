@@ -75,7 +75,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   #options!: Options;
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
-  #jumpDate!: string | undefined;
   #rowHeight!: number;
   #lastClickedId!: string | undefined;
   #histories!: MyHistoryItem[];
@@ -162,9 +161,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   search({ reFilter, includeUrl }: SearchParams, dispatch: Dispatch) {
     this.#reFilter = reFilter;
     this.#includeUrl = includeUrl;
-    dispatch('historyCollapseDate', false, true);
+    dispatch('historyCollapseDate', { collapsed: false }, true);
   }
-  async resetHistory(_: any, __: any, { toggleRecentlyClosed }: States) {
+  async resetHistory(_: any, __: any, { toggleRecentlyClosed, historyCollapseDate }: States) {
     const initialize = !this.#histories;
     if (initialize) {
       this.#histories = await this.promiseInitHistory;
@@ -196,6 +195,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         return searched;
       });
     this.setVScroll(rowSetterHistory, filtered);
+    if (historyCollapseDate?.collapsed) {
+      const vData = this.getVScrollData().filter((item) => item.headerDate);
+      this.setVScroll(rowSetterHistory, vData, false);
+      this.setScrollTop(0);
+      return;
+    }
     if (initialize) {
       $$byClass('init').forEach(rmClass('init'));
     }
@@ -213,35 +218,21 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   clearSearch(_: any, __: any, ___: any, store: StoreSub) {
     this.#reFilter = null;
-    store.dispatch('historyCollapseDate', false, true);
+    store.dispatch('historyCollapseDate', { collapsed: false }, true);
   }
-  toggleRecentlyClosed(_: any, __: any, states: States) {
-    this.resetHistory(undefined, undefined, states);
-  }
-  async collapseHistoryDate({ newValue: collapsed }: Changes<'historyCollapseDate'>, _: any, states: States) {
-    if (collapsed) {
-      const vData = this.getVScrollData().filter((item) => item.headerDate);
-      this.setVScroll(rowSetterHistory, vData, false);
-      this.setScrollTop(0);
-      return;
-    }
+  async collapseHistoryDate(
+    { newValue: { collapsed, jumpDate } }: Changes<'historyCollapseDate'>,
+    _: any,
+    states: States,
+  ) {
     await this.resetHistory(undefined, undefined, states);
-    if (this.#jumpDate) {
-      this.jumpDate();
-      this.#jumpDate = undefined;
+    if (!collapsed && jumpDate) {
+      const histories = this.getVScrollData();
+      const index = histories.findIndex(
+        (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === jumpDate,
+      );
+      this.setScrollTop(this.#rowHeight * index);
     }
-  }
-  async jumpHistoryDate(localeDate: string, dispatch: Store['dispatch']) {
-    this.#jumpDate = localeDate;
-    dispatch('historyCollapseDate', false, true);
-  }
-  async jumpDate() {
-    const histories = this.getVScrollData();
-    const index = histories.findIndex(
-      (item) => item.headerDate && getLocaleDate(item.lastVisitTime) === this.#jumpDate,
-    );
-    this.setScrollTop(this.#rowHeight * index);
-    this.#jumpDate = '';
   }
   selectItems(dispatch: Dispatch) {
     const count = this.hookData(filter(propEq('selected', true))).length;
@@ -376,9 +367,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       } else {
         store.dispatch('focusQuery');
       }
-      if (historyCollapseDate) {
-        this.jumpHistoryDate($target.textContent!, store.dispatch);
-        return;
+      if (historyCollapseDate?.collapsed) {
+        store.dispatch('historyCollapseDate', { collapsed: false, jumpDate: $target.textContent! }, true);
       }
       return;
     }
@@ -670,7 +660,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
   readonly paneName = 'histories';
   private store!: Store;
   readonly multiDeletesTitle = 'Delete selected histories';
-  toggleCollapseIcon({ newValue: collapsed }: { newValue: boolean }) {
+  toggleCollapseIcon({ newValue: { collapsed } }: Changes<'historyCollapseDate'>) {
     toggleClass('date-collapsed', collapsed)(this);
   }
   toggleRecentlyClosed({ newValue: shown }: { newValue: boolean }) {
@@ -701,10 +691,16 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
     return {
       ...super.actions(),
       historyCollapseDate: makeAction({
-        initValue: false,
+        initValue: {
+          collapsed: false,
+          jumpDate: '',
+        } as {
+          collapsed: boolean,
+          jumpDate?: string,
+        },
         target: $byClass('collapse-history-date', this),
         eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
+        eventProcesser: (_, { collapsed }) => ({ jumpDate: '', collapsed: !collapsed }),
       }),
       toggleRecentlyClosed: makeAction({
         initValue: false,
