@@ -715,10 +715,13 @@ app-main {
   .header-tabs {
     .new-window-plus {
       position: absolute;
-      left: 2em;
       right: 10px;
       width: auto;
-      height: 80%;
+      left: 0;
+      margin-left: 0;
+      height: 3em;
+      z-index: 2;
+      top: 0;
     }
 
     &.window-order-asc {

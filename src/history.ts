@@ -176,10 +176,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       const headerDateHtml = makeHistory({ ...headerDate });
       this.$rows.firstElementChild?.insertAdjacentHTML('afterend', headerDateHtml);
     }
-    const recentlyClosedFiltered: MyHistoryItem[] = toggleRecentlyClosed
+    const queryValue = this.#reFilter?.source.toLowerCase();
+    const recentlyClosedFiltered = toggleRecentlyClosed
       ? filterHistory(histories, (el) => !el.isSession)
       : histories;
-    const queryValue = this.#reFilter?.source.toLowerCase();
     const filtered = when(!queryValue)
       .then(recentlyClosedFiltered)
       .when(this.searchCache.has(queryValue!) && !toggleRecentlyClosed)
@@ -194,13 +194,13 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         }
         return searched;
       });
-    this.setVScroll(rowSetterHistory, filtered);
     if (historyCollapseDate?.collapsed) {
-      const vData = this.getVScrollData().filter((item) => item.headerDate);
+      const vData = filtered.filter((item) => item.headerDate);
       this.setVScroll(rowSetterHistory, vData, false);
       this.setScrollTop(0);
       return;
     }
+    this.setVScroll(rowSetterHistory, filtered);
     if (initialize) {
       $$byClass('init').forEach(rmClass('init'));
     }

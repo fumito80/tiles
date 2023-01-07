@@ -970,8 +970,10 @@ export async function getTabInfo(preId: number | string) {
       }))));
 }
 
+const timeFormatter = new Intl.DateTimeFormat([], { timeStyle: 'short' });
+
 export function getShortTime(dt: Date) {
-  return new Intl.DateTimeFormat([], { timeStyle: 'short' }).format(dt);
+  return timeFormatter.format(dt);
 }
 
 export const messages = {
