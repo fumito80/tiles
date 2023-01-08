@@ -373,10 +373,6 @@ form.form-query {
           display: none;
           cursor: pointer;
         }
-
-        &:last-child {
-          padding-bottom: 5px;
-        }
       }
     }
   }
@@ -384,6 +380,12 @@ form.form-query {
   &.show-queries {
     .queries {
       max-height: calc(100vh / 2);
+    }
+
+    .queries-wrap::after {
+      content: '';
+      display: block;
+      height: 0.5em;
     }
   }
 }
@@ -594,6 +596,16 @@ app-main {
     color: #999;
     width: 1.8rem;
     pointer-events: none;
+  }
+
+  .icon-url {
+    font-size: 0.3rem;
+    font-weight: bold;
+    font-family: monospace;
+
+    &::before {
+      content: 'URL';
+    }
   }
 }
 

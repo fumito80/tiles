@@ -127,7 +127,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     toggleClass('drag-start', changes.newValue)(this);
   }
   setIncludeUrl(
-    { newValue }: { newValue: boolean },
+    { newValue }: Changes<'setIncludeUrl'>,
     _: any,
     __: any,
     store: StoreSub,
