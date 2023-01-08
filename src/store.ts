@@ -50,7 +50,9 @@ export type ActionValue<T> = T extends Action<any, infer R, any, any, any, any, 
 type ActionEventType<T> = T extends Action<infer R, any, any, any, any, any, any> ? R : never;
 
 type Actions<T> = {
-  [K in keyof T]: T[K] extends Action<any, any, any, any, any, any, any> ? T : never;
+  [K in keyof T]: T[K] extends Action<
+    keyof HTMLElementEventType, any, boolean, boolean, EventListenerOptions, boolean, boolean
+  > ? T : never;
 }
 
 const actionPrefix = 'action-';
@@ -109,7 +111,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
       persistent, listenerOptions, eventOnly, noStates,
     }]) => {
       const actionName = prefixedAction(name);
-      if (target) {
+      if (target && eventType) {
         const valueProcesser = eventProcesser || ((_: any, currentValue: any) => currentValue);
         target.addEventListener(eventType, async (e: any) => {
           if (eventOnly) {
@@ -128,30 +130,22 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
           return true;
         }, listenerOptions);
       }
-      return new Promise<
-        { [key: string]: { persistent: boolean, eventOnly: boolean, noStates: boolean } }
-      >(
-        (resolve) => {
-          chrome.storage.session.remove(actionName, () => {
-            if (persistent) {
-              chrome.storage.local.get(actionName, ({ [actionName]: value }) => {
-                const actionValue = makeActionValue(value ?? initValue);
-                chrome.storage.session.set({ [actionName]: actionValue }, () => {
-                  setTimeout(
-                    () => resolve({ [actionName]: { persistent, eventOnly, noStates } }),
-                    0,
-                  );
-                });
-              });
-              return;
-            }
+      return chrome.storage.session.remove(actionName)
+        .then(() => {
+          if (!persistent) {
             const actionValue = makeActionValue(initValue);
-            chrome.storage.session.set({ [actionName]: actionValue }, () => {
-              resolve({ [actionName]: { persistent, eventOnly, noStates } });
+            return chrome.storage.session.set({ [actionName]: actionValue })
+              .then(() => ({
+                [actionName]: { persistent: persistent as boolean, eventOnly, noStates },
+              }));
+          }
+          return chrome.storage.local.get(actionName)
+            .then(({ [actionName]: value }) => {
+              const actionValue = { ...makeActionValue(value ?? initValue), isInit: true };
+              return chrome.storage.session.set({ [actionName]: actionValue })
+                .then(() => ({ [actionName]: { persistent, eventOnly, noStates } }));
             });
-          });
-        },
-      );
+        });
     });
   type StoreActions = typeof actions;
   type ActionNames = keyof StoreActions;
@@ -160,15 +154,14 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     newValue: InitValue<X>, oldValue: InitValue<X>, isInit: boolean
   };
   const initPromise = Promise.all(initPromises).then(async (actionProps) => {
-    const persistentsAction = actionProps
-      .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
+    const actionsAll = actionProps.reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
     chrome.storage.onChanged.addListener((storage, areaName) => {
       if (areaName !== 'session') {
         return;
       }
       Object.entries(storage).forEach(async ([actionName, changes]) => {
-        const { persistent, eventOnly, noStates } = persistentsAction[actionName];
-        if (eventOnly) {
+        const { persistent, eventOnly, noStates } = actionsAll[actionName];
+        if (eventOnly || changes.newValue.isInit) {
           return;
         }
         const oldValue = (changes.oldValue as ActionResult)?.value;
@@ -264,7 +257,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         ) => any)[]
       ) => {
         subscribeMethods.forEach(
-          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source)),
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source) as any),
         );
         return { map };
       };
@@ -289,7 +282,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         ) => any)[]
       ) => {
         subscribeMethods.forEach(
-          (subscribeMethod) => this.subscribe(actionName, subscribeMethod),
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod as any),
         );
       };
       return { map };
@@ -315,7 +308,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         ) => any)[]
       ) => {
         subscribeMethods.forEach(
-          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source)),
+          (subscribeMethod) => this.subscribe(actionName, subscribeMethod.bind(source) as any),
         );
         return { map };
       };

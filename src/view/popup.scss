@@ -382,7 +382,7 @@ form.form-query {
       max-height: calc(100vh / 2);
     }
 
-    .queries-wrap::after {
+    .queries-wrap:not(:has(.queries:empty))::after {
       content: '';
       display: block;
       height: 0.5em;
@@ -601,7 +601,7 @@ app-main {
   .icon-url {
     font-size: 0.3rem;
     font-weight: bold;
-    font-family: monospace;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 
     &::before {
       content: 'URL';

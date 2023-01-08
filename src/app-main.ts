@@ -126,14 +126,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   dragging(changes: Changes<'dragging'>) {
     toggleClass('drag-start', changes.newValue)(this);
   }
-  setIncludeUrl(
-    { newValue }: Changes<'setIncludeUrl'>,
-    _: any,
-    __: any,
-    store: StoreSub,
-  ) {
+  setIncludeUrl({ newValue }: Changes<'setIncludeUrl'>) {
     toggleClass('checked-include-url', newValue)(this);
-    store.dispatch('changeIncludeUrl', newValue, true);
   }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;

@@ -179,12 +179,12 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.clearSearch(store.dispatch);
     this.$inputQuery.focus();
   }
-  resetQuery({ newValue: includeUrl }: Changes<'changeIncludeUrl'>, _: any, __: any, store: StoreSub) {
+  resetQuery({ newValue: includeUrl, isInit }: Changes<'setIncludeUrl'>, _: any, __: any, store: StoreSub) {
     this.#includeUrl = includeUrl;
     this.#oldValue = '';
     const { value } = this.$inputQuery;
     if (value.length > 0) {
-      this.search(this.$inputQuery.value, store.dispatch);
+      this.search(this.$inputQuery.value, store.dispatch, isInit);
     }
   }
   clearSearch(dispatch: Store['dispatch']) {
@@ -196,7 +196,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       selectFolder($target, $byClass('leafs')!, this.#exclusiveOpenBmFolderTree);
     }
   }
-  async search(newValue: string, dispatch: Dispatch) {
+  async search(newValue: string, dispatch: Dispatch, isInit = false) {
     const oldValue = this.#oldValue;
     const isSingleChar = checkSingleChar(newValue);
     if (isSingleChar && (oldValue.length === 0 || checkSingleChar(oldValue))) {
@@ -208,7 +208,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.$inputQuery.setAttribute('value', newValue);
       this.$inputQuery.value = newValue;
     }
-    const result = this.toggleQueries(true);
+    const result = isInit ? undefined : this.toggleQueries(true);
     dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
@@ -260,7 +260,6 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       }),
       focusQuery: {},
       clearSearch: {},
-      changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
       searching: {
         initValue: false,
       },

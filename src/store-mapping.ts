@@ -64,6 +64,7 @@ export function storeMapping(options: Options, components: Components) {
   store.actionContext($headerLeafs, 'setIncludeUrl').map(
     $appMain.setIncludeUrl.bind($appMain),
     $history.setIncludeUrl.bind($history),
+    $formSearch.resetQuery.bind($formSearch),
   );
 
   store.actionContext($formSearch, 'clearSearch').map(
@@ -147,7 +148,6 @@ export function storeMapping(options: Options, components: Components) {
 
   store.context($formSearch)
     .map('inputQuery', $formSearch.inputQuery)
-    .map('changeIncludeUrl', $formSearch.resetQuery)
     .map('clearQuery', $formSearch.clearQuery)
     .map('focusQuery', $formSearch.focusQuery)
     .map('search', $formSearch.reSearchAll)

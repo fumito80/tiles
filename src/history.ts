@@ -601,9 +601,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       this.resetVScroll();
     }
   }
-  changeIncludeUrl(changes: Changes<'changeIncludeUrl'>) {
-    this.#includeUrl = changes.newValue;
-  }
   // Store
   override actions() {
     return {
