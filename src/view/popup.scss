@@ -1828,7 +1828,7 @@ bm-leaf {
       content: '';
       border: 5px solid transparent;
       border-left: 7px solid #888;
-      margin-left: 8px;
+      margin-left: auto;
     }
 
     .menu-tree {
@@ -1867,6 +1867,49 @@ bm-leaf {
 
   .bm-find-tab-mode>span {
     display: none;
+    margin-right: 8px;
+  }
+}
+
+.fav-color-themes {
+  .menu-tree {
+    max-height: 50vh;
+    overflow: auto;
+
+    &::before {
+      content: 'Rotate with F2 key';
+      font-size: 0.9em;
+      display: block;
+      text-align: center;
+    }
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .fav-palette {
+      width: 150px;
+      height: 1.2rem;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+
+      >div {
+        pointer-events: none;
+        width: 100%;
+        height: 100%;
+
+        &:first-child {
+          border-top-left-radius: 4px;
+          border-bottom-left-radius: 4px;
+        }
+
+        &:last-child {
+          border-top-right-radius: 4px;
+          border-bottom-right-radius: 4px;
+        }
+      }
+    }
   }
 }
 

@@ -1,8 +1,8 @@
-import { Panes, State } from './types';
+import { ColorPalette, Panes, State } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag,
   addAttr,
-  addBookmark, addClass, addFolder, hasClass, rmClass, showMenu,
+  addBookmark, addClass, addFolder, changeColorTheme, getChildren, hasClass, rmClass, showMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -36,6 +36,10 @@ function clickMainMenu(e: MouseEvent, store: Store) {
       chrome.runtime.openOptionsPage();
       break;
     default:
+  }
+  if (hasClass($menu, 'fav-palette')) {
+    const colorPalette = getChildren($menu).map(($el) => $el.dataset.color) as ColorPalette;
+    changeColorTheme(colorPalette);
   }
 }
 

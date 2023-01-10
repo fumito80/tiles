@@ -847,7 +847,7 @@ export function getGridColStart($target: HTMLElement) {
   return gridColStart;
 }
 
-export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+export function makeThemeCss(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
   const darkColor = '#222222';
   const [
@@ -860,7 +860,7 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  const variables = Object
+  return Object
     .entries({
       paneBg,
       paneColor,
@@ -875,6 +875,10 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     })
     .map(([key, value]) => `    --${camelToSnake(key)}: ${value};`)
     .join('\n');
+}
+
+export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+  const variables = makeThemeCss(colorPalette);
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
   chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
 }

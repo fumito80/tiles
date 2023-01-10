@@ -11,6 +11,7 @@ import {
   dropAreaClasses,
   positions,
   defaultWidth,
+  ColorPalette,
 } from './types';
 
 import {
@@ -28,11 +29,18 @@ import {
   prop,
   addListener,
   when,
+  getColorWhiteness,
+  lightColorWhiteness,
+  camelToSnake,
+  makeThemeCss,
+  setPopupStyle,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
+import { AppMain } from './app-main';
+import { setBrowserIcon } from './draw-svg';
 
 // DOM operation
 
@@ -795,4 +803,46 @@ export function moveBookmarks(
 
 export function getMessageDeleteSelecteds(count: number) {
   return `Are you sure you want to delete ${count} selected items?`;
+}
+
+export function getChildren($target: Element) {
+  return [...$target.children] as HTMLElement[];
+}
+
+export function getPalettesHtml(palettes: ColorPalette[]) {
+  return palettes
+    .map((palette) => {
+      const divs = palette.map((color) => `<div data-color=${color} style="background-color: #${color}"></div>`).join('');
+      return `<div class="fav-palette">${divs}</div>`;
+    })
+    .join('');
+}
+
+export function setThemeClass($appMain: AppMain, colorPalette: ColorPalette) {
+  const [
+    themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey,
+  ] = colorPalette
+    .map((code) => getColorWhiteness(code))
+    .map((whiteness) => whiteness <= lightColorWhiteness);
+  Object.entries({
+    themeDarkPane,
+    themeDarkFrame,
+    themeDarkHover,
+    themeDarkSearch,
+    themeDarkKey,
+  }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($appMain));
+}
+
+export function changeColorTheme(colorPalette: ColorPalette) {
+  const ruleText = makeThemeCss(colorPalette);
+  const sheet = document.styleSheets[1];
+  const root = [...sheet.cssRules].findIndex((rule) => (rule as any).selectorText === ':root');
+  sheet.deleteRule(root);
+  sheet.insertRule(`:root {\n${ruleText}}\n`);
+  setThemeClass($byTag('app-main'), colorPalette);
+  getLocal('options').then(({ options }) => {
+    setLocal({ options: { ...options, colorPalette } });
+    setPopupStyle({ css: options.css, colorPalette });
+  });
+  setBrowserIcon(colorPalette);
 }
