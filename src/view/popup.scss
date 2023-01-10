@@ -1876,12 +1876,12 @@ bm-leaf {
     max-height: 50vh;
     overflow: auto;
 
-    &::before {
-      content: 'Rotate with F2 key';
-      font-size: 0.9em;
-      display: block;
-      text-align: center;
-    }
+    // &::before {
+    //   content: 'Rotate with F2 key';
+    //   font-size: 0.9em;
+    //   display: block;
+    //   text-align: center;
+    // }
 
     &::-webkit-scrollbar {
       width: 8px;
