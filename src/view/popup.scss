@@ -598,14 +598,22 @@ app-main {
     pointer-events: none;
   }
 
-  .icon-url {
-    font-size: 0.3rem;
-    font-weight: bold;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  .include-url .icon-fa-search {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    transform: scale(.65);
 
     &::before {
-      content: 'URL';
+      position: absolute;
     }
+  }
+
+  .include-url .icon-fa-search::after {
+    content: 'URL';
+    position: absolute;
+    bottom: 0;
+    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   }
 }
 
