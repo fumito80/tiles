@@ -293,7 +293,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const currentDate = $headerDate.textContent;
     if (searching) {
       const selecteds = this.getVScrollData()
-        .filter((row) => getLocaleDate(row.lastVisitTime) === currentDate && !row.headerDate);
+        .filter(
+          (row) => !row.isSession
+          && getLocaleDate(row.lastVisitTime) === currentDate && !row.headerDate,
+        );
       const selectedIds = selecteds.map((row) => row.id);
       const selected = !selecteds[0].selected;
       this.applyData((data) => {
@@ -315,6 +318,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       let selected = true;
       for (let i = 0; i < data.length; i += 1) {
         const row = data[i];
+        if (row.isSession) {
+          newData.push(row);
+          // eslint-disable-next-line no-continue
+          continue;
+        }
         const isMatch = getLocaleDate(row.lastVisitTime) === currentDate && !row.headerDate;
         if (matched && !isMatch) {
           newData.push(...data.slice(i));
@@ -460,7 +468,13 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       clearTimeout(this.timerMultiSelect);
       this.timerMultiSelect = setTimeout(
         async () => {
-          const { dragging, multiSelPanes, searching } = await store.getStates();
+          const {
+            dragging, multiSelPanes, searching, toggleRecentlyClosed,
+          } = await store.getStates();
+          if (toggleRecentlyClosed) {
+            dialog.alert(messages.cantSelectMultiple);
+            return;
+          }
           const histories = !multiSelPanes?.histories;
           if (dragging) {
             if (!histories) {
