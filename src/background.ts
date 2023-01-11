@@ -109,7 +109,7 @@ function saveQuery(port: chrome.runtime.Port) {
       ];
       setLocal({ queries });
     });
-    chrome.runtime.sendMessage('close-popup');
+    chrome.runtime.sendMessage('close-popup').catch(() => {});
   });
 }
 

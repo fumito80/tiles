@@ -114,12 +114,11 @@ input.bullet {
 .chrome-sync {
   button {
     display: inline-flex;
-    gap: 4px;
     align-items: center;
-    background-color: white;
 
     i {
       font-size: 1.4em;
+      margin-right: 4px;
     }
   }
 }
@@ -460,7 +459,6 @@ label.theme {
   }
 }
 
-.remove-fav-palette,
 .btn-flip-bm {
   display: flex;
   justify-content: center;
@@ -477,5 +475,11 @@ label.theme {
     .icon-x {
       color: red;
     }
+  }
+}
+
+.remove-fav-palette {
+  >i {
+    transform: scale(1.5);
   }
 }
