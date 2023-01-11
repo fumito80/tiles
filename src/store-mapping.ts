@@ -137,6 +137,11 @@ export function storeMapping(options: Options, components: Components) {
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
+  store.context($tabs)
+    .map('pinWindowTop', $tabs.pinWindowTop)
+    .map('pinWindowBottom', $tabs.pinWindowBottom)
+    .map('unpinWindow', $tabs.unpinWindow);
+
   store.context($history)
     .map('clickHistory', $history.clickItem)
     .map('resetHistory', $history.resetHistory)

@@ -429,15 +429,6 @@ app-main {
     border: 0;
     font-size: 1.0rem;
 
-    // &:focus {
-    //   pointer-events: none;
-
-    //   +.main-menu {
-    //     display: block;
-    //     animation: fade-in 0.15s ease-in-out;
-    //   }
-    // }
-
     >.icon-fa-ellipsis-v {
       pointer-events: none;
     }
@@ -942,6 +933,7 @@ app-main:not(.drag-start) .folders .marker:hover {
 .folders::-webkit-scrollbar,
 .leafs::-webkit-scrollbar,
 .tabs::-webkit-scrollbar,
+.tabs-wrap::-webkit-scrollbar,
 .histories::-webkit-scrollbar {
   width: 8px;
 }

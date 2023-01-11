@@ -7,7 +7,7 @@ body {
 
 .leafs,
 .histories,
-.tabs-wrap>open-window,
+open-window,
 .histories .rows .current-date,
 .histories .rows .current-date::before,
 .current-window window-header::after {
@@ -16,8 +16,7 @@ body {
 }
 
 .folders .open>.marker>.title,
-.current-tab::after,
-.current-window window-header::before {
+.current-tab::after {
   background-color: var(--key-bg);
   color: var(--key-color);
 }
@@ -28,8 +27,8 @@ body {
 
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
-app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap:hover,
-app-main:not(.drag-start) .tabs-wrap>open-window:not(.tabs-collapsed)>.tab-wrap.selected,
+app-main:not(.drag-start) open-window:not(.tabs-collapsed)>.tab-wrap:hover,
+app-main:not(.drag-start) open-window:not(.tabs-collapsed)>.tab-wrap.selected,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
@@ -153,7 +152,7 @@ app-main:not(.drag-start) {
     }
   }
 
-  .tabs-wrap>.tabs-collapsed {
+  .tabs-collapsed {
 
     >.tab-wrap {
       background-color: $dark-icon-color;
@@ -168,7 +167,7 @@ app-main:not(.drag-start) {
     }
   }
 
-  .tabs-wrap>.tabs-collapsed>.tab-wrap.selected>.outline::after {
+  .tabs-collapsed>.tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
 
@@ -241,6 +240,7 @@ app-main:not(.drag-start) {
 
   .folders::-webkit-scrollbar-thumb,
   .tabs::-webkit-scrollbar-thumb,
+  .tabs-wrap::-webkit-scrollbar-thumb,
   &:not(.searching) .queries::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, .3);
 
@@ -403,7 +403,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 }
 
-.theme-dark-pane.theme-dark-frame .tabs .tabs-wrap {
+.theme-dark-pane.theme-dark-frame .tabs {
   .window {
     border-color: $dark-icon-color;
     border-width: 1px;

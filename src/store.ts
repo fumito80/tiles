@@ -136,14 +136,20 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
             const actionValue = makeActionValue(initValue);
             return chrome.storage.session.set({ [actionName]: actionValue })
               .then(() => ({
-                [actionName]: { persistent: persistent as boolean, eventOnly, noStates },
+                [actionName]: {
+                  persistent: persistent as boolean, eventOnly, noStates, name,
+                },
               }));
           }
-          return chrome.storage.local.get(actionName)
-            .then(({ [actionName]: value }) => {
+          return chrome.storage.local.get(name)
+            .then(({ [name]: value }) => {
               const actionValue = { ...makeActionValue(value ?? initValue), isInit: true };
               return chrome.storage.session.set({ [actionName]: actionValue })
-                .then(() => ({ [actionName]: { persistent, eventOnly, noStates } }));
+                .then(() => ({
+                  [actionName]: {
+                    persistent, eventOnly, noStates, name,
+                  },
+                }));
             });
         });
     });
@@ -160,14 +166,16 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
         return;
       }
       Object.entries(storage).forEach(async ([actionName, changes]) => {
-        const { persistent, eventOnly, noStates } = actionsAll[actionName];
+        const {
+          persistent, eventOnly, noStates, name,
+        } = actionsAll[actionName];
         if (eventOnly || changes.newValue.isInit) {
           return;
         }
         const oldValue = (changes.oldValue as ActionResult)?.value;
         const newValue = (changes.newValue as ActionResult)?.value;
         if (persistent) {
-          chrome.storage.local.set({ [actionName]: newValue });
+          chrome.storage.local.set({ [name]: newValue });
         }
         const states = noStates ? undefined : await getStates();
         subscribers[actionName]?.forEach(
@@ -326,6 +334,8 @@ export function initComponents(
   promiseInitHistory: Promise<MyHistoryItem[]>,
   lastSearchWord: string,
   isSearching: boolean,
+  pinWindowTop: number | undefined,
+  pinWindowBottom: number | undefined,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -351,6 +361,8 @@ export function initComponents(
     isSearching,
     promiseInitTabs,
     settings.windowOrderAsc,
+    pinWindowTop,
+    pinWindowBottom,
   );
   $leafs.init(options);
   $folders.init(options);

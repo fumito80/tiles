@@ -180,7 +180,14 @@ function getInitialTabs() {
 }
 
 function init([{
-  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
+  settings,
+  htmlBookmarks,
+  clientState,
+  options,
+  htmlHistory,
+  lastSearchWord,
+  pinWindowTop,
+  pinWindowBottom,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
@@ -194,6 +201,8 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
+    pinWindowTop,
+    pinWindowBottom,
   );
   const store = storeMapping(options, components);
   setOptions(settings, options);

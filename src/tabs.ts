@@ -3,8 +3,8 @@ import {
   MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, hasClass, setText, createNewTab,
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
+  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, setText, createNewTab, $byId,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
@@ -15,6 +15,7 @@ import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
 } from './popup';
 import {
+  InitailTabs,
   MulitiSelectables, Options, PromiseInitTabs, State,
 } from './types';
 import { Leaf } from './bookmarks';
@@ -49,7 +50,7 @@ async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   toggleClass('tabs-collapsed')($win);
   await promiseCollapse;
   const { length } = $$byClass('tabs-collapsed');
-  if (length === $win.parentElement!.children.length) {
+  if (length === $$byTag('open-window').length) {
     dispatch('collapseWindowsAll', true);
   } else if (length === 0) {
     dispatch('collapseWindowsAll', false);
@@ -243,6 +244,15 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
           case 'close-window':
             store.dispatch('windowAction', { type: 'closeWindow', windowId }, true);
             break;
+          case 'pin-window-top':
+            store.dispatch('pinWindowTop', windowId, true);
+            break;
+          case 'pin-window-bottom':
+            store.dispatch('pinWindowBottom', windowId, true);
+            break;
+          case 'unpin-window':
+            store.dispatch('unpinWindow', windowId, true);
+            break;
           default:
         }
       }),
@@ -366,8 +376,7 @@ function isOpenTab($target: HTMLElement) {
 
 export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'tabs';
-  #tabsWrap!: HTMLElement;
-  #initPromise!: Promise<void>;
+  #initPromise!: Promise<[InitailTabs, number]>;
   $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
   #options!: Options;
@@ -376,6 +385,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #tabOrderAsc!: boolean;
   #lastScrollTop: number | undefined;
   #promiseSmoothScroll!: Promise<any>;
+  private $pinWrap!: HTMLElement;
+  private $pinWrapB!: HTMLElement;
+  private $tabsWrap!: HTMLElement;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -383,25 +395,41 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
     tabOrderAsc: boolean,
+    pinWindowTop: number | undefined,
+    pinWindowBottom: number | undefined,
   ) {
     this.setEvent();
-    this.#tabsWrap = this.firstElementChild as HTMLElement;
+    this.$pinWrap = $byClass('pin-wrap-top', this)!;
+    this.$pinWrapB = $byClass('pin-wrap-bottom', this)!;
+    this.$tabsWrap = $byClass('tabs-wrap', this)!;
     this.#options = options;
     this.#tabOrderAsc = tabOrderAsc;
-    this.#initPromise = promiseInitTabs.then(([initTabs, currentWindowId]) => {
-      const ordered = tabOrderAsc ? initTabs.reverse() : initTabs;
-      const $windows = ordered.map((win) => {
-        const $window = document.importNode($tmplWindow, true);
-        return $window.init(
-          win.windowId,
-          $tmplOpenTab,
-          win.tabs!,
-          options.collapseTabs,
-          isSearching,
-          win.windowId === currentWindowId,
-        );
-      });
-      this.#tabsWrap.append(...$windows);
+    this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
+      const ordered = tabOrderAsc ? initWindows.concat().reverse() : initWindows;
+      const $windows = ordered
+        .map((win) => {
+          const $window = document.importNode($tmplWindow, true);
+          const $win = $window.init(
+            win.windowId,
+            $tmplOpenTab,
+            win.tabs!,
+            options.collapseTabs,
+            isSearching,
+            win.windowId === currentWindowId,
+          );
+          if (win.windowId === pinWindowTop) {
+            this.$pinWrap.append($win);
+            return undefined;
+          }
+          if (win.windowId === pinWindowBottom) {
+            this.$pinWrapB.append($win);
+            return undefined;
+          }
+          return $win;
+        })
+        .filter(Boolean);
+      this.$tabsWrap.append(...$windows as Window[]);
+      return [initWindows, currentWindowId];
     });
     this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
     return this;
@@ -410,7 +438,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   getWindows() {
-    return [...this.#tabsWrap.children] as Window[];
+    return [...this.$tabsWrap.children] as Window[];
   }
   getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
     return this.getWindows().flatMap(($win) => $win.getTabs()).filter(filter);
@@ -745,16 +773,50 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   toggleTabOrder() {
     this.getWindows().forEach((win) => {
-      this.#tabsWrap.insertAdjacentElement('afterbegin', win);
+      this.$tabsWrap.insertAdjacentElement('afterbegin', win);
     });
     this.scrollTop = 0;
+  }
+  async unpin(store?: StoreSub, $pinWrap?: HTMLElement, windowId?: number | null) {
+    const currentPin = windowId ? $byId(`win-${windowId}`) : $pinWrap?.firstElementChild;
+    if (currentPin instanceof Window) {
+      const actionName = hasClass(currentPin.parentElement!, 'pin-wrap-top') ? 'pinWindowTop' : 'pinWindowBottom';
+      store?.dispatch(actionName, null, true);
+      const [windows] = await this.#initPromise;
+      const ordered = this.#tabOrderAsc ? windows.concat().reverse() : windows;
+      const findIndex = ordered.findIndex((win) => win.windowId === currentPin.windowId);
+      this.$tabsWrap.insertBefore(currentPin, this.$tabsWrap.children[findIndex] ?? null);
+    }
+  }
+  async pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
+    if (!windowId) {
+      return;
+    }
+    this.unpin(undefined, $pinWrap);
+    const newPin = this.getWindows().find((win) => win.windowId === windowId)!;
+    $pinWrap.append(newPin);
+  }
+  async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, __: any, store: StoreSub) {
+    this.unpin(store, undefined, newValue);
+  }
+  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {
+    if (isInit) {
+      return;
+    }
+    this.pinWindow(newValue, this.$pinWrap);
+  }
+  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>) {
+    if (isInit) {
+      return;
+    }
+    this.pinWindow(newValue, this.$pinWrapB);
   }
   override actions() {
     return {
       ...super.actions(),
       windowAction: makeAction({
         initValue: {
-          type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow',
+          type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow' | 'pinWindowTop' | 'pinWindowBottom',
           windowId: -1,
         },
       }),
@@ -805,12 +867,25 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       toggleTabOrder: makeAction({
         initValue: this.#tabOrderAsc,
       }),
+      pinWindowTop: makeAction({
+        initValue: null as number | null,
+        persistent: true,
+      }),
+      unpinWindow: makeAction({
+        initValue: null as number | null,
+      }),
+      pinWindowBottom: makeAction({
+        initValue: null as number | null,
+        persistent: true,
+      }),
     };
   }
   override connect(store: Store) {
     super.connect(store);
     this.#initPromise.then(() => {
-      this.getWindows().forEach(($window) => $window.connect(store));
+      this.getWindows()
+        .concat([...this.$pinWrap.children] as Window[], [...this.$pinWrapB.children] as Window[])
+        .forEach(($window) => $window.connect(store));
     });
   }
 }
@@ -824,7 +899,6 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $searchesTabs!: HTMLElement;
   private $searchesBms!: HTMLElement;
   private $tabOrderAsc!: HTMLElement;
-  // private $newWindowPlus!: HTMLElement;
   readonly multiDeletesTitle = 'Close selected tabs';
   override init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane) {
     super.init(settings, options, $tmplMultiSelPane);
@@ -834,7 +908,6 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesTabs = $byClass('searches-tabs', this)!;
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
-    // this.$newWindowPlus = $byClass('new-window-plus', this)!;
     this.#collapsed = options.collapseTabs;
     toggleClass('window-order-asc', settings.windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);

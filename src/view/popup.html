@@ -159,11 +159,13 @@
             <div class="v-scroll-fake-bottom"></div>
         </div>
         <div is="body-tabs" class="pane-body tabs">
+            <div class="pin-wrap-top"></div>
             <div class="tabs-wrap"></div>
             <div class="new-window">
                 <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
                         class="icon-plus"></i></button>
             </div>
+            <div class="pin-wrap-bottom"></div>
         </div>
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
@@ -228,6 +230,11 @@
                         title="Show icon view"></i></button>
                 <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
                 <div class="tabs-menu" role="menu">
+                    <div role="menuitem" data-value="pin-window-top"><i class="icon-arrow-top-thin"></i>Pin top</div>
+                    <div role="menuitem" data-value="pin-window-bottom"><i class="icon-arrow-top-thin"></i>Pin bottom
+                    </div>
+                    <div role="menuitem" data-value="unpin-window"><i class="icon-pin"></i>Unpin</div>
+                    <hr aria-hidden="true">
                     <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>

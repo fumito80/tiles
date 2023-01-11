@@ -134,6 +134,8 @@ export const initialState = {
   lastSearchWord: '',
   queries: [] as string[],
   bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
+  pinWindowTop: undefined as number | undefined,
+  pinWindowBottom: undefined as number | undefined,
 };
 
 export type State = typeof initialState;
