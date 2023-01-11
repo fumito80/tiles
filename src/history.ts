@@ -471,10 +471,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
           const {
             dragging, multiSelPanes, searching, toggleRecentlyClosed,
           } = await store.getStates();
-          if (toggleRecentlyClosed) {
-            dialog.alert(messages.cantSelectMultiple);
-            return;
-          }
           const histories = !multiSelPanes?.histories;
           if (dragging) {
             if (!histories) {
@@ -483,7 +479,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             }
             return;
           }
-          if (hasClass($history, 'session-tab', 'session-window')) {
+          if (toggleRecentlyClosed || hasClass($history, 'session-tab', 'session-window')) {
             dialog.alert(messages.cantSelectMultiple);
             return;
           }

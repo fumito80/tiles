@@ -19,6 +19,8 @@ import {
   addClass,
   setThemeClass,
   changeColorTheme,
+  $,
+  setFavColorMenu,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub,
@@ -108,7 +110,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         } else if (!e.shiftKey && findIndex >= 0 && (findIndex + 1) < favColorPalettes.length) {
           palette = favColorPalettes[findIndex + 1];
         }
-        changeColorTheme(palette);
+        changeColorTheme(palette).then(() => setFavColorMenu(palette));
       });
     } else if (e.shiftKey && e.ctrlKey) {
       const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');
@@ -139,6 +141,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
+    if (!$target.closest('.fav-color-themes')) {
+      $('.main-menu.show')?.classList.remove('show');
+    }
     if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
       return;
     }

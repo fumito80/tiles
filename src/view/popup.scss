@@ -429,14 +429,14 @@ app-main {
     border: 0;
     font-size: 1.0rem;
 
-    &:focus {
-      pointer-events: none;
+    // &:focus {
+    //   pointer-events: none;
 
-      +.main-menu {
-        display: block;
-        animation: fade-in 0.15s ease-in-out;
-      }
-    }
+    //   +.main-menu {
+    //     display: block;
+    //     animation: fade-in 0.15s ease-in-out;
+    //   }
+    // }
 
     >.icon-fa-ellipsis-v {
       pointer-events: none;
@@ -1546,30 +1546,38 @@ app-main.zoom-pane {
   }
 }
 
-.main-menu .icon-arrows-left-right-solid {
-  position: relative;
-}
+.main-menu {
 
-.main-menu .icon-arrows-left-right-solid::after {
-  content: "";
-  border: 1px solid #333;
-  position: absolute;
-  top: -0.1em;
-  left: 0.57em;
-  width: 1.2em;
-  height: 100%;
-  border-radius: 2px;
-}
+  &.show {
+    display: block;
+    animation: fade-in 0.15s ease-in-out;
+  }
 
-.main-menu .icon-check-solid {
-  display: none;
-  position: absolute;
-  pointer-events: none;
-  left: 8px;
-  width: 1em;
-  font-size: 1em;
-  font-weight: bold;
-  color: $common-marker;
+  .icon-arrows-left-right-solid {
+    position: relative;
+  }
+
+  .icon-arrows-left-right-solid::after {
+    content: "";
+    border: 1px solid #333;
+    position: absolute;
+    top: -0.1em;
+    left: 0.57em;
+    width: 1.2em;
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .icon-check-solid {
+    display: none;
+    position: absolute;
+    pointer-events: none;
+    left: 8px;
+    width: 1em;
+    font-size: 1em;
+    font-weight: bold;
+    color: $common-marker;
+  }
 }
 
 .checked-include-url {
@@ -1853,6 +1861,16 @@ bm-leaf {
         opacity: 1;
         pointer-events: inherit;
       }
+
+      &::before {
+        content: '';
+        position: absolute;
+        width: 3em;
+        height: 300%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
     }
 
   }
@@ -1875,13 +1893,6 @@ bm-leaf {
   .menu-tree {
     max-height: 50vh;
     overflow: auto;
-
-    // &::before {
-    //   content: 'Rotate with F2 key';
-    //   font-size: 0.9em;
-    //   display: block;
-    //   text-align: center;
-    // }
 
     &::-webkit-scrollbar {
       width: 8px;
@@ -1907,6 +1918,22 @@ bm-leaf {
         &:last-child {
           border-top-right-radius: 4px;
           border-bottom-right-radius: 4px;
+        }
+      }
+
+      &.selected {
+        >div {
+          border: 0 solid #222222;
+          border-top-width: 2px;
+          border-bottom-width: 2px;
+
+          &:first-child {
+            border-left-width: 2px;
+          }
+
+          &:last-child {
+            border-right-width: 2px;
+          }
         }
       }
     }

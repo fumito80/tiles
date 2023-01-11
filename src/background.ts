@@ -95,18 +95,21 @@ async function onSessionChanged() {
   timeoutChangeSession = setTimeout(setHtmlHistory, 500);
 }
 
-function saveQuery() {
-  getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
-    if (!lastSearchWord) {
-      return;
-    }
-    const queries = [
-      lastSearchWord,
-      ...(rest.queries || [])
-        .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
-        .slice(0, 200),
-    ];
-    setLocal({ queries });
+function saveQuery(port: chrome.runtime.Port) {
+  port.onDisconnect.addListener(() => {
+    getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
+      if (!lastSearchWord) {
+        return;
+      }
+      const queries = [
+        lastSearchWord,
+        ...(rest.queries || [])
+          .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
+          .slice(0, 200),
+      ];
+      setLocal({ queries });
+    });
+    chrome.runtime.sendMessage('close-popup');
   });
 }
 

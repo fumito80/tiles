@@ -833,16 +833,25 @@ export function setThemeClass($appMain: AppMain, colorPalette: ColorPalette) {
   }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($appMain));
 }
 
-export function changeColorTheme(colorPalette: ColorPalette) {
+export async function changeColorTheme(colorPalette: ColorPalette) {
   const ruleText = makeThemeCss(colorPalette);
   const sheet = document.styleSheets[1];
   const root = [...sheet.cssRules].findIndex((rule) => (rule as any).selectorText === ':root');
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
-  getLocal('options').then(({ options }) => {
+  setBrowserIcon(colorPalette);
+  return getLocal('options').then(({ options }) => {
     setLocal({ options: { ...options, colorPalette } });
     setPopupStyle({ css: options.css, colorPalette });
   });
-  setBrowserIcon(colorPalette);
+}
+
+export function setFavColorMenu(colorPalette: ColorPalette) {
+  $('.fav-palette.selected')?.classList.remove('selected');
+  const $selected = $$byClass('fav-palette')
+    .find(($el) => getChildren($el)
+      .every(($color, i) => $color.dataset.color === colorPalette[i]));
+  $selected?.classList.add('selected');
+  ($selected as any).scrollIntoViewIfNeeded();
 }

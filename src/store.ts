@@ -354,9 +354,9 @@ export function initComponents(
   );
   $leafs.init(options);
   $folders.init(options);
-  $headerLeafs.init(settings, $tmplMultiSelPane, options);
-  $headerTabs.init(settings, $tmplMultiSelPane, options.collapseTabs);
-  $headerHistory.init(settings, $tmplMultiSelPane);
+  $headerLeafs.init(settings, options, $tmplMultiSelPane);
+  $headerTabs.init(settings, options, $tmplMultiSelPane);
+  $headerHistory.init(settings, options, $tmplMultiSelPane);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   return {

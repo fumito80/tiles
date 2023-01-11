@@ -27,6 +27,18 @@ type Options = State['options'];
 type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
 
+function findPalette(palette: ColorPalette) {
+  $$('.fav-palette, .tab-pane>div')
+    .filter(($el) => {
+      $el.classList.remove('selected');
+      return getChildren($el).every(($child, i) => $child.dataset.color === palette[i]);
+    })
+    .forEach(($el) => {
+      $el.classList.add('selected');
+      ($el as any).scrollIntoViewIfNeeded();
+    });
+}
+
 class ColorPaletteClass extends CustomInputElement {
   #value?: ColorPalette;
   #inputs: HTMLInputElement[];
@@ -48,22 +60,11 @@ class ColorPaletteClass extends CustomInputElement {
     });
     this.fireEvent();
     setBrowserIcon(value);
+    findPalette(value);
   }
 }
 
 customElements.define('color-palette', ColorPaletteClass);
-
-function findPalette(palette: ColorPalette) {
-  $$('.fav-palette, .tab-pane>div')
-    .filter(($el) => {
-      $el.classList.remove('selected');
-      return getChildren($el).every(($child, i) => $child.dataset.color === palette[i]);
-    })
-    .forEach(($el) => {
-      $el.classList.add('selected');
-      ($el as any).scrollIntoViewIfNeeded();
-    });
-}
 
 class FavColorPalettes extends CustomInputElement {
   #value = [] as ColorPalette[];
@@ -279,6 +280,16 @@ function initOthers() {
   }
   $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
   findPalette(colorPalette.value);
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message === 'close-popup') {
+      getLocal('options').then(({ options }) => {
+        const isSame = colorPalette.value.every((color, i) => color === options.colorPalette[i]);
+        if (!isSame) {
+          colorPalette.value = options.colorPalette;
+        }
+      });
+    }
+  });
 }
 
 const init = pipe(

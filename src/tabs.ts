@@ -826,8 +826,8 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $tabOrderAsc!: HTMLElement;
   // private $newWindowPlus!: HTMLElement;
   readonly multiDeletesTitle = 'Close selected tabs';
-  override init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, collapsed: boolean) {
-    super.init(settings, $tmplMultiSelPane);
+  override init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane) {
+    super.init(settings, options, $tmplMultiSelPane);
     this.$buttonCollapse = $byClass('collapse-tabs', this)!;
     this.$buttonPrevWin = $byClass('win-prev', this)!;
     this.$buttonNextWin = $byClass('win-next', this)!;
@@ -835,10 +835,10 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
     // this.$newWindowPlus = $byClass('new-window-plus', this)!;
-    this.#collapsed = collapsed;
+    this.#collapsed = options.collapseTabs;
     toggleClass('window-order-asc', settings.windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
-    this.toggleTabCollapsed({ newValue: collapsed });
+    this.toggleTabCollapsed({ newValue: options.collapseTabs });
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   toggleTabCollapsed({ newValue: collapsed }: { newValue: boolean }) {

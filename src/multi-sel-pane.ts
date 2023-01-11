@@ -1,8 +1,9 @@
-import { ColorPalette, Panes, State } from './types';
 import {
-  $$byClass, $$byTag, $byClass, $byTag,
-  addAttr,
-  addBookmark, addClass, addFolder, changeColorTheme, getChildren, hasClass, rmClass, showMenu,
+  ColorPalette, Options, Panes, State,
+} from './types';
+import {
+  $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass,
+  addBookmark, addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -39,7 +40,7 @@ function clickMainMenu(e: MouseEvent, store: Store) {
   }
   if (hasClass($menu, 'fav-palette')) {
     const colorPalette = getChildren($menu).map(($el) => $el.dataset.color) as ColorPalette;
-    changeColorTheme(colorPalette);
+    changeColorTheme(colorPalette).then(() => setFavColorMenu(colorPalette));
   }
 }
 
@@ -163,11 +164,20 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   abstract menuClickHandler(e: MouseEvent): void;
   readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(settings: State['settings'], $tmplMultiSelPane: MultiSelPane, _?: any) {
+  init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane, _?: any) {
     this.$mainMenu = $byClass('main-menu', this)!;
     this.includeUrl = settings.includeUrl;
-    $byClass('main-menu-button', this)?.addEventListener('click', showMenu(this.$mainMenu, true));
-    this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+    if (hasClass(this, 'end')) {
+      $byClass('main-menu-button', this)?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.$mainMenu.classList.toggle('show');
+        if (hasClass(this.$mainMenu, 'show')) {
+          showMenu(this.$mainMenu, true);
+          setFavColorMenu(options.colorPalette);
+        }
+      });
+      this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
+    }
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     const $popupMenu = $byTag('popup-menu', this);
     if (!($popupMenu instanceof PopupMenu)) {
