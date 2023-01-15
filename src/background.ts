@@ -65,7 +65,6 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  // const historiesOrSessions = await getHistoryData();
   const historiesOrSessions = await Promise.all(getHistoryData())
     .then(addHeadersHistory)
     .then((data) => data.slice(0, historyHtmlCount));

@@ -21,11 +21,7 @@ import {
 import { Leaf } from './bookmarks';
 
 export async function smoothSroll<T extends HTMLElement>($target: T, scrollTop: number) {
-  // const $tabsWrap = $target.parentElement! as HTMLElement;
-  // const $tabsWrap = $container;
-  // const $container = $tabsWrap.parentElement! as HTMLElement;
   const $container = $target.parentElement! as HTMLElement;
-  // const $container = $container.parentElement! as HTMLElement;
   const translateY = -(Math.min(
     scrollTop - $container.scrollTop,
     $container.scrollHeight - $container.offsetHeight - $container.scrollTop,
@@ -431,14 +427,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
             isSearching,
             win.windowId === currentWindowId,
           );
-          // if (win.windowId === pinWindowTop) {
-          //   this.$pinWrap.append($win);
-          //   return undefined;
-          // }
-          // if (win.windowId === pinWindowBottom) {
-          //   this.$pinWrapB.append($win);
-          //   return undefined;
-          // }
           return $win;
         })
         .filter(Boolean);
@@ -835,9 +823,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
     this.unpin(undefined, $pinWrap);
     const newPin = this.getWindows().find((win) => win.windowId === windowId)!;
-    // const wrap = document.createElement('div');
-    // wrap.append(...newPin.children);
-    // $pinWrap.appendChild(newPin).append(wrap);
     $pinWrap.appendChild(newPin);
   }
   async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {

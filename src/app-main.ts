@@ -141,7 +141,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
-    if (!$target.closest('.fav-color-themes')) {
+    if (!$target.closest('.fav-color-themes') && !hasClass($target, 'main-menu-button')) {
       $('.main-menu.show')?.classList.remove('show');
     }
     if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {

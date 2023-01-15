@@ -361,7 +361,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       rmClass('hilite'),
       addClass('drag-source'),
     ));
-    document.body.append(...$$('[role="menu"]'));
+    document.body.append(...$$('[role="menu"]:not(.menu-tree)'));
     const $draggable = when(className === 'history')
       .then(() => {
         const $draggableClone = $byClass('draggable-clone')!;

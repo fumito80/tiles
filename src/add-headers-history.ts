@@ -24,7 +24,6 @@ export default function addHeadersHistory(
   [historyItems, sessions]: [chrome.history.HistoryItem[], chrome.sessions.Session[]],
 ) {
   const sorted = sessions
-    // .filter((session) => session.lastModified !== 0)
     .map(getSessionItem)
     .concat(historyItems)
     .sort((a, b) => b.lastVisitTime! - a.lastVisitTime!);
