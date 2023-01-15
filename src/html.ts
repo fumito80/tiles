@@ -13,9 +13,14 @@ export function makeLeaf(
   isSearching = false,
 ) {
   const style = makeStyleIcon(url);
+  let decodedUrl = url || '';
+  try {
+    decodedUrl = decodeURIComponent(decodedUrl);
+  // eslint-disable-next-line no-empty
+  } catch {}
   return `
     <bm-leaf class="leaf${isSearching ? ' search-path' : ''}" id="${id}" draggable="true" style="${style}">
-      <div class="anchor" title="${htmlEscape(title)}\n${htmlEscape(url!.substring(0, 1024))}">${htmlEscape(title)}</div><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
+      <div class="anchor" title="${htmlEscape(title)}\n${htmlEscape(decodedUrl.substring(0, 1024))}">${htmlEscape(title)}</div><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
       <div class="drop-top"></div><div class="drop-bottom"></div>
     </bm-leaf>
   `;

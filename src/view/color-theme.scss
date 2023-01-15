@@ -27,8 +27,8 @@ open-window,
 
 app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
-app-main:not(.drag-start) open-window:not(.tabs-collapsed)>.tab-wrap:hover,
-app-main:not(.drag-start) open-window:not(.tabs-collapsed)>.tab-wrap.selected,
+app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap:hover,
+app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap.selected,
 .histories .rows>.history:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
@@ -67,7 +67,7 @@ app-main:not(.drag-start) {
   }
 }
 
-.tabs open-window.tabs-collapsed>.tab-wrap.drag-source {
+.tabs open-window.tabs-collapsed .tab-wrap.drag-source {
   background-color: var(--item-hover-bg);
   border-color: var(--item-hover-bg);
 }
@@ -76,14 +76,20 @@ app-main:not(.drag-start) {
 
 .theme-dark-pane {
 
-  .leafs::-webkit-scrollbar-thumb,
-  .histories::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, .3);
+  .leafs,
+  .histories,
+  open-window {
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, .3);
+    }
   }
 
-  .leafs::-webkit-scrollbar-thumb:hover,
-  .histories::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, .5);
+  .leafs,
+  .histories,
+  open-window {
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(255, 255, 255, .5);
+    }
   }
 
   .leafs .title::before {
@@ -154,7 +160,7 @@ app-main:not(.drag-start) {
 
   .tabs-collapsed {
 
-    >.tab-wrap {
+    .tab-wrap {
       background-color: $dark-icon-color;
 
       &.match {
@@ -167,12 +173,12 @@ app-main:not(.drag-start) {
     }
   }
 
-  .tabs-collapsed>.tab-wrap.selected>.outline::after {
+  .tabs-collapsed .tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
 
   &:not(.theme-dark-key) {
-    .tabs-collapsed>.current-tab>.tab-title {
+    .tabs-collapsed .current-tab>.tab-title {
       color: $font-color;
     }
   }
@@ -238,14 +244,16 @@ app-main:not(.drag-start) {
     }
   }
 
-  .folders::-webkit-scrollbar-thumb,
-  .tabs::-webkit-scrollbar-thumb,
-  .tabs-wrap::-webkit-scrollbar-thumb,
-  &:not(.searching) .queries::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, .3);
+  .folders,
+  .tabs,
+  .tabs-wrap,
+  &:not(.searching) .queries {
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, .3);
 
-    &:hover {
-      background-color: rgba(255, 255, 255, .5);
+      &:hover {
+        background-color: rgba(255, 255, 255, .5);
+      }
     }
   }
 
@@ -532,7 +540,7 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
     }
   }
 
-  .tabs open-window.tabs-collapsed>open-tab {
+  .tabs open-window.tabs-collapsed open-tab {
 
     &.match,
     &.highlight {

@@ -7,14 +7,20 @@ open-tab {
 
 .tabs {
   display: grid;
-  grid-template-rows: min-content min-content 1fr min-content;
+  // grid-template-rows: min-content min-content 1fr min-content;
+  grid-template-rows: min-content minmax(0, 100%) min-content;
   height: 100%;
-  overflow-y: auto;
+  // overflow-y: auto;
   transition: var(--xen-mode-transition);
 
-  >.tabs-wrap {
-    margin-right: 2px;
-    overflow: hidden;
+  .tabs-wrap {
+    // margin-right: 2px;
+    // overflow: hidden;
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    grid-template-columns: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   open-window {
@@ -32,8 +38,8 @@ open-tab {
       margin-bottom: 0;
     }
 
-    >.highlight,
-    >.match {
+    .highlight,
+    .match {
       display: flex !important;
     }
 
@@ -52,7 +58,7 @@ open-tab {
     }
 
     &:not(.tabs-collapsed) {
-      >.unmatch {
+      .unmatch {
         display: none;
       }
     }
@@ -141,7 +147,7 @@ open-tab {
   }
 
   .new-window-plus {
-    margin-left: 10px;
+    // margin-left: 10px;
     opacity: 0;
     pointer-events: none;
     transition: all 0.2s ease-in-out;
@@ -154,16 +160,23 @@ open-tab {
       pointer-events: all;
     }
 
-    ~.tabs>.new-window {
+    ~.tabs .pin-wrap-top:not(:empty)~.tabs-wrap .new-window {
+      margin-top: 0;
+      margin-bottom: 5px;
+    }
+
+    ~.tabs .pin-wrap-top:empty~.tabs-wrap .new-window,
+    ~.tabs .windows-wrap+.new-window {
       min-height: 0;
       max-height: 0;
+      margin: 0;
 
       >button {
         display: none;
       }
     }
 
-    >.tab-order-asc>i {
+    .tab-order-asc>i {
       transform: scale(1, -1);
     }
   }
@@ -215,7 +228,7 @@ open-tab {
 
 .tabs {
   position: relative;
-  overflow-y: scroll;
+  // overflow-y: scroll;
 
   button {
     display: flex;
@@ -361,7 +374,7 @@ app-main {
     &.tabs-collapsed {
       padding-bottom: 0;
 
-      >.tab-wrap {
+      .tab-wrap {
         width: 26px;
         height: 26px;
         margin: 2px;
@@ -443,7 +456,7 @@ app-main {
   }
 
   &:not(.searching) open-window:not(.tabs-collapsed) {
-    >window-header {
+    window-header {
       >.window-title {
         opacity: 0;
       }
@@ -613,7 +626,7 @@ app-main.drag-start>.tabs {
     }
   }
 
-  >open-tab {
+  open-tab {
     display: flex;
   }
 }
@@ -654,7 +667,7 @@ app-main.drag-start>.tabs {
 }
 
 app-main {
-  .tabs-collapsed>.tab-wrap {
+  .tabs-collapsed .tab-wrap {
     >.outline {
       content: '';
       position: absolute;
@@ -697,7 +710,7 @@ app-main {
 
   .tabs-collapsed {
 
-    >.tab-wrap.current-tab {
+    .tab-wrap.current-tab {
       border-color: var(--key-bg);
     }
 
@@ -715,9 +728,14 @@ app-main {
   margin: 5px 2px 0 auto;
   height: fit-content;
 
+  &:has(+div:empty) {
+    margin-bottom: 0;
+  }
+
   .new-window-plus {
-    width: 30px;
-    height: 30px;
+    position: relative;
+    // width: 30px;
+    // height: 30px;
     margin-left: auto;
     margin-right: 5px;
     border: none;
@@ -732,9 +750,11 @@ app-main {
   .new-window {
     width: calc(100% - 2px);
     height: 100%;
-    min-height: 60px;
+    min-height: 40px;
     position: sticky;
     bottom: 0;
+    margin: 0;
+    // margin-bottom: 5px;
     z-index: 3;
 
     >.new-window-plus {
@@ -762,7 +782,7 @@ app-main {
       margin-left: 0;
       height: 3em;
       z-index: 2;
-      top: 0;
+      top: 4px;
     }
 
     &.window-order-asc {
@@ -770,6 +790,31 @@ app-main {
         opacity: 0;
         pointer-events: none;
       }
+
+      ~.tabs .pin-wrap-top:not(:empty)~.tabs-wrap {
+        .new-window {
+          top: 0;
+          margin-bottom: 0;
+        }
+
+        .windows-wrap {
+          margin-top: 5px;
+        }
+      }
+    }
+  }
+
+  .header-tabs:not(.window-order-asc)~.tabs {
+    .pin-wrap-bottom {
+      // margin-top: 5px;
+
+      &:not(:empty) {
+        margin-top: 5px;
+      }
+    }
+
+    .windows-wrap {
+      margin-bottom: 5px;
     }
   }
 }
@@ -797,9 +842,19 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
   display: none;
 }
 
-// Pin window top
+// Pin window
+
+.header-tabs:has(~.tabs .pin-wrap-top:not(:empty)) {
+  .new-window-plus {
+    display: none;
+  }
+}
 
 .tabs {
+  .windows-wrap {
+    margin-right: 2px;
+  }
+
   open-window {
     [data-value="unpin-window"] {
       display: none;
@@ -813,7 +868,7 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
 
   .pin-wrap-bottom:not(:empty) {
     bottom: 0;
-    padding-top: 5px;
+    margin-top: 5px;
   }
 
   .pin-wrap-top:not(:empty),
@@ -821,8 +876,34 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     position: sticky;
     overflow: hidden;
     z-index: 1;
-    margin-right: 2px;
     background-color: var(--frame-bg);
+    margin-right: 2px;
+
+    open-window {
+      max-height: 30vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    &:has(.current-window) {
+      &::before {
+        content: '';
+        position: absolute;
+        width: 4px;
+        top: 3px;
+        height: calc(100% - 10px);
+        background-color: var(--key-bg);
+      }
+    }
+
+    //   window-header {
+    //     position: sticky;
+    //     top: 0;
+    //     z-index: 1;
+    //     // margin-right: 2px;
+    //   }
+    // }
 
     [data-value="unpin-window"] {
       display: inherit;
@@ -833,7 +914,10 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
       display: none;
     }
 
-    window-header.tabs-header {
+    window-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
       background-position-x: 20px;
 
       i.icon-incognito.show {
@@ -846,6 +930,14 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
         transform: scale(1.3);
         margin-left: 2px;
         margin-right: 2px;
+      }
+    }
+  }
+
+  .pin-wrap-bottom:not(:empty) {
+    &:has(.current-window) {
+      &::before {
+        height: calc(100% - 6px);
       }
     }
   }

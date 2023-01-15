@@ -930,12 +930,15 @@ app-main:not(.drag-start) .folders .marker:hover {
 
 // Scroll bar
 
-.folders::-webkit-scrollbar,
-.leafs::-webkit-scrollbar,
-.tabs::-webkit-scrollbar,
-.tabs-wrap::-webkit-scrollbar,
-.histories::-webkit-scrollbar {
-  width: 8px;
+.folders,
+.leafs,
+.tabs,
+.tabs-wrap,
+open-window,
+.histories {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
 }
 
 app-main::-webkit-scrollbar {

@@ -29,7 +29,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url,
+      url: asIsUrl,
       title,
       lastVisitTime,
       headerDate,
@@ -66,8 +66,9 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       )($row);
       return;
     }
+    const url = decodeURIComponent(asIsUrl || '');
     const text = title || url;
-    const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
+    const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(asIsUrl || '');
     const backgroundImageUrl = `url(${preFaviconUrl}${pageUrl})`;
     const {
       elementId,

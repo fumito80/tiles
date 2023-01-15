@@ -3,8 +3,8 @@ import {
   MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass,
-  rmClass, rmStyle, setAnimationClass, toggleClass, showMenu, setText, createNewTab, $byId,
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle,
+  setAnimationClass, toggleClass, showMenu, setText, createNewTab, $byId, getChildren,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
@@ -21,25 +21,28 @@ import {
 import { Leaf } from './bookmarks';
 
 export async function smoothSroll<T extends HTMLElement>($target: T, scrollTop: number) {
-  const $tabsWrap = $target.parentElement! as HTMLElement;
-  const $parent = $tabsWrap.parentElement! as HTMLElement;
+  // const $tabsWrap = $target.parentElement! as HTMLElement;
+  // const $tabsWrap = $container;
+  // const $container = $tabsWrap.parentElement! as HTMLElement;
+  const $container = $target.parentElement! as HTMLElement;
+  // const $container = $container.parentElement! as HTMLElement;
   const translateY = -(Math.min(
-    scrollTop - $parent.scrollTop,
-    $parent.scrollHeight - $parent.offsetHeight - $parent.scrollTop,
+    scrollTop - $container.scrollTop,
+    $container.scrollHeight - $container.offsetHeight - $container.scrollTop,
   ));
   if (Math.abs(translateY) <= 1) {
     return Promise.resolve($target);
   }
   const promise = new Promise<T>((resolve) => {
-    $tabsWrap.addEventListener('transitionend', () => {
-      rmClass('scroll-ease-in-out')($tabsWrap);
-      rmStyle('transform')($tabsWrap);
-      Object.assign($parent, { scrollTop });
+    $target.addEventListener('transitionend', () => {
+      rmClass('scroll-ease-in-out')($target);
+      rmStyle('transform')($target);
+      Object.assign($container, { scrollTop });
       resolve($target);
     }, { once: true });
   });
-  addClass('scroll-ease-in-out')($tabsWrap);
-  addStyle('transform', `translateY(${translateY}px)`)($tabsWrap);
+  addClass('scroll-ease-in-out')($target);
+  addStyle('transform', `translateY(${translateY}px)`)($target);
   return promise;
 }
 
@@ -66,7 +69,7 @@ async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
     ? $win.offsetTop
     : $tabs.scrollTop + (winBottom - tabsBottom);
-  smoothSroll($win, scrollTop);
+  smoothSroll($win.parentElement!, scrollTop);
 }
 
 export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
@@ -123,7 +126,8 @@ export class OpenTab extends MutiSelectableItem {
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tooltip.textContent = tooltip;
-    $tab.setAttribute('title', `${tab.title}\n${htmlEscape(tab.url!.substring(0, 1024))}`);
+    const dencodedUrl = htmlEscape(decodeURIComponent(tab.url || '').substring(0, 1024));
+    $tab.setAttribute('title', `${tab.title}\n${dencodedUrl}`);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -358,8 +362,9 @@ function isWindow($target: HTMLElement) {
   if ($target instanceof Window) {
     return $target;
   }
-  if ($target.parentElement?.parentElement instanceof Window && hasClass($target, 'window-title')) {
-    return $target.parentElement.parentElement;
+  const $window = $target.parentElement?.parentElement;
+  if ($window instanceof Window && hasClass($target, 'window-title')) {
+    return $window;
   }
   return undefined;
 }
@@ -383,11 +388,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #promiseSwitchTabEnd = Promise.resolve();
   #bmAutoFindTabsDelay = 500;
   #tabOrderAsc!: boolean;
-  #lastScrollTop: number | undefined;
+  #lastScrollTops = undefined as {
+    windowsWrap: number,
+    pinWrap: number | undefined,
+    pinWrapB: number | undefined,
+  } | undefined;
   #promiseSmoothScroll!: Promise<any>;
   private $pinWrap!: HTMLElement;
   private $pinWrapB!: HTMLElement;
   private $tabsWrap!: HTMLElement;
+  private $windosWrap!: HTMLElement;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -395,15 +405,19 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
     tabOrderAsc: boolean,
-    pinWindowTop: number | undefined,
-    pinWindowBottom: number | undefined,
+    pinWindowTop: number | null,
+    pinWindowBottom: number | null,
   ) {
     this.setEvent();
     this.$pinWrap = $byClass('pin-wrap-top', this)!;
     this.$pinWrapB = $byClass('pin-wrap-bottom', this)!;
     this.$tabsWrap = $byClass('tabs-wrap', this)!;
+    this.$windosWrap = $byClass('windows-wrap', this)!;
     this.#options = options;
     this.#tabOrderAsc = tabOrderAsc;
+    if (tabOrderAsc) {
+      this.$tabsWrap.insertBefore($byClass('new-window', this)!, this.$windosWrap);
+    }
     this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
       const ordered = tabOrderAsc ? initWindows.concat().reverse() : initWindows;
       const $windows = ordered
@@ -417,18 +431,20 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
             isSearching,
             win.windowId === currentWindowId,
           );
-          if (win.windowId === pinWindowTop) {
-            this.$pinWrap.append($win);
-            return undefined;
-          }
-          if (win.windowId === pinWindowBottom) {
-            this.$pinWrapB.append($win);
-            return undefined;
-          }
+          // if (win.windowId === pinWindowTop) {
+          //   this.$pinWrap.append($win);
+          //   return undefined;
+          // }
+          // if (win.windowId === pinWindowBottom) {
+          //   this.$pinWrapB.append($win);
+          //   return undefined;
+          // }
           return $win;
         })
         .filter(Boolean);
-      this.$tabsWrap.append(...$windows as Window[]);
+      this.$windosWrap.append(...$windows as Window[]);
+      this.pinWindow(pinWindowTop, this.$pinWrap);
+      this.pinWindow(pinWindowBottom, this.$pinWrapB);
       return [initWindows, currentWindowId];
     });
     this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
@@ -438,12 +454,22 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   getWindows() {
-    return [...this.$tabsWrap.children] as Window[];
+    return [...this.$windosWrap.children] as Window[];
+  }
+  getAllWindows() {
+    return [
+      ...this.$pinWrap.children,
+      ...this.$windosWrap.children,
+      ...this.$pinWrapB.children,
+    ] as Window[];
   }
   getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
-    return this.getWindows().flatMap(($win) => $win.getTabs()).filter(filter);
+    return this.getAllWindows().flatMap(($win) => $win.getTabs()).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams, dispatch: Dispatch) {
+    if (!reFilter) {
+      return;
+    }
     const matches = $$byClass(searchSelector, this).filter((tab) => {
       if (!(tab instanceof OpenTab)) {
         return false;
@@ -462,7 +488,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
   openTabsFromHistory(_: any, __: any, ___: any, store: StoreSub) {
-    const currentWindow = this.getWindows().find((win) => win.isCurrent);
+    const currentWindow = this.getAllWindows().find((win) => win.isCurrent);
     const index = currentWindow?.getTabs().findIndex((tab) => tab.isCurrent);
     const { windowId } = currentWindow!;
     store.dispatch('openHistories', {
@@ -612,7 +638,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       .filter(finder);
     const searches = $founds.length;
     if (searches > 0) {
-      this.#lastScrollTop = this.scrollTop;
+      this.#lastScrollTops = {
+        windowsWrap: this.$windosWrap.scrollTop,
+        pinWrap: this.$pinWrap.firstElementChild?.scrollTop,
+        pinWrapB: this.$pinWrapB.firstElementChild?.scrollTop,
+      };
       $founds.forEach((tab) => tab.setHighlight(true));
       $founds[0].setFocus(true);
       this.scrollToFocused($founds[0]);
@@ -638,13 +668,18 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   async scrollToFocused($target: OpenTab) {
     const $parentWindow = $target.getParentWindow();
     await this.#promiseSmoothScroll;
-    const currentTop = $parentWindow.offsetTop + $target.offsetTop;
-    if (currentTop >= this.scrollTop
-      && currentTop + $target.offsetHeight <= this.scrollTop + this.offsetHeight) {
+    if (!$parentWindow.closest('.tabs-wrap')) {
+      $target.scrollIntoView({ block: 'center' });
       return;
     }
-    const scrollTop = currentTop - this.offsetHeight / 2 + $target.offsetHeight / 2;
-    this.#promiseSmoothScroll = smoothSroll($parentWindow, Math.max(0, scrollTop));
+    const currentTop = $parentWindow.offsetTop + $target.offsetTop - this.$tabsWrap.offsetTop;
+    const $container = $parentWindow.parentElement?.parentElement!;
+    if (currentTop >= $container.scrollTop
+      && currentTop + $target.offsetHeight <= $container.scrollTop + $container.offsetHeight) {
+      return;
+    }
+    const scrollTop = currentTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
+    this.#promiseSmoothScroll = smoothSroll($parentWindow.parentElement!, Math.max(0, scrollTop));
   }
   mouseoverLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $leaf = (e.target as HTMLElement).parentElement;
@@ -667,13 +702,21 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
-    if (this.#lastScrollTop == null) {
+    if (this.#lastScrollTops == null) {
       return;
     }
     this.clearFocus(undefined, undefined, undefined, store);
     await this.#promiseSmoothScroll;
-    this.#promiseSmoothScroll = smoothSroll(this.getWindows()[0], this.#lastScrollTop);
-    this.#lastScrollTop = undefined;
+    if (this.#lastScrollTops.windowsWrap != null) {
+      this.#promiseSmoothScroll = smoothSroll(this.$windosWrap, this.#lastScrollTops.windowsWrap);
+    }
+    if (this.#lastScrollTops.pinWrap != null) {
+      this.$pinWrap.firstElementChild!.scrollTop = this.#lastScrollTops.pinWrap;
+    }
+    if (this.#lastScrollTops.pinWrapB != null) {
+      this.$pinWrapB.firstElementChild!.scrollTop = this.#lastScrollTops.pinWrapB;
+    }
+    this.#lastScrollTops = undefined;
   }
   mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
     const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
@@ -720,18 +763,19 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     target.gotoTab();
   }
   async switchTabWindow(_: any, e: MouseEvent) {
+    const $scroll = this.$tabsWrap;
     const isNext = hasClass(e.target as HTMLElement, 'win-next');
-    if (this.scrollHeight === this.offsetHeight) {
+    if ($scroll.scrollHeight === $scroll.offsetHeight) {
       return;
     }
     this.#promiseSwitchTabEnd = this.#promiseSwitchTabEnd.then(() => new Promise<any>((resolve) => {
-      const tabsTop = isNext ? Math.ceil(this.scrollTop) : Math.floor(this.scrollTop) - 1;
-      const tabsBottom = this.scrollTop + this.offsetHeight;
-      const $current = ([...this.firstElementChild!.children] as HTMLElement[])
+      const tabsTop = isNext ? Math.ceil($scroll.scrollTop) : Math.floor($scroll.scrollTop) - 1;
+      const tabsBottom = $scroll.scrollTop + $scroll.offsetHeight;
+      const $current = getChildren(this.$windosWrap)
         .map(($win) => ({
           $win,
-          winTop: $win.offsetTop,
-          winBottom: $win.offsetTop + $win.offsetHeight,
+          winTop: $win.offsetTop - $scroll.offsetTop,
+          winBottom: $win.offsetTop - $scroll.offsetTop + $win.offsetHeight,
         }))
         .map(({ $win, winTop, winBottom }) => ({
           $win,
@@ -758,24 +802,49 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         resolve(undefined);
         return;
       }
-      smoothSroll($target, $target.offsetTop).then(resolve);
+      smoothSroll($target.parentElement!, $target.offsetTop - $scroll.offsetTop).then(resolve);
     }));
   }
   focusCurrentTab() {
-    const $currentWindow = this.getWindows().find((win) => win.isCurrent) as any;
-    const scrollTop = when($currentWindow.offsetHeight > this.offsetHeight)
-      .then($currentWindow.offsetTop)
+    const $currentWindow = this.getAllWindows().find((win) => win.isCurrent)!;
+    if (!$currentWindow.closest('.tabs-wrap')) {
+      setAnimationClass('hilite')($currentWindow);
+      return;
+    }
+    const currentWindowTop = $currentWindow.offsetTop - this.$tabsWrap.offsetTop;
+    const scrollTop = when($currentWindow.offsetHeight > this.$tabsWrap.offsetHeight)
+      .then(currentWindowTop)
       .else(() => {
-        const diff = (this.offsetHeight - $currentWindow.offsetHeight) / 2;
-        return Math.max(0, $currentWindow.offsetTop - diff);
+        const diff = (this.$tabsWrap.offsetHeight - $currentWindow.offsetHeight) / 2;
+        return Math.max(0, currentWindowTop - diff);
       });
-    smoothSroll($currentWindow, scrollTop).then(setAnimationClass('hilite'));
+    smoothSroll($currentWindow.parentElement!, scrollTop)
+      .then(() => setAnimationClass('hilite')($currentWindow));
   }
-  toggleTabOrder() {
+  toggleTabOrder({ newValue }: Changes<'toggleTabOrder'>) {
     this.getWindows().forEach((win) => {
-      this.$tabsWrap.insertAdjacentElement('afterbegin', win);
+      this.$windosWrap.insertAdjacentElement('afterbegin', win);
     });
-    this.scrollTop = 0;
+    const position = newValue ? 'beforebegin' : 'afterend';
+    this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
+    this.$tabsWrap.scrollTop = 0;
+  }
+  async pinWindow(windowId: number | null, $pinWrap: HTMLElement, isInit = false) {
+    if (!windowId || isInit) {
+      return;
+    }
+    this.unpin(undefined, $pinWrap);
+    const newPin = this.getWindows().find((win) => win.windowId === windowId)!;
+    // const wrap = document.createElement('div');
+    // wrap.append(...newPin.children);
+    // $pinWrap.appendChild(newPin).append(wrap);
+    $pinWrap.appendChild(newPin);
+  }
+  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {
+    this.pinWindow(newValue, this.$pinWrap, isInit);
+  }
+  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>) {
+    this.pinWindow(newValue, this.$pinWrapB, isInit);
   }
   async unpin(store?: StoreSub, $pinWrap?: HTMLElement, windowId?: number | null) {
     const currentPin = windowId ? $byId(`win-${windowId}`) : $pinWrap?.firstElementChild;
@@ -785,31 +854,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       const [windows] = await this.#initPromise;
       const ordered = this.#tabOrderAsc ? windows.concat().reverse() : windows;
       const findIndex = ordered.findIndex((win) => win.windowId === currentPin.windowId);
-      this.$tabsWrap.insertBefore(currentPin, this.$tabsWrap.children[findIndex] ?? null);
+      this.$windosWrap.insertBefore(currentPin, this.$windosWrap.children[findIndex] ?? null);
     }
-  }
-  async pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
-    if (!windowId) {
-      return;
-    }
-    this.unpin(undefined, $pinWrap);
-    const newPin = this.getWindows().find((win) => win.windowId === windowId)!;
-    $pinWrap.append(newPin);
   }
   async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, __: any, store: StoreSub) {
     this.unpin(store, undefined, newValue);
-  }
-  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {
-    if (isInit) {
-      return;
-    }
-    this.pinWindow(newValue, this.$pinWrap);
-  }
-  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>) {
-    if (isInit) {
-      return;
-    }
-    this.pinWindow(newValue, this.$pinWrapB);
   }
   override actions() {
     return {
@@ -883,9 +932,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   override connect(store: Store) {
     super.connect(store);
     this.#initPromise.then(() => {
-      this.getWindows()
-        .concat([...this.$pinWrap.children] as Window[], [...this.$pinWrapB.children] as Window[])
-        .forEach(($window) => $window.connect(store));
+      this.getAllWindows().forEach(($window) => $window.connect(store));
     });
   }
 }

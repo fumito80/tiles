@@ -334,8 +334,8 @@ export function initComponents(
   promiseInitHistory: Promise<MyHistoryItem[]>,
   lastSearchWord: string,
   isSearching: boolean,
-  pinWindowTop: number | undefined,
-  pinWindowBottom: number | undefined,
+  pinWindowTop: number | null,
+  pinWindowBottom: number | null,
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
