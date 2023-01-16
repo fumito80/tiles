@@ -11,11 +11,11 @@ import {
 } from './client';
 import { Options, Panes } from './types';
 
-export function getReFilter(value: string) {
+export function getReFilter(value: string, global = false) {
   if (!value) {
     return undefined;
   }
-  return new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), 'i');
+  return new RegExp(value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'), global ? 'ig' : 'i');
 }
 
 function checkSingleChar(text: string) {
@@ -57,7 +57,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$inputQuery.value = options.restoreSearching ? lastSearchWord : '';
     this.addEventListener('submit', (e) => this.submitForm(e, options));
     this.$queries = $byClass('queries', this)!;
-    this.$inputQuery.addEventListener('click', this.clickQuery.bind(this));
+    this.$inputQuery.addEventListener('click', () => this.toggleQueries());
     this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
     this.$queries.addEventListener('keydown', (e) => e.preventDefault(), false);
   }
@@ -68,9 +68,9 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
   reSearchAll(changes: Changes<'search'>, _: any, __: any, store: StoreSub) {
     this.search(changes.newValue || this.$inputQuery.value, store.dispatch);
   }
-  async clickQuery() {
+  async toggleQueries(suggest = false) {
     const shown = hasClass(this, 'show-queries');
-    if (shown) {
+    if (shown && !suggest) {
       this.classList.remove('show-queries');
       return undefined;
     }
@@ -78,8 +78,14 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       const value = this.$inputQuery.value.trim();
       let targets = queries;
       if (value) {
-        const reFilter = getReFilter(value)!;
-        targets = queries.filter((el) => reFilter.test(el));
+        const reFilter = getReFilter(value, true)!;
+        targets = queries
+          .filter((el) => reFilter.test(el))
+          .map((el) => el.replaceAll(reFilter, '<b>$&</b>'));
+      }
+      if (suggest && (!value || targets.length === 0)) {
+        this.classList.remove('show-queries');
+        return;
       }
       const html = targets.map((el) => `<div tabindex="0"><span>${el}</span><i class="icon-x"></i></div>`).join('');
       this.$queries.innerHTML = html;
@@ -108,27 +114,26 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     e.preventDefault();
     if (!hasClass(this, 'show-queries')) {
-      await this.clickQuery();
+      await this.toggleQueries();
     }
     this.$queries.scrollTop = 0;
     const $next = e.key === 'ArrowDown' ? this.$queries.firstElementChild : this.$queries.lastElementChild;
     ($next as HTMLElement)?.focus();
   }
-  keydownQueries(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
+  async keydownQueries(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
     if (!['ArrowDown', 'ArrowUp', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       return;
     }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      this.clickQuery();
-      this.$inputQuery.focus();
+      this.focusQuery();
       return;
     }
     e.preventDefault();
     const $focused = $('.queries>div:focus', this);
     if ($focused && e.key === 'Enter') {
-      this.setQuery(undefined, { target: $focused } as unknown as MouseEvent, undefined, store);
-      this.classList.remove('show-queries');
-      this.$inputQuery.focus();
+      const query = $focused.textContent;
+      await this.search(query!, store.dispatch);
+      this.focusQuery();
       return;
     }
     if (!$focused) {
@@ -138,8 +143,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     const $next = e.key === 'ArrowDown' ? $focused.nextElementSibling : $focused.previousElementSibling;
     if (!($next instanceof HTMLElement)) {
-      this.$inputQuery.focus();
-      this.classList.remove('show-queries');
+      this.focusQuery();
       return;
     }
     $next.focus();
@@ -175,10 +179,13 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.clearSearch(store.dispatch);
     this.$inputQuery.focus();
   }
-  resetQuery({ newValue: includeUrl }: { newValue: boolean }, _: any, __: any, store: StoreSub) {
+  resetQuery({ newValue: includeUrl, isInit }: Changes<'setIncludeUrl'>, _: any, __: any, store: StoreSub) {
     this.#includeUrl = includeUrl;
     this.#oldValue = '';
-    this.search(this.$inputQuery.value, store.dispatch);
+    const { value } = this.$inputQuery;
+    if (value.length > 0) {
+      this.search(this.$inputQuery.value, store.dispatch, isInit);
+    }
   }
   clearSearch(dispatch: Store['dispatch']) {
     dispatch('clearSearch');
@@ -189,19 +196,19 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       selectFolder($target, $byClass('leafs')!, this.#exclusiveOpenBmFolderTree);
     }
   }
-  search(newValue: string, dispatch: Dispatch) {
-    this.classList.remove('show-queries');
+  async search(newValue: string, dispatch: Dispatch, isInit = false) {
     const oldValue = this.#oldValue;
     const isSingleChar = checkSingleChar(newValue);
     if (isSingleChar && (oldValue.length === 0 || checkSingleChar(oldValue))) {
       this.#oldValue = newValue;
       chrome.storage.local.set({ lastSearchWord: '' });
-      return;
+      return this.toggleQueries(true);
     }
     if (this.$inputQuery.value !== newValue) {
       this.$inputQuery.setAttribute('value', newValue);
       this.$inputQuery.value = newValue;
     }
+    const result = isInit ? undefined : this.toggleQueries(true);
     dispatch('searching', true);
     rmClass('open')($('.leafs .open'));
     this.$leafs.scrollTop = 0;
@@ -211,7 +218,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       this.$inputQuery.value = newValue;
       this.#oldValue = newValue;
       chrome.storage.local.set({ lastSearchWord: '' });
-      return;
+      return result;
     }
     const searchSelector = when(oldValue.length > 1 && newValue.startsWith(oldValue))
       .then('match' as const)
@@ -223,6 +230,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$searchTargets.forEach((target) => target.search(searchParams, dispatch));
     this.#oldValue = newValue;
     chrome.storage.local.set({ lastSearchWord: newValue });
+    return result;
   }
   reSearch({ newValue: paneName }: { newValue: Panes }, _: any, __: any, store: StoreSub) {
     const reFilter = getReFilter(this.$inputQuery.value)!;
@@ -252,7 +260,6 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
       }),
       focusQuery: {},
       clearSearch: {},
-      changeIncludeUrl: makeAction({ initValue: this.#includeUrl }),
       searching: {
         initValue: false,
       },

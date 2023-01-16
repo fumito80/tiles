@@ -11,6 +11,7 @@ import {
   PromiseInitTabs,
   InitailTabs,
   CliMessageTypes,
+  ColorPalette,
 } from './types';
 
 import {
@@ -38,6 +39,7 @@ import {
   toggleElement,
   $byTag,
   recoverMinPaneWidth,
+  getPalettesHtml,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -158,6 +160,11 @@ function setCloseApp() {
   }, queryOptions);
 }
 
+function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
+  const html = getPalettesHtml(favColorPalettes);
+  $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
+}
+
 function getInitialTabs() {
   const promiseCurrentWindowId = chrome.windows.getCurrent(queryOptions).then((win) => win.id!);
   const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
@@ -173,7 +180,14 @@ function getInitialTabs() {
 }
 
 function init([{
-  settings, htmlBookmarks, clientState, options, htmlHistory, lastSearchWord,
+  settings,
+  htmlBookmarks,
+  clientState,
+  options,
+  htmlHistory,
+  lastSearchWord,
+  pinWindowTop,
+  pinWindowBottom,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
@@ -187,6 +201,8 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
+    pinWindowTop,
+    pinWindowBottom,
   );
   const store = storeMapping(options, components);
   setOptions(settings, options);
@@ -200,6 +216,7 @@ function init([{
     // v-scroll initialize
     store.dispatch('resetHistory');
   }
+  setFavThemeMenu(options.favColorPalettes);
   return store;
 }
 

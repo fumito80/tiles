@@ -13,11 +13,11 @@
     <header>
       <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
       <div class="chrome-sync ms-auto">
-        <button class="btn btn-sm btn-outline-success upload-sync"
+        <button class="btn btn-sm btn-outline-secondary upload-sync"
           title="Save settings to the cloud in your chrome sign-in account." data-bs-toggle="tooltip"
           data-bs-placement="bottom"><i class="icon-cloud-arrow-up"></i> Upload
           sync</button>
-        <button class="btn btn-sm btn-outline-danger download-sync" data-bs-toggle="tooltip"
+        <button class="btn btn-sm btn-outline-warning ms-1 download-sync" data-bs-toggle="tooltip"
           title="Load settings from the cloud in your chrome sign-in account." data-bs-placement="bottom"><i
             class="icon-cloud-arrow-down"></i> Download
           sync</button>
@@ -25,14 +25,9 @@
     </header>
     <article>
       <form>
-
-        <div class="heading">Theme</div>
+        <div class="heading">Color theme</div>
         <div class="item-collaplse">
-          <input type="checkbox" class="bullet" tabindex="-1">
-          <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
-            <div>Color palette</div><i class="icon-fa-angle-right ms-1"></i>
-          </a>
-          <color-palette name="color-palette" class="ms-4">
+          <color-palette name="color-palette" class="ms-2">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
               title="Background color of history, tabs, and bookmarks panes">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -42,18 +37,33 @@
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
               title="Background color of search box while typing">
             <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Background color of selected folder and tab">
+              title="Background color of current folder/tab">
           </color-palette>
+          <button type="button" class="add-fav-palette ms-4 btn btn-sm btn-outline-secondary"><i class="icon-plus"></i>
+            Add to favorites</button>
+          <button type="button" class="remove-fav-palette btn btn-outline-warning btn-sm ms-2 mb-1"
+            title="Delete selected favorite palette"><i class="icon-x"></i> Delete</button>
         </div>
+        <div class="item w-100">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <span>Favorite color palettes</span>
+        </div>
+        <fav-color-palettes name="fav-color-palettes"></fav-color-palettes>
+        <label class="item-collaplse">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
+            <span>Color palettes</span><i class="icon-fa-angle-right ms-1"></i>
+          </a>
+        </label>
         <div id="color-palettes" class="collapse mt-2">
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#light-theme" type="button"
-                role="tab" aria-controls="light-theme" aria-selected="true">Light theme</button>
+                role="tab" aria-controls="light-theme" aria-selected="true">Light</button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dark-theme" type="button" role="tab"
-                aria-controls="dark-theme" aria-selected="true">Dark theme</button>
+                aria-controls="dark-theme" aria-selected="true">Dark</button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mix-theme" type="button" role="tab"

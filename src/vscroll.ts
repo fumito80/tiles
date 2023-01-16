@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape,
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape, getShortTime,
 } from './common';
 import {
   $, addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, toggleClass,
@@ -29,7 +29,16 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       return;
     }
     const {
-      url, title, lastVisitTime, headerDate, id, selected,
+      url: asIsUrl,
+      title,
+      lastVisitTime,
+      headerDate,
+      id,
+      selected,
+      isSession,
+      sessionWindow,
+      isChildSession,
+      isOpenSessionWindow,
     } = item;
     if (index === 1) {
       const lastVisitDate = getLocaleDate(lastVisitTime);
@@ -48,7 +57,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
         addStyle({ transform })($currentDate);
       }
       pipe(
-        rmClass('selected'),
+        rmClass('selected', 'hilite-fast', 'session-tab', 'session-window', 'child-session', 'open-closed-window'),
         setHTML(getLocaleDate(lastVisitTime)!),
         rmStyle('background-image'),
         addClass('header-date'),
@@ -57,17 +66,44 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       )($row);
       return;
     }
+    const url = decodeURIComponent(asIsUrl || '');
     const text = title || url;
-    const tooltip = `${text}\n${(new Date(lastVisitTime!)).toLocaleString()}\n${url}`;
-    const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(url);
-    const backgroundImage = `url(${preFaviconUrl}${pageUrl})`;
+    const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(asIsUrl || '');
+    const backgroundImageUrl = `url(${preFaviconUrl}${pageUrl})`;
+    const {
+      elementId,
+      isSessionWindow = false,
+      isSessionTab = false,
+      backgroundImage,
+      tooltipUrl = '',
+    } = isSession
+      ? {
+        elementId: `session-${id}`,
+        isSessionWindow: !!sessionWindow,
+        isSessionTab: !sessionWindow,
+        backgroundImage: sessionWindow ? 'none' : backgroundImageUrl,
+        tooltipUrl: sessionWindow ? '' : `\n${url}`,
+      }
+      : {
+        elementId: `hst-${id}`,
+        backgroundImage: backgroundImageUrl,
+        tooltipUrl: `\n${url}`,
+      };
+    const [dateValue, time] = lastVisitTime
+      ? ((date) => [`\n${date.toLocaleString()}`, getShortTime(date)])(new Date(lastVisitTime!))
+      : ['', ''];
+    const tooltip = `${text}${dateValue}${tooltipUrl}`;
     pipe(
+      toggleClass('session-window', isSessionWindow),
+      toggleClass('session-tab', isSessionTab),
+      toggleClass('child-session', !!isChildSession),
+      toggleClass('open-closed-window', !!isOpenSessionWindow),
       toggleClass('selected', !!selected),
       rmClass('hilite-fast', 'header-date'),
-      setHTML(`<div class="history-title">${htmlEscape(text!)}</div><i class="icon-x"></i>`),
+      setHTML(`<i class="icon-fa-angle-right"></i><div class="history-title">${htmlEscape(text!)}</div><div class="time">${time}</div><i class="icon-x"></i>`),
       addStyle('background-image', backgroundImage),
       addAttr('title', htmlEscape(tooltip)),
-      addAttr('id', `hst-${id}`),
+      addAttr('id', elementId),
     )($row);
   };
 }

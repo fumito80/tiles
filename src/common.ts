@@ -418,6 +418,18 @@ export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9>(
   fn8: (a: R7) => R8,
   fn9: (a: R8) => R9,
 ): (...a: T) => R9;
+export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
+  fn1: (...a: T) => R1,
+  fn2: (a: R1) => R2,
+  fn3: (a: R2) => R3,
+  fn4: (a: R3) => R4,
+  fn5: (a: R4) => R5,
+  fn6: (a: R5) => R6,
+  fn7: (a: R6) => R7,
+  fn8: (a: R7) => R8,
+  fn9: (a: R8) => R9,
+  fn10: (a: R9) => R10,
+): (...a: T) => R9;
 export function pipe<T extends Array<any>, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12>(
   fn1: (...a: T) => R1,
   fn2: (a: R1) => R2,
@@ -781,6 +793,9 @@ export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
 }
 
 export function getLocaleDate(dateOrSerial?: Date | number) {
+  if (dateOrSerial === 0) {
+    return 'Undated';
+  }
   if (dateOrSerial == null) {
     return (new Date()).toLocaleDateString();
   }
@@ -832,7 +847,7 @@ export function getGridColStart($target: HTMLElement) {
   return gridColStart;
 }
 
-export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+export function makeThemeCss(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
   const darkColor = '#222222';
   const [
@@ -845,7 +860,7 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     .map((code) => [`#${code}`, getColorWhiteness(code)])
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
-  const variables = Object
+  return Object
     .entries({
       paneBg,
       paneColor,
@@ -860,6 +875,10 @@ export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colo
     })
     .map(([key, value]) => `    --${camelToSnake(key)}: ${value};`)
     .join('\n');
+}
+
+export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+  const variables = makeThemeCss(colorPalette);
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
   chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
 }
@@ -923,15 +942,19 @@ export function getChromeId(preId: number | string) {
   return Number(id);
 }
 
+type getRecentlyClosed = () => Promise<chrome.sessions.Session[]>;
+
 export function getHistoryData(maxResults = 99999) {
   const startTime = Date.now() - pastMSec;
-  return chrome.history.search({ text: '', startTime, maxResults });
+  const histories = chrome.history.search({ text: '', startTime, maxResults });
+  const sessions = (chrome.sessions.getRecentlyClosed as getRecentlyClosed)();
+  return [histories, sessions] as const;
 }
 
 export function getHistoryDataByWorker() {
   const worker = new Worker('./worker-history.js');
-  getHistoryData().then((histories) => {
-    worker.postMessage(histories);
+  Promise.all(getHistoryData()).then(([histories, sessions]) => {
+    worker.postMessage([histories, sessions]);
   });
   return new Promise<MyHistoryItem[]>((resolve) => {
     worker.onmessage = (event) => {
@@ -950,3 +973,13 @@ export async function getTabInfo(preId: number | string) {
         incognito: win.incognito,
       }))));
 }
+
+const timeFormatter = new Intl.DateTimeFormat([], { timeStyle: 'short' });
+
+export function getShortTime(dt: Date) {
+  return timeFormatter.format(dt);
+}
+
+export const messages = {
+  cantSelectMultiple: 'Can\'t select multiple recently closed tab.',
+};

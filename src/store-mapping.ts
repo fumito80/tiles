@@ -23,18 +23,20 @@ type Components = {
   dragAndDropEvents: DragAndDropEvents,
 };
 
-export function storeMapping(options: Options, {
-  $appMain,
-  $headerLeafs,
-  $leafs,
-  $folders,
-  $headerTabs,
-  $tabs,
-  $headerHistory,
-  $history,
-  $formSearch,
-  dragAndDropEvents,
-}: Components) {
+export function storeMapping(options: Options, components: Components) {
+  const {
+    $appMain,
+    $headerLeafs,
+    $leafs,
+    $folders,
+    $headerTabs,
+    $tabs,
+    $headerHistory,
+    $history,
+    $formSearch,
+    dragAndDropEvents,
+  } = components;
+
   // Actions
   const actions = {
     ...$appMain.actions(),
@@ -48,8 +50,12 @@ export function storeMapping(options: Options, {
     ...$headerHistory.actions(),
     ...dragAndDropEvents.actions(),
   };
+
   // Build store
   const store = registerActions(actions, options);
+
+  // Connect store
+  Object.values(components).forEach((compo) => compo.connect(store));
 
   // Dispatch actions
 
@@ -58,6 +64,7 @@ export function storeMapping(options: Options, {
   store.actionContext($headerLeafs, 'setIncludeUrl').map(
     $appMain.setIncludeUrl.bind($appMain),
     $history.setIncludeUrl.bind($history),
+    $formSearch.resetQuery.bind($formSearch),
   );
 
   store.actionContext($formSearch, 'clearSearch').map(
@@ -80,14 +87,23 @@ export function storeMapping(options: Options, {
     $history.collapseHistoryDate.bind($history),
   );
 
+  store.actionContext($headerHistory, 'toggleRecentlyClosed').map(
+    $headerHistory.toggleRecentlyClosed.bind($headerHistory),
+    $history.resetHistory.bind($history),
+  );
+
+  store.actionContext(dragAndDropEvents, 'dragging').map(
+    $appMain.dragging.bind($appMain),
+    $tabs.dragging.bind($tabs),
+  );
+
   // focus subscribe unit
 
   store.subscribeContext($appMain)
     .map([$appMain, 'clickAppMain'], $appMain.clickAppMain)
     .map([$appMain, 'keydownMain'], $appMain.keydown)
     .map([$appMain, 'keyupMain'], $appMain.keyup)
-    .map([$formSearch, 'searching'], $appMain.searching)
-    .map([dragAndDropEvents, 'dragging'], $appMain.dragging);
+    .map([$formSearch, 'searching'], $appMain.searching);
 
   store.subscribeContext($leafs)
     .map([$leafs, 'clickLeafs'], $leafs.clickItem)
@@ -97,8 +113,6 @@ export function storeMapping(options: Options, {
     .map([$folders, 'clickFolders'], $leafs.clickItem)
     .map([$folders, 'mousedownFolders'], $leafs.mousedownItem)
     .map([$folders, 'mouseupFolders'], $leafs.mouseupItem);
-
-  store.subscribeContext($headerLeafs);
 
   store.subscribeContext($folders)
     .map([$folders, 'wheelFolders'], $folders.wheelHighlightTab);
@@ -127,31 +141,33 @@ export function storeMapping(options: Options, {
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
-  store.subscribeContext($headerHistory);
+  store.context($tabs)
+    .map('pinWindowTop', $tabs.pinWindowTop)
+    .map('pinWindowBottom', $tabs.pinWindowBottom)
+    .map('unpinWindow', $tabs.unpinWindow);
 
-  store.subscribeContext($history)
-    .map([$history, 'clickHistory'], $history.clickItem)
-    .map([$history, 'resetHistory'], $history.resetHistory)
-    .map([$history, 'mousedownHistory'], $history.mousedownItem)
-    .map([$history, 'mouseupHistory'], $history.mouseupItem)
-    .map([$history, 'openHistories'], $history.openHistories)
-    .map([$history, 'addBookmarksHistories'], $history.addBookmarks)
-    .map([$history, 'openWindowFromHistory'], $history.openWindowFromHistory);
+  store.context($history)
+    .map('clickHistory', $history.clickItem)
+    .map('resetHistory', $history.resetHistory)
+    .map('mousedownHistory', $history.mousedownItem)
+    .map('mouseupHistory', $history.mouseupItem)
+    .map('openHistories', $history.openHistories)
+    .map('addBookmarksHistories', $history.addBookmarks)
+    .map('openWindowFromHistory', $history.openWindowFromHistory);
 
-  store.subscribeContext($formSearch)
-    .map([$formSearch, 'inputQuery'], $formSearch.inputQuery)
-    .map([$formSearch, 'changeIncludeUrl'], $formSearch.resetQuery)
-    .map([$formSearch, 'clearQuery'], $formSearch.clearQuery)
-    .map([$formSearch, 'focusQuery'], $formSearch.focusQuery)
-    .map([$formSearch, 'search'], $formSearch.reSearchAll)
-    .map([$formSearch, 're-search'], $formSearch.reSearch)
-    .map([$formSearch, 'setQuery'], $formSearch.setQuery)
-    .map([$formSearch, 'keydownQueries'], $formSearch.keydownQueries);
+  store.context($formSearch)
+    .map('inputQuery', $formSearch.inputQuery)
+    .map('clearQuery', $formSearch.clearQuery)
+    .map('focusQuery', $formSearch.focusQuery)
+    .map('search', $formSearch.reSearchAll)
+    .map('re-search', $formSearch.reSearch)
+    .map('setQuery', $formSearch.setQuery)
+    .map('keydownQueries', $formSearch.keydownQueries);
 
-  store.subscribeContext(dragAndDropEvents)
-    .map([dragAndDropEvents, 'dragstart'], dragAndDropEvents.dragstart)
-    .map([dragAndDropEvents, 'drop'], dragAndDropEvents.drop)
-    .map([dragAndDropEvents, 'dragend'], dragAndDropEvents.dragend);
+  store.context(dragAndDropEvents)
+    .map('dragstart', dragAndDropEvents.dragstart)
+    .map('drop', dragAndDropEvents.drop)
+    .map('dragend', dragAndDropEvents.dragend);
 
   return store;
 }

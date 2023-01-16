@@ -23,9 +23,11 @@
     <div class="components">
         <div is="header-history" class="pane-header header-histories">
             <i class="icon-history" title="HISTORY"></i>
-            <button class="collapse-history-date init" type="button">
-                <i class="icon-calendar-plus-solid" title="Expand date"></i>
-                <i class="icon-calendar-minus-solid" title="Collapse by date"></i>
+            <button class="toggle-recently-closed init" type="button" title="Toggle display of recently closed tabs"><i
+                    class="icon-recently-closed-tab"></i></button>
+            <button class="collapse-history-date init" type="button" title="Toggle collapse by date">
+                <i class="icon-calendar-plus-solid"></i>
+                <i class="icon-calendar-minus-solid"></i>
             </button>
             <div class="query-wrap"></div>
             <div class="menu-button">
@@ -34,7 +36,7 @@
                 </button>
                 <div class="main-menu" role="menu">
                     <div role="menuitem" class="include-url" title="By default, search only title"><i
-                            class="icon-url"></i>Search both title and URL<i class="icon-check-solid"></i></div>
+                            class="icon-fa-search"></i>Search both title and URL<i class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
                         title="Other ways to start: Long press item/Press Ctrl+Shift key">
@@ -42,6 +44,11 @@
                         selection<i class="icon-info"></i>
                     </div>
                     <hr aria-hidden="true">
+                    <hr aria-hidden="true">
+                    <div role="menuitem" class="menu-parent fav-color-themes" title="Rotate with F2 key"><i
+                            class="icon-color-palette"></i>Favorite
+                        color palettes
+                    </div>
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
             </div>
@@ -72,7 +79,7 @@
                     class="icon-sort-desc"></i></button>
             <button class="win-prev" type="button" title="Previous window"><i class="icon-arrow-up"></i></button>
             <button class="win-next" type="button" title="Next window"><i class="icon-arrow-down"></i></button>
-            <button class="focus-current-tab" type="button" title="Scroll to current tab and highlight"><i
+            <button class="focus-current-tab" type="button" title="Scroll to current window and highlight"><i
                     class="icon-current-tab"></i></button>
             <button class="collapse-tabs" type="button" title="Toggle icon/list view of all windows"><i
                     class="icon-list"></i><i class="icon-grid"></i></button>
@@ -83,12 +90,17 @@
                 </button>
                 <div class="main-menu" role="menu">
                     <div role="menuitem" class="include-url" title="By default, search only title"><i
-                            class="icon-url"></i>Search both title and URL<i class="icon-check-solid"></i></div>
+                            class="icon-fa-search"></i>Search both title and URL<i class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
                         title="Other ways to start: Long press item/Press Ctrl+Shift key">
                         <i class="icon-check-all"></i>Mulitiple
                         selection<i class="icon-info"></i>
+                    </div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" class="menu-parent fav-color-themes" title="Rotate with F2 key"><i
+                            class="icon-color-palette"></i>Favorite
+                        color palettes
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -115,12 +127,17 @@
                     <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
                     <hr aria-hidden="true">
                     <div role="menuitem" class="include-url" title="By default, search only title"><i
-                            class="icon-url"></i>Search both title and URL<i class="icon-check-solid"></i></div>
+                            class="icon-fa-search"></i>Search both title and URL<i class="icon-check-solid"></i></div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
                         title="Other ways to start: Long press item/Press Ctrl+Shift key">
                         <i class="icon-check-all"></i>Mulitiple
                         selection<i class="icon-info"></i>
+                    </div>
+                    <hr aria-hidden="true">
+                    <div role="menuitem" class="menu-parent fav-color-themes" title="Rotate with F2 key"><i
+                            class="icon-color-palette"></i>Favorite
+                        color palettes
                     </div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
@@ -142,11 +159,15 @@
             <div class="v-scroll-fake-bottom"></div>
         </div>
         <div is="body-tabs" class="pane-body tabs">
-            <div class="tabs-wrap"></div>
-            <div class="new-window">
-                <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
-                        class="icon-plus"></i></button>
+            <div class="pin-wrap-top"></div>
+            <div class="tabs-wrap">
+                <div class="windows-wrap"></div>
+                <div class="new-window">
+                    <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
+                            class="icon-plus"></i></button>
+                </div>
             </div>
+            <div class="pin-wrap-bottom"></div>
         </div>
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit" tabindex="-1"><i class="icon-fa-search"></i></button>
@@ -211,6 +232,13 @@
                         title="Show icon view"></i></button>
                 <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
                 <div class="tabs-menu" role="menu">
+                    <div role="menuitem" data-value="pin-window-top"><i class="icon-arrow-top-thin"></i>Pin top
+                    </div>
+                    <div role="menuitem" data-value="pin-window-bottom"><i class="icon-arrow-top-thin"></i>Pin
+                        bottom
+                    </div>
+                    <div role="menuitem" data-value="unpin-window"><i class="icon-pin"></i>Unpin</div>
+                    <hr aria-hidden="true">
                     <div role="menuitem" data-value="add-new-tab"><i class="icon-tab-plus"></i>Add new tab</div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>

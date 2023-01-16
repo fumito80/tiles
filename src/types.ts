@@ -68,7 +68,14 @@ export type HtmlBookmarks = {
 }
 
 export type MyHistoryItem = Partial<
-  chrome.history.HistoryItem & { headerDate: boolean, selected: boolean }
+  chrome.history.HistoryItem & {
+    headerDate: boolean,
+    selected: boolean,
+    isSession?: boolean,
+    isChildSession?: boolean,
+    isOpenSessionWindow?: boolean,
+    sessionWindow?: chrome.history.HistoryItem[],
+  }
 >;
 
 export type ColorPalette = [
@@ -106,6 +113,7 @@ export const initialOptions = {
   bmAutoFindTabs: true,
   bmAutoFindTabsDelay: '500',
   restoreSearching: true,
+  favColorPalettes: [] as ColorPalette[],
 };
 
 export type Panes = typeof panes[number];
@@ -126,6 +134,8 @@ export const initialState = {
   lastSearchWord: '',
   queries: [] as string[],
   bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
+  pinWindowTop: null as number | null,
+  pinWindowBottom: null as number | null,
 };
 
 export type State = typeof initialState;

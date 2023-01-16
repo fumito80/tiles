@@ -22,7 +22,7 @@
   "homepage": "https://github.com/takadaZ/tiles#readme",
   "devDependencies": {
     "@types/bootstrap": "^5.2.6",
-    "@types/chrome": "^0.0.197",
+    "@types/chrome": "^0.0.206",
     "@types/css.escape": "^1.5.0",
     "@types/node": "^17.0.23",
     "@types/offscreencanvas": "^2019.6.4",
@@ -54,6 +54,6 @@
   },
   "volta": {
     "node": "18.12.1",
-    "npm": "9.1.3"
+    "npm": "9.2.0"
   }
 }

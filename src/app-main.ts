@@ -2,8 +2,7 @@
 
 import { MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener,
-  last, getColorWhiteness, lightColorWhiteness, camelToSnake, getLocal, pipe,
+  setEvents, addListener, last, getLocal, pipe,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -18,6 +17,10 @@ import {
   showMenu,
   rmClass,
   addClass,
+  setThemeClass,
+  changeColorTheme,
+  $,
+  setFavColorMenu,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub,
@@ -35,6 +38,7 @@ const excludeClasses = [
   'collapse-tab',
   'window', 'window-title', 'tab-title',
   'history', 'history-title',
+  'main-menu-button',
   'tabs-menu-button',
   'folder-menu-button',
   'open-new-tab', 'open-new-window', 'open-incognito',
@@ -45,17 +49,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   init(options: Options, isSearching: boolean) {
     this.#options = options;
     this.classList.toggle('searching', isSearching);
-    const [themeDarkPane, themeDarkFrame, themeDarkHover, themeDarkSearch, themeDarkKey] = options
-      .colorPalette
-      .map((code) => getColorWhiteness(code))
-      .map((whiteness) => whiteness <= lightColorWhiteness);
-    Object.entries({
-      themeDarkPane,
-      themeDarkFrame,
-      themeDarkHover,
-      themeDarkSearch,
-      themeDarkKey,
-    }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)(this));
+    setThemeClass(this, options.colorPalette);
 
     const $paneBodies = $$byClass('pane-body', this);
     const $endHeaderPane = last($$byClass('pane-header', this))!;
@@ -102,7 +96,24 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   // eslint-disable-next-line class-methods-use-this
   async keydown(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
-    if (e.shiftKey && e.ctrlKey) {
+    if (e.key === 'F2') {
+      getLocal('options').then(({ options: { favColorPalettes, colorPalette } }) => {
+        if (favColorPalettes.length === 0) {
+          return;
+        }
+        const findIndex = favColorPalettes
+          .findIndex((palette) => palette.every((p, i) => p === colorPalette[i]));
+        let palette = favColorPalettes[0];
+        if (e.shiftKey && findIndex > 0) {
+          palette = favColorPalettes[findIndex - 1];
+        } else if (e.shiftKey && findIndex === 0) {
+          palette = favColorPalettes.at(-1)!;
+        } else if (!e.shiftKey && findIndex >= 0 && (findIndex + 1) < favColorPalettes.length) {
+          palette = favColorPalettes[findIndex + 1];
+        }
+        changeColorTheme(palette).then(() => setFavColorMenu(palette));
+      });
+    } else if (e.shiftKey && e.ctrlKey) {
       const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');
       if (bookmarks || tabs || histories) {
         return;
@@ -126,17 +137,14 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   dragging(changes: Changes<'dragging'>) {
     toggleClass('drag-start', changes.newValue)(this);
   }
-  setIncludeUrl(
-    { newValue }: { newValue: boolean },
-    _: any,
-    __: any,
-    store: StoreSub,
-  ) {
+  setIncludeUrl({ newValue }: Changes<'setIncludeUrl'>) {
     toggleClass('checked-include-url', newValue)(this);
-    store.dispatch('changeIncludeUrl', newValue, true);
   }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
+    if (!$target.closest('.fav-color-themes') && !hasClass($target, 'main-menu-button')) {
+      $('.main-menu.show')?.classList.remove('show');
+    }
     if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
       return;
     }

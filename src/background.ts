@@ -65,10 +65,10 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
-  const histories = await getHistoryData()
+  const historiesOrSessions = await Promise.all(getHistoryData())
     .then(addHeadersHistory)
     .then((data) => data.slice(0, historyHtmlCount));
-  const html = histories.map(makeHtmlHistory).join('');
+  const html = historiesOrSessions.map(makeHtmlHistory).join('');
   const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
   return setLocal({ htmlHistory });
 }
@@ -87,18 +87,28 @@ function addHistory() {
   timeoutRefreshHistoryTitle = setTimeout(setHtmlHistory, 2000);
 }
 
-function saveQuery() {
-  getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
-    if (!lastSearchWord) {
-      return;
-    }
-    const queries = [
-      lastSearchWord,
-      ...(rest.queries || [])
-        .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
-        .slice(0, 200),
-    ];
-    setLocal({ queries });
+let timeoutChangeSession: ReturnType<typeof setTimeout>;
+
+async function onSessionChanged() {
+  clearTimeout(timeoutChangeSession);
+  timeoutChangeSession = setTimeout(setHtmlHistory, 500);
+}
+
+function saveQuery(port: chrome.runtime.Port) {
+  port.onDisconnect.addListener(() => {
+    getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
+      if (!lastSearchWord) {
+        return;
+      }
+      const queries = [
+        lastSearchWord,
+        ...(rest.queries || [])
+          .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
+          .slice(0, 200),
+      ];
+      setLocal({ queries });
+    });
+    chrome.runtime.sendMessage('close-popup').catch(() => {});
   });
 }
 
@@ -123,6 +133,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   });
   regsterChromeEvents(addHistory)([chrome.history.onVisited]);
   regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
+  regsterChromeEvents(onSessionChanged)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
   setPopupStyle(options);
 }
@@ -216,26 +227,34 @@ export const mapMessagesPtoB = {
       sourceTabs: (chrome.tabs.Tab & { isCurrentWindow: boolean, incognito: boolean })[],
       windowId: number, incognito: boolean, index?: number,
     }>,
-  ) => chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
-    const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
-    const [head, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
-      .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
-    const tabIds = head.concat(sourceTabIds, tail);
-    return chrome.tabs.move(tabIds, { windowId, index: 0 }).then(() => sourceTabs);
-  })
-    .then((tabs) => tabs.some((sourceTab) => {
-      if (
-        sourceTab.active
-        && sourceTab.isCurrentWindow
-        && sourceTab.windowId !== windowId
-        && sourceTab.incognito === incognito
-      ) {
-        chrome.tabs.update(sourceTab.id!, { active: true });
-        chrome.windows.update(windowId, { focused: true });
-        return true;
+  ) => chrome.windows.get(windowId, { populate: true })
+    .then(async ({ tabs }) => {
+      const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
+      const [head, tail] = [tabs!.slice(0, index), tabs!.slice(index)]
+        .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
+      const tabIds = head.concat(sourceTabIds, tail);
+      return chrome.tabs.move(tabIds, { windowId, index: 0 })
+        .then(() => sourceTabs)
+        .catch((reason) => reason.message as string);
+    })
+    .then((tabsOrMessage) => {
+      if (typeof tabsOrMessage === 'string') {
+        return tabsOrMessage;
       }
-      return false;
-    })),
+      return tabsOrMessage.some((sourceTab) => {
+        if (
+          sourceTab.active
+          && sourceTab.isCurrentWindow
+          && sourceTab.windowId !== windowId
+          && sourceTab.incognito === incognito
+        ) {
+          chrome.tabs.update(sourceTab.id!, { active: true });
+          chrome.windows.update(windowId, { focused: true });
+          return true;
+        }
+        return false;
+      });
+    }),
 };
 
 setMessageListener(mapMessagesPtoB);

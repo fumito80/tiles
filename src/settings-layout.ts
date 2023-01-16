@@ -3,7 +3,7 @@ import {
   $, $byClass, addClass, hasClass, rmClass,
 } from './client';
 
-export class CustomInputElement extends HTMLElement {
+export abstract class CustomInputElement extends HTMLElement {
   fireEvent() {
     this.dispatchEvent(new Event('change', { bubbles: true }));
   }
@@ -11,6 +11,7 @@ export class CustomInputElement extends HTMLElement {
   get validity() {
     return { valid: true };
   }
+  abstract value: any;
 }
 
 type Panes = State['options']['panes'][number];

@@ -19,11 +19,25 @@ import {
   $, $$, $byTag, $byClass, $byId,
   rmClass, addClass, setText, hasClass,
   insertHTML,
+  getChildren,
+  getPalettesHtml,
 } from './client';
 
 type Options = State['options'];
 type OptionNames = keyof Options;
 type Inputs = { [key in OptionNames]: Array<HTMLInputElement> };
+
+function findPalette(palette: ColorPalette) {
+  $$('.fav-palette, .tab-pane>div')
+    .filter(($el) => {
+      $el.classList.remove('selected');
+      return getChildren($el).every(($child, i) => $child.dataset.color === palette[i]);
+    })
+    .forEach(($el) => {
+      $el.classList.add('selected');
+      ($el as any).scrollIntoViewIfNeeded();
+    });
+}
 
 class ColorPaletteClass extends CustomInputElement {
   #value?: ColorPalette;
@@ -44,12 +58,64 @@ class ColorPaletteClass extends CustomInputElement {
       const input = this.children[i] as HTMLInputElement;
       input.value = `#${color}`;
     });
-    this.dispatchEvent(new Event('change', { bubbles: true }));
+    this.fireEvent();
     setBrowserIcon(value);
+    findPalette(value);
   }
 }
 
 customElements.define('color-palette', ColorPaletteClass);
+
+class FavColorPalettes extends CustomInputElement {
+  #value = [] as ColorPalette[];
+  #colorPalette!: ColorPaletteClass;
+  constructor() {
+    super();
+    this.addEventListener('click', this.clickPalette.bind(this));
+    $byClass('remove-fav-palette')?.addEventListener('click', this.removeItem.bind(this));
+    this.#colorPalette = $byTag('color-palette');
+  }
+  get value() {
+    return this.#value;
+  }
+  set value(palettes: ColorPalette[]) {
+    this.#value = palettes;
+    this.updateView();
+  }
+  add(palette: ColorPalette) {
+    const exists = this.#value.some((p) => p.every((color, i) => color === palette[i]));
+    if (exists) {
+      return;
+    }
+    this.#value.push(palette);
+    this.updateView();
+    this.fireEvent();
+    findPalette(palette);
+  }
+  removeItem() {
+    $byClass('selected', this)?.remove();
+    const value = getChildren(this).map(
+      ($el) => getChildren($el).map(($child) => $child.dataset.color),
+    );
+    this.#value = value as ColorPalette[];
+    this.fireEvent();
+  }
+  updateView() {
+    this.innerHTML = getPalettesHtml(this.#value);
+  }
+  clickPalette(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    if (!hasClass($target, 'fav-palette')) {
+      return;
+    }
+    const palette = getChildren($target).map(($el) => $el.dataset.color) as ColorPalette;
+    findPalette(palette);
+    this.#colorPalette.value = palette;
+    this.fireEvent();
+  }
+}
+
+customElements.define('fav-color-palettes', FavColorPalettes);
 
 // @ts-ignore
 // eslint-disable-next-line no-restricted-globals
@@ -204,6 +270,26 @@ function initOthers() {
     addClass('loaded')($editorCollapse);
   });
   $byClass('restore-css')?.addEventListener('click', restoreCss);
+  const favPalettes = $byTag('fav-color-palettes');
+  const colorPalette = $byTag('color-palette');
+  if (!(colorPalette instanceof ColorPaletteClass)) {
+    return;
+  }
+  if (!(favPalettes instanceof FavColorPalettes)) {
+    return;
+  }
+  $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
+  findPalette(colorPalette.value);
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message === 'close-popup') {
+      getLocal('options').then(({ options }) => {
+        const isSame = colorPalette.value.every((color, i) => color === options.colorPalette[i]);
+        if (!isSame) {
+          colorPalette.value = options.colorPalette;
+        }
+      });
+    }
+  });
 }
 
 const init = pipe(
@@ -242,7 +328,6 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
     const palette = ([...$target.children] as HTMLElement[])
       .map((el) => el.dataset.color as string) as ColorPalette;
     $byTag<ColorPaletteClass>('color-palette')!.value = palette;
-    rmClass('selected')($byClass('selected'));
-    addClass('selected')($target);
+    findPalette(palette);
   })($byClass('tab-content')!);
 });

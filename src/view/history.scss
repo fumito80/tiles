@@ -23,9 +23,33 @@
           display: none;
         }
 
-        &:active {
+        rtu &:active {
           filter: opacity(0.7);
         }
+      }
+
+      &.open-closed-window {
+        >.icon-fa-angle-right {
+          transform: rotate(90deg);
+        }
+      }
+
+      &.child-session {
+        margin-left: 1.6em;
+      }
+
+      &.fade-in {
+        animation: fade-in 0.15s ease-in-out;
+      }
+
+      >.time {
+        font-size: 0.9em;
+        padding: 0 3px;
+        opacity: .7;
+      }
+
+      &:hover .time {
+        display: none;
       }
     }
 
@@ -113,10 +137,6 @@
 }
 
 .header-histories {
-  .icon-history {
-    font-size: 1.1em;
-  }
-
   &:not(.date-collapsed) {
     .icon-calendar-plus-solid {
       display: none;
@@ -127,17 +147,40 @@
     }
   }
 
-  .collapse-history-date.hidden {
+  >button.hidden {
     opacity: 0;
     pointer-events: none;
+  }
+
+  &.show-recently-closed {
+    .toggle-recently-closed .icon-recently-closed-tab {
+      transform: unset;
+
+      &::before {
+        content: '\e90d';
+      }
+    }
+  }
+}
+
+.toggle-recently-closed {
+  margin-left: 10px;
+
+  >i {
+    transform: scale(1.1);
+  }
+}
+
+.toggle-recently-closed,
+.collapse-history-date {
+  margin-right: 10px;
+
+  .init {
+    visibility: hidden;
   }
 }
 
 // History date collapse mode
-
-.collapse-history-date.init {
-  visibility: hidden;
-}
 
 app-main:not(.disable-zoom-history) {
 
@@ -149,9 +192,7 @@ app-main:not(.disable-zoom-history) {
 
     .collapse-history-date {
       display: flex;
-      margin-left: auto;
     }
-
   }
 
   &.zoom-fade-out {
@@ -176,4 +217,66 @@ app-main:not(.disable-zoom-history) {
 
 .theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
   color: deepskyblue;
+}
+
+// Recently closed tabs
+
+.history {
+
+  >.icon-fa-angle-right {
+    display: none;
+  }
+
+  &.session-window,
+  &.session-tab {
+
+    &::before {
+      content: '\e914';
+      font-family: "glyphs";
+      font-size: 1.3em;
+      margin-left: 1.3em;
+    }
+
+    >.history-title {
+      text-indent: 2px;
+    }
+
+    &:hover>.time {
+      display: block !important;
+      color: var(--item-hover-color);
+      opacity: 1;
+    }
+
+    >.icon-x {
+      display: none !important;
+    }
+  }
+
+  &.session-window {
+    &::before {
+      content: '\e91d';
+    }
+
+    >.icon-fa-angle-right {
+      display: inline-block;
+      position: absolute;
+      left: 4px;
+    }
+  }
+}
+
+// Display time
+
+.disable-zoom-history .history .time,
+app-main:not(.disable-zoom-history).zoom-pane .history .time {
+  display: block;
+}
+
+.zoom-center .history .time,
+app-main:not(.disable-zoom-history) .history .time {
+  display: none;
+}
+
+.draggable-clone .time {
+  display: none;
 }

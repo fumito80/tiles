@@ -16,7 +16,7 @@ body {
 }
 
 /* for open tabs pane */
-.tabs::-webkit-scrollbar {
+.tabs-wrap::-webkit-scrollbar {
     width: 8px;
 }
 
