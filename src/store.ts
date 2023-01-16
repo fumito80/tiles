@@ -372,7 +372,6 @@ export function initComponents(
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   return {
-    // store,
     $appMain,
     $leafs,
     $headerLeafs,

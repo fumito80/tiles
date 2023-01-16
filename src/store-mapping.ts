@@ -92,14 +92,18 @@ export function storeMapping(options: Options, components: Components) {
     $history.resetHistory.bind($history),
   );
 
+  store.actionContext(dragAndDropEvents, 'dragging').map(
+    $appMain.dragging.bind($appMain),
+    $tabs.dragging.bind($tabs),
+  );
+
   // focus subscribe unit
 
   store.subscribeContext($appMain)
     .map([$appMain, 'clickAppMain'], $appMain.clickAppMain)
     .map([$appMain, 'keydownMain'], $appMain.keydown)
     .map([$appMain, 'keyupMain'], $appMain.keyup)
-    .map([$formSearch, 'searching'], $appMain.searching)
-    .map([dragAndDropEvents, 'dragging'], $appMain.dragging);
+    .map([$formSearch, 'searching'], $appMain.searching);
 
   store.subscribeContext($leafs)
     .map([$leafs, 'clickLeafs'], $leafs.clickItem)

@@ -464,6 +464,18 @@ app-main {
     }
   }
 
+  &:not(.searching):not(.drag-start) {
+    open-window {
+      &.tabs-collapsed .tab-wrap.selected:active>.outline {
+        filter: opacity(0.7);
+      }
+
+      &:not(.tabs-collapsed) .tab-wrap.selected:active {
+        filter: opacity(0.7);
+      }
+    }
+  }
+
   // Tooltip
 
   .tab-wrap {
@@ -530,7 +542,7 @@ app-main.drag-start>.tabs {
       }
     }
 
-    &:not(.match) {
+    &:not(.match):not(.highlight) {
 
       >.drop-top,
       >.drop-bottom {

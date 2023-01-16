@@ -1781,13 +1781,6 @@ dialog {
   }
 }
 
-app-main:not(.searching):not(.drag-start) .tab-wrap {
-
-  &.selected:active {
-    filter: opacity(0.7);
-  }
-}
-
 // Bookmark find tabs
 
 bm-leaf {

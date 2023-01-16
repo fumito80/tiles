@@ -353,7 +353,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
       const $zoomPane = $dragTargets[0].closest('.histories, .tabs') as HTMLElement;
-      zoomOut($zoomPane, { $main })();
+      setTimeout(zoomOut($zoomPane, { $main }), 100);
     } else {
       clearTimeoutZoom();
     }

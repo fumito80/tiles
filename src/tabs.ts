@@ -337,6 +337,8 @@ export class Window extends HTMLElement implements ISubscribeElement {
       case 'closeTab':
         if (this.childElementCount <= 1) {
           this.remove();
+        } else {
+          this.reloadTabs(dispatch);
         }
         break;
       case 'closeWindow': {
@@ -389,11 +391,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     pinWrap: number | undefined,
     pinWrapB: number | undefined,
   } | undefined;
+  #defaultNewWindowHeight = 0;
+  #scrollDiff = 0;
   #promiseSmoothScroll!: Promise<any>;
   private $pinWrap!: HTMLElement;
   private $pinWrapB!: HTMLElement;
   private $tabsWrap!: HTMLElement;
   private $windosWrap!: HTMLElement;
+  private $newWindow!: HTMLElement;
   init(
     $tmplOpenTab: OpenTab,
     $tmplWindow: Window,
@@ -409,10 +414,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.$pinWrapB = $byClass('pin-wrap-bottom', this)!;
     this.$tabsWrap = $byClass('tabs-wrap', this)!;
     this.$windosWrap = $byClass('windows-wrap', this)!;
+    this.$newWindow = $byClass('new-window', this)!;
     this.#options = options;
     this.#tabOrderAsc = tabOrderAsc;
     if (tabOrderAsc) {
-      this.$tabsWrap.insertBefore($byClass('new-window', this)!, this.$windosWrap);
+      this.$tabsWrap.insertBefore(this.$newWindow, this.$windosWrap);
+      if (pinWindowTop != null) {
+        this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
+      }
     }
     this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
       const ordered = tabOrderAsc ? initWindows.concat().reverse() : initWindows;
@@ -627,7 +636,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const searches = $founds.length;
     if (searches > 0) {
       this.#lastScrollTops = {
-        windowsWrap: this.$windosWrap.scrollTop,
+        windowsWrap: this.$tabsWrap.scrollTop,
         pinWrap: this.$pinWrap.firstElementChild?.scrollTop,
         pinWrapB: this.$pinWrapB.firstElementChild?.scrollTop,
       };
@@ -693,7 +702,24 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if (this.#lastScrollTops == null) {
       return;
     }
+    if (await store.getStates('dragging') === true) {
+      return;
+    }
     this.clearFocus(undefined, undefined, undefined, store);
+  }
+  mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
+    const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
+    this.findTabs(finder, store.dispatch);
+  }
+  async clearFocus(_: any, __: any, ___: any, store: StoreSub) {
+    this.getAllTabs().forEach(($tab) => {
+      $tab.setFocus(false);
+      $tab.setHighlight(false);
+    });
+    store.dispatch('setWheelHighlightTab', { searches: undefined });
+    if (this.#lastScrollTops == null) {
+      return;
+    }
     await this.#promiseSmoothScroll;
     if (this.#lastScrollTops.windowsWrap != null) {
       this.#promiseSmoothScroll = smoothSroll(this.$windosWrap, this.#lastScrollTops.windowsWrap);
@@ -705,17 +731,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       this.$pinWrapB.firstElementChild!.scrollTop = this.#lastScrollTops.pinWrapB;
     }
     this.#lastScrollTops = undefined;
-  }
-  mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
-    const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
-    this.findTabs(finder, store.dispatch);
-  }
-  clearFocus(_: any, __: any, ___: any, store: StoreSub) {
-    this.getAllTabs().forEach(($tab) => {
-      $tab.setFocus(false);
-      $tab.setHighlight(false);
-    });
-    store.dispatch('setWheelHighlightTab', { searches: undefined });
   }
   nextTabByWheel({ newValue: dir }: Changes<'nextTabByWheel'>) {
     const highlights = this.getAllTabs(($el) => $el.highlighted);
@@ -809,13 +824,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     smoothSroll($currentWindow.parentElement!, scrollTop)
       .then(() => setAnimationClass('hilite')($currentWindow));
   }
-  toggleTabOrder({ newValue }: Changes<'toggleTabOrder'>) {
+  toggleTabOrder({ newValue }: Changes<'toggleTabOrder'>, _: any, states: States) {
     this.getWindows().forEach((win) => {
       this.$windosWrap.insertAdjacentElement('afterbegin', win);
     });
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
     this.$tabsWrap.scrollTop = 0;
+    this.#defaultNewWindowHeight = (newValue && states.pinWindowTop != null)
+      ? this.$newWindow.offsetHeight
+      : 0;
   }
   async pinWindow(windowId: number | null, $pinWrap: HTMLElement, isInit = false) {
     if (!windowId || isInit) {
@@ -827,6 +845,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {
     this.pinWindow(newValue, this.$pinWrap, isInit);
+    if (!isInit) {
+      this.#defaultNewWindowHeight = newValue != null ? this.$newWindow.offsetHeight : 0;
+    }
   }
   async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>) {
     this.pinWindow(newValue, this.$pinWrapB, isInit);
@@ -844,6 +865,27 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, __: any, store: StoreSub) {
     this.unpin(store, undefined, newValue);
+  }
+  async dragging({ newValue: dragStart }: Changes<'dragging'>, _: any, __: any, store: StoreSub) {
+    if (!dragStart) {
+      setTimeout(() => clearTimeout(this.#timerMouseoverLeaf), 1);
+      await this.clearFocus(undefined, undefined, undefined, store);
+      if (this.#scrollDiff !== 0) {
+        const scrollPos = this.$tabsWrap.scrollHeight
+          - (this.$tabsWrap.scrollTop + this.$tabsWrap.offsetHeight);
+        const scrollHeight = Math.min(scrollPos, this.#scrollDiff);
+        this.$tabsWrap.scrollTop -= Math.max(scrollHeight, 0);
+        this.#scrollDiff = 0;
+      }
+      return;
+    }
+    if (this.#defaultNewWindowHeight === 0) {
+      this.#scrollDiff = 0;
+      return;
+    }
+    const scrollDiff = this.$newWindow.offsetHeight - this.#defaultNewWindowHeight;
+    this.#scrollDiff = scrollDiff;
+    this.$tabsWrap.scrollTop += scrollDiff;
   }
   override actions() {
     return {
