@@ -419,9 +419,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.#tabOrderAsc = tabOrderAsc;
     if (tabOrderAsc) {
       this.$tabsWrap.insertBefore(this.$newWindow, this.$windosWrap);
-      if (pinWindowTop != null) {
-        this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
-      }
     }
     this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
       const ordered = tabOrderAsc ? initWindows.concat().reverse() : initWindows;
@@ -440,7 +437,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         })
         .filter(Boolean);
       this.$windosWrap.append(...$windows as Window[]);
-      this.pinWindow(pinWindowTop, this.$pinWrap);
+      if (this.pinWindow(pinWindowTop, this.$pinWrap) && tabOrderAsc) {
+        this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
+      }
       this.pinWindow(pinWindowBottom, this.$pinWrapB);
       return [initWindows, currentWindowId];
     });
@@ -835,22 +834,45 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       ? this.$newWindow.offsetHeight
       : 0;
   }
-  async pinWindow(windowId: number | null, $pinWrap: HTMLElement, isInit = false) {
-    if (!windowId || isInit) {
-      return;
+  pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
+    if (windowId == null) {
+      return false;
     }
     this.unpin(undefined, $pinWrap);
-    const newPin = this.getWindows().find((win) => win.windowId === windowId)!;
+    const newPin = this.getWindows().find((win) => win.windowId === windowId);
+    if (!newPin) {
+      return false;
+    }
     $pinWrap.appendChild(newPin);
+    return true;
   }
-  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>) {
-    this.pinWindow(newValue, this.$pinWrap, isInit);
-    if (!isInit) {
-      this.#defaultNewWindowHeight = newValue != null ? this.$newWindow.offsetHeight : 0;
+  pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, __: any, store: StoreSub) {
+    if (newValue == null) {
+      this.#defaultNewWindowHeight = 0;
+      return;
+    }
+    if (isInit) {
+      const newPin = this.getAllWindows().find((win) => win.windowId === newValue);
+      if (!newPin) {
+        store.dispatch('pinWindowTop', null);
+      }
+      return;
+    }
+    const ret = this.pinWindow(newValue, this.$pinWrap);
+    if (ret) {
+      this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
+    } else {
+      store.dispatch('pinWindowTop', null);
     }
   }
-  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>) {
-    this.pinWindow(newValue, this.$pinWrapB, isInit);
+  pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, __: any, store: StoreSub) {
+    if (newValue == null || isInit) {
+      return;
+    }
+    const ret = this.pinWindow(newValue, this.$pinWrapB);
+    if (!ret) {
+      store.dispatch('pinWindowBottom', null);
+    }
   }
   async unpin(store?: StoreSub, $pinWrap?: HTMLElement, windowId?: number | null) {
     const currentPin = windowId ? $byId(`win-${windowId}`) : $pinWrap?.firstElementChild;

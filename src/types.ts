@@ -148,6 +148,7 @@ export const CliMessageTypes = {
   moveTabs: 'cl-move-tabs',
   moveTabsNewWindow: 'cl-move-tabs-new-window',
   openUrls: 'cl-open-urls',
+  setBrowserIcon: 'cl-set-browser-icon',
 } as const;
 
 export const BkgMessageTypes = {

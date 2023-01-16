@@ -12,6 +12,7 @@ import {
   positions,
   defaultWidth,
   ColorPalette,
+  CliMessageTypes,
 } from './types';
 
 import {
@@ -34,13 +35,13 @@ import {
   camelToSnake,
   makeThemeCss,
   setPopupStyle,
+  postMessage,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { setBrowserIcon } from './draw-svg';
 
 // DOM operation
 
@@ -840,7 +841,7 @@ export async function changeColorTheme(colorPalette: ColorPalette) {
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
-  setBrowserIcon(colorPalette);
+  postMessage({ type: CliMessageTypes.setBrowserIcon, payload: colorPalette });
   return getLocal('options').then(({ options }) => {
     setLocal({ options: { ...options, colorPalette } });
     setPopupStyle({ css: options.css, colorPalette });

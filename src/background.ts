@@ -8,6 +8,7 @@ import {
   CliMessageTypes,
   PayloadAction,
   historyHtmlCount,
+  ColorPalette,
 } from './types';
 
 import {
@@ -149,6 +150,9 @@ type PayloadMoveWindow = PayloadAction<
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
+  ),
+  [CliMessageTypes.setBrowserIcon]: ({ payload }: PayloadAction<ColorPalette>) => (
+    Promise.resolve(setBrowserIcon(payload))
   ),
   [CliMessageTypes.moveWindow]:
     ({
