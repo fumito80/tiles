@@ -117,13 +117,12 @@ export class OpenTab extends MutiSelectableItem {
     this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
     this.#active = tab.active;
-    this.#url = tab.url!;
+    this.#url = htmlEscape(decodeURIComponent(tab.url || '').substring(0, 1024));
     const [, $tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tooltip.textContent = tooltip;
-    const dencodedUrl = htmlEscape(decodeURIComponent(tab.url || '').substring(0, 1024));
-    $tab.setAttribute('title', `${tab.title}\n${dencodedUrl}`);
+    $tab.setAttribute('title', `${tab.title}\n${this.#url}`);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -222,7 +221,8 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   update(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
     $tab.textContent = tab.title!;
-    $tab.setAttribute('title', `${tab.title}\n${tab.url}`);
+    const decodedUrl = htmlEscape(decodeURIComponent(tab.url || '').substring(0, 1024));
+    $tab.setAttribute('title', `${tab.title}\n${decodedUrl}`);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }
@@ -458,14 +458,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if (!reFilter) {
       return;
     }
-    const matches = $$byClass(searchSelector, this).filter((tab) => {
-      if (!(tab instanceof OpenTab)) {
-        return false;
-      }
-      const isMatch = reFilter.test(tab.textContent!) || (includeUrl && reFilter.test(tab.url));
+    const tester = includeUrl
+      ? (tab: OpenTab) => reFilter.test(tab.textContent + tab.url)
+      : (tab: OpenTab) => reFilter.test(tab.textContent!);
+    $$byClass<OpenTab>(searchSelector, this).forEach((tab) => {
+      const isMatch = tester(tab);
       pipe(toggleClass('match', isMatch), toggleClass('unmatch', !isMatch))(tab);
-      return isMatch;
     });
+    const matches = $$byClass('match', this);
     dispatch('tabMatches', matches.length, true);
     if (matches.length > 0) {
       this.scrollToFocused(matches[0] as OpenTab);

@@ -38,6 +38,7 @@ const excludeClasses = [
   'collapse-tab',
   'window', 'window-title', 'tab-title',
   'history', 'history-title',
+  'main-menu-button',
   'tabs-menu-button',
   'folder-menu-button',
   'open-new-tab', 'open-new-window', 'open-incognito',

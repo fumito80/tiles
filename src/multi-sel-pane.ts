@@ -164,22 +164,17 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   protected $multiSelPane!: MultiSelPane;
   abstract menuClickHandler(e: MouseEvent): void;
   readonly abstract multiDeletesTitle: string;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane, _?: any) {
+  init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane) {
     this.includeUrl = settings.includeUrl;
     this.$mainMenu = $byClass('main-menu', this)!;
     this.showMenu = showMenu(this.$mainMenu, true);
-    // if (hasClass(this, 'end')) {
-    //   // $byClass('main-menu-button', this)?.addEventListener('click', (e) => {
-    //   //   e.stopPropagation();
-    //   //   // this.$mainMenu.classList.toggle('show');
-    //   //   // if (hasClass(this.$mainMenu, 'show')) {
-    //   //   //   showMenu(this.$mainMenu, true)(e);
-    //   //   //   setFavColorMenu(options.colorPalette);
-    //   //   // }
-    //   // });
-    //   this.$mainMenu.addEventListener('mousedown', (e) => e.preventDefault());
-    // }
+    $byClass('main-menu-button', this)?.addEventListener('click', (e) => {
+      this.$mainMenu.classList.toggle('show');
+      if (hasClass(this.$mainMenu, 'show')) {
+        showMenu(this.$mainMenu, true)(e);
+        getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
+      }
+    });
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     const $popupMenu = $byTag('popup-menu', this);
     if (!($popupMenu instanceof PopupMenu)) {
@@ -193,13 +188,6 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
       return;
     }
     this.$multiSelPane.selectItems(newValue.count, store.dispatch);
-  }
-  clickMainMenu(_: any, e: MouseEvent) {
-    this.$mainMenu.classList.toggle('show');
-    if (hasClass(this.$mainMenu, 'show')) {
-      this.showMenu(e);
-      getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
-    }
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -215,18 +203,6 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           initValue: '' as Panes,
           force: true,
         }),
-        clickMainMenu: makeAction({
-          eventType: 'click',
-          target: $byClass('main-menu-button', this),
-          eventProcesser: (e) => e.stopPropagation(),
-          eventOnly: true,
-        }),
-        mousedownMainMenu: makeAction({
-          eventType: 'mousedown',
-          target: this.$mainMenu,
-          eventProcesser: (e) => e.preventDefault(),
-          eventOnly: true,
-        }),
       };
     }
     return {};
@@ -235,9 +211,6 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     this.$multiSelPane.connect(store);
     this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store));
     store.subscribe('selectItems', this.selectItems.bind(this));
-    if (hasClass(this, 'end')) {
-      store.subscribe('clickMainMenu', this.clickMainMenu.bind(this));
-    }
   }
 }
 
