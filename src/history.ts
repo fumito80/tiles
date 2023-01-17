@@ -346,6 +346,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       let ranged = false;
       for (let i = 0; i < data.length; i += 1) {
         const row = data[i];
+        if (row.isSession) {
+          newDate.push(row);
+          // eslint-disable-next-line no-continue
+          continue;
+        }
         const bound = [lastClickedId, clickedId].includes(row.id!);
         if (ranged || bound) {
           newDate.push({ ...row, selected: true });

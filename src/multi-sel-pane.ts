@@ -164,7 +164,8 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   protected $multiSelPane!: MultiSelPane;
   abstract menuClickHandler(e: MouseEvent): void;
   readonly abstract multiDeletesTitle: string;
-  init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane, _others?: any) {
     this.includeUrl = settings.includeUrl;
     this.$mainMenu = $byClass('main-menu', this)!;
     this.showMenu = showMenu(this.$mainMenu, true);

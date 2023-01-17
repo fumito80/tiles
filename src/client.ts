@@ -810,6 +810,10 @@ export function getChildren($target: Element) {
   return [...$target.children] as HTMLElement[];
 }
 
+export function getOffsetHeight($target: HTMLElement) {
+  return Number.parseFloat(getComputedStyle($target).height);
+}
+
 export function getPalettesHtml(palettes: ColorPalette[]) {
   return palettes
     .map((palette) => {
@@ -854,5 +858,5 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
     .find(($el) => getChildren($el)
       .every(($color, i) => $color.dataset.color === colorPalette[i]));
   $selected?.classList.add('selected');
-  ($selected as any).scrollIntoViewIfNeeded();
+  ($selected as any)?.scrollIntoViewIfNeeded();
 }

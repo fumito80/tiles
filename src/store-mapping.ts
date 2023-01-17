@@ -121,13 +121,13 @@ export function storeMapping(options: Options, components: Components) {
     .map([$headerTabs, 'collapseWindowsAll'], $headerTabs.toggleTabCollapsed)
     .map([$tabs, 'setWheelHighlightTab'], $headerTabs.showBookmarkMatches)
     .map([$tabs, 'tabMatches'], $headerTabs.showTabMatches)
-    .map([$headerTabs, 'toggleTabOrderHeader'], $headerTabs.toggleTabOrder);
+    .map([$headerTabs, 'toggleWindowOrderHeader'], $headerTabs.toggleWindowOrder);
 
   store.subscribeContext($tabs)
     .map([$headerTabs, 'scrollNextWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'scrollPrevWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'focusCurrentTab'], $tabs.focusCurrentTab)
-    .map([$tabs, 'toggleTabOrder'], $tabs.toggleTabOrder)
+    .map([$tabs, 'toggleWindowOrder'], $tabs.toggleWindowOrder)
     .map([$tabs, 'clickTabs'], $tabs.clickItem)
     .map([$tabs, 'mousedownTabs'], $tabs.mousedownItem)
     .map([$tabs, 'mouseupTabs'], $tabs.mouseupItem)

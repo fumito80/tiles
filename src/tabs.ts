@@ -3,12 +3,12 @@ import {
   MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle,
-  setAnimationClass, toggleClass, showMenu, setText, createNewTab, $byId, getChildren,
+  $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle, toggleClass,
+  setAnimationClass, showMenu, setText, createNewTab, $byId, getChildren, getOffsetHeight,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
-  makeStyleIcon, pipe, setLocal, when,
+  makeStyleIcon, pipe, when,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -385,7 +385,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #options!: Options;
   #promiseSwitchTabEnd = Promise.resolve();
   #bmAutoFindTabsDelay = 500;
-  #tabOrderAsc!: boolean;
   #lastScrollTops = undefined as {
     windowsWrap: number,
     pinWrap: number | undefined,
@@ -405,7 +404,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     options: Options,
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
-    tabOrderAsc: boolean,
+    windowOrderAsc: boolean,
     pinWindowTop: number | null,
     pinWindowBottom: number | null,
   ) {
@@ -416,12 +415,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.$windosWrap = $byClass('windows-wrap', this)!;
     this.$newWindow = $byClass('new-window', this)!;
     this.#options = options;
-    this.#tabOrderAsc = tabOrderAsc;
-    if (tabOrderAsc) {
+    if (windowOrderAsc) {
       this.$tabsWrap.insertBefore(this.$newWindow, this.$windosWrap);
     }
     this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
-      const ordered = tabOrderAsc ? initWindows.concat().reverse() : initWindows;
+      const ordered = windowOrderAsc ? initWindows.concat().reverse() : initWindows;
       const $windows = ordered
         .map((win) => {
           const $window = document.importNode($tmplWindow, true);
@@ -437,8 +435,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         })
         .filter(Boolean);
       this.$windosWrap.append(...$windows as Window[]);
-      if (this.pinWindow(pinWindowTop, this.$pinWrap) && tabOrderAsc) {
-        this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
+      if (this.pinWindow(pinWindowTop, this.$pinWrap) && windowOrderAsc) {
+        this.#defaultNewWindowHeight = getOffsetHeight(this.$newWindow);
       }
       this.pinWindow(pinWindowBottom, this.$pinWrapB);
       return [initWindows, currentWindowId];
@@ -549,10 +547,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const $target = e.target as HTMLDivElement;
     const $tab = isOpenTab($target);
     const $window = isWindow($target);
+    const { offsetX } = e;
     if ($tab || $window) {
       clearTimeout(this.timerMultiSelect);
       this.timerMultiSelect = setTimeout(
         async () => {
+          if ($window && offsetX >= $window.clientWidth) {
+            return;
+          }
           const { dragging, multiSelPanes } = await store.getStates();
           const tabs = !multiSelPanes?.tabs;
           if (dragging) {
@@ -823,7 +825,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     smoothSroll($currentWindow.parentElement!, scrollTop)
       .then(() => setAnimationClass('hilite')($currentWindow));
   }
-  toggleTabOrder({ newValue }: Changes<'toggleTabOrder'>, _: any, states: States) {
+  toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>, _: any, states: States) {
+    if (isInit) {
+      return;
+    }
     this.getWindows().forEach((win) => {
       this.$windosWrap.insertAdjacentElement('afterbegin', win);
     });
@@ -831,72 +836,106 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
     this.$tabsWrap.scrollTop = 0;
     this.#defaultNewWindowHeight = (newValue && states.pinWindowTop != null)
-      ? this.$newWindow.offsetHeight
+      ? getOffsetHeight(this.$newWindow)
       : 0;
   }
-  pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
-    if (windowId == null) {
-      return false;
-    }
-    this.unpin(undefined, $pinWrap);
-    const newPin = this.getWindows().find((win) => win.windowId === windowId);
-    if (!newPin) {
-      return false;
-    }
-    $pinWrap.appendChild(newPin);
-    return true;
+  getWindowById(windowId: number) {
+    return this.getAllWindows().find((win) => win.windowId === windowId);
   }
-  pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, __: any, store: StoreSub) {
+  // eslint-disable-next-line class-methods-use-this
+  async translateWindow($target: Window, translation: number) {
+    return new Promise((resolve) => {
+      $target.addEventListener('transitionend', () => {
+        rmStyle('transform')($target);
+        toggleClass('translate-window', false)($target);
+        resolve(true);
+      }, { once: true });
+      addStyle('transform', `translateY(${translation}px)`)($target);
+    });
+  }
+  pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
+    const $newPin = this.getWindows().find((win) => win.windowId === windowId);
+    if ($newPin) {
+      $pinWrap.appendChild($newPin);
+    }
+    return !!$newPin;
+  }
+  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, states: States, store: StoreSub) {
     if (newValue == null) {
       this.#defaultNewWindowHeight = 0;
       return;
     }
-    if (isInit) {
-      const newPin = this.getAllWindows().find((win) => win.windowId === newValue);
-      if (!newPin) {
-        store.dispatch('pinWindowTop', null);
-      }
+    const $newPin = this.getWindowById(newValue);
+    if (!$newPin) {
+      store.dispatch('pinWindowTop', null);
       return;
     }
+    if (isInit) {
+      return;
+    }
+    toggleClass('translate-window', true)($newPin);
+    this.unpin(undefined, this.$pinWrap, states.toggleWindowOrder);
+    const translateY = $newPin.offsetTop - this.$tabsWrap.scrollTop;
+    await this.translateWindow($newPin, -translateY);
     const ret = this.pinWindow(newValue, this.$pinWrap);
     if (ret) {
-      this.#defaultNewWindowHeight = this.$newWindow.offsetHeight;
+      this.#defaultNewWindowHeight = getOffsetHeight(this.$newWindow);
     } else {
       store.dispatch('pinWindowTop', null);
     }
   }
-  pinWindowBottom({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, __: any, store: StoreSub) {
+  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowBottom'>, _: any, states: States, store: StoreSub) {
     if (newValue == null || isInit) {
       return;
     }
+    const $newPin = this.getWindowById(newValue);
+    if (!$newPin) {
+      store.dispatch('pinWindowBottom', null);
+      return;
+    }
+    toggleClass('translate-window', true)($newPin);
+    this.unpin(undefined, this.$pinWrapB, states.toggleWindowOrder);
+    const translateY = this.offsetHeight - $newPin.offsetTop - $newPin.offsetHeight
+      + this.$tabsWrap.scrollTop;
+    await this.translateWindow($newPin, translateY);
     const ret = this.pinWindow(newValue, this.$pinWrapB);
     if (!ret) {
       store.dispatch('pinWindowBottom', null);
     }
   }
-  async unpin(store?: StoreSub, $pinWrap?: HTMLElement, windowId?: number | null) {
+  async unpin(
+    store?: StoreSub,
+    $pinWrap?: HTMLElement,
+    windowOrderAsc?: boolean,
+    windowId?: number | null,
+    effect = false,
+  ) {
     const currentPin = windowId ? $byId(`win-${windowId}`) : $pinWrap?.firstElementChild;
     if (currentPin instanceof Window) {
       const actionName = hasClass(currentPin.parentElement!, 'pin-wrap-top') ? 'pinWindowTop' : 'pinWindowBottom';
       store?.dispatch(actionName, null, true);
       const [windows] = await this.#initPromise;
-      const ordered = this.#tabOrderAsc ? windows.concat().reverse() : windows;
+      const ordered = windowOrderAsc ? windows.concat().reverse() : windows;
       const findIndex = ordered.findIndex((win) => win.windowId === currentPin.windowId);
       this.$windosWrap.insertBefore(currentPin, this.$windosWrap.children[findIndex] ?? null);
+      if (effect) {
+        setAnimationClass('hilite')(currentPin);
+      }
     }
   }
-  async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, __: any, store: StoreSub) {
-    this.unpin(store, undefined, newValue);
+  async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, states: States, store: StoreSub) {
+    this.unpin(store, undefined, states.toggleWindowOrder, newValue, true);
   }
   async dragging({ newValue: dragStart }: Changes<'dragging'>, _: any, __: any, store: StoreSub) {
     if (!dragStart) {
       setTimeout(() => clearTimeout(this.#timerMouseoverLeaf), 1);
       await this.clearFocus(undefined, undefined, undefined, store);
       if (this.#scrollDiff !== 0) {
-        const scrollPos = this.$tabsWrap.scrollHeight
-          - (this.$tabsWrap.scrollTop + this.$tabsWrap.offsetHeight);
-        const scrollHeight = Math.min(scrollPos, this.#scrollDiff);
-        this.$tabsWrap.scrollTop -= Math.max(scrollHeight, 0);
+        const styles = getComputedStyle(this.$tabsWrap);
+        const height = Number.parseFloat(styles.height);
+        const scrollHeight = styles.gridTemplateRows.split(' ').map(Number.parseFloat).reduce((acc, n) => acc + n, 0);
+        const scrollPos = scrollHeight - (this.$tabsWrap.scrollTop + height);
+        this.$tabsWrap.scrollTop -= Math.max(0, Math.min(scrollPos, this.#scrollDiff));
         this.#scrollDiff = 0;
       }
       return;
@@ -905,7 +944,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       this.#scrollDiff = 0;
       return;
     }
-    const scrollDiff = this.$newWindow.offsetHeight - this.#defaultNewWindowHeight;
+    const scrollDiff = getOffsetHeight(this.$newWindow) - this.#defaultNewWindowHeight;
     this.#scrollDiff = scrollDiff;
     this.$tabsWrap.scrollTop += scrollDiff;
   }
@@ -962,8 +1001,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           focused?: boolean,
         },
       }),
-      toggleTabOrder: makeAction({
-        initValue: this.#tabOrderAsc,
+      toggleWindowOrder: makeAction({
+        initValue: false,
+        persistent: true,
       }),
       pinWindowTop: makeAction({
         initValue: null as number | null,
@@ -996,7 +1036,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   private $searchesBms!: HTMLElement;
   private $tabOrderAsc!: HTMLElement;
   readonly multiDeletesTitle = 'Close selected tabs';
-  override init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane) {
+  override init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane, windowOrderAsc: boolean) {
     super.init(settings, options, $tmplMultiSelPane);
     this.$buttonCollapse = $byClass('collapse-tabs', this)!;
     this.$buttonPrevWin = $byClass('win-prev', this)!;
@@ -1005,7 +1045,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
     this.#collapsed = options.collapseTabs;
-    toggleClass('window-order-asc', settings.windowOrderAsc)(this);
+    toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
     this.toggleTabCollapsed({ newValue: options.collapseTabs });
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
@@ -1014,14 +1054,10 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     toggleClass('tabs-collapsed-all', collapsed)(this);
     this.$buttonCollapse.blur();
   }
-  toggleTabOrder(_: any, __: any, ___: any, store: StoreSub) {
-    getLocal('settings').then(({ settings }) => {
-      const windowOrderAsc = !settings.windowOrderAsc;
-      toggleClass('window-order-asc', windowOrderAsc)(this);
-      this.$tabOrderAsc.blur();
-      setLocal({ settings: { ...settings, windowOrderAsc } });
-      store.dispatch('toggleTabOrder', windowOrderAsc);
-    });
+  toggleWindowOrder(_: any, __: any, states: States, store: StoreSub) {
+    toggleClass('window-order-asc', !states.toggleWindowOrder)(this);
+    this.$tabOrderAsc.blur();
+    store.dispatch('toggleWindowOrder', !states.toggleWindowOrder);
   }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
@@ -1069,7 +1105,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
         eventType: 'click',
         eventOnly: true,
       }),
-      toggleTabOrderHeader: makeAction({
+      toggleWindowOrderHeader: makeAction({
         target: this.$tabOrderAsc,
         eventType: 'click',
         eventOnly: true,

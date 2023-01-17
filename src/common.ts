@@ -821,13 +821,16 @@ export function setMessageListener<T extends Messages>(messageMap: T, once = fal
     _: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void,
   ) {
-    messageMap[message.type](message).then((responseState: any) => {
-      sendResponse(responseState);
-      if (once) {
-        chrome.runtime.onMessage.removeListener(onMessage);
-      }
-    });
-    return true;
+    const listener = messageMap[message.type];
+    if (listener) {
+      listener(message).then((responseState: any) => {
+        sendResponse(responseState);
+        if (once) {
+          chrome.runtime.onMessage.removeListener(onMessage);
+        }
+      });
+    }
+    return !!listener;
   }
   chrome.runtime.onMessage.addListener(onMessage);
 }

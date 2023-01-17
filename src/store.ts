@@ -334,6 +334,7 @@ export function initComponents(
   promiseInitHistory: Promise<MyHistoryItem[]>,
   lastSearchWord: string,
   isSearching: boolean,
+  toggleWindowOrder: boolean,
   pinWindowTop: number | null,
   pinWindowBottom: number | null,
 ) {
@@ -360,14 +361,14 @@ export function initComponents(
     options,
     isSearching,
     promiseInitTabs,
-    settings.windowOrderAsc,
+    toggleWindowOrder,
     pinWindowTop,
     pinWindowBottom,
   );
   $leafs.init(options);
   $folders.init(options);
   $headerLeafs.init(settings, options, $tmplMultiSelPane);
-  $headerTabs.init(settings, options, $tmplMultiSelPane);
+  $headerTabs.init(settings, options, $tmplMultiSelPane, toggleWindowOrder);
   $headerHistory.init(settings, options, $tmplMultiSelPane);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);

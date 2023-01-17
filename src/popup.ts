@@ -71,7 +71,6 @@ function setOptions(settings: Settings, options: Options) {
   )(document.body);
 
   setSplitWidth(settings.paneWidth);
-  recoverMinPaneWidth();
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
@@ -186,6 +185,7 @@ function init([{
   options,
   htmlHistory,
   lastSearchWord,
+  toggleWindowOrder,
   pinWindowTop,
   pinWindowBottom,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
@@ -201,6 +201,7 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
+    toggleWindowOrder,
     pinWindowTop,
     pinWindowBottom,
   );
@@ -217,6 +218,7 @@ function init([{
     store.dispatch('resetHistory');
   }
   setFavThemeMenu(options.favColorPalettes);
+  Promise.all([promiseInitTabs, promiseInitHistory]).then(recoverMinPaneWidth);
   return store;
 }
 

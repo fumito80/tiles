@@ -52,7 +52,6 @@ export const initialSettings = {
     dark: '',
     other: '',
   },
-  windowOrderAsc: false,
 };
 
 export type Settings = typeof initialSettings;
@@ -134,6 +133,7 @@ export const initialState = {
   lastSearchWord: '',
   queries: [] as string[],
   bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
+  toggleWindowOrder: false,
   pinWindowTop: null as number | null,
   pinWindowBottom: null as number | null,
 };
