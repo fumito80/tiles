@@ -97,6 +97,11 @@ export function storeMapping(options: Options, components: Components) {
     $tabs.dragging.bind($tabs),
   );
 
+  store.actionContext($headerTabs, 'collapseWindowsAll').map(
+    $headerTabs.toggleTabCollapsedAll.bind($headerTabs),
+    $tabs.toggleTabCollapsedAll.bind($tabs),
+  );
+
   // focus subscribe unit
 
   store.subscribeContext($appMain)
@@ -118,7 +123,6 @@ export function storeMapping(options: Options, components: Components) {
     .map([$folders, 'wheelFolders'], $folders.wheelHighlightTab);
 
   store.subscribeContext($headerTabs)
-    .map([$headerTabs, 'collapseWindowsAll'], $headerTabs.toggleTabCollapsed)
     .map([$tabs, 'setWheelHighlightTab'], $headerTabs.showBookmarkMatches)
     .map([$tabs, 'tabMatches'], $headerTabs.showTabMatches)
     .map([$headerTabs, 'toggleWindowOrderHeader'], $headerTabs.toggleWindowOrder);
@@ -127,6 +131,7 @@ export function storeMapping(options: Options, components: Components) {
     .map([$headerTabs, 'scrollNextWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'scrollPrevWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'focusCurrentTab'], $tabs.focusCurrentTab)
+    .map([$tabs, 'windowAction'], $tabs.dispatchWindowActions)
     .map([$tabs, 'toggleWindowOrder'], $tabs.toggleWindowOrder)
     .map([$tabs, 'clickTabs'], $tabs.clickItem)
     .map([$tabs, 'mousedownTabs'], $tabs.mousedownItem)
@@ -142,6 +147,7 @@ export function storeMapping(options: Options, components: Components) {
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
   store.context($tabs)
+    .map('checkAllCollapsed', $tabs.checkAllCollapsed)
     .map('pinWindowTop', $tabs.pinWindowTop)
     .map('pinWindowBottom', $tabs.pinWindowBottom)
     .map('unpinWindow', $tabs.unpinWindow);

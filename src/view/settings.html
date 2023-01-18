@@ -111,7 +111,7 @@
           </div>
         </layout-panes>
         <label class="item">
-          <input type="checkbox" class="bullet" tabindex="-1">Xen mode ratio:
+          <input type="checkbox" class="bullet" tabindex="-1">Xen mode display ratio:
           <select name="zoom-ratio" class="form-control ms-2">
             <option value="0.5">50%</option>
             <option value="0.6">60%</option>
@@ -137,7 +137,7 @@
           <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
           <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
         </div>
-        <label class="item new ms-3"><input type="checkbox" name="bm-auto-find-tabs">Mouse over a bookmark to highlight
+        <label class="item ms-3"><input type="checkbox" name="bm-auto-find-tabs">Mouse over a bookmark to highlight
           the
           tab
           with the matching URL</label>
@@ -152,14 +152,15 @@
             key, it opens the following URL with the input string as a parameter</span><input type="url"
             name="external-url" class="form-control mt-1 mx-3"
             placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
-        <label class="item new"><input type="checkbox" name="restore-searching">Restore the search in progress at
+        <label class="item"><input type="checkbox" name="restore-searching">Restore the search in progress at
           startup</label>
         <div class="heading">Open tabs pane</div>
         <label class="item"><input type="checkbox" name="collapse-tabs">Icon view at startup</label>
         <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window
           button</label>
         <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
-
+        <label class="item new"><input type="checkbox" name="exclude-pin-toggle-view-all">Exclude pin windows when
+          toggle all windows icon/list view</label>
         <div class="heading">History pane</div>
         <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
 

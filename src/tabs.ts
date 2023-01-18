@@ -48,12 +48,7 @@ async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   });
   toggleClass('tabs-collapsed')($win);
   await promiseCollapse;
-  const { length } = $$byClass('tabs-collapsed');
-  if (length === $$byTag('open-window').length) {
-    dispatch('collapseWindowsAll', true);
-  } else if (length === 0) {
-    dispatch('collapseWindowsAll', false);
-  }
+  dispatch('checkAllCollapsed');
   const $tabs = $win.parentElement!.parentElement!;
   const winBottom = $win.offsetTop + $win.offsetHeight;
   const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
@@ -203,6 +198,16 @@ export class OpenTab extends MutiSelectableItem {
   }
 }
 
+function getModeTabFinder(srcUrl: string, mode: string) {
+  const [, domainSrc] = extractDomain(srcUrl);
+  return mode === 'prefix'
+    ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
+    : (tab: OpenTab) => {
+      const [, domain] = extractDomain(tab.url);
+      return domain === domainSrc;
+    };
+}
+
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
   private $btnCollapseTabs!: HTMLElement;
@@ -295,11 +300,11 @@ export class Window extends HTMLElement implements ISubscribeElement {
   get isCurrent() {
     return this.#isCurrent;
   }
-  addTab(tab: chrome.tabs.Tab, dispatch: Store['dispatch']) {
+  addTab(tab: chrome.tabs.Tab, dispatch: Dispatch) {
     const $openTab = document.importNode(this.$tmplTab!, true);
     return $openTab.init(tab, this.#isSearching, dispatch);
   }
-  addTabs(tabs: chrome.tabs.Tab[], dispatch: Store['dispatch']) {
+  addTabs(tabs: chrome.tabs.Tab[], dispatch: Dispatch) {
     const $tabs = tabs.map((tab) => this.addTab(tab, dispatch));
     this.append(...$tabs);
     return $tabs;
@@ -326,7 +331,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
       this.addTabs([firstTab, ...rest], dispatch);
     });
   }
-  dispathAction(windowAction: Store['actions']['windowAction']['initValue'], dispatch: Dispatch) {
+  dispathAction({ newValue: windowAction }: Changes<'windowAction'>, dispatch: Dispatch) {
     if (windowAction?.windowId !== this.#windowId) {
       return;
     }
@@ -351,8 +356,6 @@ export class Window extends HTMLElement implements ISubscribeElement {
   connect(store: Store) {
     this.$header.connect(store);
     this.addTabs(this.tabs, store.dispatch);
-    store.subscribe('collapseWindowsAll', (changes) => this.switchCollapseIcon(changes.newValue));
-    store.subscribe('windowAction', (changes) => this.dispathAction(changes.newValue, store.dispatch));
   }
 }
 
@@ -375,6 +378,17 @@ function isOpenTab($target: HTMLElement) {
     return $target.parentElement;
   }
   return undefined;
+}
+
+async function translateWindow($target: Window, translation: number) {
+  return new Promise((resolve) => {
+    $target.addEventListener('transitionend', () => {
+      rmStyle('transform')($target);
+      toggleClass('translate-window', false)($target);
+      resolve(true);
+    }, { once: true });
+    addStyle('transform', `translateY(${translation}px)`)($target);
+  });
 }
 
 export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
@@ -647,20 +661,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       dispatch('setWheelHighlightTab', { leafId, searches });
     }
   }
-  // eslint-disable-next-line class-methods-use-this
-  getModeTabFinder(srcUrl: string, mode: string) {
-    const [, domainSrc] = extractDomain(srcUrl);
-    return mode === 'prefix'
-      ? (tab: OpenTab) => !!tab.url?.startsWith(srcUrl)
-      : (tab: OpenTab) => {
-        const [, domain] = extractDomain(tab.url);
-        return domain === domainSrc;
-      };
-  }
   async getTabFinder(srcUrl: string, bmId = '') {
     return getLocal('bmFindTabMatchMode').then(({ bmFindTabMatchMode = {} }) => {
       const mode = bmFindTabMatchMode[bmId] || this.#options.findTabsMatches;
-      return this.getModeTabFinder(srcUrl, mode);
+      return getModeTabFinder(srcUrl, mode);
     });
   }
   async scrollToFocused($target: OpenTab) {
@@ -709,7 +713,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.clearFocus(undefined, undefined, undefined, store);
   }
   mouseoverMenuTabsFind({ newValue: { url, menu } }: Changes<'mouseoverMenuTabsFind'>, _: any, __: any, store: StoreSub) {
-    const finder = this.getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
+    const finder = getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
     this.findTabs(finder, store.dispatch);
   }
   async clearFocus(_: any, __: any, ___: any, store: StoreSub) {
@@ -842,17 +846,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   getWindowById(windowId: number) {
     return this.getAllWindows().find((win) => win.windowId === windowId);
   }
-  // eslint-disable-next-line class-methods-use-this
-  async translateWindow($target: Window, translation: number) {
-    return new Promise((resolve) => {
-      $target.addEventListener('transitionend', () => {
-        rmStyle('transform')($target);
-        toggleClass('translate-window', false)($target);
-        resolve(true);
-      }, { once: true });
-      addStyle('transform', `translateY(${translation}px)`)($target);
-    });
-  }
   pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
     const $newPin = this.getWindows().find((win) => win.windowId === windowId);
     if ($newPin) {
@@ -876,7 +869,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     toggleClass('translate-window', true)($newPin);
     this.unpin(undefined, this.$pinWrap, states.toggleWindowOrder);
     const translateY = $newPin.offsetTop - this.$tabsWrap.scrollTop;
-    await this.translateWindow($newPin, -translateY);
+    await translateWindow($newPin, -translateY);
     const ret = this.pinWindow(newValue, this.$pinWrap);
     if (ret) {
       this.#defaultNewWindowHeight = getOffsetHeight(this.$newWindow);
@@ -897,7 +890,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.unpin(undefined, this.$pinWrapB, states.toggleWindowOrder);
     const translateY = this.offsetHeight - $newPin.offsetTop - $newPin.offsetHeight
       + this.$tabsWrap.scrollTop;
-    await this.translateWindow($newPin, translateY);
+    await translateWindow($newPin, translateY);
     const ret = this.pinWindow(newValue, this.$pinWrapB);
     if (!ret) {
       store.dispatch('pinWindowBottom', null);
@@ -948,6 +941,26 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.#scrollDiff = scrollDiff;
     this.$tabsWrap.scrollTop += scrollDiff;
   }
+  toggleTabCollapsedAll({ newValue }: Changes<'collapseWindowsAll'>) {
+    const windows = this.#options.excludePinToggleViewAll
+      ? this.getWindows()
+      : this.getAllWindows();
+    windows.forEach((win) => win.switchCollapseIcon(newValue));
+  }
+  dispatchWindowActions(changes: Changes<'windowAction'>, _: any, __: any, store: StoreSub) {
+    this.getAllWindows().forEach((win) => win.dispathAction(changes, store.dispatch));
+  }
+  checkAllCollapsed(_: any, __: any, ___: any, store: StoreSub) {
+    const windows = this.#options.excludePinToggleViewAll
+      ? this.getWindows()
+      : this.getAllWindows();
+    const collapseds = windows.filter((win) => hasClass(win, 'tabs-collapsed'));
+    if (collapseds.length === windows.length) {
+      store.dispatch('collapseWindowsAll', true);
+    } else if (collapseds.length === 0) {
+      store.dispatch('collapseWindowsAll', false);
+    }
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -957,6 +970,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
           windowId: -1,
         },
       }),
+      checkAllCollapsed: {},
       clickTabs: makeAction({
         target: this,
         eventType: 'click',
@@ -1047,10 +1061,10 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.#collapsed = options.collapseTabs;
     toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
-    this.toggleTabCollapsed({ newValue: options.collapseTabs });
+    this.toggleTabCollapsedAll({ newValue: options.collapseTabs });
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
-  toggleTabCollapsed({ newValue: collapsed }: { newValue: boolean }) {
+  toggleTabCollapsedAll({ newValue: collapsed }: { newValue: boolean }) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
     this.$buttonCollapse.blur();
   }

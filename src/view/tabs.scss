@@ -101,6 +101,10 @@ open-tab {
 
   .collapse-tabs {
     margin-right: 10px;
+
+    >.icon-list {
+      display: none;
+    }
   }
 
   &.tabs-collapsed-all {
@@ -111,18 +115,6 @@ open-tab {
 
       >.icon-grid {
         display: none;
-      }
-    }
-  }
-
-  &:not(.tabs-collapsed-all) {
-    .collapse-tabs {
-      >.icon-list {
-        display: none;
-      }
-
-      >.icon-grid {
-        display: block;
       }
     }
   }

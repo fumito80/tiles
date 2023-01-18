@@ -70,6 +70,27 @@ export class HistoryItem extends MutiSelectableItem {
   }
 }
 
+async function getHistoriesByIds(elementIds: string[]) {
+  const ids = elementIds.map((el) => el.replace('hst-', '')).sort();
+  const startTime = Date.now() - pastMSec;
+  return chrome.history.search({ text: '', startTime, maxResults: 99999 })
+    .then((hs): MyHistoryItem[] => {
+      if (ids.length === 1) {
+        const h = hs.find((el) => el.id === ids[0])! ?? {};
+        return [h];
+      }
+      const results = [];
+      const sorted = hs.sort((a, b) => Number(a.id) - Number(b.id));
+      for (let [id, ...rest] = ids, i = 0; id != null && i < sorted.length; i += 1) {
+        if (sorted[i].id === id) {
+          results.push(sorted[i]);
+          [id, ...rest] = rest;
+        }
+      }
+      return results;
+    });
+}
+
 export class History extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'histories';
   #options!: Options;
@@ -118,7 +139,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   async getSelectedUrls(dragElementIds: string[] = []) {
     const selecteds = this.getSelecteds(dragElementIds);
-    return this.getHistoriesByIds(selecteds.map((el) => el.id!)).then(map(({ url }) => url!));
+    return getHistoriesByIds(selecteds.map((el) => el.id!)).then(map(({ url }) => url!));
   }
   async openHistories({ newValue }: Changes<'openHistories'>) {
     const selecteds = this.getSelecteds(newValue?.elementIds!);
@@ -144,7 +165,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             .filter(({ tab, window }) => (tab || window)!.sessionId === selecteds[0].id)
             .flatMap(({ tab, window }) => tab || window?.tabs!),
         ))
-      .else(() => this.getHistoriesByIds(selecteds.map((el) => el.id!)));
+      .else(() => getHistoriesByIds(selecteds.map((el) => el.id!)));
     const urls = bookmarkDest.index == null ? items : items.reverse();
     urls.forEach(({ url, title }) => {
       addBookmark(
@@ -414,7 +435,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         return;
       }
       if (hasClass($target, 'icon-x')) {
-        const [{ url }] = await this.getHistoriesByIds([$history.id]);
+        const [{ url }] = await getHistoriesByIds([$history.id]);
         $history.delete(url!).then(() => {
           const [, id] = $history.id.split('-');
           this.applyData((data) => {
@@ -455,7 +476,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         chrome.sessions.restore(sessionId);
         return;
       }
-      const [{ url }] = await this.getHistoriesByIds([$history.id]);
+      const [{ url }] = await getHistoriesByIds([$history.id]);
       $history.open(url!, this.#options);
     }
   }
@@ -571,27 +592,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   getVScrollData() {
     return this.vScrollData;
-  }
-  // eslint-disable-next-line class-methods-use-this
-  async getHistoriesByIds(elementIds: string[]) {
-    const ids = elementIds.map((el) => el.replace('hst-', '')).sort();
-    const startTime = Date.now() - pastMSec;
-    return chrome.history.search({ text: '', startTime, maxResults: 99999 })
-      .then((hs): MyHistoryItem[] => {
-        if (ids.length === 1) {
-          const h = hs.find((el) => el.id === ids[0])! ?? {};
-          return [h];
-        }
-        const results = [];
-        const sorted = hs.sort((a, b) => Number(a.id) - Number(b.id));
-        for (let [id, ...rest] = ids, i = 0; id != null && i < sorted.length; i += 1) {
-          if (sorted[i].id === id) {
-            results.push(sorted[i]);
-            [id, ...rest] = rest;
-          }
-        }
-        return results;
-      });
   }
   getRowsPadding() {
     const $rows = $byClass('rows', this)!;

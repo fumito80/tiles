@@ -113,6 +113,7 @@ export const initialOptions = {
   bmAutoFindTabsDelay: '500',
   restoreSearching: true,
   favColorPalettes: [] as ColorPalette[],
+  excludePinToggleViewAll: true,
 };
 
 export type Panes = typeof panes[number];
