@@ -1,5 +1,5 @@
 import {
-  CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, pastMSec, State,
+  CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, pastMSec,
 } from './types';
 import {
   Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
@@ -13,7 +13,7 @@ import {
 } from './client';
 import {
   delayMultiSelect, filter, getLocaleDate, isDateEq, map, messages, pick, pipe,
-  postMessage, propEq, setLocal, when, whichClass,
+  postMessage, propEq, when, whichClass,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
@@ -128,13 +128,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
     }
     const rowHeight = getRowHeight();
-    setLocal({ vscrollProps: { rowHeight } });
     this.#rowHeight = rowHeight;
   }
   getSelecteds(dragElementIds: string[]) {
     const ids = dragElementIds.map((el) => el.split('-').at(1));
     return this.hookData(
-      (data) => data.filter((el) => el.selected || ids.includes(el.id!)),
+      (data) => data?.filter((el) => el.selected || ids.includes(el.id!)) || [],
     );
   }
   async getSelectedUrls(dragElementIds: string[] = []) {
@@ -597,15 +596,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const $rows = $byClass('rows', this)!;
     const { paddingTop, paddingBottom } = getComputedStyle($rows);
     return Number.parseFloat(paddingTop) + Number.parseFloat(paddingBottom);
-  }
-  resetVScrollHeight(
-    rowHeight: State['vscrollProps']['rowHeight'],
-    dataCount: number,
-  ) {
-    const padding = this.getRowsPadding();
-    const $fakeBottom = $byClass('v-scroll-fake-bottom', this)!;
-    const vScrollHeight = rowHeight * dataCount;
-    addStyle('height', `${vScrollHeight - this.offsetHeight + padding}px`)($fakeBottom);
   }
   setScrollTop(scrollTop: number) {
     this.scrollTop = scrollTop;

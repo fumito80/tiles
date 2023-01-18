@@ -127,9 +127,6 @@ export const initialState = {
   htmlHistory: '',
   clientState: {} as ClientState,
   settings: initialSettings,
-  vscrollProps: {
-    rowHeight: 0,
-  },
   options: initialOptions,
   lastSearchWord: '',
   queries: [] as string[],
@@ -149,7 +146,7 @@ export const CliMessageTypes = {
   moveTabs: 'cl-move-tabs',
   moveTabsNewWindow: 'cl-move-tabs-new-window',
   openUrls: 'cl-open-urls',
-  setBrowserIcon: 'cl-set-browser-icon',
+  setThemeColor: 'cl-set-theme-color',
 } as const;
 
 export const BkgMessageTypes = {

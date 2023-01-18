@@ -34,7 +34,6 @@ import {
   lightColorWhiteness,
   camelToSnake,
   makeThemeCss,
-  setPopupStyle,
   postMessage,
 } from './common';
 
@@ -256,15 +255,10 @@ export function getEndPaneMinWidth($endPane: HTMLElement) {
   return Math.max(minWidth, 120);
 }
 
-function addRootTransition() {
-  addRules(':root', [['--xen-mode-transition', 'all 0.05s ease-in-out']]);
-}
-
 async function savePaneWidth() {
   const saved = await getLocal('settings');
   const settings = getNewPaneWidth(saved);
   setLocal({ settings });
-  addRootTransition();
 }
 
 export async function recoverMinPaneWidth() {
@@ -273,7 +267,6 @@ export async function recoverMinPaneWidth() {
   let overWidth = headersWidth + 4 - document.body.offsetWidth;
   const $tabs = $byClass('tabs')!;
   if (overWidth <= 0 && $tabs.offsetWidth >= 220) {
-    addRootTransition();
     return;
   }
   const [$body1, $body2, $body3] = $$byClass('pane-body');
@@ -845,11 +838,7 @@ export async function changeColorTheme(colorPalette: ColorPalette) {
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
-  postMessage({ type: CliMessageTypes.setBrowserIcon, payload: colorPalette });
-  return getLocal('options').then(({ options }) => {
-    setLocal({ options: { ...options, colorPalette } });
-    setPopupStyle({ css: options.css, colorPalette });
-  });
+  postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette });
 }
 
 export function setFavColorMenu(colorPalette: ColorPalette) {
@@ -859,4 +848,9 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
       .every(($color, i) => $color.dataset.color === colorPalette[i]));
   $selected?.classList.add('selected');
   ($selected as any)?.scrollIntoViewIfNeeded();
+}
+
+export function scrollVerticalCenter($target: HTMLElement) {
+  const $container = $target.parentElement!;
+  $container.scrollTop = $target.offsetTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
 }

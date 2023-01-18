@@ -17,7 +17,6 @@ import {
 import {
   pipe,
   cssid,
-  setMessageListener,
   getGridColStart,
   last,
   filter,
@@ -241,7 +240,7 @@ bootstrap().then(init);
 
 // messaging add-on for background to popup
 export const mapMessagesBtoP = {};
-setMessageListener(mapMessagesBtoP, true);
+// setMessageListener(mapMessagesBtoP, true);
 
 postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' })
   // eslint-disable-next-line no-console

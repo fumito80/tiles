@@ -151,9 +151,13 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
-  [CliMessageTypes.setBrowserIcon]: ({ payload }: PayloadAction<ColorPalette>) => (
-    Promise.resolve(setBrowserIcon(payload))
-  ),
+  [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
+    setBrowserIcon(colorPalette);
+    return getLocal('options').then(({ options }) => {
+      setPopupStyle({ css: options.css, colorPalette });
+      return setLocal({ options: { ...options, colorPalette } });
+    });
+  },
   [CliMessageTypes.moveWindow]:
     ({
       payload: {

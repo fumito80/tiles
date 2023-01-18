@@ -5,6 +5,7 @@ import {
 import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle, toggleClass,
   setAnimationClass, showMenu, setText, createNewTab, $byId, getChildren, getOffsetHeight,
+  scrollVerticalCenter,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
@@ -671,7 +672,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const $parentWindow = $target.getParentWindow();
     await this.#promiseSmoothScroll;
     if (!$parentWindow.closest('.tabs-wrap')) {
-      $target.scrollIntoView({ block: 'center' });
+      scrollVerticalCenter($target);
       return;
     }
     const currentTop = $parentWindow.offsetTop + $target.offsetTop - this.$tabsWrap.offsetTop;
