@@ -158,21 +158,6 @@ app-main:not(.drag-start) {
     }
   }
 
-  .tabs-collapsed {
-
-    .tab-wrap {
-      background-color: $dark-icon-color;
-
-      &.match {
-        background-color: rgba(255, 255, 255, .2) !important;
-      }
-
-      &.current-tab {
-        background-color: var(--key-bg);
-      }
-    }
-  }
-
   .tabs-collapsed .tab-wrap.selected>.outline::after {
     color: deepskyblue;
   }
@@ -411,12 +396,41 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 }
 
-.theme-dark-pane.theme-dark-frame .tabs {
+.theme-dark-frame.theme-dark-pane .tabs {
   .window {
     border-color: $dark-icon-color;
     border-width: 1px;
     padding: 2px;
     padding-bottom: 3px;
+  }
+}
+
+.theme-dark-pane,
+.theme-dark-frame .pin-wrap-top,
+.theme-dark-frame .pin-wrap-bottom {
+  .tabs-collapsed {
+
+    .tab-wrap {
+      background-color: $dark-icon-color;
+
+      &.match {
+        background-color: rgba(255, 255, 255, .2) !important;
+      }
+
+      &.current-tab {
+        background-color: var(--key-bg);
+      }
+    }
+  }
+}
+
+.theme-dark-frame {
+
+  .pin-wrap-top,
+  .pin-wrap-bottom {
+    open-tab {
+      color: var(--frame-color);
+    }
   }
 }
 
