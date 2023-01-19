@@ -141,12 +141,15 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     return getHistoriesByIds(selecteds.map((el) => el.id!)).then(map(({ url }) => url!));
   }
   async openHistories({ newValue }: Changes<'openHistories'>) {
-    const selecteds = this.getSelecteds(newValue?.elementIds!);
-    if (selecteds[0].isSession) {
-      chrome.sessions.restore(selecteds[0].id);
+    const [sel1st, ...rest] = this.getSelecteds(newValue?.elementIds!);
+    if (!sel1st) {
       return;
     }
-    const urls = await this.getSelectedUrls(selecteds.map((el) => el.id!));
+    if (sel1st.isSession) {
+      chrome.sessions.restore(sel1st.id);
+      return;
+    }
+    const urls = await this.getSelectedUrls([sel1st, ...rest].map((el) => el.id!));
     const { windowId, index, incognito } = newValue!;
     if (!windowId) {
       chrome.windows.create({ url: urls, incognito });
@@ -155,16 +158,19 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     postMessage({ type: CliMessageTypes.openUrls, payload: { urls, windowId, index } });
   }
   async addBookmarks({ newValue }: Changes<'addBookmarksHistories'>) {
-    const { bookmarkDest } = newValue!;
-    const selecteds = this.getSelecteds(newValue?.elementIds!);
-    const items = await when(!!selecteds[0].isSession)
+    const [sel1st, ...rest] = this.getSelecteds(newValue?.elementIds!);
+    if (!sel1st) {
+      return;
+    }
+    const items = await when(!!sel1st.isSession)
       .then(() => (chrome.sessions.getRecentlyClosed as () => Promise<chrome.sessions.Session[]>)()
         .then(
           (sessions) => sessions
-            .filter(({ tab, window }) => (tab || window)!.sessionId === selecteds[0].id)
+            .filter(({ tab, window }) => (tab || window)!.sessionId === sel1st.id)
             .flatMap(({ tab, window }) => tab || window?.tabs!),
         ))
-      .else(() => getHistoriesByIds(selecteds.map((el) => el.id!)));
+      .else(() => getHistoriesByIds([sel1st, ...rest].map((el) => el.id!)));
+    const { bookmarkDest } = newValue!;
     const urls = bookmarkDest.index == null ? items : items.reverse();
     urls.forEach(({ url, title }) => {
       addBookmark(
