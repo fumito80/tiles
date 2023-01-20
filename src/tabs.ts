@@ -251,13 +251,15 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
             store.dispatch('windowAction', { type: 'closeWindow', windowId }, true);
             break;
           case 'pin-window-top':
-            store.dispatch('pinWindowTop', windowId, true);
-            break;
           case 'pin-window-bottom':
-            store.dispatch('pinWindowBottom', windowId, true);
+            store.dispatch('pinWindow', {
+              windowId,
+              place: $target.dataset.value === 'pin-window-top' ? 'top' : 'bottom',
+              method: 'add',
+            }, true);
             break;
           case 'unpin-window':
-            store.dispatch('unpinWindow', windowId, true);
+            store.dispatch('pinWindow', { windowId, method: 'sub' });
             break;
           default:
         }
@@ -420,8 +422,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     isSearching: boolean,
     promiseInitTabs: PromiseInitTabs,
     windowOrderAsc: boolean,
-    pinWindowTop: number | null,
-    pinWindowBottom: number | null,
+    pinWindows: States['pinWindows'],
   ) {
     this.setEvent();
     this.$pinWrap = $byClass('pin-wrap-top', this)!;
@@ -450,10 +451,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         })
         .filter(Boolean);
       this.$windosWrap.append(...$windows as Window[]);
-      if (this.pinWindow(pinWindowTop, this.$pinWrap) && windowOrderAsc) {
+      const $pinTops = $windows.filter(($win) => pinWindows?.top?.includes($win.windowId));
+      this.$pinWrap.append(...$pinTops);
+      if ($pinTops.length > 0 && windowOrderAsc) {
         this.#defaultNewWindowHeight = getOffsetHeight(this.$newWindow);
       }
-      this.pinWindow(pinWindowBottom, this.$pinWrapB);
+      this.$pinWrapB.append(
+        ...$windows.filter(($win) => pinWindows?.bottom?.includes($win.windowId)),
+      );
       return [initWindows, currentWindowId];
     });
     this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
@@ -840,65 +845,59 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
     this.$tabsWrap.scrollTop = 0;
-    this.#defaultNewWindowHeight = (newValue && states.pinWindowTop != null)
+    this.#defaultNewWindowHeight = (newValue && states.pinWindows?.top?.length)
       ? getOffsetHeight(this.$newWindow)
       : 0;
   }
   getWindowById(windowId: number) {
     return this.getAllWindows().find((win) => win.windowId === windowId);
   }
-  pinWindow(windowId: number | null, $pinWrap: HTMLElement) {
-    const $newPin = this.getWindows().find((win) => win.windowId === windowId);
-    if ($newPin) {
-      $pinWrap.appendChild($newPin);
-    }
-    return !!$newPin;
+  // eslint-disable-next-line class-methods-use-this
+  pinWindow({ newValue }: Changes<'pinWindow'>, _: any, states: States, store: StoreSub) {
+    const { top: pinsTop, bottom: pinsBottom } = states.pinWindows || {};
+    const newState = when(newValue.method === 'add')
+      .then(() => ({
+        top: newValue.place === 'top' ? [newValue.windowId!] : pinsTop,
+        bottom: newValue.place === 'bottom' ? [newValue.windowId!] : pinsBottom,
+      }))
+      .else(() => {
+        const [top, bottom] = [pinsTop, pinsBottom]
+          .map((pin) => pin?.filter((winId) => winId !== newValue.windowId));
+        return { top, bottom };
+      });
+    store.dispatch('pinWindows', newState);
   }
-  async pinWindowTop({ newValue, isInit }: Changes<'pinWindowTop'>, _: any, states: States, store: StoreSub) {
-    if (newValue == null) {
-      this.#defaultNewWindowHeight = 0;
-      return;
-    }
-    const $newPin = this.getWindowById(newValue);
-    if (!$newPin) {
-      store.dispatch('pinWindowTop', null);
-      return;
-    }
+  async pinWindows({ newValue, isInit }: Changes<'pinWindows'>, _: any, states: States) {
     if (isInit) {
       return;
     }
-    toggleClass('translate-window', true)($newPin);
-    this.unpin(undefined, this.$pinWrap, states.toggleWindowOrder);
-    const translateY = $newPin.offsetTop - this.$tabsWrap.scrollTop;
-    await translateWindow($newPin, -translateY);
-    const ret = this.pinWindow(newValue, this.$pinWrap);
-    if (ret) {
+    const $toTop = this.getWindows().find(($win) => newValue.top?.includes($win.windowId));
+    if ($toTop) {
+      toggleClass('translate-window', true)($toTop);
+      this.unpin(this.$pinWrap, states.toggleWindowOrder);
+      const translateY = $toTop.offsetTop - this.$tabsWrap.scrollTop;
+      await translateWindow($toTop, -translateY);
+      this.$pinWrap.appendChild($toTop);
       this.#defaultNewWindowHeight = getOffsetHeight(this.$newWindow);
-    } else {
-      store.dispatch('pinWindowTop', null);
-    }
-  }
-  async pinWindowBottom({ newValue, isInit }: Changes<'pinWindowBottom'>, _: any, states: States, store: StoreSub) {
-    if (newValue == null || isInit) {
       return;
     }
-    const $newPin = this.getWindowById(newValue);
-    if (!$newPin) {
-      store.dispatch('pinWindowBottom', null);
+    const $toBottom = this.getWindows().find(($win) => newValue.bottom?.includes($win.windowId));
+    if ($toBottom) {
+      toggleClass('translate-window', true)($toBottom);
+      this.unpin(this.$pinWrapB, states.toggleWindowOrder);
+      const translateY = this.offsetHeight - $toBottom.offsetTop - $toBottom.offsetHeight
+        + this.$tabsWrap.scrollTop;
+      await translateWindow($toBottom, translateY);
+      this.$pinWrapB.appendChild($toBottom);
       return;
     }
-    toggleClass('translate-window', true)($newPin);
-    this.unpin(undefined, this.$pinWrapB, states.toggleWindowOrder);
-    const translateY = this.offsetHeight - $newPin.offsetTop - $newPin.offsetHeight
-      + this.$tabsWrap.scrollTop;
-    await translateWindow($newPin, translateY);
-    const ret = this.pinWindow(newValue, this.$pinWrapB);
-    if (!ret) {
-      store.dispatch('pinWindowBottom', null);
-    }
+    const pineds = [...newValue.top ?? [], ...newValue.bottom ?? []];
+    const $unpin = [...getChildren(this.$pinWrap), ...getChildren(this.$pinWrapB)]
+      .filter(($el): $el is Window => $el instanceof Window)
+      .find(($win) => !pineds.includes($win.windowId));
+    this.unpin(undefined, states.toggleWindowOrder, $unpin?.windowId);
   }
   async unpin(
-    store?: StoreSub,
     $pinWrap?: HTMLElement,
     windowOrderAsc?: boolean,
     windowId?: number | null,
@@ -906,8 +905,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   ) {
     const currentPin = windowId ? $byId(`win-${windowId}`) : $pinWrap?.firstElementChild;
     if (currentPin instanceof Window) {
-      const actionName = hasClass(currentPin.parentElement!, 'pin-wrap-top') ? 'pinWindowTop' : 'pinWindowBottom';
-      store?.dispatch(actionName, null, true);
       const [windows] = await this.#initPromise;
       const ordered = windowOrderAsc ? windows.concat().reverse() : windows;
       const findIndex = ordered.findIndex((win) => win.windowId === currentPin.windowId);
@@ -916,9 +913,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         setAnimationClass('hilite')(currentPin);
       }
     }
-  }
-  async unpinWindow({ newValue }: Changes<'unpinWindow'>, _: any, states: States, store: StoreSub) {
-    this.unpin(store, undefined, states.toggleWindowOrder, newValue, true);
   }
   async dragging({ newValue: dragStart }: Changes<'dragging'>, _: any, __: any, store: StoreSub) {
     if (!dragStart) {
@@ -1020,15 +1014,21 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         initValue: false,
         persistent: true,
       }),
-      pinWindowTop: makeAction({
-        initValue: null as number | null,
-        persistent: true,
+      pinWindow: makeAction({
+        initValue: {
+          windowId: null,
+          method: null,
+        } as {
+          windowId: number | null,
+          place?: 'top' | 'bottom',
+          method: 'add' | 'sub' | null,
+        },
       }),
-      unpinWindow: makeAction({
-        initValue: null as number | null,
-      }),
-      pinWindowBottom: makeAction({
-        initValue: null as number | null,
+      pinWindows: makeAction({
+        initValue: {
+          top: undefined as number[] | undefined,
+          bottom: undefined as number[] | undefined,
+        },
         persistent: true,
       }),
     };

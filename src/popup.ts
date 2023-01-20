@@ -185,8 +185,7 @@ function init([{
   htmlHistory,
   lastSearchWord,
   toggleWindowOrder,
-  pinWindowTop,
-  pinWindowBottom,
+  pinWindows,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
@@ -201,8 +200,7 @@ function init([{
     lastSearchWord,
     isSearching,
     toggleWindowOrder,
-    pinWindowTop,
-    pinWindowBottom,
+    pinWindows,
   );
   const store = storeMapping(options, components);
   setOptions(settings, options);

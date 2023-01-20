@@ -132,8 +132,10 @@ export const initialState = {
   queries: [] as string[],
   bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
   toggleWindowOrder: false,
-  pinWindowTop: null as number | null,
-  pinWindowBottom: null as number | null,
+  pinWindows: {
+    top: undefined as number[] | undefined,
+    bottom: undefined as number[] | undefined,
+  },
 };
 
 export type State = typeof initialState;

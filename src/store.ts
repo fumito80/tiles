@@ -7,7 +7,7 @@ import { OpenTab, Window } from './tabs';
 import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
-import { IPubSubElement, ISubscribeElement } from './popup';
+import { IPubSubElement, ISubscribeElement, States } from './popup';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -130,27 +130,19 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
           return true;
         }, listenerOptions);
       }
-      return chrome.storage.session.remove(actionName)
-        .then(() => {
-          if (!persistent) {
-            const actionValue = makeActionValue(initValue);
-            return chrome.storage.session.set({ [actionName]: actionValue })
-              .then(() => ({
-                [actionName]: {
-                  persistent: persistent as boolean, eventOnly, noStates, name,
-                },
-              }));
-          }
-          return chrome.storage.local.get(name)
-            .then(({ [name]: value }) => {
-              const actionValue = { ...makeActionValue(value ?? initValue), isInit: true };
-              return chrome.storage.session.set({ [actionName]: actionValue })
-                .then(() => ({
-                  [actionName]: {
-                    persistent, eventOnly, noStates, name,
-                  },
-                }));
-            });
+      if (eventOnly) {
+        return undefined;
+      }
+      if (!persistent) {
+        const actionValue = makeActionValue(initValue);
+        return chrome.storage.session.set({ [actionName]: actionValue })
+          .then(() => ({ [actionName]: { persistent: persistent as boolean, noStates, name } }));
+      }
+      return chrome.storage.local.get(name)
+        .then(({ [name]: value }) => {
+          const actionValue = makeActionValue(value ?? initValue);
+          return chrome.storage.session.set({ [actionName]: actionValue })
+            .then(() => ({ [actionName]: { persistent, noStates, name } }));
         });
     });
   type StoreActions = typeof actions;
@@ -160,18 +152,15 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     newValue: InitValue<X>, oldValue: InitValue<X>, isInit: boolean
   };
   const initPromise = Promise.all(initPromises).then(async (actionProps) => {
-    const actionsAll = actionProps.reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
+    const actionsAll = actionProps
+      .filter(Boolean)
+      .reduce((acc, currentValue) => ({ ...acc, ...currentValue! }), {});
     chrome.storage.onChanged.addListener((storage, areaName) => {
       if (areaName !== 'session') {
         return;
       }
       Object.entries(storage).forEach(async ([actionName, changes]) => {
-        const {
-          persistent, eventOnly, noStates, name,
-        } = actionsAll[actionName];
-        if (eventOnly || changes.newValue.isInit) {
-          return;
-        }
+        const { persistent, noStates, name } = actionsAll![actionName];
         const oldValue = (changes.oldValue as ActionResult)?.value;
         const newValue = (changes.newValue as ActionResult)?.value;
         if (persistent) {
@@ -335,8 +324,7 @@ export function initComponents(
   lastSearchWord: string,
   isSearching: boolean,
   toggleWindowOrder: boolean,
-  pinWindowTop: number | null,
-  pinWindowBottom: number | null,
+  pinWindows: States['pinWindows'],
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -362,8 +350,7 @@ export function initComponents(
     isSearching,
     promiseInitTabs,
     toggleWindowOrder,
-    pinWindowTop,
-    pinWindowBottom,
+    pinWindows,
   );
   $leafs.init(options);
   $folders.init(options);
