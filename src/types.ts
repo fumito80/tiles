@@ -23,6 +23,13 @@ export type MapMessagesBtoP = typeof mapMessagesBtoP;
 export const historyHtmlCount = 32;
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
+export type ColorInfo = {
+  color: string;
+  whiteness: number;
+  chroma: number;
+  vivid: number;
+}
+
 export const defaultWidth = {
   leafs: 200,
   tabs: 325,
@@ -51,6 +58,11 @@ export const initialSettings = {
     light: '',
     dark: '',
     other: '',
+  },
+  palettes: {
+    light: [] as ColorInfo[][],
+    dark: [] as ColorInfo[][],
+    other: [] as ColorInfo[][],
   },
 };
 
@@ -113,7 +125,6 @@ export const initialOptions = {
   bmAutoFindTabsDelay: '500',
   restoreSearching: true,
   favColorPalettes: [] as ColorPalette[],
-  excludePinToggleViewAll: true,
 };
 
 export type Panes = typeof panes[number];

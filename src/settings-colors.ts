@@ -1,4 +1,4 @@
-import { ColorPalette } from './types';
+import { ColorInfo, ColorPalette } from './types';
 
 import {
   getColorWhiteness,
@@ -7,13 +7,6 @@ import {
   lightColorWhiteness,
   objectEqaul,
 } from './common';
-
-type ColorInfo = {
-  color: string;
-  whiteness: number;
-  chroma: number;
-  vivid: number;
-}
 
 function getRGBDiff(a: ColorInfo, b: ColorInfo) {
   const [r1, g1, b1] = getRGB(a.color);

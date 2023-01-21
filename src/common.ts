@@ -910,7 +910,9 @@ export async function makeColorPalette() {
       paneBg.whiteness > lightColorWhiteness && frameBg.whiteness <= lightColorWhiteness
     ),
   );
-  const other = getColorPaletteHTML(recombiPalette(others, 100));
+
+  const mixThemes = recombiPalette(others, 100);
+  const other = getColorPaletteHTML(mixThemes);
 
   const dark1 = base.filter(
     ([paneBg, frameBg]) => paneBg.whiteness <= lightColorWhiteness
@@ -932,7 +934,8 @@ export async function makeColorPalette() {
     )
     .concat(dark1);
 
-  const dark = getColorPaletteHTML(recombiPaletteDark(darkOrVivid, 100));
+  const darkThemes = recombiPaletteDark(darkOrVivid, 100);
+  const dark = getColorPaletteHTML(darkThemes);
 
   const lightThemesAndDefault = [
     addColorSpec(defaultColorPalette),
@@ -940,7 +943,10 @@ export async function makeColorPalette() {
   ];
   const light = getColorPaletteHTML(lightThemesAndDefault);
 
-  return { light, dark, other };
+  return {
+    html: { light, dark, other },
+    palettes: { light: lightThemesAndDefault, dark: darkThemes, other: mixThemes },
+  };
 }
 
 export function getChromeId(preId: number | string) {

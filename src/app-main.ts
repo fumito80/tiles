@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import { MulitiSelectables, Options } from './types';
+import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
   setEvents, addListener, last, getLocal, pipe,
 } from './common';
@@ -112,6 +112,14 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           palette = favColorPalettes[findIndex + 1];
         }
         changeColorTheme(palette).then(() => setFavColorMenu(palette));
+      });
+    } else if (e.key === 'F4') {
+      getLocal('settings', 'options').then(({ settings: { palettes }, options: { favColorPalettes } }) => {
+        const palettesAll = Object.values(palettes)
+          .flatMap((palette) => palette.map((p) => p.map((pp) => pp.color)))
+          .concat(favColorPalettes);
+        const palette = palettesAll[Math.floor(palettesAll.length * Math.random())];
+        changeColorTheme(palette as ColorPalette);
       });
     } else if (e.shiftKey && e.ctrlKey) {
       const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');

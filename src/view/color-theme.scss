@@ -167,6 +167,45 @@ app-main:not(.drag-start) {
       color: $font-color;
     }
   }
+
+  .pin-wrap-top,
+  .pin-wrap-bottom {
+    .unpin-window {
+      >i {
+        color: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      &:hover::after,
+      &:focus::after {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+
+      &:active::after {
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+}
+
+app-main:not(.theme-dark-pane) {
+
+  .pin-wrap-top,
+  .pin-wrap-bottom {
+    .unpin-window {
+      >i {
+        color: rgba(0, 0, 0, 0.5) !important;
+      }
+
+      &:hover::after,
+      &:focus::after {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+
+      &:active::after {
+        background-color: rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
 }
 
 .theme-dark-frame {
@@ -405,9 +444,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   }
 }
 
-.theme-dark-pane,
-.theme-dark-frame .pin-wrap-top,
-.theme-dark-frame .pin-wrap-bottom {
+.theme-dark-pane {
   .tabs-collapsed {
 
     .tab-wrap {
@@ -420,16 +457,6 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
       &.current-tab {
         background-color: var(--key-bg);
       }
-    }
-  }
-}
-
-.theme-dark-frame {
-
-  .pin-wrap-top,
-  .pin-wrap-bottom {
-    open-tab {
-      color: var(--frame-color);
     }
   }
 }

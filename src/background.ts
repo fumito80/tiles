@@ -121,8 +121,10 @@ const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options
 
 async function init(storage: Pick<State, InitStateKeys>) {
   const css = await fetch('./default.css').then((resp) => resp.text());
-  const theme = await makeColorPalette();
-  const settings = { ...initialSettings, ...storage.settings, theme };
+  const { html: theme, palettes } = await makeColorPalette();
+  const settings = {
+    ...initialSettings, ...storage.settings, theme, palettes,
+  };
   const clientState = storage.clientState || {};
   const lastSearchWord = storage.lastSearchWord || '';
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };

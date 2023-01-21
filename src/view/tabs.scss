@@ -241,42 +241,8 @@ open-tab {
         color: red;
       }
 
-      [data-value='pin-window-top'],
-      [data-value='pin-window-bottom'] {
-        &::before {
-          content: '\e91f';
-          font-family: 'glyphs';
-          font-size: 1.5em;
-          position: absolute;
-          margin-left: 14px;
-        }
-
-        .icon-arrow-top-thin {
-          transform: translate(-7px, -1px);
-        }
-      }
-
-      [data-value='pin-window-bottom'] {
-        .icon-arrow-top-thin {
-          transform: translate(-7px, -1px) rotate(180deg);
-        }
-      }
-
-      [data-value='unpin-window'] {
-        >i {
-          transform: scale(1.2) translateY(4px);
-        }
-
-        &::before {
-          content: '';
-          width: 18px;
-          height: 18px;
-          position: absolute;
-          border-left: 1px solid;
-          transform: rotate(135deg);
-          left: 4px;
-          top: 10px;
-        }
+      [data-value='pin-window-top']>i {
+        transform: scale(1, -1);
       }
     }
   }
@@ -715,7 +681,7 @@ app-main {
 }
 
 .new-window {
-  margin: 5px 2px 0 auto;
+  margin: 5px 2px 2px auto;
   height: fit-content;
 
   &:has(+div:empty) {
@@ -842,24 +808,72 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
   }
 
   open-window {
-    [data-value="unpin-window"] {
-      display: none;
-    }
-
     &.translate-window {
       z-index: 1;
       transition: transform 0.2s ease;
+    }
+
+    window-header {
+      .unpin-window {
+        display: none;
+      }
     }
   }
 
   .pin-wrap-top,
   .pin-wrap-bottom {
+    position: sticky;
+    overflow: hidden;
+    z-index: 1;
+    margin-right: 2px;
 
     open-window {
-      background-color: var(--frame-bg);
-      border-width: 1px;
-      border-color: rgba(0, 0, 0, 0.3);
-      padding: 2px;
+      border: 1px solid transparent !important;
+      padding: 1px !important;
+      max-height: 30vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 15px !important;
+
+      window-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        max-height: 0;
+        margin-bottom: 0;
+        overflow: visible;
+
+        >*:not(.unpin-window) {
+          display: none;
+        }
+      }
+
+      &:not(:has(open-tab:hover)):hover {
+        .unpin-window {
+          display: flex;
+          position: absolute;
+          top: 0;
+          right: -15px;
+
+          &:hover {
+            >i::before {
+              content: '\e922';
+            }
+          }
+        }
+      }
+    }
+
+    &:has(.current-window) {
+      &::before {
+        content: '';
+        position: absolute;
+        width: 4px;
+        top: 3px;
+        height: calc(100% - 10px);
+        background-color: var(--key-bg);
+      }
     }
   }
 
@@ -874,7 +888,7 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     }
   }
 
-  .pin-wrap-bottom:not(:empty) {
+  .pin-wrap-bottom {
     bottom: 0;
     margin-top: 5px;
   }
@@ -883,65 +897,11 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     max-height: 45vh;
   }
 
-  .pin-wrap-top:not(:empty),
-  .pin-wrap-bottom:not(:empty) {
-    position: sticky;
-    overflow: hidden;
-    z-index: 1;
-    background-color: var(--frame-bg);
-    margin-right: 2px;
-
-    open-window {
-      max-height: 30vh;
-      overflow-x: hidden;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
-
-    &:has(.current-window) {
-      &::before {
-        content: '';
-        position: absolute;
-        width: 4px;
-        top: 3px;
-        height: calc(100% - 10px);
-        background-color: var(--key-bg);
-      }
-    }
-
-    [data-value="unpin-window"] {
-      display: inherit;
-    }
-
-    [data-value="pin-window-top"],
-    [data-value="pin-window-bottom"] {
-      display: none;
-    }
-
-    window-header {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background-position-x: 20px;
-
-      i.icon-incognito.show {
-        left: 40px;
-      }
-
-      &::before {
-        content: '\e91f';
-        font-family: "glyphs";
-        transform: scale(1.3);
-        margin-left: 2px;
-        margin-right: 2px;
-      }
-    }
-  }
-
   .pin-wrap-bottom:not(:empty) {
     &:has(.current-window) {
       &::before {
-        height: calc(100% - 6px);
+        top: 2px;
+        height: calc(100% - 5px);
       }
     }
   }
@@ -950,5 +910,12 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
 app-main.drag-start {
   [data-value="pin-window-bottom"] {
     bottom: unset;
+  }
+
+  .pin-wrap-top,
+  .pin-wrap-bottom {
+    open-window:has(.tabs-header.drag-source) {
+      border-color: var(--item-hover-bg) !important;
+    }
   }
 }
