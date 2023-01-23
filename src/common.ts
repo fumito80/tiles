@@ -963,7 +963,7 @@ export function getHistoryData(maxResults = 99999) {
   return [histories, sessions] as const;
 }
 
-export function getHistoryDataByWorker() {
+export async function getHistoryDataByWorker() {
   const worker = new Worker('./worker-history.js');
   Promise.all(getHistoryData()).then(([histories, sessions]) => {
     worker.postMessage([histories, sessions]);
@@ -995,3 +995,11 @@ export function getShortTime(dt: Date) {
 export const messages = {
   cantSelectMultiple: 'Can\'t select multiple recently closed tab.',
 };
+
+export function getNextIndex(length: number, currentIndex: number, isPrevious: boolean) {
+  return when(isPrevious && currentIndex === 0)
+    .then(length - 1)
+    .when(!isPrevious && currentIndex === length - 1)
+    .then(0)
+    .else(isPrevious ? currentIndex - 1 : currentIndex + 1);
+}

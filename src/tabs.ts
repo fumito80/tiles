@@ -51,15 +51,15 @@ async function collapseTab(dispatch: Dispatch, $win: HTMLElement) {
   await promiseCollapse;
   dispatch('checkAllCollapsed');
   const $tabs = $win.parentElement!.parentElement!;
-  const winBottom = $win.offsetTop + $win.offsetHeight;
+  const winBottom = $win.offsetTop + $win.offsetHeight - $tabs.offsetTop;
   const tabsBottom = $tabs.scrollTop + $tabs.offsetHeight;
-  const isTopOver = $tabs.scrollTop <= $win.offsetTop;
+  const isTopOver = $tabs.scrollTop <= ($win.offsetTop - $tabs.offsetTop);
   const isBottomUnder = tabsBottom > winBottom;
   if (isTopOver && isBottomUnder) {
     return;
   }
   const scrollTop = ($tabs.offsetHeight < $win.offsetHeight)
-    ? $win.offsetTop
+    ? ($win.offsetTop - $tabs.offsetTop)
     : $tabs.scrollTop + (winBottom - tabsBottom);
   smoothSroll($win.parentElement!, scrollTop);
 }
@@ -312,6 +312,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   switchCollapseIcon(collapsed: boolean) {
     toggleClass('tabs-collapsed', collapsed)(this);
+    return this;
   }
   getTabs() {
     const [, ...$tabs] = [...this.children];
@@ -381,17 +382,6 @@ function isOpenTab($target: HTMLElement) {
   return undefined;
 }
 
-async function translateWindow($target: Window, translation: number) {
-  return new Promise((resolve) => {
-    $target.addEventListener('transitionend', () => {
-      rmStyle('transform')($target);
-      toggleClass('translate-window', false)($target);
-      resolve(true);
-    }, { once: true });
-    addStyle('transform', `translateY(${translation}px)`)($target);
-  });
-}
-
 export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'tabs';
   #initPromise!: Promise<[InitailTabs, number]>;
@@ -447,12 +437,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         })
         .filter(Boolean);
       this.$windosWrap.append(...$windows as Window[]);
-      this.$pinWrap.append(
-        ...$windows.filter(($win) => pinWindows?.top?.includes($win.windowId)),
-      );
-      this.$pinWrapB.append(
-        ...$windows.filter(($win) => pinWindows?.bottom?.includes($win.windowId)),
-      );
+      [
+        [this.$pinWrap, pinWindows?.top] as const,
+        [this.$pinWrapB, pinWindows?.bottom] as const,
+      ].forEach(([$container, windowIds]) => {
+        $container.append(
+          ...$windows
+            .filter(($win) => windowIds?.includes($win.windowId))
+            .map(($win) => $win.switchCollapseIcon(true)),
+        );
+      });
       return [initWindows, currentWindowId];
     });
     this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
@@ -843,6 +837,26 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   getWindowById(windowId: number) {
     return this.getAllWindows().find((win) => win.windowId === windowId);
   }
+  async translateWindow(
+    $pinContainer: HTMLElement,
+    $target: Window,
+    translation: number,
+    pinWindows: Changes<'pinWindows'>['newValue'],
+    windowOrderAsc: boolean,
+  ) {
+    toggleClass('translate-window', true)($target);
+    await new Promise((resolve) => {
+      $target.addEventListener('transitionend', () => {
+        rmStyle('transform')($target);
+        rmClass('translate-window')($target);
+        resolve(true);
+      }, { once: true });
+      addStyle('transform', `translateY(${translation}px)`)($target);
+    });
+    this.unpin(pinWindows, windowOrderAsc);
+    $pinContainer.appendChild($target);
+    $target.switchCollapseIcon(true);
+  }
   // eslint-disable-next-line class-methods-use-this
   pinWindow({ newValue }: Changes<'pinWindow'>, _: any, states: States, store: StoreSub) {
     const { top: pinsTop, bottom: pinsBottom } = states.pinWindows || {};
@@ -858,30 +872,21 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       });
     store.dispatch('pinWindows', newState);
   }
-  async pinWindows({ newValue, isInit }: Changes<'pinWindows'>, _: any, states: States) {
+  pinWindows({ newValue, isInit }: Changes<'pinWindows'>, _: any, states: States) {
     if (isInit) {
       return;
     }
-    this.unpin(newValue, states.toggleWindowOrder!);
-    const $toTop = this.getWindows().find(($win) => newValue.top?.includes($win.windowId));
-    if ($toTop) {
-      toggleClass('translate-window', true)($toTop);
-      this.unpin(newValue, states.toggleWindowOrder!);
-      const translateY = $toTop.offsetTop - this.$tabsWrap.scrollTop;
-      await translateWindow($toTop, -translateY);
-      this.$pinWrap.appendChild($toTop);
-      $toTop.switchCollapseIcon(true);
+    const $top = this.getWindows().find(($win) => newValue.top?.includes($win.windowId));
+    if ($top) {
+      const translate = $top.offsetTop - this.$tabsWrap.scrollTop;
+      this.translateWindow(this.$pinWrap, $top, -translate, newValue, states.toggleWindowOrder!);
       return;
     }
-    const $toBottom = this.getWindows().find(($win) => newValue.bottom?.includes($win.windowId));
-    if ($toBottom) {
-      toggleClass('translate-window', true)($toBottom);
-      this.unpin(newValue, states.toggleWindowOrder!);
-      const translateY = this.offsetHeight - $toBottom.offsetTop - $toBottom.offsetHeight
+    const $bottom = this.getWindows().find(($win) => newValue.bottom?.includes($win.windowId));
+    if ($bottom) {
+      const translate = this.offsetHeight - $bottom.offsetTop - $bottom.offsetHeight
         + this.$tabsWrap.scrollTop;
-      await translateWindow($toBottom, translateY);
-      this.$pinWrapB.appendChild($toBottom);
-      $toBottom.switchCollapseIcon(true);
+      this.translateWindow(this.$pinWrapB, $bottom, translate, newValue, states.toggleWindowOrder!);
       return;
     }
     this.unpin(newValue, states.toggleWindowOrder!, true);

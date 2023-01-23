@@ -2,7 +2,7 @@
 
 import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe,
+  setEvents, addListener, last, getLocal, pipe, getNextIndex,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -46,6 +46,8 @@ const excludeClasses = [
 
 export class AppMain extends HTMLElement implements IPubSubElement {
   #options!: Options;
+  #randomPalettes = [] as ColorPalette[];
+  #randomPalettesIndex = 0;
   init(options: Options, isSearching: boolean) {
     this.#options = options;
     this.classList.toggle('searching', isSearching);
@@ -93,6 +95,16 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
     toggleClass('disable-zoom-history', !options.zoomHistory)(this);
     toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
+    getLocal('settings', 'options').then(({ settings: { palettes } }) => {
+      const palettesAll = Object.values(palettes)
+        .flatMap((palette) => palette.map((p) => p.map((pp) => pp.color) as ColorPalette));
+      const { length } = palettesAll;
+      for (let i = 0; i < length; i += 1) {
+        const randomIndex = Math.floor((length - i) * Math.random());
+        const [randomPalette] = palettesAll.splice(randomIndex, 1);
+        this.#randomPalettes.push(randomPalette);
+      }
+    });
   }
   // eslint-disable-next-line class-methods-use-this
   async keydown(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
@@ -103,24 +115,18 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         }
         const findIndex = favColorPalettes
           .findIndex((palette) => palette.every((p, i) => p === colorPalette[i]));
-        let palette = favColorPalettes[0];
-        if (e.shiftKey && findIndex > 0) {
-          palette = favColorPalettes[findIndex - 1];
-        } else if (e.shiftKey && findIndex === 0) {
-          palette = favColorPalettes.at(-1)!;
-        } else if (!e.shiftKey && findIndex >= 0 && (findIndex + 1) < favColorPalettes.length) {
-          palette = favColorPalettes[findIndex + 1];
-        }
+        const nextIndex = getNextIndex(favColorPalettes.length, findIndex, e.shiftKey);
+        const palette = favColorPalettes[nextIndex];
         changeColorTheme(palette).then(() => setFavColorMenu(palette));
       });
-    } else if (e.key === 'F4') {
-      getLocal('settings', 'options').then(({ settings: { palettes }, options: { favColorPalettes } }) => {
-        const palettesAll = Object.values(palettes)
-          .flatMap((palette) => palette.map((p) => p.map((pp) => pp.color)))
-          .concat(favColorPalettes);
-        const palette = palettesAll[Math.floor(palettesAll.length * Math.random())];
-        changeColorTheme(palette as ColorPalette);
-      });
+    } else if (e.key === 'F8') {
+      this.#randomPalettesIndex = getNextIndex(
+        this.#randomPalettes.length,
+        this.#randomPalettesIndex,
+        e.shiftKey,
+      );
+      const palette = this.#randomPalettes[this.#randomPalettesIndex];
+      changeColorTheme(palette);
     } else if (e.shiftKey && e.ctrlKey) {
       const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');
       if (bookmarks || tabs || histories) {

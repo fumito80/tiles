@@ -808,9 +808,10 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
   }
 
   open-window {
+    transition: transform 0.2s ease;
+
     &.translate-window {
       z-index: 1;
-      transition: transform 0.2s ease;
     }
 
     window-header {
@@ -824,7 +825,6 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
   .pin-wrap-bottom {
     position: sticky;
     overflow: hidden;
-    z-index: 1;
     margin-right: 2px;
 
     open-window {
@@ -888,7 +888,7 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     }
   }
 
-  .pin-wrap-bottom {
+  .pin-wrap-bottom:not(:empty) {
     bottom: 0;
     margin-top: 5px;
   }
