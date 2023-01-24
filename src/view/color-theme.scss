@@ -370,9 +370,9 @@ app-main:not(.theme-dark-pane) {
 
   &.theme-dark-pane {
     .tabs open-window.current-window::before {
-      height: calc(100% - 4px);
-      top: 2px;
+      top: 0;
       left: -9px;
+      height: 100%;
     }
   }
 }
