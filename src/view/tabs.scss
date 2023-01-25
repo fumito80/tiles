@@ -90,17 +90,11 @@ open-tab {
     }
   }
 
-  button {
-
-    &.tab-order-asc,
-    &.focus-current-tab,
-    &.collapse-tabs,
-    &.win-prev {
-      margin-left: 10px;
-    }
+  >button {
+    margin-left: 10px;
   }
 
-  .win-next {
+  >.win-next {
     margin-left: 0;
   }
 

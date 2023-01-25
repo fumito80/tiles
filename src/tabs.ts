@@ -6,6 +6,7 @@ import {
   $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle, toggleClass,
   setAnimationClass, showMenu, setText, createNewTab, getChildren,
   scrollVerticalCenter,
+  toggleElement,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
@@ -259,6 +260,9 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
               method: 'add',
             }, true);
             break;
+          case 'minimize-others':
+            store.dispatch('windowAction', { type: 'minimizeOthers', windowId }, true);
+            break;
           default:
         }
       }),
@@ -335,6 +339,9 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   dispathAction({ newValue: windowAction }: Changes<'windowAction'>, dispatch: Dispatch) {
     if (windowAction?.windowId !== this.#windowId) {
+      if (windowAction.type === 'minimizeOthers') {
+        chrome.windows.update(this.windowId, { state: 'minimized' });
+      }
       return;
     }
     switch (windowAction.type) {
@@ -350,6 +357,12 @@ export class Window extends HTMLElement implements ISubscribeElement {
         break;
       case 'closeWindow': {
         chrome.windows.remove(this.#windowId, () => this.remove());
+        break;
+      }
+      case 'minimizeOthers': {
+        if (!this.isCurrent) {
+          chrome.windows.update(this.#windowId, { focused: true });
+        }
         break;
       }
       default:
@@ -932,12 +945,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       store.dispatch('collapseWindowsAll', false);
     }
   }
+  minimizeAll() {
+    this.getAllWindows()
+      .filter(($win) => !$win.isCurrent)
+      .forEach(($win) => chrome.windows.update($win.windowId, { state: 'minimized' }));
+  }
   override actions() {
     return {
       ...super.actions(),
       windowAction: makeAction({
         initValue: {
-          type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow' | 'pinWindowTop' | 'pinWindowBottom',
+          type: '' as 'collapseWindow' | 'closeTab' | 'closeWindow' | 'pinWindowTop' | 'pinWindowBottom' | 'minimizeOthers',
           windowId: -1,
         },
       }),
@@ -1036,6 +1054,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
     this.#collapsed = options.collapseTabs;
+    toggleElement(options.showMinimizeAll, 'flex')($byClass('minimize-all', this)!);
     toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
     this.toggleTabCollapsedAll({ newValue: options.collapseTabs });
@@ -1098,6 +1117,11 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
       }),
       toggleWindowOrderHeader: makeAction({
         target: this.$tabOrderAsc,
+        eventType: 'click',
+        eventOnly: true,
+      }),
+      minimizeAll: makeAction({
+        target: $byClass('minimize-all', this),
         eventType: 'click',
         eventOnly: true,
       }),

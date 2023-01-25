@@ -131,6 +131,7 @@ export function storeMapping(options: Options, components: Components) {
     .map([$headerTabs, 'scrollNextWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'scrollPrevWindow'], $tabs.switchTabWindow)
     .map([$headerTabs, 'focusCurrentTab'], $tabs.focusCurrentTab)
+    .map([$headerTabs, 'minimizeAll'], $tabs.minimizeAll)
     .map([$tabs, 'windowAction'], $tabs.dispatchWindowActions)
     .map([$tabs, 'toggleWindowOrder'], $tabs.toggleWindowOrder)
     .map([$tabs, 'clickTabs'], $tabs.clickItem)

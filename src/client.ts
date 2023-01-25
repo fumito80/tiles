@@ -162,7 +162,7 @@ export function hasClass($el: Element | undefined, ...classNames: string[]) {
 }
 
 export function toggleElement(isShow = true, shownDisplayType = 'block') {
-  return (selectorOrElement: string | HTMLElement, parent = document) => {
+  return (selectorOrElement: string | HTMLElement, parent = document as Document | HTMLElement) => {
     const display = isShow ? shownDisplayType : 'none';
     const $target = typeof selectorOrElement === 'string' ? $(selectorOrElement, parent) : selectorOrElement;
     addStyle({ display })($target);

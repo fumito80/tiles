@@ -125,6 +125,7 @@ export const initialOptions = {
   bmAutoFindTabsDelay: '500',
   restoreSearching: true,
   favColorPalettes: [] as ColorPalette[],
+  showMinimizeAll: false,
 };
 
 export type Panes = typeof panes[number];
