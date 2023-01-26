@@ -148,6 +148,7 @@ open-tab {
     }
 
     ~.tabs .pin-wrap-top:not(:empty)~.tabs-wrap .new-window {
+      height: 1.4em;
       margin-top: 0;
       margin-bottom: 5px;
     }
@@ -691,10 +692,6 @@ app-main {
     align-items: center;
     font-size: 1.2em;
     transition: height 0s ease-in-out;
-
-    >i {
-      line-height: inherit;
-    }
   }
 }
 
@@ -715,13 +712,6 @@ app-main {
 
     &:has(+.windows-wrap) {
       min-height: auto;
-
-      &::after {
-        content: '\e90b';
-        font-family: 'glyphs';
-        font-size: 1.2em;
-        color: transparent;
-      }
 
       >.new-window-plus {
         position: absolute;
@@ -837,7 +827,7 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
   .pin-wrap-top,
   .pin-wrap-bottom {
     position: sticky;
-    z-index: 1;
+    z-index: 2;
     overflow: hidden;
     margin-right: 2px;
 
