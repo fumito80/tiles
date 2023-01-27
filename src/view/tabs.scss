@@ -16,7 +16,7 @@ open-tab {
     grid-template-rows: min-content 1fr;
     grid-template-columns: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
   }
 
   open-window {
@@ -27,7 +27,7 @@ open-tab {
     margin-bottom: 5px;
     padding: 1px;
     padding-bottom: 2px;
-    transition: transform 0.2s ease;
+    transition: transform 0.15s ease;
     animation: fade-in 0.15s ease-in-out;
 
     &:last-child {

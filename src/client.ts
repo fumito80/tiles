@@ -842,11 +842,11 @@ export async function changeColorTheme(colorPalette: ColorPalette) {
 }
 
 export function setFavColorMenu(colorPalette: ColorPalette) {
-  $('.fav-palette.selected')?.classList.remove('selected');
+  $('.fav-palette.selected-palette')?.classList.remove('selected-palette');
   const $selected = $$byClass('fav-palette')
     .find(($el) => getChildren($el)
       .every(($color, i) => $color.dataset.color === colorPalette[i]));
-  $selected?.classList.add('selected');
+  $selected?.classList.add('selected-palette');
   ($selected as any)?.scrollIntoViewIfNeeded();
 }
 
