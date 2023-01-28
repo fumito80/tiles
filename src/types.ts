@@ -31,9 +31,9 @@ export type ColorInfo = {
 }
 
 export const defaultWidth = {
-  leafs: 200,
-  tabs: 325,
   histories: 100,
+  tabs: 325,
+  leafs: 200,
   folders: 150,
 };
 
@@ -99,7 +99,11 @@ export type ColorPalette = [
 
 export const defaultColorPalette: ColorPalette = ['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
 
-const panes = ['histories', 'tabs', 'bookmarks'] as const;
+const panes = [
+  'histories',
+  'tabs',
+  'bookmarks',
+] as const;
 
 export const initialOptions = {
   panes,

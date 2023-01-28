@@ -77,7 +77,16 @@ open-tab {
 }
 
 .pane-body.end.tabs {
-  margin-right: 1px;
+  margin-right: 0;
+
+  .pin-wrap-top,
+  .pin-wrap-bottom {
+    margin-right: 4px;
+  }
+
+  .tabs-wrap {
+    margin-right: 2px;
+  }
 }
 
 .pane-header.header-tabs {

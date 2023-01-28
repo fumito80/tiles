@@ -160,7 +160,6 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   abstract paneName: Panes;
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
-  private showMenu!: Function;
   protected $multiSelPane!: MultiSelPane;
   abstract menuClickHandler(e: MouseEvent): void;
   readonly abstract multiDeletesTitle: string;
@@ -168,10 +167,11 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane, _others?: any) {
     this.includeUrl = settings.includeUrl;
     this.$mainMenu = $byClass('main-menu', this)!;
-    this.showMenu = showMenu(this.$mainMenu, true);
     $byClass('main-menu-button', this)?.addEventListener('click', (e) => {
-      this.$mainMenu.classList.toggle('show');
-      if (hasClass(this.$mainMenu, 'show')) {
+      const isShow = hasClass(this.$mainMenu, 'show');
+      $$byClass('main-menu').forEach(rmClass('show'));
+      if (!isShow) {
+        this.$mainMenu.classList.add('show');
         showMenu(this.$mainMenu, true)(e);
         getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
       }

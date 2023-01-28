@@ -702,7 +702,13 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
         addClass('menu-right')($menu);
         return `${rect.left}px`;
       })
-      .else(`${rect.left - width + rect.width}px`);
+      .else(() => {
+        const maxMenu = Math.max(...$$byClass('menu-tree', $menu).map(($el) => $el.offsetWidth));
+        if (rect.left - (width + maxMenu) < 0) {
+          addClass('menu-right')($menu);
+        }
+        return `${rect.left - width + rect.width}px`;
+      });
     const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
       ? `${rect.top - height}px`
       : `${rect.top + rect.height}px`;
