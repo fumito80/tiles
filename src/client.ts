@@ -785,7 +785,7 @@ export function moveBookmarks(
         const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
         $destFolders.insertAdjacentElement(position, $source);
         pipe(
-          rmClass('search-path'),
+          rmClass('search-path', 'selected'),
           setAnimationClass('hilite'),
         )($source);
       } else if (!isLeafFrom) {
