@@ -561,6 +561,19 @@ export async function addBookmark(
     setAnimationClass('hilite')($Leaf);
     $Leaf.editBookmarkTitle();
   }
+  return true;
+}
+
+export async function addBookmarkFromText(parentId = '1', url = '') {
+  const inputUrl = await dialog.inputText('URL', 'Add bookmark', url);
+  if (inputUrl) {
+    const success = await addBookmark(parentId, { url: inputUrl, title: inputUrl }).catch(
+      (reason) => dialog.alert(reason.message).then(() => false),
+    );
+    if (!success) {
+      addBookmarkFromText(parentId, inputUrl);
+    }
+  }
 }
 
 export function selectFolder(

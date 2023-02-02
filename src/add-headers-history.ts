@@ -7,7 +7,7 @@ function getSessionTab({ url, title, sessionId }: chrome.tabs.Tab, lastVisitTime
 }
 
 function getSessionItem({ window, tab, lastModified }: chrome.sessions.Session): MyHistoryItem {
-  const lastVisitTime = lastModified * 1000;
+  const lastVisitTime = lastModified * 1000 + 999.999;
   if (tab) {
     return { isSession: true, ...getSessionTab(tab, lastVisitTime) };
   }

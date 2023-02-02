@@ -2,7 +2,7 @@ import {
   ColorPalette, Options, Panes, State,
 } from './types';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass,
+  $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
   addBookmark, addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
 } from './client';
 import {
@@ -20,6 +20,11 @@ function clickMainMenu(e: MouseEvent, store: Store) {
     case 'add-bookmark': {
       const id = $byClass('open')?.id;
       addBookmark(id || '1');
+      break;
+    }
+    case 'add-bookmark-text': {
+      const id = $byClass('open')?.id;
+      addBookmarkFromText(id || '1');
       break;
     }
     case 'start-multi-select':

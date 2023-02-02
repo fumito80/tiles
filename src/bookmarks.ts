@@ -3,7 +3,7 @@ import {
   setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
-  cbToResolve, cssid, curry3, getCurrentTab, setEvents, setFavicon, switches,
+  cssid, getCurrentTab, setEvents, setFavicon, switches,
   delayMultiSelect, prop, setLocal, getLocal, htmlEscape,
 } from './common';
 import { dialog } from './dialogs';
@@ -115,6 +115,25 @@ export class HeaderLeafs extends MulitiSelectablePaneHeader {
   }
 }
 
+async function updateUrl(
+  bookmarkId: string,
+  url: string,
+  title: string,
+  placeholder: string,
+): Promise<string> {
+  const result = await dialog.inputText(title, 'Edit URL of bookmark', url, placeholder);
+  if (!result) {
+    throw new Error();
+  }
+  const success = await chrome.bookmarks.update(bookmarkId, { url: result })
+    .then(() => true)
+    .catch((reason) => dialog.alert(reason.message).then(() => false));
+  if (!success) {
+    return updateUrl(bookmarkId, result, title, placeholder);
+  }
+  return result;
+}
+
 function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatch) {
   setEvents([$leafMenu], {
     async click(e) {
@@ -146,14 +165,14 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
         }
         case 'edit-url': {
           const { url = '', title } = await getBookmark($leaf.id);
-          // eslint-disable-next-line no-alert
-          const result = prompt(`[Edit URL]\n${title}`, url);
-          if (result == null) {
-            break;
-          }
-          await cbToResolve(curry3(chrome.bookmarks.update)($leaf.id)({ url: result }));
-          $leaf.updateAnchor({ title, url: result });
-          setAnimationClass('hilite')($leaf);
+          $leaf.classList.add('selected');
+          await updateUrl($leaf.id, url, title, url)
+            .then((result) => {
+              $leaf.updateAnchor({ title, url: result });
+              setAnimationClass('hilite')($leaf);
+            })
+            .catch(() => {});
+          $leaf.classList.remove('selected');
           break;
         }
         case 'remove':

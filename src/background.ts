@@ -239,7 +239,7 @@ export const mapMessagesPtoB = {
     }>,
   ) => chrome.windows.get(windowId, { populate: true })
     .then(async ({ tabs }) => {
-      const pins = tabs!.slice(index).concat(sourceTabs).filter((t) => t.pinned);
+      const pins = tabs!.slice(index).concat(sourceTabs).filter(prop('pinned'));
       if (pins.length > 0) {
         const updates = pins?.map((p) => chrome.tabs.update(p.id!, { pinned: false }));
         return Promise.all(updates).then(() => tabs!);
@@ -247,7 +247,7 @@ export const mapMessagesPtoB = {
       return tabs!;
     })
     .then(async (tabs) => {
-      const sourceTabIds = sourceTabs!.map(prop('id')) as number[];
+      const sourceTabIds = sourceTabs!.map((t) => t.id!);
       const [head, tail] = [tabs.slice(0, index), tabs.slice(index)]
         .map((ts) => ts.map((tab) => tab.id!).filter((id) => !sourceTabIds.includes(id)));
       const tabIds = head.concat(sourceTabIds, tail);
