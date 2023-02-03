@@ -41,7 +41,7 @@ import {
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header', 'pin-bookmark'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -345,6 +345,11 @@ export default class DragAndDropEvents implements IPubSubElement {
       .then([[$target], [$target.parentElement!.id]] as const)
       .when(className === 'window')
       .then([[$target.firstElementChild as HTMLElement], [$target.id]] as const)
+      .when(className === 'pin-bookmark')
+      .then(() => {
+        const $source = $('.current-window .current-tab')!;
+        return [[$source], [$source.id]] as const;
+      })
       .else(() => {
         const $selecteds = $$byClass('selected');
         const $reselecteds = resetMultiSelect($target, $selecteds, store.dispatch) || $$byClass('selected');
@@ -352,7 +357,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       });
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
-      const $zoomPane = $dragTargets[0].closest('.histories, .tabs') as HTMLElement;
+      const $zoomPane = $dragTargets[0]?.closest('.histories, .tabs') as HTMLElement;
       setTimeout(zoomOut($zoomPane, { $main }), 100);
     } else {
       clearTimeoutZoom();
@@ -371,9 +376,10 @@ export default class DragAndDropEvents implements IPubSubElement {
         return $draggableClone;
       })
       .else(() => getDraggableElement($dragTargets as HTMLElement[]));
+    const sourceClassName = className === 'pin-bookmark' ? 'tab-wrap' : className;
     e.dataTransfer!.setDragImage($draggable, -12, 10);
     e.dataTransfer!.setData('application/source-id', ids.join(','));
-    e.dataTransfer!.setData('application/source-class', className!);
+    e.dataTransfer!.setData('application/source-class', sourceClassName);
     e.dataTransfer!.effectAllowed = 'move';
     store.dispatch('dragging', true);
   }
@@ -427,7 +433,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     const destId = $dropTarget.id;
     const isDroppedTab = hasClass($dropTarget, 'tab-wrap');
     let bookmarkDest: chrome.bookmarks.BookmarkDestinationArg = { parentId: destId };
-    if (sourceClass === 'tabs-header') {
+    if (sourceClass === 'tabs-header' || sourceClass === 'pin-bookmark') {
       return;
     }
     if (dropAreaClass === 'leafs') {

@@ -1,4 +1,4 @@
-import { $byTag } from './client';
+import { $byClass, $byTag } from './client';
 
 const dialogStyle = `
   h4 {
@@ -16,7 +16,17 @@ const dialogStyle = `
   textarea {
     display: block;
     min-width: calc(100vw * 2 / 3);
-    min-height: 50px;
+    min-height: 1rem;
+    height: 6rem;
+    margin-top: 0.375rem;
+    padding: 0.375rem;
+    border: 1px solid darkgray;
+    border-radius: 0.375rem;
+  }
+  textarea:focus,
+  textarea:active {
+    border-color: #1a73e8;
+    outline: 0;
   }
   button {
     float: right;
@@ -98,22 +108,28 @@ export class DialogContent extends HTMLElement {
 }
 export default class ModalDialog extends HTMLDialogElement {
   private dialogContent: DialogContent;
+  private $inputQuery!: HTMLInputElement;
   private resolve!: (value?: boolean) => void;
   constructor() {
     super();
     this.dialogContent = $byTag('dialog-content');
-    if (this.dialogContent instanceof DialogContent) {
-      this.dialogContent.setOkButton(this.clickOk.bind(this));
-      this.dialogContent.setCancelButton(this.clickCancel.bind(this));
+    if (!(this.dialogContent instanceof DialogContent)) {
+      return;
     }
+    this.dialogContent.setOkButton(this.clickOk.bind(this));
+    this.dialogContent.setCancelButton(this.clickCancel.bind(this));
+    this.$inputQuery = $byClass('query')!;
+  }
+  terminate(result: boolean) {
+    this.close();
+    this.resolve(result);
+    this.$inputQuery.focus();
   }
   clickOk() {
-    this.close();
-    this.resolve(true);
+    this.terminate(true);
   }
   clickCancel() {
-    this.close();
-    this.resolve(false);
+    this.terminate(false);
   }
   async setConfig(msg: string, cancel = false, title = '', inputText = undefined as string | undefined, placeholder = '') {
     if (this.open) {

@@ -95,6 +95,7 @@ export function storeMapping(options: Options, components: Components) {
   store.actionContext(dragAndDropEvents, 'dragging').map(
     $appMain.dragging.bind($appMain),
     $tabs.dragging.bind($tabs),
+    $formSearch.dragging.bind($formSearch),
   );
 
   store.actionContext($headerTabs, 'collapseWindowsAll').map(
