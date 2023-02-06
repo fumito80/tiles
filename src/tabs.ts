@@ -356,7 +356,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
         }
         break;
       case 'closeWindow': {
-        chrome.windows.remove(this.#windowId, () => this.remove());
+        chrome.windows.remove(this.#windowId).then(() => this.remove());
         break;
       }
       case 'minimizeOthers': {

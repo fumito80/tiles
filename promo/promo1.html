@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="promo-image.css">
+    <style>
+        @font-face {
+            font-family: 'Montserrat';
+            src: url('../Montserrat-VariableFont_wght.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            padding: 10px;
+            background-color: lightgray;
+        }
+
+        body>div {
+            background-color: lightgray;
+            width: 440px;
+            max-height: 280px;
+            overflow: hidden;
+        }
+
+        .canvas {
+            width: 420px;
+            height: 320px;
+            background-color: #FEFEFE;
+            padding: 10px 10px 0 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-column-gap: 17px;
+            grid-row-gap: 0px;
+            /* transform: translate(0, 30px); */
+        }
+
+        .canvas>div {
+            /* margin-left: auto;
+            margin-right: auto; */
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .P {
+            width: 100%;
+            height: 100%;
+        }
+
+        i {
+            font-size: 2.1rem;
+        }
+
+        .title {
+            position: fixed;
+            z-index: 2;
+            font-family: 'Montserrat';
+            font-weight: bold;
+            color: rgba(0, 0, 0, .8);
+            background-color: transparent;
+            /* color: #5A5D66; */
+            left: 176px;
+            /* top: 150px; */
+            /* top: 238px; */
+            top: 175px;
+            font-size: 24px;
+        }
+
+        .title-bg {
+            position: fixed;
+            z-index: 1;
+            left: 190px;
+            top: 185px;
+            width: 260px;
+            height: 20px;
+            background-color: #fefefe;
+        }
+    </style>
+    <title>Promo1</title>
+</head>
+
+<body>
+    <div class="title">
+        Popup'n My Resources
+    </div>
+    <!-- <div class="title-bg"></div> -->
+    <div>
+        <div class="canvas"></div>
+    </div>
+    <svg class="P" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(15, 16) scale(0.32, 0.32)" stroke-linecap="round" stroke-linejoin="round">
+            <g stroke="#5A5D66" stroke-width="40">
+                <path d="
+              M 60  60 C 50 95 50 105 15 113
+            " transform="translate(2,0)" />
+                <path d="
+              M 30 15
+              L 113 15 C 105 62 105 67 70 67
+              M 60  60 C 50 95 50 105 15 113
+            " transform="translate(0,0)" />
+            </g>
+            <g stroke="#FEFEFE" stroke-width="13">
+                <path d="
+              M 30 15
+              L 113 15 C 105 62 105 67 70 67
+            " transform="translate(0,0)" />
+                <path d="
+              M 60  60 C 50 95 50 105 15 113
+            " transform="translate(1,0)" />
+            </g>
+        </g>
+    </svg>
+    <script src="promo-image.js"></script>
+</body>
+
+</html>

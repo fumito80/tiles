@@ -97,7 +97,13 @@ export type ColorPalette = [
   keyColor: string,
 ];
 
-export const defaultColorPalette: ColorPalette = ['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2'];
+export const defaultColorPalette: ColorPalette = [
+  'FEFFFE',
+  'BFD7EA',
+  '0B3954',
+  'E0FF4F',
+  'FF6663',
+];
 
 const panes = [
   'histories',

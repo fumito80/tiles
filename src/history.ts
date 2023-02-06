@@ -12,8 +12,8 @@ import {
   $$byTag,
 } from './client';
 import {
-  delayMultiSelect, filter, getLocaleDate, isDateEq, map, messages, pick, pipe,
-  postMessage, propEq, when, whichClass,
+  delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
+  postMessage, propEq, when, whichClass, map, messages, pick, pipe, isDateEq,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
@@ -98,7 +98,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   #reFilter!: RegExp | null;
   #rowHeight!: number;
   #lastClickedId!: string | undefined;
-  #histories!: MyHistoryItem[];
+  #histories: MyHistoryItem[] | undefined;
   private preSelectAll = false;
   private $draggableClone!: HTMLElement;
   private $rows!: HTMLElement;
@@ -146,7 +146,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       return;
     }
     if (sel1st.isSession) {
-      chrome.sessions.restore(sel1st.id);
+      chrome.sessions.restore(sel1st.id, this.restoredSession);
       return;
     }
     const urls = await this.getSelectedUrls([sel1st, ...rest].map((el) => el.id!));
@@ -189,12 +189,17 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', { collapsed: false }, true);
   }
+  clearHistory(states: States) {
+    this.#histories = undefined;
+    this.promiseInitHistory = getHistoryDataByWorker();
+    this.resetHistory(undefined, undefined, states);
+  }
   async resetHistory(_: any, __: any, { toggleRecentlyClosed, historyCollapseDate }: States) {
     const initialize = !this.#histories;
     if (initialize) {
       this.#histories = await this.promiseInitHistory;
     }
-    const [init, ...tail] = this.#histories;
+    const [init, ...tail] = this.#histories!;
     let histories = [init, ...tail];
     if (initialize && !init.headerDate && !isDateEq(init.lastVisitTime, new Date())) {
       const headerDate = { headerDate: true, lastVisitTime: init.lastVisitTime };
@@ -411,7 +416,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       return;
     }
-    const $history = $target.parentElement;
+    const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
     if ($history instanceof HistoryItem) {
       if ($history.isSession && hasClass($target, 'icon-fa-angle-right')) {
         const [, id] = $history.id.split('-');
@@ -478,7 +483,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       if ($history.isSession) {
         const [, sessionId] = $history.id.split('session-');
-        chrome.sessions.restore(sessionId);
+        chrome.sessions.restore(sessionId, this.restoredSession);
         return;
       }
       const [{ url }] = await getHistoriesByIds([$history.id]);
@@ -586,13 +591,13 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.dispatchEvent(new Event('scroll'));
   }
   hookData<T>(fnHook: (data: MyHistoryItem[]) => T) {
-    return fnHook(this.#histories);
+    return fnHook(this.#histories!);
   }
   applyData(
     fnApply: (data: MyHistoryItem[]) => MyHistoryItem[],
   ) {
     this.vScrollData = fnApply(this.vScrollData);
-    this.#histories = fnApply(this.#histories);
+    this.#histories = fnApply(this.#histories!);
     this.resetVScroll();
   }
   getVScrollData() {
@@ -610,6 +615,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   setIncludeUrl(changes: { isInit: boolean }) {
     if (!changes.isInit) {
       this.resetVScroll();
+    }
+  }
+  // eslint-disable-next-line class-methods-use-this
+  restoredSession(session: chrome.sessions.Session) {
+    if (session.window?.state === 'minimized') {
+      chrome.windows.update(session.window!.id!, { state: 'normal' });
     }
   }
   // Store
@@ -638,6 +649,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       openWindowFromHistory: makeAction({
         initValue: false, // incognito?
       }),
+      clearHistory: makeAction(),
       resetHistory: makeAction(),
       clickHistory: makeAction({
         target: this,

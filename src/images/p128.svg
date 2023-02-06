@@ -1,7 +1,7 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle fill="#B9C4DE" cx="64" cy="64" r="64" />
+  <circle fill="#CAE9FF" cx="64" cy="64" r="64" />
   <g transform="translate(27,28) scale(0.60,0.60)" stroke-linecap="round" stroke-linejoin="round">
-    <g stroke="#FF5C00" stroke-width="40">
+    <g stroke="#5A5D66" stroke-width="40">
       <path d="
         M 60  60 C 50 95 50 105 15 113
       " transform="translate(2,0)" />
@@ -11,7 +11,7 @@
         M 60  60 C 50 95 50 105 15 113
       " transform="translate(0,0)" />
     </g>
-    <g stroke="#FFFFFF" stroke-width="13">
+    <g stroke="#FEFEFE" stroke-width="13">
       <path d="
         M 30 15
         L 113 15 C 105 62 105 67 70 67

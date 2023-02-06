@@ -9,7 +9,6 @@ import {
   MyHistoryItem,
   Options,
   ColorPalette,
-  defaultColorPalette,
   HTMLElementEventType,
   pastMSec,
   EventListenerOptions,
@@ -793,11 +792,11 @@ export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
 }
 
 export function getLocaleDate(dateOrSerial?: Date | number) {
-  if (dateOrSerial === 0) {
-    return 'Undated';
-  }
   if (dateOrSerial == null) {
     return (new Date()).toLocaleDateString();
+  }
+  if (dateOrSerial < 1000) {
+    return 'Undated';
   }
   return (new Date(dateOrSerial)).toLocaleDateString();
 }
@@ -853,19 +852,23 @@ export function getGridColStart($target: HTMLElement) {
   return gridColStart;
 }
 
-export function makeThemeCss(colorPalette: ColorPalette) {
+export function getColorFromBg(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
   const darkColor = '#222222';
+  return colorPalette
+    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
+    .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
+}
+
+export function makeThemeCss(colorPalette: ColorPalette) {
   const [
     [paneBg, paneColor],
     [frameBg, frameColor],
     [itemHoverBg, itemHoverColor],
     [searchingBg, searchingColor],
     [keyBg, keyColor],
-  ] = colorPalette
-    .map((code) => [`#${code}`, getColorWhiteness(code)])
-    .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
-    .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
+  ] = getColorFromBg(colorPalette);
   return Object
     .entries({
       paneBg,
@@ -938,7 +941,7 @@ export async function makeColorPalette() {
   const dark = getColorPaletteHTML(darkThemes);
 
   const lightThemesAndDefault = [
-    addColorSpec(defaultColorPalette),
+    addColorSpec(['FFFFFF', 'E8E8E9', 'CCE5FF', 'F6F6F6', '1DA1F2']),
     ...recombiPalette(lightTheme, 80),
   ];
   const light = getColorPaletteHTML(lightThemesAndDefault);

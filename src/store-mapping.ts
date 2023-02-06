@@ -176,5 +176,9 @@ export function storeMapping(options: Options, components: Components) {
     .map('drop', dragAndDropEvents.drop)
     .map('dragend', dragAndDropEvents.dragend);
 
+  chrome.sessions.onChanged.addListener(() => {
+    store.getStates().then($history.clearHistory.bind($history));
+  });
+
   return store;
 }

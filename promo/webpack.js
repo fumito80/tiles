@@ -1,3 +1,4 @@
+const path = require('path');
 /* eslint-disable import/no-extraneous-dependencies */
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -6,17 +7,14 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const WebpackNotifierPlugin = require('webpack-notifier');
 
 module.exports = {
+  mode: 'development',
   entry: {
-    popup: './src/popup.ts',
-    background: './src/background.ts',
-    'worker-history': './src/worker-history.ts',
-    settings: './src/settings.ts',
-    'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-    'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
+    'promo-image': './promo/promo-image.ts',
   },
   output: {
     globalObject: 'self',
     filename: '[name].js',
+    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
@@ -52,11 +50,11 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: '*.*', context: 'src/assets/' },
-        { from: '*.html', context: 'src/view/' },
-        { from: '*.png', context: 'src/images/' },
-        { from: '*.json', context: 'src/_locales/en/', to: '_locales/en' },
-        { from: '*.json', context: 'src/_locales/ja/', to: '_locales/ja' },
+        //     { from: '*.*', context: 'src/assets/' },
+        { from: '*.html', context: 'promo/' },
+        //     { from: '*.png', context: 'src/images/' },
+        //     { from: '*.json', context: 'src/_locales/en/', to: '_locales/en' },
+        //     { from: '*.json', context: 'src/_locales/ja/', to: '_locales/ja' },
       ],
     }),
     new ESLintPlugin({
