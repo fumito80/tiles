@@ -619,8 +619,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   // eslint-disable-next-line class-methods-use-this
   restoredSession(session: chrome.sessions.Session) {
-    if (session.window?.state === 'minimized') {
-      chrome.windows.update(session.window!.id!, { state: 'normal' });
+    if (session.window?.id) {
+      chrome.windows.update(session.window.id, { focused: true });
     }
   }
   // Store

@@ -226,9 +226,8 @@ window-header,
 
 .leaf-menu-button,
 .folder-menu-button,
-.tabs-menu-button,
 .multi-sel-menu-button,
-.collapse-tab,
+window-header>button,
 .unpin-window {
   display: none;
   z-index: 1;
@@ -698,6 +697,10 @@ app-main {
         content: "\f07c";
       }
     }
+  }
+
+  &.end {
+    margin-right: 3px;
   }
 }
 
@@ -1717,16 +1720,6 @@ dialog {
     }
   }
 
-  &.end {
-    .query-wrap {
-      margin-left: auto;
-    }
-
-    .pin-bookmark {
-      margin-left: 5px;
-    }
-  }
-
   grid-column-start: span 2;
 
   &.end {
@@ -1738,6 +1731,14 @@ dialog {
 
     &.end {
       grid-column-start: span 3;
+
+      .query-wrap {
+        margin-left: auto;
+      }
+
+      .pin-bookmark {
+        margin-left: 5px;
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import '../src/view/glyphs.scss';
 
-const pallets = [
+const paletts = [
   '3D405B', 'E07A5F', '81B29A', 'F4F1DE', 'F2CC8F',
   '1B4965', '5FA8D3', '62B6CB', 'BEE9E8', 'CAE9FF',
   'ebeae1', 'cbd9a0', 'fbb89e', 'e9f2c2', 'dba0a0',
@@ -106,7 +106,7 @@ function addGlyphs($el: HTMLDivElement, index: number) {
   return $el;
 }
 
-pallets
+paletts
   .map(addRound)
   .reduce(setSize, [[undefined, 0]] as SetSizeResult[])
   .map(setP)

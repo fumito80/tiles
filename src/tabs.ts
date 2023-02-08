@@ -10,7 +10,7 @@ import {
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
-  makeStyleIcon, pipe, when,
+  makeStyleIcon, pipe, when, setEvents, whichClass, switches,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -233,12 +233,26 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   }
   connect(store: Store) {
     const windowId = this.#windowId;
-    $byClass('collapse-tab', this)?.addEventListener('click', (e) => {
-      store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
-      (e.target as HTMLElement).blur();
-    });
-    $byClass('unpin-window', this)?.addEventListener('click', () => {
-      store.dispatch('pinWindow', { windowId, method: 'sub' });
+    const buttons = ['collapse-tab', 'unpin-window', 'minimize-others'] as const;
+    setEvents($$byTag('button', this), {
+      click(e) {
+        const buttonClass = whichClass(buttons, e.currentTarget as HTMLElement);
+        switches(buttonClass)
+          .case('collapse-tab')
+          .then(() => {
+            store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
+            (e.currentTarget as HTMLElement).blur();
+          })
+          .case('unpin-window')
+          .then(() => {
+            store.dispatch('pinWindow', { windowId, method: 'sub' });
+          })
+          .case('minimize-others')
+          .then(() => {
+            store.dispatch('windowAction', { type: 'minimizeOthers', windowId }, true);
+          })
+          .else(undefined);
+      },
     });
     pipe(
       addListener('click', (e) => {
@@ -1054,7 +1068,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
     this.#collapsed = options.collapseTabs;
-    toggleElement(options.showMinimizeAll, 'flex')($byClass('minimize-all', this)!);
+    toggleElement(options.showMinimizeAll, '')($byClass('minimize-all', this)!);
     toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
     this.toggleTabCollapsedAll({ newValue: options.collapseTabs });

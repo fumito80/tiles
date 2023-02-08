@@ -252,9 +252,6 @@ open-tab {
   }
 
   .collapse-tab {
-    margin-left: auto;
-    margin-right: 2px;
-
     >.icon-list {
       display: none;
     }
@@ -285,6 +282,13 @@ window-header {
   border-top-right-radius: 3px;
   margin-bottom: 2px;
   transition: background-color 0.1s;
+  gap: 2px;
+
+  >button {
+    >i {
+      pointer-events: inherit;
+    }
+  }
 
   >div {
     opacity: 1;
