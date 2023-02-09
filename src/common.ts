@@ -887,9 +887,12 @@ export function makeThemeCss(colorPalette: ColorPalette) {
 }
 
 export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
-  const variables = makeThemeCss(colorPalette);
-  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${css}`);
-  chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
+  getLocal('settings').then(({ settings }) => {
+    const variables = makeThemeCss(colorPalette);
+    const height = `body { height: ${settings.height}px; }`;
+    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${height}\n\n${css}`);
+    chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
+  });
 }
 
 export async function makeColorPalette() {
@@ -1005,4 +1008,12 @@ export function getNextIndex(length: number, currentIndex: number, isPrevious: b
     .when(!isPrevious && currentIndex === length - 1)
     .then(0)
     .else(isPrevious ? currentIndex - 1 : currentIndex + 1);
+}
+
+export function decodeUrl(url?: string) {
+  try {
+    return decodeURIComponent((url || '').substring(0, 1024));
+  } catch {
+    return (url || '').substring(0, 1024);
+  }
 }

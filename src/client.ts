@@ -13,6 +13,9 @@ import {
   defaultWidth,
   ColorPalette,
   CliMessageTypes,
+  PaneLayouts,
+  paneNames,
+  defaultWidthes,
 } from './types';
 
 import {
@@ -26,7 +29,6 @@ import {
   htmlEscape,
   pipe,
   decode,
-  pick,
   prop,
   addListener,
   when,
@@ -35,6 +37,8 @@ import {
   camelToSnake,
   makeThemeCss,
   postMessage,
+  pick,
+  setPopupStyle,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -221,22 +225,55 @@ export function getGridTemplateColumns() {
   };
 }
 
-export function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
+export function initSplitWidth(paneLayouts: PaneLayouts, paneWidth: Partial<SplitterClasses>) {
+  const $bodies = $$byClass('pane-body');
+  const [$pane1, $pane2, $pane3] = $bodies;
+  let widthes: PaneLayouts[number] | undefined;
+  if (paneLayouts.length === 0) {
+    if (paneWidth.pane3 === defaultWidth.histories
+      && paneWidth.pane2 === defaultWidth.tabs
+      && paneWidth.pane1 === defaultWidth.leafs) {
+      [widthes] = defaultWidthes;
+    } else {
+      widthes = [$pane1, $pane2, $pane3].map(($body, i) => {
+        const name = whichClass(paneNames, $body)!;
+        const width = [paneWidth.pane3, paneWidth.pane2, paneWidth.pane1][i];
+        return { name, width };
+      }) as PaneLayouts[number];
+    }
+    getLocal('settings').then(({ settings }) => setLocal({ settings: { ...settings, paneLayouts: [widthes!] } }));
+  } else {
+    widthes = paneLayouts.find((ps) => [$pane1, $pane2, $pane3].every(
+      (pane, i) => hasClass(pane, ps[i].name),
+    ));
+    if (!widthes) {
+      widthes = defaultWidthes.find((panes) => [$pane1, $pane2, $pane3].every(
+        ($pane, i) => hasClass($pane, panes[i].name),
+      ))!;
+    }
+  }
+  widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
+}
+
+function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
   const $bodies = $$byClass('pane-body');
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
 export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
-  const { pane3, pane2, pane1 } = getGridTemplateColumns();
-  return {
-    ...settings,
-    paneWidth: {
-      pane3,
-      pane2,
-      pane1,
-    },
-  };
+  const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
+  const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
+    const name = whichClass(paneNames, $body)!;
+    const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
+    return { name, width };
+  }) as PaneLayouts[number];
+  const paneLayouts = settings.paneLayouts
+    .filter((ps) => ![$pane1, $pane2, $pane3].every(
+      (pane, i) => hasClass(pane, ps[i].name),
+    ))
+    .concat([newWidthes]);
+  return { ...settings, paneLayouts };
 }
 
 export function getEndPaneMinWidth($endPane: HTMLElement) {
@@ -253,45 +290,6 @@ export function getEndPaneMinWidth($endPane: HTMLElement) {
       queryWrapMinWidth,
     );
   return Math.max(minWidth, 120);
-}
-
-async function savePaneWidth() {
-  const saved = await getLocal('settings');
-  const settings = getNewPaneWidth(saved);
-  setLocal({ settings });
-}
-
-export async function recoverMinPaneWidth() {
-  const $headerPanes = $$byClass('pane-header');
-  let headersWidth = $headerPanes.reduce((acc, $el) => acc + $el.offsetWidth, 0);
-  let overWidth = headersWidth + 4 - document.body.offsetWidth;
-  const $tabs = $byClass('tabs')!;
-  if (overWidth <= 0 && $tabs.offsetWidth >= 220) {
-    return;
-  }
-  const [$body1, $body2, $body3] = $$byClass('pane-body');
-  const [pane3, pane2, pane1] = [$body1, $body2, $body3].map(($body) => {
-    const paneName = whichClass(['leafs', 'tabs', 'histories', 'folders'] as const, $body)!;
-    return defaultWidth[paneName];
-  });
-  setSplitWidth({ pane1, pane2, pane3 });
-  headersWidth = $headerPanes.reduce((acc, $el) => acc + $el.offsetWidth, 0);
-  overWidth = headersWidth + 4 - document.body.offsetWidth;
-  if (overWidth <= 0) {
-    savePaneWidth();
-    return;
-  }
-  const [maxWidthPane] = Object.entries({ pane1, pane2, pane3 })
-    .map(([className, width]) => ({ className, width }))
-    .sort((a, b) => b.width - a.width);
-  const { className } = maxWidthPane;
-  setSplitWidth({
-    pane1,
-    pane2,
-    pane3,
-    [className]: maxWidthPane.width - overWidth,
-  });
-  savePaneWidth();
 }
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in') {
@@ -364,6 +362,7 @@ export function saveStateAllPaths(id?: string) {
 function setMouseEventListener(
   mouseMoveHandler: (e: MouseEvent) => void,
   getSettings: (state: Pick<State, 'settings'>) => Settings,
+  resizeHeight = false,
 ) {
   const mouseMoveHandlerWrapper = (e: MouseEvent) => {
     e.preventDefault();
@@ -373,9 +372,13 @@ function setMouseEventListener(
   document.addEventListener('mouseup', async () => {
     $byClass('mousedown')?.classList.remove('mousedown');
     document.removeEventListener('mousemove', mouseMoveHandlerWrapper);
-    const saved = await getLocal('settings');
+    const saved = await getLocal('settings', 'options');
     const settings = getSettings(saved);
-    setLocal({ settings });
+    setLocal({ settings }).then(() => {
+      if (resizeHeight) {
+        setPopupStyle(saved.options);
+      }
+    });
   }, { once: true });
 }
 
@@ -388,7 +391,7 @@ function getNewSize({ settings }: Pick<State, 'settings'>) {
 }
 
 export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewSize);
+  setMouseEventListener(mouseMoveHandler, getNewSize, true);
 }
 
 export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
@@ -411,16 +414,6 @@ export function resizeSplitHandler(
       return;
     }
     setSplitWidth({ [className]: width });
-  };
-}
-
-export function resizeWidthHandler($ref: HTMLElement, startWidth: number, endPaneMinWidth: number) {
-  return (e: MouseEvent) => {
-    const width = Math.min(startWidth - e.screenX, 800);
-    if (width - $ref.offsetLeft < endPaneMinWidth) {
-      return;
-    }
-    addStyle('width', `${width}px`)(document.body);
   };
 }
 

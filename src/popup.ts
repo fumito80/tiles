@@ -30,14 +30,13 @@ import {
 import {
   $, $$,
   addStyle, addClass,
-  setSplitWidth,
+  initSplitWidth,
   hasClass,
   addChild,
   setHTML,
   $$byClass, $byClass,
   toggleElement,
   $byTag,
-  recoverMinPaneWidth,
   getPalettesHtml,
 } from './client';
 import { AppMain } from './app-main';
@@ -64,12 +63,9 @@ const sheet = document.head.appendChild(document.createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
-  pipe(
-    addStyle('width', `${settings.width}px`),
-    addStyle('height', `${settings.height}px`),
-  )(document.body);
+  // addStyle('height', `${settings.height}px`)(document.body);
 
-  setSplitWidth(settings.paneWidth);
+  initSplitWidth(settings.paneLayouts, settings.paneWidth);
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
@@ -199,7 +195,7 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
-    toggleWindowOrder,
+    toggleWindowOrder ?? false,
     pinWindows,
   );
   const store = storeMapping(options, components);
@@ -215,7 +211,6 @@ function init([{
     store.dispatch('resetHistory');
   }
   setFavThemeMenu(options.favColorPalettes);
-  Promise.all([promiseInitTabs, promiseInitHistory]).then(recoverMinPaneWidth);
   return store;
 }
 

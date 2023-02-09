@@ -11,7 +11,6 @@ import {
   setResizeHandler,
   setSplitterHandler,
   resizeSplitHandler,
-  resizeWidthHandler,
   resizeHeightHandler,
   getEndPaneMinWidth,
   showMenu,
@@ -55,7 +54,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
 
     const $paneBodies = $$byClass('pane-body', this);
     const $endHeaderPane = last($$byClass('pane-header', this))!;
-    const $endBodyPane = last($paneBodies)!;
 
     $$byClass('split-h', this).forEach(($splitter, i) => {
       const $targetPane = $paneBodies[i];
@@ -75,15 +73,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         );
         setSplitterHandler(handler);
       })($splitter);
-    });
-
-    $byClass('resize-x', this)?.addEventListener('mousedown', (e) => {
-      const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-      setResizeHandler(resizeWidthHandler(
-        $endBodyPane,
-        document.body.offsetWidth + e.screenX,
-        endPaneMinWidth,
-      ));
     });
 
     $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));

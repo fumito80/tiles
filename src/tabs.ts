@@ -10,7 +10,7 @@ import {
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape,
-  makeStyleIcon, pipe, when, setEvents, whichClass, switches,
+  makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -114,7 +114,7 @@ export class OpenTab extends MutiSelectableItem {
     this.#incognito = tab.incognito;
     this.setCurrentTab(tab);
     this.#active = tab.active;
-    this.#url = decodeURIComponent((tab.url || '').substring(0, 1024));
+    this.#url = decodeUrl(tab.url);
     const [, $tab,, $tooltip] = [...this.children];
     $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
@@ -226,8 +226,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   update(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
     $tab.textContent = tab.title!;
-    const decodedUrl = htmlEscape(decodeURIComponent((tab.url || '').substring(0, 1024)));
-    $tab.setAttribute('title', `${tab.title}\n${decodedUrl}`);
+    $tab.setAttribute('title', `${tab.title}\n${decodeUrl(tab.url)}`);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }

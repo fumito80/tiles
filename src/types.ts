@@ -37,6 +37,30 @@ export const defaultWidth = {
   folders: 150,
 };
 
+export const paneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
+
+type PaneWidth = {
+  name: (typeof paneNames)[number];
+  width: number,
+};
+
+export type PaneLayouts = [PaneWidth, PaneWidth, PaneWidth][];
+
+export const defaultWidthes: PaneLayouts = [
+  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'leafs', width: 200 }],
+  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'folders', width: 150 }],
+  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'leafs', width: 175 }],
+  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'folders', width: 130 }],
+  [{ name: 'histories', width: 100 }, { name: 'leafs', width: 200 }, { name: 'folders', width: 150 }],
+  [{ name: 'histories', width: 100 }, { name: 'folders', width: 150 }, { name: 'leafs', width: 200 }],
+  [{ name: 'tabs', width: 300 }, { name: 'leafs', width: 150 }, { name: 'folders', width: 130 }],
+  [{ name: 'tabs', width: 300 }, { name: 'folders', width: 130 }, { name: 'leafs', width: 150 }],
+  [{ name: 'leafs', width: 150 }, { name: 'folders', width: 130 }, { name: 'tabs', width: 300 }],
+  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 150 }, { name: 'tabs', width: 300 }],
+  [{ name: 'leafs', width: 175 }, { name: 'folders', width: 130 }, { name: 'histories', width: 175 }],
+  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 175 }, { name: 'histories', width: 175 }],
+];
+
 export const initialSettings = {
   postPage: false,
   width: 800,
@@ -46,6 +70,7 @@ export const initialSettings = {
     pane2: defaultWidth.tabs,
     pane3: defaultWidth.histories,
   },
+  paneLayouts: [] as PaneLayouts,
   bodyColor: '#222222',
   tabs: true,
   history: true,

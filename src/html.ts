@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  makeStyleIcon, htmlEscape, getLocaleDate, getShortTime,
+  makeStyleIcon, htmlEscape, getLocaleDate, getShortTime, decodeUrl,
 } from './common';
 
 type NodeParamas = Pick<chrome.bookmarks.BookmarkTreeNode, 'id' | 'title'> & {
@@ -13,11 +13,7 @@ export function makeLeaf(
   isSearching = false,
 ) {
   const style = makeStyleIcon(url);
-  let decodedUrl = (url || '').substring(0, 1024);
-  try {
-    decodedUrl = decodeURIComponent(decodedUrl);
-  // eslint-disable-next-line no-empty
-  } catch {}
+  const decodedUrl = decodeUrl(url);
   return `
     <bm-leaf class="leaf${isSearching ? ' search-path' : ''}" id="${id}" draggable="true" style="${style}">
       <div class="anchor" title="${htmlEscape(title)}\n${htmlEscape(decodedUrl)}">${htmlEscape(title)}</div><button class="leaf-menu-button"><i class="icon-fa-ellipsis-v"></i></button>

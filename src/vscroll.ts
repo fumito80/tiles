@@ -1,6 +1,6 @@
 import { MyHistoryItem } from './types';
 import {
-  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape, getShortTime,
+  pipe, getLocaleDate, htmlEscape, preFaviconUrl, cssEscape, getShortTime, decodeUrl,
 } from './common';
 import {
   $, addStyle, addAttr, setHTML, rmClass, setText, rmStyle, addClass, rmAttr, toggleClass,
@@ -66,7 +66,7 @@ export function rowSetterHistory(isShowFixedHeader: boolean) {
       )($row);
       return;
     }
-    const url = decodeURIComponent(asIsUrl || '');
+    const url = decodeUrl(asIsUrl);
     const text = title || url;
     const pageUrl = (!url || url.startsWith('data')) ? 'none' : cssEscape(asIsUrl || '');
     const backgroundImageUrl = `url(${preFaviconUrl}${pageUrl})`;

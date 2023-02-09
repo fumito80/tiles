@@ -2,7 +2,7 @@ import { Options } from './types';
 import { getLocal, getGridColStart } from './common';
 import {
   $, $$byClass, $byClass,
-  setSplitWidth, addStyle, addClass, rmStyle, rmClass, hasClass,
+  initSplitWidth, addStyle, addClass, rmStyle, rmClass, hasClass,
 } from './client';
 
 type ZoomingElements = {
@@ -76,7 +76,7 @@ export function zoomOut(
     });
     addClass('zoom-fade-out')($main);
     const promise3 = getLocal('settings')
-      .then(({ settings: { paneWidth } }) => setSplitWidth(paneWidth))
+      .then(({ settings: { paneLayouts, paneWidth } }) => initSplitWidth(paneLayouts, paneWidth))
       .then(() => new Promise((resolve) => {
         $target.addEventListener('transitionend', resolve, { once: true });
       }));
