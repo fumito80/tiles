@@ -1017,3 +1017,18 @@ export function decodeUrl(url?: string) {
     return (url || '').substring(0, 1024);
   }
 }
+
+export function addQueryHistory() {
+  getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
+    if (!lastSearchWord) {
+      return;
+    }
+    const queries = [
+      lastSearchWord,
+      ...(rest.queries || [])
+        .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
+        .slice(0, 200),
+    ];
+    setLocal({ queries });
+  });
+}

@@ -771,40 +771,43 @@ export function moveBookmarks(
   sourceIds: string[],
   destId: string,
 ) {
-  const [$destLeafs, $destFolders] = dropAreaClass === 'leafs' ? $$byClass('open') : $$(cssid(destId));
-  if (!$destLeafs) {
+  const [$destLeaf, $destFolders] = dropAreaClass === 'leafs' ? $$byClass('open') : $$(cssid(destId));
+  if (!$destLeaf) {
     return;
   }
   const { parentId, index } = bookmarkDest;
   chrome.bookmarks.getSubTree(parentId!)
     .then(([node]) => node.children?.find((bm) => bm.index === index))
     .then((destBm) => sequentialMoveBookmarks(sourceIds, parentId!, destBm?.id))
-    .then(() => sourceIds.forEach((sourceId) => {
-      const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+    .then(() => {
       const position = positions[dropAreaClass];
-      const isRootTo = $destLeafs.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
-      const isRootFrom = $sourceLeafs.parentElement?.id === '1';
-      const isLeafFrom = hasClass($sourceLeafs, 'leaf');
-      if (isLeafFrom && isRootFrom && !isRootTo) {
-        $sourceFolders.remove();
-      } else if (isLeafFrom && isRootTo) {
-        const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
-        $destFolders.insertAdjacentElement(position, $source);
-        pipe(
-          rmClass('search-path', 'selected'),
-          setAnimationClass('hilite'),
-        )($source);
-      } else if (!isLeafFrom) {
-        const $lastParantElement = $sourceFolders.parentElement!;
-        $destFolders.insertAdjacentElement(position, $sourceFolders);
-        setHasChildren($lastParantElement);
-        setHasChildren($sourceFolders.parentElement!);
-        setOpenPaths($sourceFolders);
-        setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
-      }
-      $destLeafs.insertAdjacentElement(position, $sourceLeafs);
-      setAnimationClass('hilite')($sourceLeafs);
-    }));
+      const isRootTo = $destLeaf.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
+      const orderedIds = position === 'afterend' ? sourceIds.reverse() : sourceIds;
+      orderedIds.forEach((sourceId) => {
+        const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+        const isRootFrom = $sourceLeafs.parentElement?.id === '1';
+        const isLeafFrom = hasClass($sourceLeafs, 'leaf');
+        if (isLeafFrom && isRootFrom && !isRootTo) {
+          $sourceFolders.remove();
+        } else if (isLeafFrom && isRootTo) {
+          const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
+          $destFolders.insertAdjacentElement(position, $source);
+          pipe(
+            rmClass('search-path', 'selected'),
+            setAnimationClass('hilite'),
+          )($source);
+        } else if (!isLeafFrom) {
+          const $lastParantElement = $sourceFolders.parentElement!;
+          $destFolders.insertAdjacentElement(position, $sourceFolders);
+          setHasChildren($lastParantElement);
+          setHasChildren($sourceFolders.parentElement!);
+          setOpenPaths($sourceFolders);
+          setAnimationClass('hilite')($(':scope > .marker', $sourceFolders));
+        }
+        $destLeaf.insertAdjacentElement(position, $sourceLeafs);
+        setAnimationClass('hilite')($sourceLeafs);
+      });
+    });
 }
 
 export function getMessageDeleteSelecteds(count: number) {

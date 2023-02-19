@@ -23,6 +23,7 @@ import {
   makeColorPalette,
   getHistoryData,
   prop,
+  addQueryHistory,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -97,18 +98,7 @@ async function onSessionChanged() {
 
 function saveQuery(port: chrome.runtime.Port) {
   port.onDisconnect.addListener(() => {
-    getLocal('lastSearchWord', 'queries').then(({ lastSearchWord, ...rest }) => {
-      if (!lastSearchWord) {
-        return;
-      }
-      const queries = [
-        lastSearchWord,
-        ...(rest.queries || [])
-          .filter((el) => el.localeCompare(lastSearchWord, undefined, { sensitivity: 'accent' }) !== 0)
-          .slice(0, 200),
-      ];
-      setLocal({ queries });
-    });
+    addQueryHistory();
     chrome.runtime.sendMessage('close-popup').catch(() => {});
   });
 }

@@ -289,6 +289,7 @@ function getDraggableElement(
   $dragTargets: HTMLElement[],
 ) {
   const $draggableClone = $byClass('draggable-clone')!;
+  $draggableClone.innerHTML = '';
   const itemHeight = $dragTargets[0].offsetHeight;
   $dragTargets.some(($el, i) => {
     if (itemHeight * i > 120) {
@@ -347,6 +348,9 @@ export default class DragAndDropEvents implements IPubSubElement {
       .then([[$target.firstElementChild as HTMLElement], [$target.id]] as const)
       .when(className === 'pin-bookmark')
       .then(() => {
+        store.dispatch('multiSelPanes', {
+          bookmarks: false, tabs: false, histories: false, all: false,
+        });
         const $source = $('.current-window .current-tab')!;
         return [[$source], [$source.id]] as const;
       })

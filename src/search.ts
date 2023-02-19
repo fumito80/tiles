@@ -1,7 +1,11 @@
 import {
   Changes, Dispatch, IPubSubElement, makeAction, Store, StoreSub,
 } from './popup';
-import { getLocal, setLocal, when } from './common';
+import {
+  addListener,
+  addQueryHistory,
+  getLocal, pipe, setLocal, when,
+} from './common';
 import {
   $, $byClass,
   rmClass, addAttr,
@@ -57,9 +61,11 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$inputQuery.value = options.restoreSearching ? lastSearchWord : '';
     this.addEventListener('submit', (e) => this.submitForm(e, options));
     this.$queries = $byClass('queries', this)!;
-    this.$inputQuery.addEventListener('click', () => this.toggleQueries());
-    this.$inputQuery.addEventListener('keydown', this.keydownQuery.bind(this), false);
     this.$queries.addEventListener('keydown', (e) => e.preventDefault(), false);
+    pipe(
+      addListener('click', () => this.toggleQueries()),
+      addListener('keydown', this.keydownQuery.bind(this), false),
+    )(this.$inputQuery);
   }
   inputQuery(_: any, e: Event, __: any, store: StoreSub) {
     const { value } = (e.target as HTMLInputElement);
@@ -160,9 +166,15 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     return false;
   }
+  addQueryHistory() {
+    if (this.$inputQuery.value) {
+      addQueryHistory();
+    }
+  }
   focusQuery() {
     this.classList.remove('show-queries');
     this.$inputQuery.focus();
+    this.addQueryHistory();
   }
   clearQuery(_: any, __: any, ___: any, store: StoreSub) {
     if (this.$inputQuery.value === '') {

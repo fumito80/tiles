@@ -184,6 +184,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
           if (!$target) {
             break;
           }
+          dispatch('focusQuery');
           $target.click();
           $target.focus();
           setTimeout(() => {
