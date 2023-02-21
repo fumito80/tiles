@@ -149,7 +149,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       chrome.sessions.restore(sel1st.id, this.restoredSession);
       return;
     }
-    const urls = await this.getSelectedUrls([sel1st, ...rest].map((el) => el.id!));
+    const urls = await getHistoriesByIds([sel1st, ...rest].map((el) => el.id!))
+      .then(map(({ url }) => url!));
     const { windowId, index, incognito } = newValue!;
     if (!windowId) {
       chrome.windows.create({ url: urls, incognito });

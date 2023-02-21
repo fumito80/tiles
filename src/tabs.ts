@@ -105,10 +105,13 @@ export class OpenTab extends MutiSelectableItem {
   #highlighted = false;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
+  private $title!: HTMLElement;
   init(tab: chrome.tabs.Tab, isSearching: boolean, dispatch: Store['dispatch']) {
+    this.classList.toggle('unmatch', isSearching);
     this.$main = $byTag('app-main');
     this.$tooltip = $byClass('tooltip', this)!;
-    this.classList.toggle('unmatch', isSearching);
+    this.$title = $byClass('tab-title', this)!;
+    this.$title.textContent = tab.title!;
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
@@ -116,7 +119,6 @@ export class OpenTab extends MutiSelectableItem {
     this.#active = tab.active;
     this.#url = decodeUrl(tab.url);
     const [, $tab,, $tooltip] = [...this.children];
-    $tab.textContent = tab.title!;
     const tooltip = getTooltip(tab);
     $tooltip.textContent = tooltip;
     $tab.setAttribute('title', `${tab.title}\n${htmlEscape(this.#url)}`);
@@ -133,6 +135,9 @@ export class OpenTab extends MutiSelectableItem {
   }
   get isCurrent() {
     return this.#active;
+  }
+  get text() {
+    return this.$title.textContent;
   }
   get url() {
     return this.#url;
@@ -500,7 +505,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
     const tester = includeUrl
       ? (tab: OpenTab) => reFilter.test(tab.textContent + tab.url)
-      : (tab: OpenTab) => reFilter.test(tab.textContent!);
+      : (tab: OpenTab) => reFilter.test(tab.text!);
     $$byClass<OpenTab>(searchSelector, this).forEach((tab) => {
       const isMatch = tester(tab);
       pipe(toggleClass('match', isMatch), toggleClass('unmatch', !isMatch))(tab);
