@@ -462,7 +462,6 @@ export default class DragAndDropEvents implements IPubSubElement {
     }
     store.dispatch('multiSelPanes', { all: false });
     // from tabs to bookmarks/folder
-    const position = positions[dropAreaClass];
     const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
     const isRootFolder = ['drop-top', 'drop-bottom'].includes(dropAreaClass) && $(`.leafs ${cssid(destId)}`)?.parentElement?.id === '1';
     if (
@@ -493,6 +492,7 @@ export default class DragAndDropEvents implements IPubSubElement {
           addBookmarksFromTabs(tabs!, bookmarkDest);
           return;
         }
+        const position = positions[dropAreaClass];
         addFolderFromTabs(tabs!, bookmarkDest, destId, position);
       });
       return;

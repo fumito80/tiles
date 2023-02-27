@@ -455,7 +455,7 @@ export async function removeFolder($folder: HTMLElement) {
     rmClass('hilite'),
     setAnimationFolder('remove-hilite'),
   )($byClass('marker', $folder)!);
-  $byId($folder.id).remove();
+  $(`.leafs ${cssid($folder.id)}`)?.remove();
 }
 
 export async function editTitle(
@@ -612,13 +612,16 @@ export async function addFolder(
       return id;
     }
   } else if (destId) {
-    const [, $dest] = $$(cssid(destId)).map(($destFolder) => {
-      insertHTML(position, htmlNode)($destFolder);
-      addAttr('data-children', String($destFolder.children.length))($destFolder);
-      return $destFolder;
-    });
+    const $dest = $$(cssid(destId))
+      .map(($destFolder) => {
+        insertHTML(position, htmlNode)($destFolder);
+        addAttr('data-children', String($destFolder.children.length))($destFolder);
+        return $destFolder;
+      })
+      .find(($destFolder) => !!$destFolder.closest('.folders'));
     if (!index) {
-      $(':scope > .marker > .title', $dest)?.click();
+      const $target = $(':scope > .marker > .title', $dest)!;
+      selectFolder($target, $byClass('leafs')!, false);
     }
     return id;
   } else {
@@ -674,7 +677,8 @@ export async function addFolderFromTabs(
   tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
   const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
-  editTitle($target.firstElementChild as HTMLElement, parentFolderId, false);
+  const $title = $target.firstElementChild as HTMLElement;
+  editTitle($title, parentFolderId, false);
 }
 
 export function openFolder(folderId: string, incognito = false) {
@@ -771,7 +775,9 @@ export function moveBookmarks(
   sourceIds: string[],
   destId: string,
 ) {
-  const [$destLeaf, $destFolders] = dropAreaClass === 'leafs' ? $$byClass('open') : $$(cssid(destId));
+  const [$destLeaf, $destFolder] = dropAreaClass === 'leafs'
+    ? [$('.leafs .open')!, $('.folders .open')!]
+    : [$(`.leafs ${cssid(destId)}`)!, $(`.folders ${cssid(destId)}`)!];
   if (!$destLeaf) {
     return;
   }
@@ -784,21 +790,21 @@ export function moveBookmarks(
       const isRootTo = $destLeaf.parentElement?.id === '1' && !['drop-folder', 'leafs'].includes(dropAreaClass);
       const orderedIds = position === 'afterend' ? sourceIds.reverse() : sourceIds;
       orderedIds.forEach((sourceId) => {
-        const [$sourceLeafs, $sourceFolders] = $$(cssid(sourceId));
+        const [$sourceLeafs, $sourceFolders] = [$(`.leafs ${cssid(sourceId)}`)!, $(`.folders ${cssid(sourceId)}`)!];
         const isRootFrom = $sourceLeafs.parentElement?.id === '1';
         const isLeafFrom = hasClass($sourceLeafs, 'leaf');
         if (isLeafFrom && isRootFrom && !isRootTo) {
           $sourceFolders.remove();
         } else if (isLeafFrom && isRootTo) {
           const $source = isRootFrom ? $sourceFolders : $sourceLeafs.cloneNode(true) as HTMLElement;
-          $destFolders.insertAdjacentElement(position, $source);
+          $destFolder.insertAdjacentElement(position, $source);
           pipe(
             rmClass('search-path', 'selected'),
             setAnimationClass('hilite'),
           )($source);
         } else if (!isLeafFrom) {
           const $lastParantElement = $sourceFolders.parentElement!;
-          $destFolders.insertAdjacentElement(position, $sourceFolders);
+          $destFolder.insertAdjacentElement(position, $sourceFolders);
           setHasChildren($lastParantElement);
           setHasChildren($sourceFolders.parentElement!);
           setOpenPaths($sourceFolders);

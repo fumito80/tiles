@@ -285,12 +285,6 @@ window-header {
   transition: background-color 0.1s;
   gap: 2px;
 
-  >button {
-    >i {
-      pointer-events: inherit;
-    }
-  }
-
   >div {
     opacity: 1;
     transition: opacity 0.15s;
