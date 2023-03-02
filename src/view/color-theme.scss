@@ -163,7 +163,7 @@ app-main:not(.drag-start) {
   }
 
   &:not(.theme-dark-key) {
-    .tabs-collapsed .current-tab>.tab-title {
+    .tabs-collapsed .current-tab:not(.match)>.tab-title {
       color: $font-color;
     }
   }

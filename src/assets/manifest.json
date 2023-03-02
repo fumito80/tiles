@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Popup'n My Resources",
-  "version": "0.21.12",
+  "version": "0.21.13",
   "default_locale": "en",
   "description": "Integrated bookmarks, tabs, and history manager. Change to your favorite colors to change your mood at work!",
   "permissions": [

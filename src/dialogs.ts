@@ -20,7 +20,7 @@ const dialogStyle = `
     height: 6rem;
     margin-top: 0.375rem;
     padding: 0.375rem;
-    border: 1px solid darkgray;
+    border: 2px solid darkgray;
     border-radius: 0.375rem;
   }
   textarea:focus,

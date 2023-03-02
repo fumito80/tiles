@@ -157,9 +157,13 @@ open-tab {
     }
 
     ~.tabs .pin-wrap-top:not(:empty)~.tabs-wrap .new-window {
-      height: 1.4em;
+      height: 1.2em;
       margin-top: 0;
       margin-bottom: 5px;
+
+      .new-window-plus {
+        position: static;
+      }
     }
 
     ~.tabs .pin-wrap-top:empty~.tabs-wrap .new-window,
@@ -691,6 +695,7 @@ app-main {
   }
 
   .new-window-plus {
+    position: relative;
     justify-content: center;
     align-items: center;
     border: none;
