@@ -177,10 +177,10 @@ function getOptions(inputs: Inputs) {
 
 function saveOptions(inputs: Inputs) {
   return async (e: Event) => {
-    const { options: { css, colorPalette } } = await pipe(getOptions, setLocal)(inputs);
+    const { options: { css, colorPalette, windowMode } } = await pipe(getOptions, setLocal)(inputs);
     const name = (e.target as Element).getAttribute('name');
-    if (['color-palette', 'css'].includes(name!)) {
-      setPopupStyle({ css, colorPalette });
+    if (['color-palette', 'css', 'window-mode'].includes(name!)) {
+      setPopupStyle({ css, colorPalette, windowMode });
     }
   };
 }

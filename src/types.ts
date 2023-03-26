@@ -161,6 +161,7 @@ export const initialOptions = {
   restoreSearching: true,
   favColorPalettes: [] as ColorPalette[],
   showMinimizeAll: true,
+  windowMode: false,
 };
 
 export type Panes = typeof panes[number];

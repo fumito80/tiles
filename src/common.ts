@@ -886,12 +886,51 @@ export function makeThemeCss(colorPalette: ColorPalette) {
     .join('\n');
 }
 
-export function setPopupStyle({ css, colorPalette }: Pick<Options, 'css' | 'colorPalette'>) {
+export async function getPopup() {
+  const url = chrome.runtime.getURL('popup.html*');
+  const [popup] = await chrome.tabs.query({ url });
+  return popup;
+}
+
+export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, 'css' | 'colorPalette' | 'windowMode'>) {
+  if (windowMode) {
+    chrome.action.setPopup({ popup: '' });
+    // eslint-disable-next-line no-undef
+    if (globalThis.document) {
+      document.body.style.setProperty('width', '100%');
+      document.body.style.setProperty('height', 'calc(100vh - 5px)');
+    }
+    return;
+  }
   getLocal('settings').then(({ settings }) => {
     const variables = makeThemeCss(colorPalette);
     const height = `body { height: ${settings.height}px; }`;
     const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${height}\n\n${css}`);
     chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
+    getPopup().then((popup) => {
+      if (popup) {
+        chrome.windows.remove(popup.windowId);
+      }
+    });
+  });
+}
+
+export function setWindowMode() {
+  chrome.action.onClicked.addListener(async () => {
+    const { settings: { width, height }, options } = await getLocal('settings', 'options');
+    if (!options.windowMode) {
+      return;
+    }
+    const popup = await getPopup();
+    if (popup) {
+      chrome.windows.update(popup.windowId, { focused: true });
+      return;
+    }
+    const variables = makeThemeCss(options.colorPalette);
+    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
+    chrome.windows.create({
+      url: `popup.html?css=${encoded}`, width, height, type: 'panel',
+    });
   });
 }
 

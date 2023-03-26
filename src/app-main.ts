@@ -2,7 +2,7 @@
 
 import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex,
+  setEvents, addListener, last, getLocal, pipe, getNextIndex, getPopup,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -22,7 +22,7 @@ import {
   setFavColorMenu,
 } from './client';
 import {
-  makeAction, Changes, IPubSubElement, StoreSub,
+  makeAction, Changes, IPubSubElement, StoreSub, Store,
 } from './popup';
 import { Leaf } from './bookmarks';
 
@@ -47,6 +47,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #options!: Options;
   #randomPalettes = [] as ColorPalette[];
   #randomPalettesIndex = 0;
+  #timerResizeWindow!: ReturnType<typeof setTimeout>;
   init(options: Options, isSearching: boolean) {
     this.#options = options;
     this.classList.toggle('searching', isSearching);
@@ -75,7 +76,19 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       })($splitter);
     });
 
-    $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
+    if (options.windowMode) {
+      window.addEventListener('resize', () => {
+        clearTimeout(this.#timerResizeWindow);
+        this.#timerResizeWindow = setTimeout(async () => {
+          if (window.outerHeight < 200) {
+            const popup = await getPopup();
+            chrome.windows.update(popup.windowId, { height: 200 });
+          }
+        }, 500);
+      });
+    } else {
+      $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
+    }
 
     const panes = [
       ...(options.zoomHistory ? [$byClass('histories', this)!] : []),
@@ -176,6 +189,17 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
     store.dispatch('focusQuery');
   }
+  // eslint-disable-next-line class-methods-use-this
+  async changeFocusedWindow({ newValue: windowId }: Changes<'changeFocusedWindow'>) {
+    const { options: { windowMode } } = await getLocal('options');
+    if (windowMode) {
+      return;
+    }
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      return;
+    }
+    window.close();
+  }
   actions() {
     return {
       clickAppMain: makeAction({
@@ -203,8 +227,17 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         eventOnly: true,
         noStates: true,
       }),
+      changeFocusedWindow: makeAction({
+        initValue: 0,
+        force: true,
+      }),
     };
   }
   // eslint-disable-next-line class-methods-use-this
-  connect() {}
+  connect(store: Store) {
+    const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+    chrome.windows.onFocusChanged.addListener(async (windowId) => {
+      store.dispatch('changeFocusedWindow', windowId, true);
+    }, queryOptions);
+  }
 }

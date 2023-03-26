@@ -63,8 +63,6 @@ const sheet = document.head.appendChild(document.createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
-  // addStyle('height', `${settings.height}px`)(document.body);
-
   initSplitWidth(settings.paneLayouts, settings.paneWidth);
 
   if (options.showCloseTab) {
@@ -143,21 +141,12 @@ function layoutPanes(options: Options, isSearching: boolean) {
   }, { 'app-main': $appMain } as StoredElements);
 }
 
-const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-
-function setCloseApp() {
-  chrome.windows.onFocusChanged.addListener((windowId) => {
-    if (windowId === chrome.windows.WINDOW_ID_NONE) {
-      return;
-    }
-    window.close();
-  }, queryOptions);
-}
-
 function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   const html = getPalettesHtml(favColorPalettes);
   $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
+
+const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
 
 function getInitialTabs() {
   const promiseCurrentWindowId = chrome.windows.getCurrent(queryOptions).then((win) => win.id!);
@@ -173,6 +162,12 @@ function getInitialTabs() {
   return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }
 
+function initWindowMode() {
+  document.body.style.setProperty('width', '100%');
+  document.body.style.setProperty('height', 'calc(100vh - 5px)');
+  addStyle({ 'pointer-events': 'none' })($byClass('resize-y'));
+}
+
 function init([{
   settings,
   htmlBookmarks,
@@ -183,6 +178,9 @@ function init([{
   toggleWindowOrder,
   pinWindows,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
+  if (options.windowMode) {
+    initWindowMode();
+  }
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
   const compos = layoutPanes(options, isSearching);
@@ -205,7 +203,6 @@ function init([{
   toggleElement(!options.findTabsFirst, 'flex')('[data-value="find-in-tabs"]');
   toggleElement(options.findTabsFirst, 'flex')('[data-value="open-new-tab"]');
   setExternalUrl(options);
-  setCloseApp();
   if (!isSearching) {
     // v-scroll initialize
     store.dispatch('resetHistory');

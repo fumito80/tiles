@@ -24,6 +24,7 @@ import {
   getHistoryData,
   prop,
   addQueryHistory,
+  setWindowMode,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -129,6 +130,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   regsterChromeEvents(onSessionChanged)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
   setPopupStyle(options);
+  setWindowMode();
 }
 
 getLocal(...initStateKeys).then(init);
@@ -146,7 +148,8 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
     setBrowserIcon(colorPalette);
     return getLocal('options').then(({ options }) => {
-      setPopupStyle({ css: options.css, colorPalette });
+      const { css, windowMode } = options;
+      setPopupStyle({ css, colorPalette, windowMode });
       return setLocal({ options: { ...options, colorPalette } });
     });
   },
