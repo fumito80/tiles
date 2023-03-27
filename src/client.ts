@@ -16,6 +16,7 @@ import {
   PaneLayouts,
   paneNames,
   defaultWidthes,
+  maxHeight,
 } from './types';
 
 import {
@@ -39,6 +40,7 @@ import {
   postMessage,
   pick,
   setPopupStyle,
+  updateSettings,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -225,11 +227,15 @@ export function getGridTemplateColumns() {
   };
 }
 
-export function initSplitWidth(paneLayouts: PaneLayouts, paneWidth: Partial<SplitterClasses>) {
+export function initSplitWidth(
+  { paneLayouts, paneLayoutsWindowMode, paneWidth }: Settings,
+  options: Options,
+) {
+  const layouts = options.windowMode ? paneLayoutsWindowMode : paneLayouts;
   const $bodies = $$byClass('pane-body');
   const [$pane1, $pane2, $pane3] = $bodies;
   let widthes: PaneLayouts[number] | undefined;
-  if (paneLayouts.length === 0) {
+  if (layouts.length === 0) {
     if (paneWidth.pane3 === defaultWidth.histories
       && paneWidth.pane2 === defaultWidth.tabs
       && paneWidth.pane1 === defaultWidth.leafs) {
@@ -241,9 +247,10 @@ export function initSplitWidth(paneLayouts: PaneLayouts, paneWidth: Partial<Spli
         return { name, width };
       }) as PaneLayouts[number];
     }
-    getLocal('settings').then(({ settings }) => setLocal({ settings: { ...settings, paneLayouts: [widthes!] } }));
+    const layoutType = options.windowMode ? 'paneLayoutsWindowMode' : 'paneLayouts';
+    updateSettings({ [layoutType]: [widthes!] });
   } else {
-    widthes = paneLayouts.find((ps) => [$pane1, $pane2, $pane3].every(
+    widthes = layouts.find((ps) => [$pane1, $pane2, $pane3].every(
       (pane, i) => hasClass(pane, ps[i].name),
     ));
     if (!widthes) {
@@ -261,18 +268,22 @@ function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
-export function getNewPaneWidth({ settings }: Pick<State, 'settings'>) {
+export function getNewPaneWidth({ settings, options }: Pick<State, 'settings' | 'options'>) {
   const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
   const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
     const name = whichClass(paneNames, $body)!;
     const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
     return { name, width };
   }) as PaneLayouts[number];
-  const paneLayouts = settings.paneLayouts
+  const layouts = options.windowMode ? settings.paneLayoutsWindowMode : settings.paneLayouts;
+  const paneLayouts = layouts
     .filter((ps) => ![$pane1, $pane2, $pane3].every(
       (pane, i) => hasClass(pane, ps[i].name),
     ))
     .concat([newWidthes]);
+  if (options.windowMode) {
+    return { ...settings, paneLayoutsWindowMode: paneLayouts };
+  }
   return { ...settings, paneLayouts };
 }
 
@@ -324,7 +335,7 @@ export async function createNewTab(options: Options, url: string) {
     ['rs', rest.index + 1],
     ['ls', rest.index],
   );
-  chrome.tabs.create({ index, url, windowId }, window.close);
+  chrome.tabs.create({ index, url, windowId });
 }
 
 export async function getBookmark(id: string) {
@@ -361,8 +372,8 @@ export function saveStateAllPaths(id?: string) {
 
 function setMouseEventListener(
   mouseMoveHandler: (e: MouseEvent) => void,
-  getSettings: (state: Pick<State, 'settings'>) => Settings,
-  resizeHeight = false,
+  getSettings: (state: Pick<State, 'settings' | 'options'>) => Settings,
+  resizeHeight: boolean,
 ) {
   const mouseMoveHandlerWrapper = (e: MouseEvent) => {
     e.preventDefault();
@@ -395,7 +406,7 @@ export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
 }
 
 export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewPaneWidth);
+  setMouseEventListener(mouseMoveHandler, getNewPaneWidth, false);
 }
 
 export function resizeSplitHandler(
@@ -418,7 +429,7 @@ export function resizeSplitHandler(
 }
 
 export function resizeHeightHandler(e: MouseEvent) {
-  const height = Math.min(e.clientY - 6, 570);
+  const height = Math.min(e.clientY - 6, maxHeight);
   if (height < 200) {
     return;
   }
@@ -684,7 +695,7 @@ export async function addFolderFromTabs(
 export function openFolder(folderId: string, incognito = false) {
   chrome.bookmarks.getChildren(folderId, (bookmarks) => {
     const url = bookmarks.map((bm) => bm.url).filter((surl) => !!surl) as string[];
-    chrome.windows.create({ url, incognito }, window.close);
+    chrome.windows.create({ url, incognito });
   });
 }
 

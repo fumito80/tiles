@@ -119,8 +119,7 @@ async function dropWithTabs(
       .then((tabs) => tabs.map((tab) => tab.url!))
       .then((urls) => postMessage({
         type: CliMessageTypes.openUrls, payload: { urls, windowId, index },
-      }))
-      .then(window.close);
+      }));
     return;
   }
   // merge window

@@ -162,7 +162,7 @@ export class OpenTab extends MutiSelectableItem {
     }
     const { windowId } = this.getParentWindow();
     chrome.windows.update(windowId, { focused: true });
-    chrome.tabs.update(this.tabId, { active: true }, window.close);
+    chrome.tabs.update(this.tabId, { active: true });
   }
   closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
@@ -264,7 +264,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
         switch ($target.dataset.value) {
           case 'add-new-tab': {
             chrome.tabs.create({ windowId: this.#windowId });
-            chrome.windows.update(this.#windowId, { focused: true }, window.close);
+            chrome.windows.update(this.#windowId, { focused: true });
             break;
           }
           case 'close-window':
@@ -662,7 +662,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         this.selectItems(store.dispatch);
         return;
       }
-      chrome.windows.update($window.windowId, { focused: true }, window.close);
+      chrome.windows.update($window.windowId, { focused: true });
     }
   }
   selectItems(dispatch: Dispatch, precount?: number) {

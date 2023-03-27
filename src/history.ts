@@ -183,7 +183,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   openWindowFromHistory({ newValue: incognito }: { newValue: boolean }) {
     this.getSelectedUrls()
-      .then((urls) => chrome.windows.create({ url: urls, incognito }, window.close));
+      .then((urls) => chrome.windows.create({ url: urls, incognito }));
   }
   search({ reFilter, includeUrl }: SearchParams, dispatch: Dispatch) {
     this.#reFilter = reFilter;

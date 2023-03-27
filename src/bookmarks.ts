@@ -58,11 +58,11 @@ export class Leaf extends MutiSelectableItem {
       case OpenBookmarkType.window:
       case OpenBookmarkType.incognito: {
         const incognito = openType === OpenBookmarkType.incognito;
-        chrome.windows.create({ url, incognito }, window.close);
+        chrome.windows.create({ url, incognito });
         break;
       }
       case OpenBookmarkType.current:
-        getCurrentTab().then(({ id }) => chrome.tabs.update(id!, { url }, window.close));
+        getCurrentTab().then(({ id }) => chrome.tabs.update(id!, { url }));
         break;
       default:
     }

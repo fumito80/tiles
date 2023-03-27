@@ -75,8 +75,8 @@ export function zoomOut(
       $main.addEventListener('transitionend', resolve, { once: true });
     });
     addClass('zoom-fade-out')($main);
-    const promise3 = getLocal('settings')
-      .then(({ settings: { paneLayouts, paneWidth } }) => initSplitWidth(paneLayouts, paneWidth))
+    const promise3 = getLocal('settings', 'options')
+      .then(({ settings, options }) => initSplitWidth(settings, options))
       .then(() => new Promise((resolve) => {
         $target.addEventListener('transitionend', resolve, { once: true });
       }));

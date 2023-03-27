@@ -30,12 +30,7 @@ export type ColorInfo = {
   vivid: number;
 }
 
-export const defaultWidth = {
-  histories: 100,
-  tabs: 325,
-  leafs: 200,
-  folders: 150,
-};
+export const maxHeight = 570;
 
 export const paneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
 
@@ -61,16 +56,27 @@ export const defaultWidthes: PaneLayouts = [
   [{ name: 'folders', width: 130 }, { name: 'leafs', width: 175 }, { name: 'histories', width: 175 }],
 ];
 
+export const defaultWidth = {
+  histories: 100,
+  tabs: 325,
+  leafs: 200,
+  folders: 150,
+};
+
 export const initialSettings = {
   postPage: false,
-  width: 800,
   height: 500,
+  windowWidth: 800,
+  windowHeight: 500,
+  windowTop: undefined as number | undefined,
+  windowLeft: undefined as number | undefined,
   paneWidth: {
     pane1: defaultWidth.leafs,
     pane2: defaultWidth.tabs,
     pane3: defaultWidth.histories,
   },
   paneLayouts: [] as PaneLayouts,
+  paneLayoutsWindowMode: [] as PaneLayouts,
   bodyColor: '#222222',
   tabs: true,
   history: true,

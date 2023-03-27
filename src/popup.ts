@@ -63,7 +63,7 @@ const sheet = document.head.appendChild(document.createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
-  initSplitWidth(settings.paneLayouts, settings.paneWidth);
+  initSplitWidth(settings, options);
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);

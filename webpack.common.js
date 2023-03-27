@@ -15,7 +15,7 @@ module.exports = {
     'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
   },
   output: {
-    globalObject: 'self',
+    globalObject: 'globalThis',
     filename: '[name].js',
   },
   module: {

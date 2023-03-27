@@ -149,7 +149,8 @@ export function storeMapping(options: Options, components: Components) {
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
   store.context($appMain)
-    .map('changeFocusedWindow', $appMain.changeFocusedWindow);
+    .map('changeFocusedWindow', $appMain.changeFocusedWindow)
+    .map('resizeWindow', $appMain.resizeWindow);
 
   store.context($tabs)
     .map('checkAllCollapsed', $tabs.checkAllCollapsed)

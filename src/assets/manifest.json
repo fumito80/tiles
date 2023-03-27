@@ -27,8 +27,7 @@
     "_execute_action": {
       "description": "Toggle Popup'n My Resources",
       "suggested_key": {
-        "mac": "Command+Shift+P",
-        "default": "Alt+Shift+P"
+        "default": "Alt+P"
       }
     }
   },

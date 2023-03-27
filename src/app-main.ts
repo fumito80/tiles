@@ -2,7 +2,7 @@
 
 import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex, getPopup,
+  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -47,11 +47,15 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #options!: Options;
   #randomPalettes = [] as ColorPalette[];
   #randomPalettesIndex = 0;
-  #timerResizeWindow!: ReturnType<typeof setTimeout>;
+  // #timerResizeWindow!: ReturnType<typeof setTimeout>;
+  #windowId!: number;
   init(options: Options, isSearching: boolean) {
     this.#options = options;
     this.classList.toggle('searching', isSearching);
     setThemeClass(this, options.colorPalette);
+    chrome.windows.getCurrent().then((win) => {
+      this.#windowId = win.id!;
+    });
 
     const $paneBodies = $$byClass('pane-body', this);
     const $endHeaderPane = last($$byClass('pane-header', this))!;
@@ -76,17 +80,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       })($splitter);
     });
 
-    if (options.windowMode) {
-      window.addEventListener('resize', () => {
-        clearTimeout(this.#timerResizeWindow);
-        this.#timerResizeWindow = setTimeout(async () => {
-          if (window.outerHeight < 200) {
-            const popup = await getPopup();
-            chrome.windows.update(popup.windowId, { height: 200 });
-          }
-        }, 500);
-      });
-    } else {
+    if (!options.windowMode) {
       $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
     }
 
@@ -200,6 +194,17 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
     window.close();
   }
+  // eslint-disable-next-line class-methods-use-this
+  resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>) {
+    if (popupWindow.state === 'normal' && popupWindow.focused) {
+      updateSettings({
+        windowTop: popupWindow.top,
+        windowLeft: popupWindow.left,
+        windowWidth: popupWindow.width,
+        windowHeight: popupWindow.height,
+      });
+    }
+  }
   actions() {
     return {
       clickAppMain: makeAction({
@@ -231,13 +236,21 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         initValue: 0,
         force: true,
       }),
+      resizeWindow: makeAction({
+        initValue: undefined as chrome.windows.Window | undefined,
+      }),
     };
   }
   // eslint-disable-next-line class-methods-use-this
   connect(store: Store) {
     const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-    chrome.windows.onFocusChanged.addListener(async (windowId) => {
+    chrome.windows.onFocusChanged.addListener((windowId) => {
       store.dispatch('changeFocusedWindow', windowId, true);
     }, queryOptions);
+    chrome.windows.onBoundsChanged.addListener((win) => {
+      if (win.id === this.#windowId) {
+        store.dispatch('resizeWindow', win);
+      }
+    });
   }
 }

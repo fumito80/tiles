@@ -675,6 +675,10 @@ export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.local, ...keyNames);
 }
 
+export async function updateSettings<T extends Partial<State['settings']>>(setting: T) {
+  return getLocal('settings').then(({ settings }) => setLocal({ settings: { ...settings, ...setting } }));
+}
+
 export function getSync<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.sync, ...keyNames);
 }
@@ -895,7 +899,6 @@ export async function getPopup() {
 export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, 'css' | 'colorPalette' | 'windowMode'>) {
   if (windowMode) {
     chrome.action.setPopup({ popup: '' });
-    // eslint-disable-next-line no-undef
     if (globalThis.document) {
       document.body.style.setProperty('width', '100%');
       document.body.style.setProperty('height', 'calc(100vh - 5px)');
@@ -904,8 +907,8 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
   }
   getLocal('settings').then(({ settings }) => {
     const variables = makeThemeCss(colorPalette);
-    const height = `body { height: ${settings.height}px; }`;
-    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${height}\n\n${css}`);
+    const styleHeight = `body { height: ${settings.height}px; }`;
+    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${styleHeight}\n\n${css}`);
     chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
     getPopup().then((popup) => {
       if (popup) {
@@ -917,7 +920,7 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
 
 export function setWindowMode() {
   chrome.action.onClicked.addListener(async () => {
-    const { settings: { width, height }, options } = await getLocal('settings', 'options');
+    const { settings, options } = await getLocal('settings', 'options');
     if (!options.windowMode) {
       return;
     }
@@ -929,7 +932,12 @@ export function setWindowMode() {
     const variables = makeThemeCss(options.colorPalette);
     const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
     chrome.windows.create({
-      url: `popup.html?css=${encoded}`, width, height, type: 'panel',
+      url: `popup.html?css=${encoded}`,
+      type: 'panel',
+      width: settings.windowWidth,
+      height: settings.windowHeight,
+      top: settings.windowTop,
+      left: settings.windowLeft,
     });
   });
 }
