@@ -155,7 +155,10 @@ export function storeMapping(options: Options, components: Components) {
   store.context($tabs)
     .map('checkAllCollapsed', $tabs.checkAllCollapsed)
     .map('pinWindow', $tabs.pinWindow)
-    .map('pinWindows', $tabs.pinWindows);
+    .map('pinWindows', $tabs.pinWindows)
+    .map('onCreatedWindow', $tabs.onCreatedWindow)
+    .map('onRemovedWindow', $tabs.onRemovedWindow)
+    .map('setCurrentWindowId', $tabs.setCurrentWindowId);
 
   store.context($history)
     .map('clickHistory', $history.clickItem)

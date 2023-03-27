@@ -145,6 +145,7 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
+  [CliMessageTypes.getCurrentWindowId]: () => getLocal('currentWindowId').then(({ currentWindowId }) => currentWindowId),
   [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
     setBrowserIcon(colorPalette);
     return getLocal('options').then(({ options }) => {

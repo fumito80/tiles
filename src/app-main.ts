@@ -2,7 +2,7 @@
 
 import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
+  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings, chromeEventFilter,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -243,10 +243,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   // eslint-disable-next-line class-methods-use-this
   connect(store: Store) {
-    const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-    chrome.windows.onFocusChanged.addListener((windowId) => {
-      store.dispatch('changeFocusedWindow', windowId, true);
-    }, queryOptions);
+    if (!this.#options.windowMode) {
+      chrome.windows.onFocusChanged.addListener((windowId) => {
+        store.dispatch('changeFocusedWindow', windowId, true);
+      }, chromeEventFilter);
+      return;
+    }
     chrome.windows.onBoundsChanged.addListener((win) => {
       if (win.id === this.#windowId) {
         store.dispatch('resizeWindow', win);

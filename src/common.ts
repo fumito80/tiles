@@ -919,7 +919,7 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
 }
 
 export function setWindowMode() {
-  chrome.action.onClicked.addListener(async () => {
+  chrome.action.onClicked.addListener(async (tab) => {
     const { settings, options } = await getLocal('settings', 'options');
     if (!options.windowMode) {
       return;
@@ -933,12 +933,13 @@ export function setWindowMode() {
     const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
     chrome.windows.create({
       url: `popup.html?css=${encoded}`,
-      type: 'panel',
+      type: 'popup',
       width: settings.windowWidth,
       height: settings.windowHeight,
       top: settings.windowTop,
       left: settings.windowLeft,
     });
+    setLocal({ currentWindowId: tab.windowId });
   });
 }
 
@@ -1079,3 +1080,5 @@ export function addQueryHistory() {
     setLocal({ queries });
   });
 }
+
+export const chromeEventFilter = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;

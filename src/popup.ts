@@ -9,7 +9,6 @@ import {
   ClientState,
   StoredElements,
   PromiseInitTabs,
-  InitailTabs,
   CliMessageTypes,
   ColorPalette,
 } from './types';
@@ -38,6 +37,7 @@ import {
   toggleElement,
   $byTag,
   getPalettesHtml,
+  getInitialTabs,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -144,22 +144,6 @@ function layoutPanes(options: Options, isSearching: boolean) {
 function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   const html = getPalettesHtml(favColorPalettes);
   $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
-}
-
-const queryOptions = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
-
-function getInitialTabs() {
-  const promiseCurrentWindowId = chrome.windows.getCurrent(queryOptions).then((win) => win.id!);
-  const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
-    chrome.windows.getAll({ ...queryOptions, populate: true }, (wins) => {
-      const windows = wins.map((win) => ({
-        windowId: win.id!,
-        tabs: win.tabs!,
-      }));
-      resolve(windows);
-    });
-  });
-  return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }
 
 function initWindowMode() {

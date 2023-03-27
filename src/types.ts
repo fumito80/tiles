@@ -190,6 +190,7 @@ export const initialState = {
     top: undefined as number[] | undefined,
     bottom: undefined as number[] | undefined,
   },
+  currentWindowId: undefined as number | undefined,
 };
 
 export type State = typeof initialState;
@@ -203,6 +204,7 @@ export const CliMessageTypes = {
   moveTabsNewWindow: 'cl-move-tabs-new-window',
   openUrls: 'cl-open-urls',
   setThemeColor: 'cl-set-theme-color',
+  getCurrentWindowId: 'cl-get-current-window-id',
 } as const;
 
 export const BkgMessageTypes = {

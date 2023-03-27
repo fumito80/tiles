@@ -3,7 +3,6 @@ import {
   HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
-import { OpenTab, Window } from './tabs';
 import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
@@ -328,8 +327,6 @@ export function initComponents(
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
-  const $tmplOpenTab = $('open-tab', $template) as OpenTab;
-  const $tmplWindow = $('open-window', $template) as Window;
   const $tmplMultiSelPane = $('multi-sel-pane', $template) as MultiSelPane;
   // Define component (Custom element)
   const $formSearch = $byClass('form-query') as FormSearch;
@@ -344,8 +341,7 @@ export function initComponents(
   // Initialize component
   const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
-    $tmplOpenTab,
-    $tmplWindow,
+    $template,
     options,
     isSearching,
     promiseInitTabs,

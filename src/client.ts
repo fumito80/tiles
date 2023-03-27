@@ -17,6 +17,7 @@ import {
   paneNames,
   defaultWidthes,
   maxHeight,
+  InitailTabs,
 } from './types';
 
 import {
@@ -41,6 +42,7 @@ import {
   pick,
   setPopupStyle,
   updateSettings,
+  chromeEventFilter,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -885,4 +887,19 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
 export function scrollVerticalCenter($target: HTMLElement) {
   const $container = $target.parentElement!;
   $container.scrollTop = $target.offsetTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
+}
+
+export function getInitialTabs() {
+  const promiseCurrentWindowId = chrome.windows.getCurrent(chromeEventFilter)
+    .then((win) => win.id!);
+  const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
+    chrome.windows.getAll({ ...chromeEventFilter, populate: true }, (wins) => {
+      const windows = wins.map((win) => ({
+        windowId: win.id!,
+        tabs: win.tabs!,
+      }));
+      resolve(windows);
+    });
+  });
+  return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }
