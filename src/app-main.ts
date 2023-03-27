@@ -254,5 +254,10 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         store.dispatch('resizeWindow', win);
       }
     });
+    chrome.windows.onFocusChanged.addListener((windowId) => {
+      if (windowId !== this.#windowId) {
+        store.dispatch('setCurrentWindowId', windowId, true);
+      }
+    }, chromeEventFilter);
   }
 }

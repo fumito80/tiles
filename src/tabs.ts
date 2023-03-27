@@ -1111,18 +1111,25 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   onRemovedWindow({ newValue: windowId }: Changes<'onRemovedWindow'>) {
     const targetWin = this.getAllWindows().find((win) => win.windowId === windowId);
     targetWin?.remove();
-    chrome.windows.getCurrent(chromeEventFilter).then(({ id }) => {
-      const currentWin = this.getAllWindows().find((win) => win.windowId === id);
-      if (currentWin) {
-        this.clearCurrentWindow();
-        currentWin.setCurrent(true);
-      }
-    });
   }
-  setCurrentWindowId({ newValue: windowId }: Changes<'setCurrentWindowId'>) {
-    this.clearCurrentWindow();
+  setCurrentWindow(windowId: number) {
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      chrome.windows.getAll(chromeEventFilter).then((wins) => {
+        if (wins.every((win) => win.state === 'minimized')) {
+          this.clearCurrentWindow();
+        }
+      });
+      return;
+    }
     const currentWin = this.getAllWindows().find((win) => win.windowId === windowId);
-    currentWin?.setCurrent(true);
+    if (currentWin) {
+      this.clearCurrentWindow();
+      currentWin?.setCurrent(true);
+    }
+  }
+  // eslint-disable-next-line class-methods-use-this
+  setCurrentWindowId({ newValue: windowId }: Changes<'setCurrentWindowId'>) {
+    this.setCurrentWindow(windowId);
   }
   override actions() {
     return {
@@ -1221,6 +1228,5 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     postMessage({ type: CliMessageTypes.getCurrentWindowId }).then((currentWindowId) => store.dispatch('setCurrentWindowId', currentWindowId as unknown as number, true));
     chrome.windows.onCreated.addListener((win) => store.dispatch('onCreatedWindow', win, true), chromeEventFilter);
     chrome.windows.onRemoved.addListener((windowId) => store.dispatch('onRemovedWindow', windowId, true), chromeEventFilter);
-    chrome.windows.onFocusChanged.addListener((windowId) => store.dispatch('setCurrentWindowId', windowId, true), chromeEventFilter);
   }
 }
