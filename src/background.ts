@@ -54,7 +54,7 @@ function makeHtmlBookmarks() {
       concat(children?.filter(propNe('id', '1')).map(digBookmarks())),
     )();
     const htmlBookmarks: HtmlBookmarks = { leafs, folders };
-    chrome.storage.local.set({ htmlBookmarks });
+    setLocal({ htmlBookmarks });
   });
 }
 

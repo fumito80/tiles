@@ -2,7 +2,8 @@
 
 import { ColorPalette, MulitiSelectables, Options } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings, chromeEventFilter,
+  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
+  chromeEventFilter, cssid,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -20,9 +21,11 @@ import {
   changeColorTheme,
   $,
   setFavColorMenu,
+  setHTML,
+  $$,
 } from './client';
 import {
-  makeAction, Changes, IPubSubElement, StoreSub, Store,
+  makeAction, Changes, IPubSubElement, StoreSub, Store, States,
 } from './popup';
 import { Leaf } from './bookmarks';
 
@@ -205,6 +208,22 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       });
     }
   }
+  // eslint-disable-next-line class-methods-use-this
+  refreshBookmarks(_: any, __: any, states: States, store: StoreSub) {
+    store.dispatch('multiSelPanes', { all: false });
+    getLocal('htmlBookmarks', 'clientState').then(({ clientState, htmlBookmarks }) => {
+      setHTML(htmlBookmarks.leafs)($byClass('leafs')!);
+      setHTML(htmlBookmarks.folders)($byClass('folders')!);
+      clientState.paths?.map((id) => $(`.folders ${cssid(id)}`)).forEach(addClass('path'));
+      if (clientState.open) {
+        if (states.searching) {
+          $(`.folders ${cssid(clientState.open)}`)?.classList.add('open');
+        } else {
+          $$(cssid(clientState.open)).forEach(addClass('open'));
+        }
+      }
+    });
+  }
   actions() {
     return {
       clickAppMain: makeAction({
@@ -239,6 +258,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       resizeWindow: makeAction({
         initValue: undefined as chrome.windows.Window | undefined,
       }),
+      updateBookmarks: {},
     };
   }
   // eslint-disable-next-line class-methods-use-this
@@ -259,5 +279,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         store.dispatch('setCurrentWindowId', { windowId, isEventTrigger: true }, true);
       }
     }, chromeEventFilter);
+    chrome.storage.local.onChanged.addListener((storage) => {
+      if (!storage.htmlBookmarks) {
+        return;
+      }
+      store.dispatch('updateBookmarks');
+    });
   }
 }

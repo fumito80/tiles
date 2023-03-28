@@ -150,7 +150,8 @@ export function storeMapping(options: Options, components: Components) {
 
   store.context($appMain)
     .map('changeFocusedWindow', $appMain.changeFocusedWindow)
-    .map('resizeWindow', $appMain.resizeWindow);
+    .map('resizeWindow', $appMain.resizeWindow)
+    .map('updateBookmarks', $appMain.refreshBookmarks);
 
   store.context($tabs)
     .map('checkAllCollapsed', $tabs.checkAllCollapsed)

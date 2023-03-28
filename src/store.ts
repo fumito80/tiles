@@ -154,10 +154,7 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
     const actionsAll = actionProps
       .filter(Boolean)
       .reduce((acc, currentValue) => ({ ...acc, ...currentValue! }), {});
-    chrome.storage.onChanged.addListener((storage, areaName) => {
-      if (areaName !== 'session') {
-        return;
-      }
+    chrome.storage.session.onChanged.addListener((storage) => {
       Object.entries(storage).forEach(async ([actionName, changes]) => {
         const { persistent, noStates, name } = actionsAll![actionName];
         const oldValue = (changes.oldValue as ActionResult)?.value;
