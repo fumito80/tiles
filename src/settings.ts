@@ -3,7 +3,7 @@ import * as bootstrap from 'bootstrap';
 import { State, ColorPalette } from './types';
 import { CustomInputElement } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
-import { setBrowserIcon } from './draw-svg';
+import { setToolbarIcon } from './draw-svg';
 import {
   curry, pipe, tap,
   getSync, setSync, setLocal,
@@ -59,7 +59,7 @@ class ColorPaletteClass extends CustomInputElement {
       input.value = `#${color}`;
     });
     this.fireEvent();
-    setBrowserIcon(value);
+    setToolbarIcon(value);
     findPalette(value);
   }
 }

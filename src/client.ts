@@ -43,12 +43,14 @@ import {
   setPopupStyle,
   updateSettings,
   chromeEventFilter,
+  base64Encode,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
+import { getSvgBrowserIcon } from './draw-svg';
 
 // DOM operation
 
@@ -865,6 +867,21 @@ export function setThemeClass($appMain: AppMain, colorPalette: ColorPalette) {
   }).forEach(([key, enabled]) => toggleClass(camelToSnake(key), enabled)($appMain));
 }
 
+export function setBrowserFavicon(colorPalette: ColorPalette) {
+  getSvgBrowserIcon(colorPalette)
+    .then((svg) => svg.trim().replaceAll(/(>[\s\n]+<)/g, '><'))
+    .then((svg) => base64Encode(svg))
+    .then((base64svg) => {
+      let link = $('link[rel="icon"]') as HTMLLinkElement;
+      if (!link) {
+        link = Object.assign(document.head.appendChild(document.createElement('link')), {
+          rel: 'icon',
+        });
+      }
+      link.href = `data:image/svg+xml;base64,${base64svg}`;
+    });
+}
+
 export async function changeColorTheme(colorPalette: ColorPalette) {
   const ruleText = makeThemeCss(colorPalette);
   const sheet = document.styleSheets[1];
@@ -873,6 +890,11 @@ export async function changeColorTheme(colorPalette: ColorPalette) {
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
   postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette });
+  getLocal('options').then(({ options }) => {
+    if (options.windowMode) {
+      setBrowserFavicon(colorPalette);
+    }
+  });
 }
 
 export function setFavColorMenu(colorPalette: ColorPalette) {

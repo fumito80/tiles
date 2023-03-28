@@ -16,7 +16,7 @@ async function getImageData(svg: string) {
   });
 }
 
-async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
+export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
   const [first, ...rest] = colorPalette;
   const outer = rest.reduce((acc, color) => {
     const whiteness = getColorWhiteness(color);
@@ -59,7 +59,7 @@ export function setSvg(el: HTMLImageElement, svg: string) {
   });
 }
 
-export function setBrowserIcon(colorPalette: Options['colorPalette']) {
+export function setToolbarIcon(colorPalette: Options['colorPalette']) {
   getSvgBrowserIcon(colorPalette)
     .then(getImageData)
     .then((imageData) => chrome.action.setIcon({ imageData }));

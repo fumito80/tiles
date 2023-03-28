@@ -20,7 +20,7 @@ import {
 import {
   CliMessageTypes,
   InitailTabs,
-  MulitiSelectables, Options, PayloadUpdateWindow, PromiseInitTabs, State,
+  MulitiSelectables, Options, PayloadUpdateWindow, PromiseInitTabs, SetCurrentWindow, State,
 } from './types';
 import { Leaf } from './bookmarks';
 
@@ -389,7 +389,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
         break;
       }
       case 'minimizeOthers': {
-        dispatch('setCurrentWindowId', this.#windowId, true);
+        dispatch('setCurrentWindowId', { windowId: this.#windowId, isEventTrigger: false }, true);
         break;
       }
       default:
@@ -1135,11 +1135,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       currentWin?.setCurrent(true);
     }
   }
-  setCurrentWindowId({ newValue: windowId }: Changes<'setCurrentWindowId'>) {
+  setCurrentWindowId({ newValue: { windowId, isEventTrigger } }: Changes<'setCurrentWindowId'>) {
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
       return;
     }
     this.setCurrentWindow(windowId);
+    if (isEventTrigger) {
+      return;
+    }
     const payload: PayloadUpdateWindow = {
       windowId,
       updateInfo: { focused: true },
@@ -1152,7 +1155,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       $win.reloadTabs(store.dispatch);
     }
   }
-  onActivatedTab({ newValue: tabId }: Changes<'setCurrentWindowId'>) {
+  onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>) {
     const [targetTab] = this.getAllTabs((tab) => tab.tabId === tabId);
     if (targetTab) {
       const win = targetTab.getParentWindow();
@@ -1235,7 +1238,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         persistent: true,
       }),
       setCurrentWindowId: makeAction({
-        initValue: undefined as number | undefined,
+        initValue: undefined as SetCurrentWindow | undefined,
       }),
       onCreatedWindow: makeAction({
         initValue: undefined as chrome.windows.Window | undefined,

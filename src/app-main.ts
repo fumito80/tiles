@@ -256,7 +256,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     });
     chrome.windows.onFocusChanged.addListener((windowId) => {
       if (windowId !== this.#windowId) {
-        store.dispatch('setCurrentWindowId', windowId, true);
+        store.dispatch('setCurrentWindowId', { windowId, isEventTrigger: true }, true);
       }
     }, chromeEventFilter);
   }

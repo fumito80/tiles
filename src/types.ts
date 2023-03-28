@@ -251,6 +251,11 @@ export const splitterClasses = ['pane1', 'pane2', 'pane3'] as const;
 
 export type SplitterClasses = { [key in typeof splitterClasses[number]]: number };
 
+export type SetCurrentWindow = {
+  windowId: number,
+  isEventTrigger: boolean,
+};
+
 export type PayloadMoveItem = {
   id: string;
   targetId: string;

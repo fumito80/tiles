@@ -38,6 +38,7 @@ import {
   $byTag,
   getPalettesHtml,
   getInitialTabs,
+  setBrowserFavicon,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -146,10 +147,11 @@ function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
 
-function initWindowMode() {
+function initWindowMode(options: Options) {
   document.body.style.setProperty('width', '100%');
   document.body.style.setProperty('height', 'calc(100vh - 5px)');
   addStyle({ 'pointer-events': 'none' })($byClass('resize-y'));
+  setBrowserFavicon(options.colorPalette);
 }
 
 function init([{
@@ -163,7 +165,7 @@ function init([{
   pinWindows,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   if (options.windowMode) {
-    initWindowMode();
+    initWindowMode(options);
   }
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;

@@ -899,10 +899,6 @@ export async function getPopup() {
 export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, 'css' | 'colorPalette' | 'windowMode'>) {
   if (windowMode) {
     chrome.action.setPopup({ popup: '' });
-    if (globalThis.document) {
-      document.body.style.setProperty('width', '100%');
-      document.body.style.setProperty('height', 'calc(100vh - 5px)');
-    }
     return;
   }
   getLocal('settings').then(({ settings }) => {

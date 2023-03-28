@@ -29,7 +29,7 @@ import {
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
-import { setBrowserIcon } from './draw-svg';
+import { setToolbarIcon } from './draw-svg';
 import addHeadersHistory from './add-headers-history';
 
 function digBookmarks(isNode = true) {
@@ -126,7 +126,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const clientState = storage.clientState || {};
   const lastSearchWord = storage.lastSearchWord || '';
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
-  setBrowserIcon(options.colorPalette);
+  setToolbarIcon(options.colorPalette);
   makeHtmlBookmarks();
   setHtmlHistory();
   setLocal({
@@ -177,7 +177,7 @@ export const mapMessagesPtoB = {
     });
   },
   [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
-    setBrowserIcon(colorPalette);
+    setToolbarIcon(colorPalette);
     return getLocal('options').then(({ options }) => {
       const { css, windowMode } = options;
       setPopupStyle({ css, colorPalette, windowMode });
