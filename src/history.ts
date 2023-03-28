@@ -146,7 +146,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       return;
     }
     if (sel1st.isSession) {
-      chrome.sessions.restore(sel1st.id, this.restoredSession);
+      postMessage({ type: CliMessageTypes.restoreSession, payload: sel1st.id });
       return;
     }
     const urls = await getHistoriesByIds([sel1st, ...rest].map((el) => el.id!))
@@ -484,7 +484,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       if ($history.isSession) {
         const [, sessionId] = $history.id.split('session-');
-        chrome.sessions.restore(sessionId, this.restoredSession);
+        postMessage({ type: CliMessageTypes.restoreSession, payload: sessionId });
         return;
       }
       const [{ url }] = await getHistoriesByIds([$history.id]);
@@ -616,12 +616,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   setIncludeUrl(changes: { isInit: boolean }) {
     if (!changes.isInit) {
       this.resetVScroll();
-    }
-  }
-  // eslint-disable-next-line class-methods-use-this
-  restoredSession(session: chrome.sessions.Session) {
-    if (session.window?.id) {
-      chrome.windows.update(session.window.id, { focused: true });
     }
   }
   // Store

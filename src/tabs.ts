@@ -20,7 +20,7 @@ import {
 import {
   CliMessageTypes,
   InitailTabs,
-  MulitiSelectables, Options, PromiseInitTabs, State,
+  MulitiSelectables, Options, PayloadUpdateWindow, PromiseInitTabs, State,
 } from './types';
 import { Leaf } from './bookmarks';
 
@@ -385,9 +385,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
         break;
       }
       case 'minimizeOthers': {
-        if (!this.isCurrent) {
-          chrome.windows.update(this.#windowId, { focused: true });
-        }
+        dispatch('setCurrentWindowId', this.#windowId, true);
         break;
       }
       default:
@@ -1084,7 +1082,13 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   minimizeAll() {
     this.getAllWindows()
-      .filter(($win) => !$win.isCurrent)
+      .filter(($win) => {
+        if ($win.isCurrent) {
+          chrome.windows.update($win.windowId, { focused: true });
+          return false;
+        }
+        return true;
+      })
       .forEach(($win) => chrome.windows.update($win.windowId, { state: 'minimized' }));
   }
   clearCurrentWindow() {
@@ -1127,9 +1131,16 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       currentWin?.setCurrent(true);
     }
   }
-  // eslint-disable-next-line class-methods-use-this
   setCurrentWindowId({ newValue: windowId }: Changes<'setCurrentWindowId'>) {
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      return;
+    }
     this.setCurrentWindow(windowId);
+    const payload: PayloadUpdateWindow = {
+      windowId,
+      updateInfo: { focused: true },
+    };
+    postMessage({ type: CliMessageTypes.updateWindow, payload });
   }
   override actions() {
     return {
@@ -1225,7 +1236,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if (!this.#options.windowMode) {
       return;
     }
-    postMessage({ type: CliMessageTypes.getCurrentWindowId }).then((currentWindowId) => store.dispatch('setCurrentWindowId', currentWindowId as unknown as number, true));
+    postMessage({ type: CliMessageTypes.getCurrentWindowId })
+      .then((currentWindowId) => this.setCurrentWindow(currentWindowId as unknown as number));
     chrome.windows.onCreated.addListener((win) => store.dispatch('onCreatedWindow', win, true), chromeEventFilter);
     chrome.windows.onRemoved.addListener((windowId) => store.dispatch('onRemovedWindow', windowId, true), chromeEventFilter);
   }

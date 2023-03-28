@@ -205,6 +205,8 @@ export const CliMessageTypes = {
   openUrls: 'cl-open-urls',
   setThemeColor: 'cl-set-theme-color',
   getCurrentWindowId: 'cl-get-current-window-id',
+  restoreSession: 'cl-restore-session',
+  updateWindow: 'cl-update-window',
 } as const;
 
 export const BkgMessageTypes = {
@@ -254,6 +256,11 @@ export type PayloadMoveItem = {
   targetId: string;
   dropClass: DropClasses;
 }
+
+export type PayloadUpdateWindow = {
+  windowId: number,
+  updateInfo: chrome.windows.UpdateInfo,
+};
 
 export type PayloadAction<P = void, M = never, E = never> = {
   payload: P;

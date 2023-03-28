@@ -836,7 +836,7 @@ export function setMessageListener<T extends Messages>(messageMap: T, once = fal
       }
       return isPromise;
     }
-    return false;
+    return true;
   }
   chrome.runtime.onMessage.addListener(onMessage);
 }

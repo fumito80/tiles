@@ -9,6 +9,7 @@ import {
   PayloadAction,
   historyHtmlCount,
   ColorPalette,
+  PayloadUpdateWindow,
 } from './types';
 
 import {
@@ -104,6 +105,12 @@ function saveQuery(port: chrome.runtime.Port) {
   });
 }
 
+function restoredSession(session: chrome.sessions.Session) {
+  if (session.window?.id) {
+    chrome.windows.update(session.window.id, { focused: true });
+  }
+}
+
 type InitStateKeys = keyof Pick<
   State,
   'settings' | 'clientState' | 'options' | 'lastSearchWord'
@@ -146,6 +153,17 @@ export const mapMessagesPtoB = {
     Promise.resolve(payload)
   ),
   [CliMessageTypes.getCurrentWindowId]: () => getLocal('currentWindowId').then(({ currentWindowId }) => currentWindowId),
+  [CliMessageTypes.restoreSession]: ({ payload }: PayloadAction<string>) => (
+    (chrome.sessions.restore(payload) as unknown as Promise<chrome.sessions.Session>)
+      .then(restoredSession)
+  ),
+  [CliMessageTypes.updateWindow]: ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
+    if (payload.windowId === chrome.windows.WINDOW_ID_NONE) {
+      return Promise.reject();
+    }
+    // eslint-disable-next-line no-console
+    return chrome.windows.update(payload.windowId, payload.updateInfo).catch(console.error);
+  },
   [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
     setBrowserIcon(colorPalette);
     return getLocal('options').then(({ options }) => {
