@@ -148,6 +148,9 @@ type PayloadMoveWindow = PayloadAction<
   { sourceWindowId: number, windowId: number, index: number, focused: boolean }
 >;
 
+let timerUpdWin: ReturnType<typeof setTimeout>;
+// let promiseUpdWin = Promise.resolve();
+
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
@@ -158,11 +161,20 @@ export const mapMessagesPtoB = {
       .then(restoredSession)
   ),
   [CliMessageTypes.updateWindow]: ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
-    if (payload.windowId === chrome.windows.WINDOW_ID_NONE) {
+    const { windowId, updateInfo } = payload;
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
       return Promise.reject();
     }
-    // eslint-disable-next-line no-console
-    return chrome.windows.update(payload.windowId, payload.updateInfo).catch(console.error);
+    if (updateInfo.focused) {
+      clearTimeout(timerUpdWin);
+      timerUpdWin = setTimeout(() => chrome.windows.update(windowId, updateInfo), 100);
+      return Promise.resolve();
+    }
+    return chrome.windows.get(windowId).then((win) => {
+      if (win) {
+        chrome.windows.update(win.id!, updateInfo);
+      }
+    });
   },
   [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
     setBrowserIcon(colorPalette);

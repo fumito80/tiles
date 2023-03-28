@@ -119,7 +119,7 @@ export class OpenTab extends MutiSelectableItem {
     this.#tabId = tab.id!;
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
-    this.setCurrentTab(tab);
+    this.setCurrent(tab.active);
     this.#active = tab.active;
     this.#url = decodeUrl(tab.url || tab.pendingUrl);
     const [, $tab,, $tooltip] = [...this.children];
@@ -156,9 +156,9 @@ export class OpenTab extends MutiSelectableItem {
     // eslint-disable-next-line no-use-before-define
     return this.parentElement as Window;
   }
-  setCurrentTab(tab: chrome.tabs.Tab) {
-    this.#active = tab.active;
-    this.classList.toggle('current-tab', tab.active);
+  setCurrent(isCurrent: boolean) {
+    this.#active = isCurrent;
+    this.classList.toggle('current-tab', isCurrent);
   }
   gotoTab() {
     if (this.checkMultiSelect()) {
@@ -330,6 +330,9 @@ export class Window extends HTMLElement implements ISubscribeElement {
     this.#isCurrent = isCurrent;
     this.classList.toggle('current-window', isCurrent);
   }
+  setCurrentTab(tabId: number) {
+    this.getTabs().forEach((tab) => tab.setCurrent(tab.tabId === tabId));
+  }
   addTab(tab: chrome.tabs.Tab, dispatch: Dispatch) {
     const $openTab = document.importNode(this.$tmplTab!, true);
     return $openTab.init(tab, this.#isSearching, dispatch);
@@ -360,6 +363,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
       this.$header.update(firstTab);
       this.clearTabs();
       this.addTabs([firstTab, ...rest], dispatch);
+      dispatch('multiSelPanes', { all: false });
     });
   }
   dispathAction({ newValue: windowAction }: Changes<'windowAction'>, dispatch: Dispatch) {
@@ -1142,6 +1146,19 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     };
     postMessage({ type: CliMessageTypes.updateWindow, payload });
   }
+  refreshWindow({ newValue: windowId }: Changes<'onUpdateTab'>, _: any, __: any, store: StoreSub) {
+    const $win = this.getAllWindows().find((win) => win.windowId === windowId);
+    if ($win) {
+      $win.reloadTabs(store.dispatch);
+    }
+  }
+  onActivatedTab({ newValue: tabId }: Changes<'setCurrentWindowId'>) {
+    const [targetTab] = this.getAllTabs((tab) => tab.tabId === tabId);
+    if (targetTab) {
+      const win = targetTab.getParentWindow();
+      win.setCurrentTab(targetTab.tabId);
+    }
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -1226,6 +1243,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       onRemovedWindow: makeAction({
         initValue: undefined as number | undefined,
       }),
+      onUpdateTab: makeAction({
+        // initValue: undefined as chrome.tabs.Tab | undefined,
+        initValue: undefined as number | undefined,
+      }),
+      onActivatedTab: makeAction({
+        // initValue: undefined as chrome.tabs.Tab | undefined,
+        initValue: undefined as number | undefined,
+      }),
     };
   }
   override connect(store: Store) {
@@ -1236,9 +1261,15 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     if (!this.#options.windowMode) {
       return;
     }
+    // Window Mode
     postMessage({ type: CliMessageTypes.getCurrentWindowId })
       .then((currentWindowId) => this.setCurrentWindow(currentWindowId as unknown as number));
     chrome.windows.onCreated.addListener((win) => store.dispatch('onCreatedWindow', win, true), chromeEventFilter);
     chrome.windows.onRemoved.addListener((windowId) => store.dispatch('onRemovedWindow', windowId, true), chromeEventFilter);
+    chrome.tabs.onUpdated.addListener((_, __, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
+    chrome.tabs.onRemoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
+    chrome.tabs.onMoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
+    chrome.tabs.onDetached.addListener((_, { oldWindowId: windowId }) => store.dispatch('onUpdateTab', windowId, true));
+    chrome.tabs.onActivated.addListener(({ tabId }) => store.dispatch('onActivatedTab', tabId, true));
   }
 }
