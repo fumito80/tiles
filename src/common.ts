@@ -934,8 +934,9 @@ export function setWindowMode() {
       height: settings.windowHeight,
       top: settings.windowTop,
       left: settings.windowLeft,
+    }).then((win) => {
+      setLocal({ windowModeInfo: { currentWindowId: tab.windowId, popupWindowId: win.id } });
     });
-    setLocal({ currentWindowId: tab.windowId });
   });
 }
 

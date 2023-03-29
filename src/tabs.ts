@@ -18,9 +18,8 @@ import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
 } from './popup';
 import {
-  CliMessageTypes,
-  InitailTabs,
-  MulitiSelectables, Options, PayloadUpdateWindow, PromiseInitTabs, SetCurrentWindow, State,
+  CliMessageTypes, InitailTabs, MulitiSelectables, Options, PayloadUpdateWindow,
+  PromiseInitTabs, SetCurrentWindow, State, WindowModeInfo,
 } from './types';
 import { Leaf } from './bookmarks';
 
@@ -1246,11 +1245,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         initValue: undefined as number | undefined,
       }),
       onUpdateTab: makeAction({
-        // initValue: undefined as chrome.tabs.Tab | undefined,
         initValue: undefined as number | undefined,
       }),
       onActivatedTab: makeAction({
-        // initValue: undefined as chrome.tabs.Tab | undefined,
         initValue: undefined as number | undefined,
       }),
     };
@@ -1264,8 +1261,18 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     // Window Mode
-    postMessage({ type: CliMessageTypes.getCurrentWindowId })
-      .then((currentWindowId) => this.setCurrentWindow(currentWindowId as unknown as number));
+    postMessage({ type: CliMessageTypes.getWindowModeInfo }).then((windowModeInfo) => {
+      const { currentWindowId, popupWindowId } = windowModeInfo as unknown as WindowModeInfo;
+      if (currentWindowId && currentWindowId !== chrome.windows.WINDOW_ID_NONE) {
+        this.setCurrentWindow(currentWindowId);
+      }
+      // check exclusive runable 2 of 2
+      chrome.windows.getCurrent().then((win) => {
+        if (popupWindowId !== win.id) {
+          window.close();
+        }
+      });
+    });
     chrome.windows.onCreated.addListener((win) => store.dispatch('onCreatedWindow', win, true), chromeEventFilter);
     chrome.windows.onRemoved.addListener((windowId) => store.dispatch('onRemovedWindow', windowId, true), chromeEventFilter);
     chrome.tabs.onUpdated.addListener((_, __, { windowId }) => store.dispatch('onUpdateTab', windowId, true));

@@ -148,6 +148,12 @@ function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
 }
 
 function initWindowMode(options: Options) {
+  // check exclusive runable 1 of 2
+  chrome.windows.getCurrent().then((win) => {
+    if (win.type !== 'popup') {
+      window.close();
+    }
+  });
   document.body.style.setProperty('width', '100%');
   document.body.style.setProperty('height', 'calc(100vh - 5px)');
   addStyle({ 'pointer-events': 'none' })($byClass('resize-y'));

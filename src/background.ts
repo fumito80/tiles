@@ -142,13 +142,18 @@ type PayloadMoveWindow = PayloadAction<
 >;
 
 let timerUpdWin: ReturnType<typeof setTimeout>;
-// let promiseUpdWin = Promise.resolve();
 
 export const mapMessagesPtoB = {
   [CliMessageTypes.initialize]: ({ payload }: PayloadAction<string>) => (
     Promise.resolve(payload)
   ),
-  [CliMessageTypes.getCurrentWindowId]: () => getLocal('currentWindowId').then(({ currentWindowId }) => currentWindowId),
+  [CliMessageTypes.getWindowModeInfo]: async () => {
+    const { windowModeInfo } = await getLocal('windowModeInfo');
+    setLocal({
+      windowModeInfo: { ...windowModeInfo, currentWindowId: chrome.windows.WINDOW_ID_NONE },
+    });
+    return windowModeInfo;
+  },
   [CliMessageTypes.restoreSession]: ({ payload }: PayloadAction<string>) => (
     (chrome.sessions.restore(payload) as unknown as Promise<chrome.sessions.Session>)
       .then(restoredSession)
