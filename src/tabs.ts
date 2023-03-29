@@ -1152,13 +1152,17 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       $win.reloadTabs(store.dispatch);
     }
   }
-  async onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>) {
-    const targetTab = await chrome.tabs.get(tabId);
-    if (!targetTab?.active) {
+  async onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>, _: any, __: any, store: StoreSub) {
+    const tab = await chrome.tabs.get(tabId);
+    const $win = this.getAllWindows().find((win) => win.windowId === tab.windowId);
+    if (!$win || !tab) {
       return;
     }
-    const win = this.getAllWindows().find((w) => w.windowId === targetTab.windowId);
-    win?.setCurrentTab(tabId);
+    if (tab.active) {
+      $win.setCurrentTab(tabId);
+      return;
+    }
+    $win.reloadTabs(store.dispatch);
   }
   override actions() {
     return {
