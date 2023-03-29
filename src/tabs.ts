@@ -120,7 +120,6 @@ export class OpenTab extends MutiSelectableItem {
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
     this.setCurrent(tab.active);
-    this.#active = tab.active;
     this.#url = decodeUrl(tab.url || tab.pendingUrl);
     const [, $tab,, $tooltip] = [...this.children];
     const tooltip = getTooltip(tab);
@@ -576,8 +575,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
             win.windowId === currentWindowId,
           );
           return $win;
-        })
-        .filter(Boolean);
+        });
       this.$windosWrap.append(...$windows as Window[]);
       [
         [this.$pinWrap, pinWindows?.top] as const,
@@ -1155,12 +1153,13 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       $win.reloadTabs(store.dispatch);
     }
   }
-  onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>) {
-    const [targetTab] = this.getAllTabs((tab) => tab.tabId === tabId);
-    if (targetTab) {
-      const win = targetTab.getParentWindow();
-      win.setCurrentTab(targetTab.tabId);
+  async onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>) {
+    const targetTab = await chrome.tabs.get(tabId);
+    if (!targetTab?.active) {
+      return;
     }
+    const win = this.getAllWindows().find((w) => w.windowId === targetTab.windowId);
+    win?.setCurrentTab(tabId);
   }
   override actions() {
     return {
@@ -1273,6 +1272,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     chrome.tabs.onRemoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
     chrome.tabs.onMoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
     chrome.tabs.onDetached.addListener((_, { oldWindowId: windowId }) => store.dispatch('onUpdateTab', windowId, true));
-    chrome.tabs.onActivated.addListener(({ tabId }) => store.dispatch('onActivatedTab', tabId, true));
+    let timerOnActivated: ReturnType<typeof setTimeout>;
+    chrome.tabs.onActivated.addListener(({ tabId }) => {
+      clearTimeout(timerOnActivated);
+      timerOnActivated = setTimeout(() => store.dispatch('onActivatedTab', tabId, true), 100);
+    });
   }
 }

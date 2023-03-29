@@ -204,25 +204,23 @@ export const mapMessagesPtoB = {
         .catch((reason) => reason.message as string)
     ),
   [CliMessageTypes.moveWindowNew]: ({ payload }: PayloadAction<{ windowId: number }>) => (
-    chrome.windows.update(payload.windowId, { state: 'normal' }).then(() => {
-      chrome.windows.get(payload.windowId, { populate: true })
-        .then(({
-          tabs, incognito, left, top, width, height,
-        }) => {
-          if (!tabs) {
-            return;
-          }
-          const activeTabIndex = tabs.findIndex((tab) => tab.active);
-          const [activeTab] = tabs.splice(activeTabIndex, 1);
-          chrome.windows.create({
-            tabId: activeTab.id, incognito, left, top, width, height,
-          }, (win) => {
-            tabs.forEach(async (tab) => {
-              await chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+    chrome.windows.update(payload.windowId, { state: 'normal' })
+      .then(
+        () => chrome.windows.get(payload.windowId, { populate: true })
+          .then(({
+            tabs, incognito, left, top, width, height,
+          }) => {
+            const activeTabIndex = tabs!.findIndex((tab) => tab.active);
+            const [activeTab] = tabs!.splice(activeTabIndex, 1);
+            return chrome.windows.create({
+              tabId: activeTab.id, incognito, left, top, width, height,
+            }).then((win) => {
+              tabs!.forEach((tab) => {
+                chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
+              });
             });
-          });
-        });
-    })
+          }),
+      )
   ),
   [CliMessageTypes.moveTabsNewWindow]: async (
     { payload }: PayloadAction<{ tabId: number, incognito: boolean }[]>,
