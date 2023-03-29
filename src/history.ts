@@ -1,5 +1,6 @@
 import {
-  CliMessageTypes, Collection, MulitiSelectables, MyHistoryItem, Options, pastMSec,
+  CliMessageTypes, Collection, historyHtmlCount, MulitiSelectables,
+  MyHistoryItem, Options, pastMSec,
 } from './types';
 import {
   Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
@@ -182,13 +183,14 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     if (isSearching) {
       const header = '<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>';
       const line = '<history-item class="history" draggable="true" style="transform: translateY(-10000px);"></history-item>';
-      const lines = Array(32).fill(line).join('');
+      const lines = Array(historyHtmlCount).fill(line).join('');
       insertHTML('afterbegin', header + lines)(this.firstElementChild);
     } else {
       insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
     }
     const rowHeight = getRowHeight();
     this.#rowHeight = rowHeight;
+    this.style.setProperty('max-height', `${this.#rowHeight * (historyHtmlCount - 2)}px`);
   }
   getSelecteds(dragElementIds: string[]) {
     const ids = dragElementIds.map((el) => el.split('-').at(1));

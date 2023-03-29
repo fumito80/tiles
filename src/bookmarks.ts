@@ -35,7 +35,7 @@ export class Leaf extends MutiSelectableItem {
       return;
     }
     if (options.findTabsFirst) {
-      dispatch('activateTab', { url: this.url, focused: true, bookmarkId: this.id });
+      dispatch('activateTab', { url: this.url, focused: true, bookmarkId: this.id }, true);
       return;
     }
     this.openBookmark(options);

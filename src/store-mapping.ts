@@ -148,6 +148,9 @@ export function storeMapping(options: Options, components: Components) {
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
+  store.subscribeContext($history)
+    .map([$appMain, 'updateWindowHeight'], $history.resetHistory);
+
   store.context($appMain)
     .map('changeFocusedWindow', $appMain.changeFocusedWindow)
     .map('resizeWindow', $appMain.resizeWindow)

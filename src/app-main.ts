@@ -198,7 +198,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     window.close();
   }
   // eslint-disable-next-line class-methods-use-this
-  resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>) {
+  resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>, _: any, __: any, store: StoreSub) {
     if (popupWindow.state === 'normal' && popupWindow.focused) {
       updateSettings({
         windowTop: popupWindow.top,
@@ -206,6 +206,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         windowWidth: popupWindow.width,
         windowHeight: popupWindow.height,
       });
+      store.dispatch('updateWindowHeight', popupWindow.height);
     }
   }
   // eslint-disable-next-line class-methods-use-this
@@ -259,6 +260,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         initValue: undefined as chrome.windows.Window | undefined,
       }),
       updateBookmarks: {},
+      updateWindowHeight: makeAction({
+        initValue: 0,
+      }),
     };
   }
   // eslint-disable-next-line class-methods-use-this
