@@ -218,8 +218,16 @@ export const CliMessageTypes = {
 } as const;
 
 export const BkgMessageTypes = {
-  updateHistory: 'bkg-update-history',
+  applyOptions: 'bkg-apply-options',
+  applyStyle: 'bkg-apply-style',
+  tryChangePalette: 'bkg-try-change-palette',
 } as const;
+
+export type ApplyStyle = {
+  css: string,
+  colorPalette: ColorPalette,
+  windowMode: boolean,
+}
 
 export const OpenBookmarkType = {
   tab: 'tab',

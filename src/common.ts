@@ -12,6 +12,7 @@ import {
   HTMLElementEventType,
   pastMSec,
   EventListenerOptions,
+  Settings,
 } from './types';
 
 import {
@@ -896,15 +897,19 @@ export async function getPopup() {
   return popup;
 }
 
+export function cssToParams(settings: Settings, colorPalette: ColorPalette, css: string) {
+  const variables = makeThemeCss(colorPalette);
+  const styleHeight = `body { height: ${settings.height}px; }`;
+  return `:root {\n${variables}\n}\n\n${styleHeight}\n\n${css}`;
+}
+
 export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, 'css' | 'colorPalette' | 'windowMode'>) {
   if (windowMode) {
     chrome.action.setPopup({ popup: '' });
     return;
   }
   getLocal('settings').then(({ settings }) => {
-    const variables = makeThemeCss(colorPalette);
-    const styleHeight = `body { height: ${settings.height}px; }`;
-    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${styleHeight}\n\n${css}`);
+    const encoded = encodeURIComponent(cssToParams(settings, colorPalette, css));
     chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
     getPopup().then((popup) => {
       if (popup) {

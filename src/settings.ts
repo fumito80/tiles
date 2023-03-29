@@ -1,6 +1,8 @@
 import './view/settings.scss';
 import * as bootstrap from 'bootstrap';
-import { State, ColorPalette } from './types';
+import {
+  State, ColorPalette, BkgMessageTypes, CliMessageTypes,
+} from './types';
 import { CustomInputElement } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 import { setToolbarIcon } from './draw-svg';
@@ -14,6 +16,7 @@ import {
   camelToSnake,
   setPopupStyle,
   getLocal,
+  postMessage,
 } from './common';
 import {
   $, $$, $byTag, $byClass, $byId,
@@ -180,7 +183,9 @@ function saveOptions(inputs: Inputs) {
     const { options: { css, colorPalette, windowMode } } = await pipe(getOptions, setLocal)(inputs);
     const name = (e.target as Element).getAttribute('name');
     if (['color-palette', 'css', 'window-mode'].includes(name!)) {
-      setPopupStyle({ css, colorPalette, windowMode });
+      const payload = { css, colorPalette, windowMode };
+      setPopupStyle(payload);
+      postMessage({ type: BkgMessageTypes.applyStyle, payload });
     }
   };
 }
@@ -255,6 +260,14 @@ async function restoreCss() {
   }
 }
 
+function getNewColorPalette(currentColorPalette: ColorPalette, newColorPalette: ColorPalette) {
+  const isSame = currentColorPalette.every((color, i) => color === newColorPalette[i]);
+  if (!isSame) {
+    return newColorPalette;
+  }
+  return currentColorPalette;
+}
+
 function initOthers() {
   $$('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
   $byId('customize-css')?.addEventListener('shown.bs.collapse', async () => {
@@ -281,12 +294,11 @@ function initOthers() {
   $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
   findPalette(colorPalette.value);
   chrome.runtime.onMessage.addListener((message) => {
-    if (message === 'close-popup') {
+    if (message.type === CliMessageTypes.setThemeColor) {
+      colorPalette.value = getNewColorPalette(colorPalette.value, message.payload);
+    } else if (message.type === BkgMessageTypes.tryChangePalette) {
       getLocal('options').then(({ options }) => {
-        const isSame = colorPalette.value.every((color, i) => color === options.colorPalette[i]);
-        if (!isSame) {
-          colorPalette.value = options.colorPalette;
-        }
+        colorPalette.value = getNewColorPalette(colorPalette.value, options.colorPalette);
       });
     }
   });

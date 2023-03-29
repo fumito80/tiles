@@ -11,6 +11,9 @@ import {
   PromiseInitTabs,
   CliMessageTypes,
   ColorPalette,
+  BkgMessageTypes,
+  PayloadAction,
+  ApplyStyle,
 } from './types';
 
 import {
@@ -24,6 +27,7 @@ import {
   extractDomain,
   postMessage,
   getHistoryDataByWorker,
+  setMessageListener,
 } from './common';
 
 import {
@@ -112,7 +116,7 @@ function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPan
     .map((name) => $byClass(prefix + name)!);
 }
 
-function layoutPanes(options: Options, isSearching: boolean) {
+function layoutPanes(options: Options, settings: Settings, isSearching: boolean) {
   const $appMain = $byTag('app-main') as AppMain;
   const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
   const $bodies = getPanes(options.panes, options.bookmarksPanes);
@@ -132,7 +136,7 @@ function layoutPanes(options: Options, isSearching: boolean) {
     const $splitter = $$byClass('split-h')[gridColStart - 1];
     addClass('bold-separator')($splitter);
   }
-  $appMain.init(options, isSearching);
+  $appMain.init(options, settings, isSearching);
   return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane.getAttribute('is');
     if (!name) {
@@ -175,7 +179,7 @@ function init([{
   }
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
-  const compos = layoutPanes(options, isSearching);
+  const compos = layoutPanes(options, settings, isSearching);
   const components = initComponents(
     compos,
     options,
@@ -218,11 +222,18 @@ async function bootstrap() {
   });
 }
 
-bootstrap().then(init);
+const promiseStore = bootstrap().then(init);
 
 // messaging add-on for background to popup
-export const mapMessagesBtoP = {};
-// setMessageListener(mapMessagesBtoP, true);
+async function applyStyle({ payload }: PayloadAction<ApplyStyle>) {
+  return promiseStore.then((store) => store.dispatch('applyStyle', payload, true));
+}
+
+export const mapMessagesBtoP = {
+  [BkgMessageTypes.applyStyle]: applyStyle,
+};
+
+setMessageListener(mapMessagesBtoP);
 
 postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' })
   // eslint-disable-next-line no-console

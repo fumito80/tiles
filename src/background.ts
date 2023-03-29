@@ -10,6 +10,7 @@ import {
   historyHtmlCount,
   ColorPalette,
   PayloadUpdateWindow,
+  BkgMessageTypes,
 } from './types';
 
 import {
@@ -94,7 +95,7 @@ function updateHistory1500() {
 function saveQuery(port: chrome.runtime.Port) {
   port.onDisconnect.addListener(() => {
     addQueryHistory();
-    chrome.runtime.sendMessage('close-popup').catch(() => {});
+    chrome.runtime.sendMessage({ type: BkgMessageTypes.tryChangePalette }).catch(() => {});
   });
 }
 

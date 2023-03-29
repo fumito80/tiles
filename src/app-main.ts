@@ -1,9 +1,11 @@
 /* eslint-disable import/prefer-default-export */
 
-import { ColorPalette, MulitiSelectables, Options } from './types';
+import {
+  ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
+} from './types';
 import {
   setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
-  chromeEventFilter, cssid,
+  chromeEventFilter, cssid, cssToParams,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -23,6 +25,8 @@ import {
   setFavColorMenu,
   setHTML,
   $$,
+  $byTag,
+  setBrowserFavicon,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -48,12 +52,14 @@ const excludeClasses = [
 
 export class AppMain extends HTMLElement implements IPubSubElement {
   #options!: Options;
+  #settings!: Settings;
   #randomPalettes = [] as ColorPalette[];
   #randomPalettesIndex = 0;
   // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
-  init(options: Options, isSearching: boolean) {
+  init(options: Options, settings: Settings, isSearching: boolean) {
     this.#options = options;
+    this.#settings = settings;
     this.classList.toggle('searching', isSearching);
     setThemeClass(this, options.colorPalette);
     chrome.windows.getCurrent().then((win) => {
@@ -225,6 +231,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }
     });
   }
+  // eslint-disable-next-line class-methods-use-this
+  applyStyle({ newValue: { css, colorPalette } }: Changes<'applyStyle'>) {
+    const sheet = $byTag('style');
+    sheet.textContent = cssToParams(this.#settings, colorPalette, css);
+    setBrowserFavicon(colorPalette);
+  }
   actions() {
     return {
       clickAppMain: makeAction({
@@ -262,6 +274,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       updateBookmarks: {},
       updateWindowHeight: makeAction({
         initValue: 0,
+      }),
+      applyStyle: makeAction({
+        initValue: undefined as ApplyStyle | undefined,
       }),
     };
   }
