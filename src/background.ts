@@ -77,25 +77,18 @@ async function setHtmlHistory() {
   return setLocal({ htmlHistory });
 }
 
-let timeoutRemoveHistory: ReturnType<typeof setTimeout>;
+let timeoutUpdateHistory500: ReturnType<typeof setTimeout>;
 
-async function onVisitRemoved() {
-  clearTimeout(timeoutRemoveHistory);
-  timeoutRemoveHistory = setTimeout(setHtmlHistory, 500);
+function updateHistory500() {
+  clearTimeout(timeoutUpdateHistory500);
+  timeoutUpdateHistory500 = setTimeout(setHtmlHistory, 500);
 }
 
-let timeoutRefreshHistoryTitle: ReturnType<typeof setTimeout>;
+let timeoutUpdateHistory1500: ReturnType<typeof setTimeout>;
 
-function addHistory() {
-  clearTimeout(timeoutRefreshHistoryTitle);
-  timeoutRefreshHistoryTitle = setTimeout(setHtmlHistory, 2000);
-}
-
-let timeoutChangeSession: ReturnType<typeof setTimeout>;
-
-async function onSessionChanged() {
-  clearTimeout(timeoutChangeSession);
-  timeoutChangeSession = setTimeout(setHtmlHistory, 500);
+function updateHistory1500() {
+  clearTimeout(timeoutUpdateHistory1500);
+  timeoutUpdateHistory1500 = setTimeout(setHtmlHistory, 1500);
 }
 
 function saveQuery(port: chrome.runtime.Port) {
@@ -132,9 +125,9 @@ async function init(storage: Pick<State, InitStateKeys>) {
   setLocal({
     settings, clientState, options, lastSearchWord,
   });
-  regsterChromeEvents(addHistory)([chrome.history.onVisited]);
-  regsterChromeEvents(onVisitRemoved)([chrome.history.onVisitRemoved]);
-  regsterChromeEvents(onSessionChanged)([chrome.sessions.onChanged]);
+  regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
+  regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
+  regsterChromeEvents(updateHistory500)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
   setPopupStyle(options);
   setWindowMode();

@@ -269,6 +269,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }, chromeEventFilter);
       return;
     }
+    // Window Mode
     chrome.windows.onBoundsChanged.addListener((win) => {
       if (win.id === this.#windowId) {
         store.dispatch('resizeWindow', win);

@@ -91,6 +91,66 @@ async function getHistoriesByIds(elementIds: string[]) {
     });
 }
 
+export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
+  readonly paneName = 'histories';
+  private store!: Store;
+  readonly multiDeletesTitle = 'Delete selected histories';
+  toggleCollapseIcon({ newValue: { collapsed } }: Changes<'historyCollapseDate'>) {
+    toggleClass('date-collapsed', collapsed)(this);
+  }
+  toggleRecentlyClosed({ newValue: shown }: { newValue: boolean }) {
+    toggleClass('show-recently-closed', shown)(this);
+  }
+  multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
+    const isMultiSelect = Object.values(newValue).some((value) => !!value);
+    $$byTag('button', this).forEach(toggleClass('hidden', isMultiSelect));
+  }
+  // eslint-disable-next-line class-methods-use-this
+  menuClickHandler(e: MouseEvent) {
+    const $target = e.target as HTMLElement;
+    const className = whichClass(['open-new-tab', 'open-new-window', 'open-incognito'] as const, $target);
+    switch (className) {
+      case 'open-new-tab': {
+        this.store.dispatch('openTabsFromHistory');
+        break;
+      }
+      case 'open-incognito':
+      case 'open-new-window': {
+        this.store.dispatch('openWindowFromHistory', className === 'open-incognito', true);
+        break;
+      }
+      default:
+    }
+  }
+  override actions() {
+    return {
+      ...super.actions(),
+      historyCollapseDate: makeAction({
+        initValue: {
+          collapsed: false,
+          jumpDate: '',
+        } as {
+          collapsed: boolean,
+          jumpDate?: string,
+        },
+        target: $byClass('collapse-history-date', this),
+        eventType: 'click',
+        eventProcesser: (_, { collapsed }) => ({ jumpDate: '', collapsed: !collapsed }),
+      }),
+      toggleRecentlyClosed: makeAction({
+        initValue: false,
+        target: $byClass('toggle-recently-closed', this),
+        eventType: 'click',
+        eventProcesser: (_, currentValue) => !currentValue,
+      }),
+    };
+  }
+  override connect(store: Store) {
+    super.connect(store);
+    this.store = store;
+  }
+}
+
 export class History extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'histories';
   #options!: Options;
@@ -190,7 +250,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', { collapsed: false }, true);
   }
-  clearHistory(states: States) {
+  refreshHistory(_: any, __: any, states: States, store: StoreSub) {
+    store.dispatch('multiSelPanes', { all: false });
     this.#histories = undefined;
     this.promiseInitHistory = getHistoryDataByWorker();
     this.resetHistory(undefined, undefined, states);
@@ -493,7 +554,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   }
   multiSelect({ newValue: { histories } }: { newValue: MulitiSelectables }) {
     if (!histories) {
-      this.applyData((data) => data.map((row) => ({ ...row, selected: false })));
+      this.applyData((data) => data?.map((row) => ({ ...row, selected: false })));
       this.#lastClickedId = undefined;
     }
   }
@@ -667,66 +728,17 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       updateSelCount: makeAction({
         initValue: 0,
       }),
+      updateHistory: {},
     };
-  }
-}
-
-export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
-  readonly paneName = 'histories';
-  private store!: Store;
-  readonly multiDeletesTitle = 'Delete selected histories';
-  toggleCollapseIcon({ newValue: { collapsed } }: Changes<'historyCollapseDate'>) {
-    toggleClass('date-collapsed', collapsed)(this);
-  }
-  toggleRecentlyClosed({ newValue: shown }: { newValue: boolean }) {
-    toggleClass('show-recently-closed', shown)(this);
-  }
-  multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
-    const isMultiSelect = Object.values(newValue).some((value) => !!value);
-    $$byTag('button', this).forEach(toggleClass('hidden', isMultiSelect));
   }
   // eslint-disable-next-line class-methods-use-this
-  menuClickHandler(e: MouseEvent) {
-    const $target = e.target as HTMLElement;
-    const className = whichClass(['open-new-tab', 'open-new-window', 'open-incognito'] as const, $target);
-    switch (className) {
-      case 'open-new-tab': {
-        this.store.dispatch('openTabsFromHistory');
-        break;
-      }
-      case 'open-incognito':
-      case 'open-new-window': {
-        this.store.dispatch('openWindowFromHistory', className === 'open-incognito', true);
-        break;
-      }
-      default:
-    }
-  }
-  override actions() {
-    return {
-      ...super.actions(),
-      historyCollapseDate: makeAction({
-        initValue: {
-          collapsed: false,
-          jumpDate: '',
-        } as {
-          collapsed: boolean,
-          jumpDate?: string,
-        },
-        target: $byClass('collapse-history-date', this),
-        eventType: 'click',
-        eventProcesser: (_, { collapsed }) => ({ jumpDate: '', collapsed: !collapsed }),
-      }),
-      toggleRecentlyClosed: makeAction({
-        initValue: false,
-        target: $byClass('toggle-recently-closed', this),
-        eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
-      }),
-    };
-  }
   override connect(store: Store) {
-    super.connect(store);
-    this.store = store;
+    // Popup mode/Window mode both
+    chrome.storage.local.onChanged.addListener((storage) => {
+      if (!storage.htmlHistory) {
+        return;
+      }
+      store.dispatch('updateHistory', undefined, true);
+    });
   }
 }

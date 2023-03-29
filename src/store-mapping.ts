@@ -170,7 +170,8 @@ export function storeMapping(options: Options, components: Components) {
     .map('mouseupHistory', $history.mouseupItem)
     .map('openHistories', $history.openHistories)
     .map('addBookmarksHistories', $history.addBookmarks)
-    .map('openWindowFromHistory', $history.openWindowFromHistory);
+    .map('openWindowFromHistory', $history.openWindowFromHistory)
+    .map('updateHistory', $history.refreshHistory);
 
   store.context($formSearch)
     .map('inputQuery', $formSearch.inputQuery)
@@ -185,10 +186,6 @@ export function storeMapping(options: Options, components: Components) {
     .map('dragstart', dragAndDropEvents.dragstart)
     .map('drop', dragAndDropEvents.drop)
     .map('dragend', dragAndDropEvents.dragend);
-
-  chrome.sessions.onChanged.addListener(() => {
-    store.getStates().then($history.clearHistory.bind($history));
-  });
 
   return store;
 }
