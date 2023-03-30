@@ -80,12 +80,12 @@ export class Folders extends Bookmarks implements IPubSubElement {
             break;
           }
           case 'add-folder': {
-            addFolder($folder.id);
+            addFolder(store.dispatch, $folder.id);
             break;
           }
           case 'edit': {
             const $title = $('.title > div', $folder)!;
-            const title = await editTitle($title, $folder.id);
+            const title = await editTitle($title, $folder.id, store.dispatch);
             if (!title) {
               return;
             }

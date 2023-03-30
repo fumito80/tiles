@@ -71,9 +71,9 @@ export class Leaf extends MutiSelectableItem {
       default:
     }
   }
-  async editBookmarkTitle() {
+  async editBookmarkTitle(dispatch: Dispatch) {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
-    const title = await editTitle($anchor, this.id, false, true);
+    const title = await editTitle($anchor, this.id, dispatch, false, true);
     if (!title) {
       return;
     }
@@ -163,7 +163,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
           $leaf.openBookmark(OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
-          $leaf.editBookmarkTitle();
+          $leaf.editBookmarkTitle(dispatch);
           break;
         }
         case 'edit-url': {

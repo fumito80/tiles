@@ -463,7 +463,8 @@ export async function removeFolder($folder: HTMLElement) {
 
 export async function editTitle(
   $title: HTMLElement,
-  folderId: string,
+  bookmarkId: string,
+  dispatch: Dispatch,
   newFolder = false,
   isBookmark = false,
 ) {
@@ -509,8 +510,12 @@ export async function editTitle(
         if (title === currentTitle) {
           return resolve();
         }
-        const ret = await chrome.bookmarks.update(folderId, { title })
-          .catch((reason) => reason.message as string);
+        dispatch('editingBookmark', true);
+        const ret = await chrome.bookmarks.update(bookmarkId, { title })
+          .catch((reason) => {
+            dispatch('editingBookmark', false);
+            return reason.message as string;
+          });
         if (typeof ret === 'string') {
           await dialog.alert(ret);
           setText(currentTitle)($title);
@@ -537,7 +542,15 @@ export async function addBookmark(
   const params = {
     title: title!, url: url!, parentId, index,
   };
-  const { id } = await chrome.bookmarks.create(params);
+  const { id } = await chrome.bookmarks.create(params).catch(() => {
+    if (dispatchEditing) {
+      dispatchEditing('editingBookmark', true);
+    }
+    return { id: undefined };
+  });
+  if (!id) {
+    return false;
+  }
   const htmlLeaf = makeLeaf({ id, ...params });
   if (parentId === '1') {
     insertHTML('beforebegin', htmlLeaf)($byId('1')!.children[index! + 1]);
@@ -558,10 +571,7 @@ export async function addBookmark(
   if ($Leaf && dispatchEditing && (!isSearching || parentId === '1')) {
     ($Leaf as any).scrollIntoViewIfNeeded();
     setAnimationClass('hilite')($Leaf);
-    await $Leaf.editBookmarkTitle();
-  }
-  if (dispatchEditing) {
-    dispatchEditing('editingBookmark', false);
+    await $Leaf.editBookmarkTitle(dispatchEditing);
   }
   return true;
 }
@@ -602,6 +612,7 @@ export function selectFolder(
 }
 
 export async function addFolder(
+  dispatch: Dispatch,
   parentId = '1',
   title = '',
   indexIn: number | undefined = undefined,
@@ -647,7 +658,7 @@ export async function addFolder(
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
   return new Promise<string | void>((resolve) => {
-    editTitle($target.firstElementChild as HTMLElement, id, !title).then((retitled) => {
+    editTitle($target.firstElementChild as HTMLElement, id, dispatch, !title).then((retitled) => {
       if (!retitled && !title) {
         removeFolder($target.parentElement!.parentElement!);
         resolve();
@@ -678,9 +689,17 @@ export async function addFolderFromTabs(
   bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
   destId: string,
   position: InsertPosition,
+  dispatch: Dispatch,
 ) {
   const { parentId, index } = bookmarkDestArg;
-  const parentFolderId = await addFolder(parentId, tabs[0].title, index, destId, position);
+  const parentFolderId = await addFolder(
+    dispatch,
+    parentId,
+    tabs[0].title,
+    index,
+    destId,
+    position,
+  );
   if (!parentFolderId) {
     return;
   }
@@ -688,7 +707,7 @@ export async function addFolderFromTabs(
   const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
   const $title = $target.firstElementChild as HTMLElement;
-  editTitle($title, parentFolderId, false);
+  editTitle($title, parentFolderId, dispatch, false);
 }
 
 export function openFolder(folderId: string, incognito = false) {

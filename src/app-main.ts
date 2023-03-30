@@ -219,6 +219,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   // eslint-disable-next-line class-methods-use-this
   refreshBookmarks(_: any, __: any, states: States, store: StoreSub) {
     if (states.editingBookmark) {
+      store.dispatch('editingBookmark', false);
       return;
     }
     addChild($byClass('leaf-menu')!)($byClass('components')!);

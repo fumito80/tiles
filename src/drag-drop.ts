@@ -492,7 +492,7 @@ export default class DragAndDropEvents implements IPubSubElement {
           return;
         }
         const position = positions[dropAreaClass];
-        addFolderFromTabs(tabs!, bookmarkDest, destId, position);
+        addFolderFromTabs(tabs!, bookmarkDest, destId, position, store.dispatch);
       });
       return;
     }

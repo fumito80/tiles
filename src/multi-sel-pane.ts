@@ -36,7 +36,7 @@ function clickMainMenu(e: MouseEvent, store: Store) {
       });
       break;
     case 'add-folder':
-      addFolder();
+      addFolder(store.dispatch);
       break;
     case 'settings':
       chrome.runtime.openOptionsPage();
