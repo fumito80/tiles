@@ -483,3 +483,12 @@ label.theme {
     transform: scale(1.5);
   }
 }
+
+.item:has([name="window-mode"]:not(:checked))+div .apply-settings {
+  color: var(--bs-btn-disabled-color);
+  pointer-events: none;
+  background-color: var(--bs-btn-disabled-bg);
+  border-color: var(--bs-btn-disabled-border-color);
+  opacity: var(--bs-btn-disabled-opacity);
+  cursor: pointer;
+}

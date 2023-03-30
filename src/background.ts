@@ -214,10 +214,11 @@ export const mapMessagesPtoB = {
             return chrome.windows.create({
               tabId: activeTab.id, incognito, left, top, width, height,
             }).then((win) => {
-              tabs!.forEach((tab) => {
-                chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index });
-              });
-            });
+              const moves = tabs!.map((tab) => (
+                chrome.tabs.move(tab.id!, { windowId: win!.id, index: tab.index })
+              ));
+              return Promise.all(moves).then(() => undefined);
+            }).catch((reason) => (reason.message as string));
           }),
       )
   ),
@@ -236,8 +237,8 @@ export const mapMessagesPtoB = {
     }, [[], []] as [number[], number[]]);
     const tabIds = [...primary, ...reject];
     return chrome.tabs.move(tabIds, { windowId: newWindow.id!, index: -1 })
-      .then(([{ windowId }]) => ({ windowId }))
-      .catch((reason) => ({ windowId: -1, message: reason.message }));
+      .then(() => ({ windowId: newWindow.id! }))
+      .catch((reason) => ({ windowId: chrome.windows.WINDOW_ID_NONE, message: reason.message }));
   },
   [CliMessageTypes.openUrls]: (
     { payload: { urls, windowId, index } }: PayloadAction<{

@@ -13,6 +13,7 @@ import {
   pastMSec,
   EventListenerOptions,
   Settings,
+  PromiseType,
 } from './types';
 
 import {
@@ -567,22 +568,14 @@ export function getParentElement(el: HTMLElement, level: number): HTMLElement | 
   return getParentElement(el.parentElement, level - 1);
 }
 
-const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime) as
-  (message: any, responseCallback: (response: any) => void) => void;
-
 type MapMessages = MapMessagesPtoB & MapMessagesBtoP;
 
 export async function postMessage<T extends keyof MapMessages>(
   msg: { type: T } & Partial<PayloadAction<MessageTypePayloadAction<MapMessages>[T]>>,
 ) {
-  return new Promise<ReturnType<MapMessages[T]>>((resolve) => {
-    sendMessage(msg, (resp) => {
-      if (!chrome.runtime.lastError) {
-        resolve(resp);
-      }
-      return true;
-    });
-  });
+  return chrome.runtime.sendMessage(msg)
+    // eslint-disable-next-line no-console
+    .catch(console.error) as unknown as PromiseType<ReturnType<MapMessages[T]>>;
 }
 
 export function cssid(id: string | number) {

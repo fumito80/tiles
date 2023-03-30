@@ -106,6 +106,7 @@ async function dropWithTabs(
     );
     if (message) {
       await dialog.alert(message);
+      return;
     }
     chrome.windows.update(windowId, { focused: true });
     return;
@@ -482,7 +483,12 @@ export default class DragAndDropEvents implements IPubSubElement {
       const windowId = getChromeId(sourceId);
       if (dropAreaClass === 'new-window-plus') {
         // to new window
-        postMessage({ type: CliMessageTypes.moveWindowNew, payload: { windowId } });
+        postMessage({ type: CliMessageTypes.moveWindowNew, payload: { windowId } })
+          .then((message) => {
+            if (message) {
+              dialog.alert(message);
+            }
+          });
         return;
       }
       // to bookmarks/folder

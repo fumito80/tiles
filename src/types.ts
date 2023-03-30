@@ -327,4 +327,4 @@ export type EventListenerOptions = boolean | AddEventListenerOptions;
 
 export type AbstractConstructor<T = any> = abstract new (...args: any[]) => T;
 
-export type PromiseType<T> = Awaited<Promise<T>>;
+export type PromiseType<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
