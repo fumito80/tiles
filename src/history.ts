@@ -7,7 +7,7 @@ import {
 } from './popup';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
-  createNewTab, setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
+  setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
   addBookmark,
   getMessageDeleteSelecteds,
   $$byTag,
@@ -53,11 +53,11 @@ function filterHistory(source: MyHistoryItem[], fnFilter: (el: MyHistoryItem) =>
 }
 
 export class HistoryItem extends MutiSelectableItem {
-  async open(url: string, options: Options) {
+  async open(url: string, dispatch: Dispatch) {
     if (this.checkMultiSelect()) {
       return;
     }
-    createNewTab(options, url);
+    dispatch('addNewTab', url, true);
   }
   async delete(url: string) {
     this.setAnimation('hilite-fast');
@@ -220,7 +220,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     }
     postMessage({ type: CliMessageTypes.openUrls, payload: { urls, windowId, index } });
   }
-  async addBookmarks({ newValue }: Changes<'addBookmarksHistories'>) {
+  async addBookmarks({ newValue }: Changes<'addBookmarksHistories'>, _: any, __: any, store: StoreSub) {
     const [sel1st, ...rest] = this.getSelecteds(newValue?.elementIds!);
     if (!sel1st) {
       return;
@@ -237,9 +237,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const urls = bookmarkDest.index == null ? items : items.reverse();
     urls.forEach(({ url, title }) => {
       addBookmark(
-        bookmarkDest.parentId,
+        bookmarkDest.parentId ?? '1',
         { url, title: title || url?.substring(0, 50), ...bookmarkDest },
-        urls.length !== 1,
+        urls.length !== 1 ? undefined : store.dispatch,
       );
     });
   }
@@ -551,7 +551,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         return;
       }
       const [{ url }] = await getHistoriesByIds([$history.id]);
-      $history.open(url!, this.#options);
+      $history.open(url!, store.dispatch);
     }
   }
   multiSelect({ newValue: { histories } }: { newValue: MulitiSelectables }) {

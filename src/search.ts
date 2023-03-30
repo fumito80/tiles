@@ -10,7 +10,6 @@ import {
   $, $byClass,
   rmClass, addAttr,
   selectFolder,
-  createNewTab,
   hasClass,
 } from './client';
 import { Options, Panes } from './types';
@@ -38,6 +37,7 @@ export interface ISearchable {
 }
 
 export class FormSearch extends HTMLFormElement implements IPubSubElement {
+  #options!: Options;
   #oldValue = '';
   #includeUrl!: boolean;
   #exclusiveOpenBmFolderTree!: boolean;
@@ -52,6 +52,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     options: Options,
     lastSearchWord: string,
   ) {
+    this.#options = options;
     this.#includeUrl = includeUrl;
     this.#exclusiveOpenBmFolderTree = options.exclusiveOpenBmFolderTree;
     this.$searchTargets = $searchTargets;
@@ -59,7 +60,7 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     this.$clear = $byClass('clear-search', this)!;
     this.$leafs = $byClass('leafs')!;
     this.$inputQuery.value = options.restoreSearching ? lastSearchWord : '';
-    this.addEventListener('submit', (e) => this.submitForm(e, options));
+    this.addEventListener('submit', (e) => e.preventDefault());
     this.$queries = $byClass('queries', this)!;
     this.$queries.addEventListener('keydown', (e) => e.preventDefault(), false);
     pipe(
@@ -154,15 +155,14 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
     }
     $next.focus();
   }
-  submitForm(e: Event, options: Options) {
-    e.preventDefault();
-    if (options.enableExternalUrl && options.externalUrl) {
+  submitForm(_: any, __: any, ___: any, store: StoreSub) {
+    if (this.#options.enableExternalUrl && this.#options.externalUrl) {
       const value = this.$inputQuery.value.trim();
       if (value.length <= 1) {
         return false;
       }
-      const url = options.externalUrl + encodeURIComponent(value);
-      createNewTab(options, url);
+      const url = this.#options.externalUrl + encodeURIComponent(value);
+      store.dispatch('addNewTab', url, true);
     }
     return false;
   }
@@ -296,6 +296,11 @@ export class FormSearch extends HTMLFormElement implements IPubSubElement {
         eventType: 'keydown',
         eventOnly: true,
         listenerOptions: false,
+      }),
+      submitForm: makeAction({
+        target: this,
+        eventType: 'submit',
+        eventOnly: true,
       }),
     };
   }

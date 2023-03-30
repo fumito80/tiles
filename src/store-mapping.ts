@@ -165,7 +165,10 @@ export function storeMapping(options: Options, components: Components) {
     .map('onRemovedWindow', $tabs.onRemovedWindow)
     .map('setCurrentWindowId', $tabs.setCurrentWindowId)
     .map('onUpdateTab', $tabs.refreshWindow)
-    .map('onActivatedTab', $tabs.onActivatedTab);
+    .map('onActivatedTab', $tabs.onActivatedTab)
+    .map('addNewTab', $tabs.addNewTab)
+    .map('replaceCurrentTab', $tabs.replaceCurrentTab)
+    .map('addBookmarkFromTab', $tabs.addBookmarkFromTab);
 
   store.context($history)
     .map('clickHistory', $history.clickItem)
@@ -184,6 +187,7 @@ export function storeMapping(options: Options, components: Components) {
     .map('search', $formSearch.reSearchAll)
     .map('re-search', $formSearch.reSearch)
     .map('setQuery', $formSearch.setQuery)
+    .map('submitForm', $formSearch.submitForm)
     .map('keydownQueries', $formSearch.keydownQueries);
 
   store.context(dragAndDropEvents)

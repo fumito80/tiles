@@ -3,7 +3,7 @@ import {
 } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
-  addBookmark, addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
+  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -19,7 +19,7 @@ function clickMainMenu(e: MouseEvent, store: Store) {
   switch ($menu.dataset.value) {
     case 'add-bookmark': {
       const id = $byClass('open')?.id;
-      addBookmark(id || '1');
+      store.dispatch('addBookmarkFromTab', { parentId: id || '1' }, true);
       break;
     }
     case 'add-bookmark-text': {
@@ -50,8 +50,8 @@ function clickMainMenu(e: MouseEvent, store: Store) {
 }
 
 export class PopupMenu extends HTMLElement {
-  init(menuClickHandler: (e: MouseEvent) => void) {
-    this.addEventListener('click', menuClickHandler);
+  init(menuClickHandler: (e: MouseEvent, dispatch: Dispatch) => void, dispatch: Dispatch) {
+    this.addEventListener('click', (e) => menuClickHandler(e, dispatch));
     this.addEventListener('mousedown', (e) => e.preventDefault());
   }
 }
@@ -165,8 +165,9 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   abstract paneName: Panes;
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
+  protected $popupMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
-  abstract menuClickHandler(e: MouseEvent): void;
+  abstract menuClickHandler(e: MouseEvent, dispatch: Dispatch): void;
   readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane, _others?: any) {
@@ -182,12 +183,8 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
       }
     });
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
-    const $popupMenu = $byTag('popup-menu', this);
-    if (!($popupMenu instanceof PopupMenu)) {
-      throw new Error('No popup found');
-    }
-    $popupMenu.init(this.menuClickHandler.bind(this));
-    this.$multiSelPane.init(this, $popupMenu);
+    this.$popupMenu = $byTag('popup-menu', this);
+    this.$multiSelPane.init(this, this.$popupMenu);
   }
   selectItems({ newValue }: Changes<'selectItems'>, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
@@ -217,6 +214,10 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     this.$multiSelPane.connect(store);
     this.$mainMenu.addEventListener('click', (e) => clickMainMenu(e, store));
     store.subscribe('selectItems', this.selectItems.bind(this));
+    if (!(this.$popupMenu instanceof PopupMenu)) {
+      throw new Error('No popup found');
+    }
+    this.$popupMenu.init(this.menuClickHandler.bind(this), store.dispatch);
   }
 }
 

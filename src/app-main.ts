@@ -5,7 +5,7 @@ import {
 } from './types';
 import {
   setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
-  chromeEventFilter, cssid, cssToParams,
+  chromeEventFilter, cssid, makeCss,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -27,6 +27,7 @@ import {
   $$,
   $byTag,
   setBrowserFavicon,
+  addChild,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -217,6 +218,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   // eslint-disable-next-line class-methods-use-this
   refreshBookmarks(_: any, __: any, states: States, store: StoreSub) {
+    if (states.editingBookmark) {
+      return;
+    }
+    addChild($byClass('leaf-menu')!)($byClass('components')!);
+    addChild($byClass('folder-menu')!)($byClass('components')!);
     store.dispatch('multiSelPanes', { all: false });
     getLocal('htmlBookmarks', 'clientState').then(({ clientState, htmlBookmarks }) => {
       setHTML(htmlBookmarks.leafs)($byClass('leafs')!);
@@ -231,11 +237,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }
     });
   }
-  // eslint-disable-next-line class-methods-use-this
   applyStyle({ newValue: { css, colorPalette } }: Changes<'applyStyle'>) {
-    const sheet = $byTag('style');
-    sheet.textContent = cssToParams(this.#settings, colorPalette, css);
     setBrowserFavicon(colorPalette);
+    $byTag('style').textContent = makeCss(this.#settings, colorPalette, css);
   }
   actions() {
     return {
@@ -277,6 +281,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }),
       applyStyle: makeAction({
         initValue: undefined as ApplyStyle | undefined,
+      }),
+      editingBookmark: makeAction({
+        initValue: false,
       }),
     };
   }

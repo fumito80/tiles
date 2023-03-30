@@ -4,14 +4,15 @@ import {
 } from './multi-sel-pane';
 import {
   $, $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle,
-  toggleClass, setAnimationClass, showMenu, setText, createNewTab, getChildren,
+  toggleClass, setAnimationClass, showMenu, setText, getChildren,
   scrollVerticalCenter,
   toggleElement,
   getInitialTabs,
+  addBookmark,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
-  makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter,
+  makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -138,6 +139,9 @@ export class OpenTab extends MutiSelectableItem {
   get isCurrent() {
     return this.#active;
   }
+  get windowId() {
+    return this.getParentWindow().windowId;
+  }
   get text() {
     return this.$title.textContent;
   }
@@ -162,8 +166,7 @@ export class OpenTab extends MutiSelectableItem {
     if (this.checkMultiSelect()) {
       return;
     }
-    const { windowId } = this.getParentWindow();
-    chrome.windows.update(windowId, { focused: true });
+    chrome.windows.update(this.windowId, { focused: true });
     chrome.tabs.update(this.tabId, { active: true });
   }
   closeTab(dispatch: Store['dispatch']) {
@@ -171,9 +174,8 @@ export class OpenTab extends MutiSelectableItem {
       e.stopPropagation();
       this.addEventListener('animationend', () => {
         chrome.tabs.remove(this.tabId, () => {
-          const { windowId } = this.getParentWindow();
           this.remove();
-          dispatch('windowAction', { type: 'closeTab', windowId }, true);
+          dispatch('windowAction', { type: 'closeTab', windowId: this.windowId }, true);
         });
       }, { once: true });
       setAnimationClass('remove-hilite')(this);
@@ -658,9 +660,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     Promise.all(promises).then(() => {
       $tabs
         .map(($tab) => {
-          const win = $tab.getParentWindow();
+          const { windowId } = $tab;
           $tab.remove();
-          return win.windowId;
+          return windowId;
         })
         .filter((id, i, ids) => ids.indexOf(id) === i)
         .forEach((windowId) => dispatch('windowAction', { type: 'closeTab', windowId }, true));
@@ -893,7 +895,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $nextTab.setFocus(true);
     this.scrollToFocused($nextTab);
   }
-  async activateTab({ newValue: { url, focused, bookmarkId } }: Changes<'activateTab'>) {
+  async activateTab({ newValue: { url, focused, bookmarkId } }: Changes<'activateTab'>, _: any, __:any, store: StoreSub) {
     let target: OpenTab | undefined;
     if (focused) {
       [target] = this.getAllTabs((tab) => tab.focused);
@@ -908,7 +910,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       target = sorted.find(await this.getTabFinder(url, bookmarkId));
     }
     if (!target) {
-      chrome.bookmarks.get(bookmarkId).then(([bm]) => createNewTab(this.#options, bm.url!));
+      chrome.bookmarks.get(bookmarkId).then(([bm]) => store.dispatch('addNewTab', bm.url!, true));
       return;
     }
     target.gotoTab();
@@ -1164,6 +1166,41 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
     $win.reloadTabs(store.dispatch);
   }
+  getCurrentTab() {
+    const $win = this.getAllWindows().find((win) => win.isCurrent);
+    return $win?.getTabs().find((tab) => tab.isCurrent);
+  }
+  addNewTab({ newValue: url }: Changes<'addNewTab'>) {
+    const $tab = this.getCurrentTab();
+    if (!$tab) {
+      return;
+    }
+    const tabIndex = $tab.getParentWindow().getTabs().findIndex((tab) => tab.tabId === $tab.tabId);
+    const index = decode(
+      this.#options.newTabPosition,
+      ['le', 0],
+      ['rs', tabIndex + 1],
+      ['ls', tabIndex],
+    );
+    chrome.tabs.create({ index, url, windowId: $tab.windowId });
+  }
+  replaceCurrentTab({ newValue: url }: Changes<'replaceCurrentTab'>) {
+    const $tab = this.getCurrentTab();
+    if (!$tab) {
+      return;
+    }
+    chrome.tabs.update($tab.tabId, { url });
+    chrome.windows.update($tab.windowId, { focused: true });
+  }
+  async addBookmarkFromTab({ newValue }: Changes<'addBookmarkFromTab'>, _: any, __: any, store: StoreSub) {
+    const $tab = this.getCurrentTab();
+    if (!$tab) {
+      return;
+    }
+    const { parentId = '1', index } = newValue ?? {};
+    const tab = await chrome.tabs.get($tab.tabId);
+    addBookmark(parentId, { ...tab, index }, store.dispatch);
+  }
   override actions() {
     return {
       ...super.actions(),
@@ -1253,6 +1290,15 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       }),
       onActivatedTab: makeAction({
         initValue: undefined as number | undefined,
+      }),
+      addNewTab: makeAction({
+        initValue: '',
+      }),
+      replaceCurrentTab: makeAction({
+        initValue: '',
+      }),
+      addBookmarkFromTab: makeAction({
+        initValue: undefined as chrome.bookmarks.BookmarkCreateArg | undefined,
       }),
     };
   }

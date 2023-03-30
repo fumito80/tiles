@@ -2,7 +2,7 @@
 
 import { getBookmarksBase } from './bookmarks';
 import {
-  $, $$byClass, $byClass, addAttr, addBookmark, addFolder, addStyle, editTitle, hasClass,
+  $, $$byClass, $byClass, addAttr, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
@@ -18,44 +18,6 @@ function onClickAngle($target: HTMLElement) {
   }
   toggleClass('path')($folder);
 }
-
-setEvents($$byClass('folder-menu'), {
-  async click(e) {
-    const $folder = getParentElement(e.target as HTMLElement, 4)!;
-    const { value } = (e.target as HTMLElement).dataset;
-    switch (value) {
-      case 'add-bookmark': {
-        addBookmark($folder.id);
-        break;
-      }
-      case 'add-folder': {
-        addFolder($folder.id);
-        break;
-      }
-      case 'edit': {
-        const $title = $('.title > div', $folder)!;
-        const title = await editTitle($title, $folder.id);
-        if (!title) {
-          return;
-        }
-        addAttr('title', title)($title.parentElement);
-        break;
-      }
-      case 'open-all':
-      case 'open-all-incognito':
-        openFolder($folder.id, value === 'open-all-incognito');
-        break;
-      case 'remove': {
-        removeFolder($folder);
-        break;
-      }
-      default:
-    }
-  },
-  mousedown(e) {
-    e.preventDefault();
-  },
-});
 
 const Bookmarks = getBookmarksBase(HTMLDivElement);
 
@@ -107,6 +69,43 @@ export class Folders extends Bookmarks implements IPubSubElement {
         }
         default:
       }
+    });
+    setEvents($$byClass('folder-menu'), {
+      async click(e) {
+        const $folder = getParentElement(e.target as HTMLElement, 4)!;
+        const { value } = (e.target as HTMLElement).dataset;
+        switch (value) {
+          case 'add-bookmark': {
+            store.dispatch('addBookmarkFromTab', { parentId: $folder.id });
+            break;
+          }
+          case 'add-folder': {
+            addFolder($folder.id);
+            break;
+          }
+          case 'edit': {
+            const $title = $('.title > div', $folder)!;
+            const title = await editTitle($title, $folder.id);
+            if (!title) {
+              return;
+            }
+            addAttr('title', title)($title.parentElement);
+            break;
+          }
+          case 'open-all':
+          case 'open-all-incognito':
+            openFolder($folder.id, value === 'open-all-incognito');
+            break;
+          case 'remove': {
+            removeFolder($folder);
+            break;
+          }
+          default:
+        }
+      },
+      mousedown(e) {
+        e.preventDefault();
+      },
     });
   }
   actions() {

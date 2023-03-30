@@ -560,15 +560,6 @@ export function pick(...props: any) {
     .reduce((acc: any, key: any) => ({ ...acc, [key]: target[key] }), {});
 }
 
-export async function getCurrentTab() {
-  return new Promise<chrome.tabs.Tab>((resolve) => {
-    chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    }, ([tab]) => resolve(tab));
-  });
-}
-
 export function getParentElement(el: HTMLElement, level: number): HTMLElement | null {
   if (level <= 0 || !el || !el.parentElement) {
     return el;
@@ -897,7 +888,7 @@ export async function getPopup() {
   return popup;
 }
 
-export function cssToParams(settings: Settings, colorPalette: ColorPalette, css: string) {
+export function makeCss(settings: Settings, colorPalette: ColorPalette, css: string) {
   const variables = makeThemeCss(colorPalette);
   const styleHeight = `body { height: ${settings.height}px; }`;
   return `:root {\n${variables}\n}\n\n${styleHeight}\n\n${css}`;
@@ -909,7 +900,7 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
     return;
   }
   getLocal('settings').then(({ settings }) => {
-    const encoded = encodeURIComponent(cssToParams(settings, colorPalette, css));
+    const encoded = encodeURIComponent(makeCss(settings, colorPalette, css));
     chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
     getPopup().then((popup) => {
       if (popup) {

@@ -25,12 +25,10 @@ import {
   cssid,
   curry,
   cbToResolve,
-  getCurrentTab,
   getLocal,
   setLocal,
   htmlEscape,
   pipe,
-  decode,
   prop,
   addListener,
   when,
@@ -51,6 +49,7 @@ import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
 import { getSvgBrowserIcon } from './draw-svg';
+import { Dispatch } from './popup';
 
 // DOM operation
 
@@ -331,17 +330,6 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilit
   };
 }
 
-export async function createNewTab(options: Options, url: string) {
-  const { windowId, ...rest } = await getCurrentTab();
-  const index = decode(
-    options.newTabPosition,
-    ['le', 0],
-    ['rs', rest.index + 1],
-    ['ls', rest.index],
-  );
-  chrome.tabs.create({ index, url, windowId });
-}
-
 export async function getBookmark(id: string) {
   return chrome.bookmarks.get(id).then(([tab]) => tab);
 }
@@ -536,12 +524,15 @@ export async function editTitle(
 }
 
 export async function addBookmark(
-  parentId = '1',
-  bookmarkCreateArg: chrome.bookmarks.BookmarkCreateArg | null = null,
-  silent = false,
+  parentId: string,
+  bookmarkCreateArg: chrome.bookmarks.BookmarkCreateArg,
+  dispatchEditing?: Dispatch,
 ) {
+  if (dispatchEditing) {
+    dispatchEditing('editingBookmark', true);
+  }
   const isSearching = hasClass($byTag('app-main'), 'searching');
-  const { title, url } = bookmarkCreateArg ?? await getCurrentTab();
+  const { title, url } = bookmarkCreateArg;
   const index = bookmarkCreateArg?.index ?? (parentId === '1' ? 0 : undefined);
   const params = {
     title: title!, url: url!, parentId, index,
@@ -564,10 +555,13 @@ export async function addBookmark(
     }
   }
   const $Leaf = $(`.folders ${cssid(id)}`) as Leaf || $(`.leafs ${cssid(id)}`) as Leaf;
-  if ($Leaf && !silent && (!isSearching || parentId === '1')) {
+  if ($Leaf && dispatchEditing && (!isSearching || parentId === '1')) {
     ($Leaf as any).scrollIntoViewIfNeeded();
     setAnimationClass('hilite')($Leaf);
-    $Leaf.editBookmarkTitle();
+    await $Leaf.editBookmarkTitle();
+  }
+  if (dispatchEditing) {
+    dispatchEditing('editingBookmark', false);
   }
   return true;
 }
@@ -669,13 +663,14 @@ export const panes = ['folders', 'leafs', 'tabs'] as const;
 export function addBookmarksFromTabs(
   tabs: Pick<chrome.tabs.Tab, 'title' | 'url'>[],
   bookmarkDestArg: chrome.bookmarks.BookmarkDestinationArg,
+  dispatch: Dispatch,
 ) {
-  const { parentId, index } = bookmarkDestArg;
-  const silent = tabs.length > 1;
+  const { parentId = '1', index } = bookmarkDestArg;
+  const dispatchEditing = tabs.length > 1 ? undefined : dispatch;
   const sourceList = index == null ? tabs : tabs.reverse();
   sourceList.forEach(({ title, url }) => addBookmark(parentId, {
     title, url, index, parentId,
-  }, silent));
+  }, dispatchEditing));
 }
 
 export async function addFolderFromTabs(
@@ -689,7 +684,7 @@ export async function addFolderFromTabs(
   if (!parentFolderId) {
     return;
   }
-  tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }, true));
+  tabs.forEach(({ title, url }) => addBookmark(parentFolderId, { title, url }));
   const $target = $(`.folders ${cssid(parentFolderId)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
   const $title = $target.firstElementChild as HTMLElement;

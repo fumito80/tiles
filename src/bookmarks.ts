@@ -1,9 +1,9 @@
 import {
-  $, $$, $$byClass, $byClass, addClass, rmClass, hasClass, addStyle, addBookmark, getBookmark,
-  setAnimationClass, editTitle, createNewTab, remeveBookmark, getMessageDeleteSelecteds,
+  $, $$, $$byClass, $byClass, addClass, rmClass, hasClass, addStyle, getBookmark,
+  setAnimationClass, editTitle, remeveBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
-  cssid, getCurrentTab, setEvents, setFavicon, switches,
+  cssid, setEvents, setFavicon, switches,
   delayMultiSelect, prop, setLocal, getLocal, htmlEscape,
 } from './common';
 import { dialog } from './dialogs';
@@ -38,7 +38,7 @@ export class Leaf extends MutiSelectableItem {
       dispatch('activateTab', { url: this.url, focused: true, bookmarkId: this.id }, true);
       return;
     }
-    this.openBookmark(options);
+    this.openBookmark(OpenBookmarkType.tab, dispatch);
   }
   get url() {
     const $anchor = this.firstElementChild as HTMLAnchorElement;
@@ -46,13 +46,15 @@ export class Leaf extends MutiSelectableItem {
     return url;
   }
   async openBookmark(
-    options: Options,
-    openType: keyof typeof OpenBookmarkType = OpenBookmarkType.tab,
+    openType: keyof typeof OpenBookmarkType,
+    dispatch?: Dispatch,
   ) {
     const { url } = await getBookmark(this.id);
     switch (openType) {
       case OpenBookmarkType.tab: {
-        createNewTab(options, url!);
+        if (dispatch) {
+          dispatch('addNewTab', url, true);
+        }
         break;
       }
       case OpenBookmarkType.window:
@@ -62,7 +64,9 @@ export class Leaf extends MutiSelectableItem {
         break;
       }
       case OpenBookmarkType.current:
-        getCurrentTab().then(({ id }) => chrome.tabs.update(id!, { url }));
+        if (dispatch) {
+          dispatch('replaceCurrentTab', url, true);
+        }
         break;
       default:
     }
@@ -84,24 +88,23 @@ export class Leaf extends MutiSelectableItem {
 export class HeaderLeafs extends MulitiSelectablePaneHeader {
   readonly paneName = 'bookmarks';
   private $pinBookmark!: HTMLElement;
-  private options!: Options;
   readonly multiDeletesTitle = 'Delete selected bookmarks';
   override init(settings: State['settings'], options: Options, $tmplMultiSelPane: MultiSelPane) {
     super.init(settings, options, $tmplMultiSelPane);
     this.$pinBookmark = $byClass('pin-bookmark', this)!;
-    this.$pinBookmark.addEventListener('click', () => addBookmark());
-    this.options = options;
   }
   override connect(store: Store) {
     super.connect(store);
+    this.$pinBookmark.addEventListener('click', () => store.dispatch('addBookmarkFromTab', { parentId: '1' }, true));
   }
-  menuClickHandler(e: MouseEvent) {
+  // eslint-disable-next-line class-methods-use-this
+  menuClickHandler(e: MouseEvent, dispatch: Dispatch) {
     const $target = e.target as HTMLElement;
     switch ($target.dataset.value) {
       case 'open-new-tab': {
         getSelecteds().reverse()
           .filter(($el): $el is Leaf => $el instanceof Leaf)
-          .forEach((leaf) => leaf.openBookmark(this.options, OpenBookmarkType.tab));
+          .forEach((leaf) => leaf.openBookmark(OpenBookmarkType.tab, dispatch));
         break;
       }
       case 'open-incognito':
@@ -148,16 +151,16 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
           break;
         }
         case 'open-new-tab':
-          $leaf.openBookmark(options);
+          $leaf.openBookmark(OpenBookmarkType.tab, dispatch);
           break;
         case 'open-in-current-tab':
-          $leaf.openBookmark(options, OpenBookmarkType.current);
+          $leaf.openBookmark(OpenBookmarkType.current, dispatch);
           break;
         case 'open-new-window':
-          $leaf.openBookmark(options, OpenBookmarkType.window);
+          $leaf.openBookmark(OpenBookmarkType.window);
           break;
         case 'open-incognito':
-          $leaf.openBookmark(options, OpenBookmarkType.incognito);
+          $leaf.openBookmark(OpenBookmarkType.incognito);
           break;
         case 'edit-title': {
           $leaf.editBookmarkTitle();

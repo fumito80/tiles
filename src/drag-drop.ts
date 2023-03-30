@@ -469,7 +469,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       && (dropPane === 'leafs' || dropAreaClass === 'drop-folder' || isRootFolder)
     ) {
       const tabs = await Promise.all(sourceIds.map(getTabInfo));
-      addBookmarksFromTabs(tabs, bookmarkDest);
+      addBookmarksFromTabs(tabs, bookmarkDest, store.dispatch);
       return;
     }
     // from tabs to window of tabs
@@ -488,7 +488,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       // to bookmarks/folder
       chrome.windows.get(windowId, { populate: true }).then(({ tabs }) => {
         if (dropPane === 'leafs') {
-          addBookmarksFromTabs(tabs!, bookmarkDest);
+          addBookmarksFromTabs(tabs!, bookmarkDest, store.dispatch);
           return;
         }
         const position = positions[dropAreaClass];
