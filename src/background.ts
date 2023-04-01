@@ -165,7 +165,7 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.getWindowModeInfo]: async () => {
     const { windowModeInfo } = await getLocal('windowModeInfo');
     setLocal({
-      windowModeInfo: { popupWindowId: undefined, currentWindowId: chrome.windows.WINDOW_ID_NONE },
+      windowModeInfo: { ...windowModeInfo, currentWindowId: chrome.windows.WINDOW_ID_NONE },
     });
     return windowModeInfo;
   },

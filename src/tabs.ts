@@ -23,6 +23,7 @@ import {
   PromiseInitTabs, SetCurrentWindow, State,
 } from './types';
 import { Leaf } from './bookmarks';
+import { dialog } from './dialogs';
 
 export async function smoothSroll<T extends HTMLElement>($target: T, scrollTop: number) {
   const $container = $target.parentElement! as HTMLElement;
@@ -959,7 +960,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }));
   }
   focusCurrentTab() {
-    const $currentWindow = this.getAllWindows().find((win) => win.isCurrent)!;
+    const $currentTab = this.getCurrentTab();
+    if (!$currentTab) {
+      return;
+    }
+    const $currentWindow = $currentTab.getParentWindow();
     if (!$currentWindow.closest('.tabs-wrap')) {
       setAnimationClass('hilite')($currentWindow);
       return;
@@ -1174,8 +1179,13 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     $win.reloadTabs(store.dispatch);
   }
   getCurrentTab() {
-    const $win = this.getAllWindows().find((win) => win.isCurrent);
-    return $win?.getTabs().find((tab) => tab.isCurrent);
+    const $currentTab = this.getAllWindows()
+      .find((win) => win.isCurrent)
+      ?.getTabs().find((tab) => tab.isCurrent);
+    if (!$currentTab) {
+      dialog.alert('Unable to identify a current window');
+    }
+    return $currentTab;
   }
   addNewTab({ newValue: url }: Changes<'addNewTab'>) {
     const $tab = this.getCurrentTab();
