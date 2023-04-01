@@ -14,6 +14,7 @@ import {
   EventListenerOptions,
   Settings,
   PromiseType,
+  BkgMessageTypes,
 } from './types';
 
 import {
@@ -780,14 +781,14 @@ export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
   };
 }
 
-export function getLocaleDate(dateOrSerial?: Date | number) {
-  if (dateOrSerial == null) {
+export function getLocaleDate(serialDate?: number) {
+  if (serialDate == null) {
     return (new Date()).toLocaleDateString();
   }
-  if (dateOrSerial < 1000) {
+  if (serialDate < 1000) {
     return 'Undated';
   }
-  return (new Date(dateOrSerial)).toLocaleDateString();
+  return (new Date(serialDate)).toLocaleDateString();
 }
 
 export function isDateEq(dateOrSerial1?: Date | number, dateOrSerial2?: Date | number) {
@@ -845,7 +846,7 @@ export function getColorFromBg(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
   const darkColor = '#222222';
   return colorPalette
-    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map((code) => [`#${code}`, getColorWhiteness(code)] as const)
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
 }
@@ -897,21 +898,28 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
     chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
     getPopup().then((popup) => {
       if (popup) {
-        chrome.windows.remove(popup.windowId);
+        postMessage({ type: BkgMessageTypes.terminateWindowMode });
       }
     });
   });
 }
 
 export function setWindowMode() {
+  let popupWindowId = chrome.windows.WINDOW_ID_NONE as number;
   chrome.action.onClicked.addListener(async (tab) => {
     const { settings, options } = await getLocal('settings', 'options');
     if (!options.windowMode) {
       return;
     }
-    const popup = await getPopup();
+    const popup = await chrome.windows.update(popupWindowId, { focused: true })
+      .catch(() => undefined);
     if (popup) {
-      chrome.windows.update(popup.windowId, { focused: true });
+      return;
+    }
+    const popup2 = await getPopup();
+    if (popup2) {
+      popupWindowId = popup2.windowId;
+      chrome.windows.update(popupWindowId, { focused: true });
       return;
     }
     const variables = makeThemeCss(options.colorPalette);
@@ -919,12 +927,10 @@ export function setWindowMode() {
     chrome.windows.create({
       url: `popup.html?css=${encoded}`,
       type: 'popup',
-      width: settings.windowWidth,
-      height: settings.windowHeight,
-      top: settings.windowTop,
-      left: settings.windowLeft,
+      ...settings.windowSize,
     }).then((win) => {
-      setLocal({ windowModeInfo: { currentWindowId: tab.windowId, popupWindowId: win.id } });
+      popupWindowId = win.id!;
+      setLocal({ windowModeInfo: { popupWindowId, currentWindowId: tab.windowId } });
     });
   });
 }
@@ -1068,3 +1074,7 @@ export function addQueryHistory() {
 }
 
 export const chromeEventFilter = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+
+export function getHtmlHistory(htmlHistory: string) {
+  return `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
+}

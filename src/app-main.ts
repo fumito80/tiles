@@ -5,7 +5,7 @@ import {
 } from './types';
 import {
   setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
-  chromeEventFilter, cssid, makeCss,
+  chromeEventFilter, cssid, makeCss, pick,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -207,12 +207,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   // eslint-disable-next-line class-methods-use-this
   resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>, _: any, __: any, store: StoreSub) {
     if (popupWindow.state === 'normal' && popupWindow.focused) {
-      updateSettings({
-        windowTop: popupWindow.top,
-        windowLeft: popupWindow.left,
-        windowWidth: popupWindow.width,
-        windowHeight: popupWindow.height,
-      });
+      const windowSize = pick('width', 'height', 'top', 'left')(popupWindow) as NonNullable<Settings['windowSize']>;
+      updateSettings({ windowSize });
       store.dispatch('updateWindowHeight', popupWindow.height);
     }
   }

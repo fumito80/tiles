@@ -20,7 +20,7 @@ import {
 } from './popup';
 import {
   CliMessageTypes, InitailTabs, MulitiSelectables, Options, PayloadUpdateWindow,
-  PromiseInitTabs, SetCurrentWindow, State, WindowModeInfo,
+  PromiseInitTabs, SetCurrentWindow, State,
 } from './types';
 import { Leaf } from './bookmarks';
 
@@ -1134,7 +1134,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       currentWin?.setCurrent(true);
     }
   }
-  setCurrentWindowId({ newValue: { windowId, isEventTrigger } }: Changes<'setCurrentWindowId'>) {
+  setCurrentWindowId({ newValue }: Changes<'setCurrentWindowId'>) {
+    const { windowId = chrome.windows.WINDOW_ID_NONE, isEventTrigger } = newValue ?? {};
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
       return;
     }
@@ -1155,7 +1156,13 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
   }
   async onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>, _: any, __: any, store: StoreSub) {
-    const tab = await chrome.tabs.get(tabId);
+    if (!tabId) {
+      return;
+    }
+    const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+    if (!tab) {
+      return;
+    }
     const $win = this.getAllWindows().find((win) => win.windowId === tab.windowId);
     if (!$win || !tab) {
       return;
@@ -1311,17 +1318,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     // Window Mode
-    postMessage({ type: CliMessageTypes.getWindowModeInfo }).then((windowModeInfo) => {
-      const { currentWindowId, popupWindowId } = windowModeInfo as unknown as WindowModeInfo;
+    postMessage({ type: CliMessageTypes.getWindowModeInfo }).then(({ currentWindowId }) => {
       if (currentWindowId && currentWindowId !== chrome.windows.WINDOW_ID_NONE) {
         this.setCurrentWindow(currentWindowId);
       }
-      // check exclusive runable 2 of 2
-      chrome.windows.getCurrent().then((win) => {
-        if (popupWindowId !== win.id) {
-          window.close();
-        }
-      });
     });
     chrome.windows.onCreated.addListener((win) => store.dispatch('onCreatedWindow', win, true), chromeEventFilter);
     chrome.windows.onRemoved.addListener((windowId) => store.dispatch('onRemovedWindow', windowId, true), chromeEventFilter);

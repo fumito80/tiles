@@ -66,10 +66,12 @@ export const defaultWidth = {
 export const initialSettings = {
   postPage: false,
   height: 500,
-  windowWidth: 800,
-  windowHeight: 500,
-  windowTop: undefined as number | undefined,
-  windowLeft: undefined as number | undefined,
+  windowSize: {
+    width: 800,
+    height: 500,
+    top: undefined as number | undefined,
+    left: undefined as number | undefined,
+  },
   paneWidth: {
     pane1: defaultWidth.leafs,
     pane2: defaultWidth.tabs,
@@ -199,6 +201,7 @@ export const initialState = {
     popupWindowId: undefined,
     currentWindowId: undefined,
   } as WindowModeInfo,
+  updatedHistory: Date.now(),
 };
 
 export type State = typeof initialState;
@@ -221,6 +224,7 @@ export const BkgMessageTypes = {
   applyOptions: 'bkg-apply-options',
   applyStyle: 'bkg-apply-style',
   tryChangePalette: 'bkg-try-change-palette',
+  terminateWindowMode: 'bkg-terminate-window-mode',
 } as const;
 
 export type ApplyStyle = {

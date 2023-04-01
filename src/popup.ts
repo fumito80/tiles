@@ -14,6 +14,7 @@ import {
   BkgMessageTypes,
   PayloadAction,
   ApplyStyle,
+  WindowModeInfo,
 } from './types';
 
 import {
@@ -151,10 +152,10 @@ function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
 
-function initWindowMode(options: Options) {
-  // check exclusive runable 1 of 2
+function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {
   chrome.windows.getCurrent().then((win) => {
-    if (win.type !== 'popup') {
+    // check exclusive runable
+    if (windowModeInfo.popupWindowId !== win.id) {
       window.close();
     }
   });
@@ -173,9 +174,10 @@ function init([{
   lastSearchWord,
   toggleWindowOrder,
   pinWindows,
+  windowModeInfo,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
   if (options.windowMode) {
-    initWindowMode(options);
+    initWindowMode(options, windowModeInfo);
   }
   const promiseInitHistory = getHistoryDataByWorker();
   const isSearching = options.restoreSearching && lastSearchWord.length > 1;
@@ -231,6 +233,7 @@ async function applyStyle({ payload }: PayloadAction<ApplyStyle>) {
 
 export const mapMessagesBtoP = {
   [BkgMessageTypes.applyStyle]: applyStyle,
+  [BkgMessageTypes.terminateWindowMode]: () => window.close() as unknown as Promise<void>,
 };
 
 setMessageListener(mapMessagesBtoP);

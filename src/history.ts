@@ -14,7 +14,7 @@ import {
 } from './client';
 import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
-  postMessage, propEq, when, whichClass, map, messages, pick, pipe, isDateEq,
+  postMessage, propEq, when, whichClass, map, messages, pick, pipe, isDateEq, getHtmlHistory,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
@@ -154,7 +154,6 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
 
 export class History extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'histories';
-  #options!: Options;
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
   #rowHeight!: number;
@@ -175,7 +174,6 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     htmlHistory: string,
     isSearching: boolean,
   ) {
-    this.#options = options;
     this.promiseInitHistory = promiseInitHistory;
     this.$rows = $byClass('rows', this)!;
     this.$fakeBottom = $byClass('v-scroll-fake-bottom', this)!;
@@ -186,11 +184,19 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       const lines = Array(historyHtmlCount).fill(line).join('');
       insertHTML('afterbegin', header + lines)(this.firstElementChild);
     } else {
-      insertHTML('afterbegin', htmlHistory)(this.firstElementChild);
+      const html = options.windowMode ? this.getHistoryHtmlWindowMode() : htmlHistory;
+      insertHTML('afterbegin', html)(this.firstElementChild);
     }
     const rowHeight = getRowHeight();
     this.#rowHeight = rowHeight;
     this.style.setProperty('max-height', `${this.#rowHeight * (historyHtmlCount - 2)}px`);
+  }
+  // eslint-disable-next-line class-methods-use-this
+  getHistoryHtmlWindowMode() {
+    const html = [...Array(historyHtmlCount)]
+      .map(() => makeHistory({ url: '', lastVisitTime: Date.now() }))
+      .join('');
+    return getHtmlHistory(html);
   }
   getSelecteds(dragElementIds: string[]) {
     const ids = dragElementIds.map((el) => el.split('-').at(1));
@@ -737,7 +743,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
   override connect(store: Store) {
     // Popup mode/Window mode both
     chrome.storage.local.onChanged.addListener((storage) => {
-      if (!storage.htmlHistory) {
+      if (!storage.updatedHistory) {
         return;
       }
       store.dispatch('updateHistory', undefined, true);

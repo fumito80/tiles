@@ -27,6 +27,8 @@ import {
   prop,
   addQueryHistory,
   setWindowMode,
+  getHtmlHistory,
+  map,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -70,12 +72,22 @@ const bookmarksEvents = [
 regsterChromeEvents(makeHtmlBookmarks)(bookmarksEvents);
 
 async function setHtmlHistory() {
+  const { options } = await getLocal('options');
+  if (options.windowMode) {
+    return setLocal({ updatedHistory: Date.now() });
+  }
   const historiesOrSessions = await Promise.all(getHistoryData())
     .then(addHeadersHistory)
     .then((data) => data.slice(0, historyHtmlCount));
-  const html = historiesOrSessions.map(makeHtmlHistory).join('');
-  const htmlHistory = `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${html}`;
+  const htmlHistory = pipe(map(makeHtmlHistory), (items) => items.join(''), getHtmlHistory)(historiesOrSessions);
   return setLocal({ htmlHistory });
+}
+
+async function removeWindowModeHistory(url?: string) {
+  if (url?.startsWith(chrome.runtime.getURL(''))) {
+    return chrome.history.deleteUrl({ url });
+  }
+  return undefined;
 }
 
 let timeoutUpdateHistory500: ReturnType<typeof setTimeout>;
@@ -87,7 +99,8 @@ function updateHistory500() {
 
 let timeoutUpdateHistory1500: ReturnType<typeof setTimeout>;
 
-function updateHistory1500() {
+function updateHistory1500({ url }: chrome.history.HistoryItem) {
+  removeWindowModeHistory(url);
   clearTimeout(timeoutUpdateHistory1500);
   timeoutUpdateHistory1500 = setTimeout(setHtmlHistory, 1500);
 }
@@ -125,13 +138,14 @@ async function init(storage: Pick<State, InitStateKeys>) {
   setHtmlHistory();
   setLocal({
     settings, clientState, options, lastSearchWord,
+  }).then(() => {
+    setPopupStyle(options);
+    setWindowMode();
   });
   regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
   regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
   regsterChromeEvents(updateHistory500)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
-  setPopupStyle(options);
-  setWindowMode();
 }
 
 getLocal(...initStateKeys).then(init);
@@ -151,7 +165,7 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.getWindowModeInfo]: async () => {
     const { windowModeInfo } = await getLocal('windowModeInfo');
     setLocal({
-      windowModeInfo: { ...windowModeInfo, currentWindowId: chrome.windows.WINDOW_ID_NONE },
+      windowModeInfo: { popupWindowId: undefined, currentWindowId: chrome.windows.WINDOW_ID_NONE },
     });
     return windowModeInfo;
   },
