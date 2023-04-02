@@ -48,7 +48,6 @@ import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { getSvgBrowserIcon } from './draw-svg';
 import { Dispatch } from './popup';
 
 // DOM operation
@@ -882,7 +881,7 @@ export function setThemeClass($appMain: AppMain, colorPalette: ColorPalette) {
 }
 
 export function setBrowserFavicon(colorPalette: ColorPalette) {
-  getSvgBrowserIcon(colorPalette)
+  postMessage({ type: CliMessageTypes.getSvgBrowserFavicon, payload: colorPalette })
     .then((svg) => svg.trim().replaceAll(/(>[\s\n]+<)/g, '><'))
     .then((svg) => base64Encode(svg))
     .then((base64svg) => {

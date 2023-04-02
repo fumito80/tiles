@@ -32,7 +32,7 @@ import {
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
-import { setToolbarIcon } from './draw-svg';
+import { getSvgBrowserIcon, setToolbarIcon } from './draw-svg';
 import addHeadersHistory from './add-headers-history';
 
 function digBookmarks(isNode = true) {
@@ -172,6 +172,9 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.restoreSession]: ({ payload }: PayloadAction<string>) => (
     (chrome.sessions.restore(payload) as unknown as Promise<chrome.sessions.Session>)
       .then(restoredSession)
+  ),
+  [CliMessageTypes.getSvgBrowserFavicon]: ({ payload }: PayloadAction<ColorPalette>) => (
+    getSvgBrowserIcon(payload)
   ),
   [CliMessageTypes.updateWindow]: ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
     const { windowId, updateInfo } = payload;

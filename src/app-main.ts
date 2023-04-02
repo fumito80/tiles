@@ -58,6 +58,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #randomPalettesIndex = 0;
   // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
+  #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey'>[] | undefined;
   init(options: Options, settings: Settings, isSearching: boolean) {
     this.#options = options;
     this.#settings = settings;
@@ -111,9 +112,18 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         this.#randomPalettes.push(randomPalette);
       }
     });
+    chrome.commands.getAll().then((commands) => {
+      this.#shortcuts = commands
+        .filter((cmd) => cmd.shortcut)
+        .map((cmd) => ({
+          key: cmd.shortcut!.replaceAll(/Ctrl|Alt|Shift|\+/g, ''),
+          ctrlKey: /Ctrl/.test(cmd.shortcut!),
+          altKey: /Alt/.test(cmd.shortcut!),
+          shiftKey: /Shift/.test(cmd.shortcut!),
+        }));
+    });
   }
-  // eslint-disable-next-line class-methods-use-this
-  async keydown(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
+  async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
     if (e.key === 'F2') {
       getLocal('options').then(({ options: { favColorPalettes, colorPalette } }) => {
         if (favColorPalettes.length === 0) {
@@ -134,21 +144,21 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       const palette = this.#randomPalettes[this.#randomPalettesIndex];
       changeColorTheme(palette);
     } else if (e.shiftKey && e.ctrlKey) {
-      const { bookmarks, tabs, histories } = await store.getStates('multiSelPanes');
-      if (bookmarks || tabs || histories) {
-        return;
+      const {
+        bookmarks, tabs, histories, all: alls,
+      } = states.multiSelPanes ?? {};
+      const all = !(bookmarks || tabs || histories || alls);
+      store.dispatch('multiSelPanes', { all });
+    } else {
+      const isShortcut = (e.key === 'Escape') || this.#shortcuts?.some((keys) => (
+        keys.key === e.key.toUpperCase()
+        && keys.altKey === e.altKey
+        && keys.ctrlKey === e.ctrlKey
+        && keys.shiftKey === e.shiftKey
+      ));
+      if (isShortcut) {
+        store.dispatch('focusWindow', undefined, true);
       }
-      store.dispatch('multiSelPanes', { all: true });
-    }
-  }
-  // eslint-disable-next-line class-methods-use-this
-  async keyup(_: any, e: KeyboardEvent, __: any, store: StoreSub) {
-    if (e.key === 'Shift') {
-      const { all } = await store.getStates('multiSelPanes');
-      if (!all) {
-        return;
-      }
-      store.dispatch('multiSelPanes', { all: false });
     }
   }
   searching(changes: Changes<'searching'>) {
@@ -254,10 +264,13 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         } as MulitiSelectables,
       }),
       keydownMain: makeAction({
+        initValue: {
+          key: '', shiftKey: false, ctrlKey: false, altKey: false,
+        } as Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey'>,
         target: this,
         eventType: 'keydown',
-        eventOnly: true,
-        noStates: true,
+        eventProcesser: pick('key', 'shiftKey', 'ctrlKey', 'altKey'),
+        force: true,
       }),
       keyupMain: makeAction({
         target: this,
@@ -282,6 +295,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       editingBookmark: makeAction({
         initValue: false,
       }),
+      focusWindow: {},
     };
   }
   // eslint-disable-next-line class-methods-use-this

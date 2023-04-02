@@ -1104,7 +1104,10 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   }
   async onCreatedWindow({ newValue: newWin }: Changes<'onCreatedWindow'>, _: any, states: States, store: StoreSub) {
     this.clearCurrentWindow();
-    const win = await chrome.windows.get(newWin.id!, { populate: true });
+    const win = await chrome.windows.get(newWin?.id!, { populate: true }).catch(() => undefined);
+    if (!win) {
+      return;
+    }
     const $window = document.importNode(this.$tmplWindow, true);
     const $win = $window.init(
       win.id!,
@@ -1212,11 +1215,19 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   async addBookmarkFromTab({ newValue }: Changes<'addBookmarkFromTab'>, _: any, __: any, store: StoreSub) {
     const $tab = this.getCurrentTab();
     if (!$tab) {
+      // chrome.windows.update(this.#windowId, { focused: false });
       return;
     }
     const { parentId = '1', index } = newValue ?? {};
     const tab = await chrome.tabs.get($tab.tabId);
     addBookmark(parentId, { ...tab, index }, store.dispatch);
+  }
+  focusWindow() {
+    const $tab = this.getCurrentTab();
+    if (!$tab) {
+      return;
+    }
+    chrome.windows.update($tab.windowId, { focused: true });
   }
   override actions() {
     return {

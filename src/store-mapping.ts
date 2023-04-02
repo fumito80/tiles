@@ -108,7 +108,6 @@ export function storeMapping(options: Options, components: Components) {
   store.subscribeContext($appMain)
     .map([$appMain, 'clickAppMain'], $appMain.clickAppMain)
     .map([$appMain, 'keydownMain'], $appMain.keydown)
-    .map([$appMain, 'keyupMain'], $appMain.keyup)
     .map([$formSearch, 'searching'], $appMain.searching);
 
   store.subscribeContext($leafs)
@@ -146,6 +145,7 @@ export function storeMapping(options: Options, components: Components) {
     .map([$leafs, 'mouseoverMenuTabsFind'], $tabs.mouseoverMenuTabsFind)
     .map([$leafs, 'mouseoutMenuTabsFind'], $tabs.clearFocus)
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
+    .map([$appMain, 'focusWindow'], $tabs.focusWindow)
     .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
 
   store.subscribeContext($history)
