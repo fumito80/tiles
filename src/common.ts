@@ -904,37 +904,6 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
   });
 }
 
-export function setWindowMode() {
-  let popupWindowId = chrome.windows.WINDOW_ID_NONE as number;
-  chrome.action.onClicked.addListener(async (tab) => {
-    const { settings, options } = await getLocal('settings', 'options');
-    if (!options.windowMode) {
-      return;
-    }
-    const popup = await chrome.windows.update(popupWindowId, { focused: true })
-      .catch(() => undefined);
-    if (popup) {
-      return;
-    }
-    const popup2 = await getPopup();
-    if (popup2) {
-      popupWindowId = popup2.windowId;
-      chrome.windows.update(popupWindowId, { focused: true });
-      return;
-    }
-    const variables = makeThemeCss(options.colorPalette);
-    const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
-    chrome.windows.create({
-      url: `popup.html?css=${encoded}`,
-      type: 'popup',
-      ...settings.windowSize,
-    }).then((win) => {
-      popupWindowId = win.id!;
-      setLocal({ windowModeInfo: { popupWindowId, currentWindowId: tab.windowId } });
-    });
-  });
-}
-
 export async function makeColorPalette() {
   const palettes: ColorPalette[] = await fetch('./color-palette1.json').then((resp) => resp.json());
   const base = palettes

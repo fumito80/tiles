@@ -8,4 +8,8 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
   },
   devtool: 'inline-source-map',
+  watchOptions: {
+    poll: true,
+    ignored: [path.resolve(__dirname, 'src/background.ts')],
+  },
 };

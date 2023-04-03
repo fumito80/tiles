@@ -26,9 +26,10 @@ import {
   getHistoryData,
   prop,
   addQueryHistory,
-  setWindowMode,
   getHtmlHistory,
   map,
+  getPopup,
+  makeThemeCss,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -140,7 +141,6 @@ async function init(storage: Pick<State, InitStateKeys>) {
     settings, clientState, options, lastSearchWord,
   }).then(() => {
     setPopupStyle(options);
-    setWindowMode();
   });
   regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
   regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
@@ -149,6 +149,27 @@ async function init(storage: Pick<State, InitStateKeys>) {
 }
 
 getLocal(...initStateKeys).then(init);
+
+chrome.action.onClicked.addListener(async (tab) => {
+  const { settings, options } = await getLocal('settings', 'options');
+  if (!options.windowMode) {
+    return;
+  }
+  const popup = await getPopup();
+  if (popup) {
+    chrome.windows.update(popup.windowId, { focused: true });
+    return;
+  }
+  const variables = makeThemeCss(options.colorPalette);
+  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
+  chrome.windows.create({
+    url: `popup.html?css=${encoded}`,
+    type: 'popup',
+    ...settings.windowSize,
+  }).then((win) => {
+    setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: tab.windowId } });
+  });
+});
 
 // Messagings popup to background
 

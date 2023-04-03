@@ -8,7 +8,7 @@ const WebpackNotifierPlugin = require('webpack-notifier');
 module.exports = {
   entry: {
     popup: './src/popup.ts',
-    background: './src/background.ts',
+    // background: './src/background.ts',
     'worker-history': './src/worker-history.ts',
     settings: './src/settings.ts',
     'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
@@ -22,6 +22,7 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
+        exclude: /background\.ts$/,
         use: [
           {
             loader: 'ts-loader',
@@ -43,9 +44,6 @@ module.exports = {
   },
   target: ['web', 'es2021'],
   cache: true,
-  watchOptions: {
-    poll: true,
-  },
   plugins: [
     new MiniCssExtractPlugin({
       filename: '[name].css',
