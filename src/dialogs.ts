@@ -13,16 +13,24 @@ const dialogStyle = `
     color: #222222;
     max-width: calc(100vw * 2 / 3);
   }
+  input,
   textarea {
     display: block;
     min-width: calc(100vw * 2 / 3);
-    min-height: 1rem;
-    height: 6rem;
-    margin-top: 0.375rem;
+    margin-top: 0.3rem;
     padding: 0.375rem;
     border: 2px solid darkgray;
     border-radius: 0.375rem;
   }
+  input {
+    margin-bottom: 0.3rem;
+  }
+  textarea {
+    min-height: 1rem;
+    height: 6rem;
+  }
+  input:focus,
+  input:active,
   textarea:focus,
   textarea:active {
     border-color: #1a73e8;
@@ -35,7 +43,7 @@ const dialogStyle = `
     position: relative;
     border: 0;
     border-radius: 0.2rem;
-    padding: 3px 8px;
+    padding: 0.375rem 1.0rem;
   }
   button:hover {
     background-color: #d6d6d6;
@@ -58,7 +66,9 @@ export class DialogContent extends HTMLElement {
   private shadow: ShadowRoot;
   private $title: HTMLDivElement;
   private $text: HTMLDivElement;
-  private $input: HTMLTextAreaElement;
+  private $name: HTMLInputElement;
+  private $captionUrl: HTMLDivElement;
+  private $url: HTMLTextAreaElement;
   private $cancelButton: HTMLButtonElement;
   private okListener!: () => void;
   private cancelListener!: () => void;
@@ -69,32 +79,43 @@ export class DialogContent extends HTMLElement {
     style.textContent = dialogStyle;
     this.$title = this.shadow.appendChild(document.createElement('h4'));
     this.$text = this.shadow.appendChild(document.createElement('div'));
-    this.$input = this.shadow.appendChild(document.createElement('textarea'));
+    this.$name = this.shadow.appendChild(document.createElement('input'));
+    this.$name.type = 'text';
+    this.$captionUrl = this.shadow.appendChild(document.createElement('div'));
+    this.$url = this.shadow.appendChild(document.createElement('textarea'));
     this.$cancelButton = this.shadow.appendChild(document.createElement('button'));
     this.$cancelButton.textContent = 'Cancel';
     this.$cancelButton.addEventListener('click', () => this.cancelListener());
     const $okButton = this.shadow.appendChild(document.createElement('button'));
     $okButton.textContent = 'OK';
     $okButton.addEventListener('click', () => this.okListener());
-    this.$input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        this.okListener();
-      }
-    });
+    this.$url.addEventListener('keydown', this.ok.bind(this));
+    this.$name.addEventListener('keydown', this.ok.bind(this));
   }
   setConfig(
     text: string,
     cancel = false,
+    captionTitle = '',
     title = '',
-    inputText = undefined as string | undefined,
-    placeholder = '',
+    captionUrl = '',
+    url = '',
   ) {
     this.$text.innerHTML = text;
-    this.$title.innerHTML = title;
+    this.$title.innerHTML = captionTitle;
     this.$cancelButton.style.setProperty('display', cancel ? '' : 'none');
-    this.$input.style.setProperty('display', inputText != null ? '' : 'none');
-    this.$input.value = inputText ?? '';
-    this.$input.setAttribute('placeholder', placeholder ?? '');
+    this.$name.style.setProperty('display', captionTitle ? '' : 'none');
+    this.$name.value = title;
+    this.$name.setAttribute('placeholder', title);
+    this.$captionUrl.style.setProperty('display', captionUrl ? '' : 'none');
+    this.$captionUrl.innerHTML = captionUrl;
+    this.$url.style.setProperty('display', captionUrl ? '' : 'none');
+    this.$url.value = url;
+    this.$url.setAttribute('placeholder', url);
+  }
+  ok(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      this.okListener();
+    }
   }
   setOkButton(listener: () => void) {
     this.okListener = listener;
@@ -102,8 +123,11 @@ export class DialogContent extends HTMLElement {
   setCancelButton(listener: () => void) {
     this.cancelListener = listener;
   }
-  get inputText() {
-    return this.$input.value.trim();
+  get input() {
+    return {
+      name: this.$name.value.trim(),
+      url: this.$url.value.trim(),
+    };
   }
 }
 export default class ModalDialog extends HTMLDialogElement {
@@ -131,11 +155,11 @@ export default class ModalDialog extends HTMLDialogElement {
   clickCancel() {
     this.terminate(false);
   }
-  async setConfig(msg: string, cancel = false, title = '', inputText = undefined as string | undefined, placeholder = '') {
+  async setConfig(msg: string, cancel = false, captionTitle = '', title = '', captionUrl = '', url = '') {
     if (this.open) {
       return undefined;
     }
-    this.dialogContent.setConfig(msg, cancel, title, inputText, placeholder);
+    this.dialogContent.setConfig(msg, cancel, captionTitle, title, captionUrl, url);
     this.showModal();
     return new Promise<boolean>((resolve) => {
       this.resolve = resolve as (value?: boolean) => void;
@@ -147,9 +171,9 @@ export default class ModalDialog extends HTMLDialogElement {
   async confirm(msg: string) {
     return this.setConfig(msg, true);
   }
-  async inputText(msg: string, title = '', inputText = '', placeholder = '') {
-    return this.setConfig(msg, true, title, inputText, placeholder)
-      .then((ret) => (ret ? this.dialogContent.inputText : undefined));
+  async editBookmark(title: string, name: string, url: string) {
+    return this.setConfig('Name', true, title, name, 'URL', url)
+      .then((ret) => (ret ? this.dialogContent.input : undefined));
   }
 }
 

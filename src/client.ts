@@ -541,14 +541,16 @@ export async function addBookmark(
   const params = {
     title: title!, url: url!, parentId, index,
   };
-  const { id } = await chrome.bookmarks.create(params).catch(() => {
-    if (dispatchEditing) {
-      dispatchEditing('editingBookmark', false);
-    }
-    return { id: undefined };
-  });
-  if (!id) {
-    return false;
+  const { id, message } = await chrome.bookmarks.create(params)
+    .then((resp) => ({ id: resp.id, message: undefined }))
+    .catch((reason) => {
+      if (dispatchEditing) {
+        dispatchEditing('editingBookmark', false);
+      }
+      return { id: '' as string, message: reason.message as string };
+    });
+  if (message) {
+    return message;
   }
   const htmlLeaf = makeLeaf({ id, ...params });
   if (parentId === '1') {
@@ -572,17 +574,26 @@ export async function addBookmark(
     setAnimationClass('hilite')($Leaf);
     await $Leaf.editBookmarkTitle(dispatchEditing);
   }
-  return true;
+  return undefined;
 }
 
-export async function addBookmarkFromText(parentId = '1', url = '') {
-  const inputUrl = await dialog.inputText('URL', 'Add bookmark', url);
-  if (inputUrl) {
-    const success = await addBookmark(parentId, { url: inputUrl, title: inputUrl }).catch(
-      (reason) => dialog.alert(reason.message).then(() => false),
-    );
+export async function addBookmarkFromText(parentId = '1', url = '', name = '') {
+  const input = await dialog.editBookmark('Add bookmark', name, url);
+  if (input) {
+    if (!input.url) {
+      addBookmarkFromText(parentId, input.url, input.name);
+      return;
+    }
+    const title = input.name || name || input.url;
+    const success = await addBookmark(parentId, { url: input.url, title })
+      .then((message) => {
+        if (message) {
+          return dialog.alert(message).then(() => false);
+        }
+        return true;
+      });
     if (!success) {
-      addBookmarkFromText(parentId, inputUrl);
+      addBookmarkFromText(parentId, input.url, input.name);
     }
   }
 }

@@ -2,7 +2,7 @@
 
 import { getBookmarksBase } from './bookmarks';
 import {
-  $, $$byClass, $byClass, addAttr, addFolder, addStyle, editTitle, hasClass,
+  $, $$byClass, $byClass, addAttr, addBookmarkFromText, addFolder, addStyle, editTitle, hasClass,
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
@@ -79,11 +79,15 @@ export class Folders extends Bookmarks implements IPubSubElement {
             store.dispatch('addBookmarkFromTab', { parentId: $folder.id });
             break;
           }
+          case 'add-bookmark-text': {
+            addBookmarkFromText($folder.id);
+            break;
+          }
           case 'add-folder': {
             addFolder(store.dispatch, $folder.id);
             break;
           }
-          case 'edit': {
+          case 'rename': {
             const $title = $('.title > div', $folder)!;
             const title = await editTitle($title, $folder.id, store.dispatch);
             if (!title) {

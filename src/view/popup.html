@@ -121,18 +121,15 @@
         <div is="header-leafs" class="pane-header header-leafs">
             <i class="icon-bookmarks" title="BOOKMARKS"></i>
             <div class="query-wrap"></div>
-            <button class="pin-bookmark" title="Click to bookmark current page, or works as drag & drop current tab"
-                type="button" draggable="true"></button>
+            <button class="pin-bookmark" title="Click to bookmark current page or works as drag & drop it" type="button"
+                draggable="true"></button>
             <div class="menu-button">
                 <button class="main-menu-button" type="button">
                     <i class="icon-fa-ellipsis-v"></i>
                 </button>
                 <div class="main-menu" role="menu">
-                    <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add bookmark
-                        current page</div>
-                    <div role="menuitem" data-value="add-bookmark-text"><i class="icon-clipboard"></i>Add bookmark
-                        from
-                        URL text</div>
+                    <div role="menuitem" data-value="add-bookmark-text"><i class="icon-bookmarks"></i>Add new bookmark
+                    </div>
                     <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
                     <hr aria-hidden="true">
                     <div role="menuitem" class="include-url" title="By default, search only title"><i
@@ -211,20 +208,21 @@
                 </div>
             </div>
             <hr aria-hidden="true">
-            <div role="menuitem" data-value="edit-title"><i class="icon-fa-edit"></i>Edit title</div>
-            <div role="menuitem" data-value="edit-url"><i class="icon-fa-link"></i>Edit URL</div>
+            <div role="menuitem" data-value="edit-title"><i class="icon-rename"></i>Rename</div>
+            <div role="menuitem" data-value="edit-url"><i class="icon-edit"></i>Edit</div>
             <hr aria-hidden="true">
             <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
         </div>
         <div class="folder-menu" role="menu">
-            <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Add bookmark current page</div>
+            <div role="menuitem" data-value="add-bookmark"><i class="icon-fa-star-o"></i>Bookmark current tab</div>
+            <div role="menuitem" data-value="add-bookmark-text"><i class="icon-bookmarks"></i>Add new bookmark</div>
             <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
             <hr aria-hidden="true">
             <div role="menuitem" data-value="open-all"><i class="icon-new-window"></i>Open all in new window</div>
             <div role="menuitem" data-value="open-all-incognito"><i class="icon-incognito"></i>Open all in incognito
                 window</div>
             <hr aria-hidden="true">
-            <div role="menuitem" data-value="edit"><i class="icon-fa-edit"></i>Edit title</div>
+            <div role="menuitem" data-value="rename"><i class="icon-rename"></i>Rename</div>
             <hr aria-hidden="true">
             <div role="menuitem" data-value="remove"><i class="icon-fa-trash-alt"></i>Delete</div>
         </div>

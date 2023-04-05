@@ -123,16 +123,17 @@ async function updateUrl(
   url: string,
   title: string,
   placeholder: string,
-): Promise<string> {
-  const result = await dialog.inputText(title, 'Edit URL of bookmark', url, placeholder);
+): Promise<{ name: string, url: string }> {
+  const result = await dialog.editBookmark('Edit bookmark', title, url);
   if (!result) {
     throw new Error();
   }
-  const success = await chrome.bookmarks.update(bookmarkId, { url: result })
+  const bookmarkChangesArg = { url: result.url || url, title: result.name || title };
+  const success = await chrome.bookmarks.update(bookmarkId, bookmarkChangesArg)
     .then(() => true)
     .catch((reason) => dialog.alert(reason.message).then(() => false));
   if (!success) {
-    return updateUrl(bookmarkId, result, title, placeholder);
+    return updateUrl(bookmarkId, result.url, result.name, placeholder);
   }
   return result;
 }
@@ -171,7 +172,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
           $leaf.classList.add('selected');
           await updateUrl($leaf.id, url, title, url)
             .then((result) => {
-              $leaf.updateAnchor({ title, url: result });
+              $leaf.updateAnchor({ title: result.name, url: result.url });
               setAnimationClass('hilite')($leaf);
             })
             .catch(() => {});

@@ -1353,7 +1353,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     let timerOnActivated: ReturnType<typeof setTimeout>;
     chrome.tabs.onActivated.addListener(({ tabId }) => {
       clearTimeout(timerOnActivated);
-      timerOnActivated = setTimeout(() => store.dispatch('onActivatedTab', tabId, true), 100);
+      timerOnActivated = setTimeout(() => store.dispatch('onActivatedTab', tabId, true), 200);
     });
   }
 }
