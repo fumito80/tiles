@@ -58,7 +58,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #randomPalettesIndex = 0;
   // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
-  #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey'>[] | undefined;
+  #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>[] | undefined;
   init(options: Options, settings: Settings, isSearching: boolean) {
     this.#options = options;
     this.#settings = settings;
@@ -116,10 +116,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       this.#shortcuts = commands
         .filter((cmd) => cmd.shortcut)
         .map((cmd) => ({
-          key: cmd.shortcut!.replaceAll(/Ctrl|Alt|Shift|\+/g, ''),
+          key: cmd.shortcut!.replaceAll(/Ctrl|Alt|Shift|Command|\+/g, ''),
           ctrlKey: /Ctrl/.test(cmd.shortcut!),
           altKey: /Alt/.test(cmd.shortcut!),
           shiftKey: /Shift/.test(cmd.shortcut!),
+          metaKey: /Command/.test(cmd.shortcut!),
         }));
     });
   }
@@ -150,11 +151,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       const all = !(bookmarks || tabs || histories || alls);
       store.dispatch('multiSelPanes', { all });
     } else {
-      const isShortcut = (e.key === 'Escape') || this.#shortcuts?.some((keys) => (
+      const isShortcut = (e.key === 'Escape' && !e.shiftKey) || this.#shortcuts?.some((keys) => (
         keys.key === e.key.toUpperCase()
         && keys.altKey === e.altKey
         && keys.ctrlKey === e.ctrlKey
         && keys.shiftKey === e.shiftKey
+        && keys.metaKey === e.metaKey
       ));
       if (isShortcut) {
         store.dispatch('focusWindow', undefined, true);
@@ -265,11 +267,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }),
       keydownMain: makeAction({
         initValue: {
-          key: '', shiftKey: false, ctrlKey: false, altKey: false,
-        } as Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey'>,
+          key: '', shiftKey: false, ctrlKey: false, altKey: false, metaKey: false,
+        } as Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>,
         target: this,
         eventType: 'keydown',
-        eventProcesser: pick('key', 'shiftKey', 'ctrlKey', 'altKey'),
+        eventProcesser: pick('key', 'shiftKey', 'ctrlKey', 'altKey', 'metaKey'),
         force: true,
       }),
       keyupMain: makeAction({

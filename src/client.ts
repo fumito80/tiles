@@ -24,7 +24,6 @@ import {
   whichClass,
   cssid,
   curry,
-  cbToResolve,
   getLocal,
   setLocal,
   htmlEscape,
@@ -466,6 +465,7 @@ export async function editTitle(
   dispatch: Dispatch,
   newFolder = false,
   isBookmark = false,
+  delay = 100,
 ) {
   addStyle('text-overflow', 'unset')($title);
   const currentTitle = $title.textContent!;
@@ -523,7 +523,7 @@ export async function editTitle(
         setAnimationFolder('hilite')($title.parentElement?.parentElement);
         return resolve(title);
       }, { once: true });
-    }, 100);
+    }, delay);
   });
 }
 
@@ -543,7 +543,7 @@ export async function addBookmark(
   };
   const { id } = await chrome.bookmarks.create(params).catch(() => {
     if (dispatchEditing) {
-      dispatchEditing('editingBookmark', true);
+      dispatchEditing('editingBookmark', false);
     }
     return { id: undefined };
   });
@@ -613,14 +613,21 @@ export function selectFolder(
 export async function addFolder(
   dispatch: Dispatch,
   parentId = '1',
-  title = '',
+  title = 'New Folder',
   indexIn: number | undefined = undefined,
   destId: string = '',
   position: InsertPosition = 'afterbegin',
 ) {
   const index = indexIn ?? (parentId === '1' ? 0 : undefined);
-  const params = { title: title || 'Enter title', parentId, index };
-  const { id } = await cbToResolve(curry(chrome.bookmarks.create)(params));
+  const params = { title, parentId, index };
+  dispatch('editingBookmark', true);
+  const { id } = await chrome.bookmarks.create(params).catch(() => {
+    dispatch('editingBookmark', false);
+    return { id: undefined };
+  });
+  if (!id) {
+    return undefined;
+  }
   const htmlNode = makeNode({
     id, children: '', length: 0, ...params,
   });
@@ -657,7 +664,14 @@ export async function addFolder(
   const $target = $(`.folders ${cssid(id)} > .marker > .title`)!;
   setAnimationFolder('hilite')($target.parentElement);
   return new Promise<string | void>((resolve) => {
-    editTitle($target.firstElementChild as HTMLElement, id, dispatch, !title).then((retitled) => {
+    editTitle(
+      $target.firstElementChild as HTMLElement,
+      id,
+      dispatch,
+      !title,
+      false,
+      200,
+    ).then((retitled) => {
       if (!retitled && !title) {
         removeFolder($target.parentElement!.parentElement!);
         resolve();
