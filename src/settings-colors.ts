@@ -1,4 +1,4 @@
-import { ColorInfo, ColorPalette } from './types';
+import type { ColorInfo, ColorPalette } from './types';
 
 import {
   getColorWhiteness,

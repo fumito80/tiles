@@ -6,10 +6,9 @@ import {
   openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
-import {
-  IPubSubElement, makeAction, Store,
-} from './popup';
-import { Options } from './types';
+import { makeAction, Store } from './popup';
+import type { IPubSubElement } from './popup';
+import type { Options } from './types';
 
 function onClickAngle($target: HTMLElement) {
   const $folder = $target.parentElement?.parentElement!;

@@ -8,7 +8,7 @@ import { FormSearch } from './search';
 import { HeaderTabs, Tabs } from './tabs';
 import DragAndDropEvents from './drag-drop';
 import { registerActions } from './store';
-import { Options } from './types';
+import type { Options } from './types';
 
 type Components = {
   $appMain: AppMain,

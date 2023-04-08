@@ -1,4 +1,4 @@
-import { MyHistoryItem } from './types';
+import type { MyHistoryItem } from './types';
 import {
   makeStyleIcon, htmlEscape, getLocaleDate, getShortTime, decodeUrl,
 } from './common';

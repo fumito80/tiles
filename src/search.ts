@@ -1,5 +1,6 @@
-import {
-  Changes, Dispatch, IPubSubElement, makeAction, Store, StoreSub,
+import { makeAction } from './popup';
+import type {
+  Changes, Dispatch, IPubSubElement, Store, StoreSub,
 } from './popup';
 import {
   addListener,
@@ -12,7 +13,7 @@ import {
   selectFolder,
   hasClass,
 } from './client';
-import { Options, Panes } from './types';
+import type { Options, Panes } from './types';
 
 export function getReFilter(value: string, global = false) {
   if (!value) {

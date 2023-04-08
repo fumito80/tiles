@@ -12,12 +12,14 @@ import {
   getSelecteds,
   MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
-import { ISearchable, SearchParams } from './search';
+import type { ISearchable, SearchParams } from './search';
 import {
-  ISubscribeElement, makeAction, Store, Dispatch, States, Changes, StoreSub,
+  makeAction, Store, Dispatch, States, Changes, StoreSub,
 } from './popup';
-import {
-  AbstractConstructor, MulitiSelectables, OpenBookmarkType, Options, State,
+import type { ISubscribeElement } from './popup';
+import { OpenBookmarkType } from './types';
+import type {
+  AbstractConstructor, MulitiSelectables, Options, State,
 } from './types';
 
 export class Leaf extends MutiSelectableItem {

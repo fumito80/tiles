@@ -2,16 +2,15 @@
 
 import './view/popup.scss';
 
-import {
+import { BkgMessageTypes, CliMessageTypes } from './types';
+import type {
   HtmlBookmarks,
   Settings,
   State,
   ClientState,
   StoredElements,
   PromiseInitTabs,
-  CliMessageTypes,
   ColorPalette,
-  BkgMessageTypes,
   PayloadAction,
   ApplyStyle,
   WindowModeInfo,
@@ -56,9 +55,8 @@ import { HeaderHistory, History, HistoryItem } from './history';
 import { MultiSelPane, PopupMenu } from './multi-sel-pane';
 import ModalDialog, { DialogContent } from './dialogs';
 import { storeMapping } from './store-mapping';
-import {
-  ActionValue, initComponents, IPublishElement, makeAction,
-} from './store';
+import { initComponents, makeAction } from './store';
+import type { ActionValue, IPublishElement } from './store';
 
 export { makeAction, IPublishElement };
 
@@ -176,6 +174,25 @@ function init([{
   pinWindows,
   windowModeInfo,
 }, promiseInitTabs]: [State, PromiseInitTabs]) {
+  customElements.define('app-main', AppMain);
+  customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
+  customElements.define('body-leafs', Leafs, { extends: 'div' });
+  customElements.define('body-folders', Folders, { extends: 'div' });
+  customElements.define('open-tab', OpenTab);
+  customElements.define('open-window', Window);
+  customElements.define('window-header', WindowHeader);
+  customElements.define('body-tabs', Tabs, { extends: 'div' });
+  customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
+  customElements.define('form-search', FormSearch, { extends: 'form' });
+  customElements.define('body-history', History, { extends: 'div' });
+  customElements.define('header-history', HeaderHistory, { extends: 'div' });
+  customElements.define('history-item', HistoryItem);
+  customElements.define('bm-leaf', Leaf);
+  customElements.define('multi-sel-pane', MultiSelPane);
+  customElements.define('popup-menu', PopupMenu);
+  customElements.define('dialog-content', DialogContent);
+  customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
+
   if (options.windowMode) {
     initWindowMode(options, windowModeInfo);
   }
@@ -242,25 +259,6 @@ postMessage({ type: CliMessageTypes.initialize, payload: '(^^♪' })
   // eslint-disable-next-line no-console
   .then(console.info)
   .then(() => chrome.runtime.connect({ name: 'popup' }));
-
-customElements.define('app-main', AppMain);
-customElements.define('header-leafs', HeaderLeafs, { extends: 'div' });
-customElements.define('body-leafs', Leafs, { extends: 'div' });
-customElements.define('body-folders', Folders, { extends: 'div' });
-customElements.define('open-tab', OpenTab);
-customElements.define('open-window', Window);
-customElements.define('window-header', WindowHeader);
-customElements.define('body-tabs', Tabs, { extends: 'div' });
-customElements.define('header-tabs', HeaderTabs, { extends: 'div' });
-customElements.define('form-search', FormSearch, { extends: 'form' });
-customElements.define('body-history', History, { extends: 'div' });
-customElements.define('header-history', HeaderHistory, { extends: 'div' });
-customElements.define('history-item', HistoryItem);
-customElements.define('bm-leaf', Leaf);
-customElements.define('multi-sel-pane', MultiSelPane);
-customElements.define('popup-menu', PopupMenu);
-customElements.define('dialog-content', DialogContent);
-customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
 
 export type Store = ReturnType<typeof init>;
 export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;

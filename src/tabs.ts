@@ -14,12 +14,14 @@ import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
 } from './common';
-import { ISearchable, SearchParams } from './search';
-import {
-  Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
+import type { ISearchable, SearchParams } from './search';
+import { makeAction } from './popup';
+import type {
+  Changes, Dispatch, IPubSubElement, ISubscribeElement, States, Store, StoreSub,
 } from './popup';
-import {
-  CliMessageTypes, InitailTabs, MulitiSelectables, Options, PayloadUpdateWindow,
+import { CliMessageTypes } from './types';
+import type {
+  InitailTabs, MulitiSelectables, Options, PayloadUpdateWindow,
   PromiseInitTabs, SetCurrentWindow, State,
 } from './types';
 import { Leaf } from './bookmarks';

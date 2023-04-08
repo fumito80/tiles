@@ -1,6 +1,8 @@
 /* eslint-disable no-redeclare */
 
-import {
+import { pastMSec, BkgMessageTypes } from './types';
+
+import type {
   PayloadAction,
   MapMessagesPtoB,
   MapMessagesBtoP,
@@ -10,11 +12,9 @@ import {
   Options,
   ColorPalette,
   HTMLElementEventType,
-  pastMSec,
   EventListenerOptions,
   Settings,
   PromiseType,
-  BkgMessageTypes,
 } from './types';
 
 import {

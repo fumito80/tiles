@@ -6,10 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "webpack --config webpack.dev.js",
-    "watch": "webpack --config webpack.dev.js -w && vite build --config vite.config.dev.js",
+    "watch:vite": "vite build --config=vite.config.dev.js -w",
+    "watch:webpack": "vite build --config=vite.config.dev.js && webpack --config webpack.dev.js -w",
+    "build:worker": "vite build --config=vite.config.worker-history.js & vite build --config=vite.config.monaco-editor-worker.js & vite build --config vite.config.monaco-css-worker.js",
     "build": "vite build --config=vite.config.js && webpack --config webpack.prod.js",
-    "promo": "webpack --config ./promo/webpack.js -w",
-    "bkg": "vite build --config vite.config.dev.js -w"
+    "promo": "webpack --config ./promo/webpack.js -w"
   },
   "repository": {
     "type": "git",

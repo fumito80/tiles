@@ -1,4 +1,4 @@
-import { State, InsertPosition } from './types';
+import type { State, InsertPosition } from './types';
 import {
   $, $byClass, addClass, hasClass, rmClass,
 } from './client';

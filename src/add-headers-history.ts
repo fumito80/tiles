@@ -1,4 +1,4 @@
-import { MyHistoryItem } from './types';
+import type { MyHistoryItem } from './types';
 
 function getSessionTab({ url, title, sessionId }: chrome.tabs.Tab, lastVisitTime?: number) {
   return {

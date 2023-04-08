@@ -35,8 +35,9 @@ import {
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
-import {
-  Dispatch, IPubSubElement, makeAction, Store, StoreSub,
+import { makeAction } from './popup';
+import type {
+  Dispatch, IPubSubElement, Store, StoreSub,
 } from './popup';
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';

@@ -47,7 +47,7 @@ import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { Dispatch } from './popup';
+import type { Dispatch } from './popup';
 
 // DOM operation
 

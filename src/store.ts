@@ -1,4 +1,4 @@
-import {
+import type {
   EventListenerOptions,
   HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
 } from './types';
@@ -6,7 +6,7 @@ import { $, $byClass, $byTag } from './client';
 import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
-import { IPubSubElement, ISubscribeElement, States } from './popup';
+import type { IPubSubElement, ISubscribeElement, States } from './popup';
 
 type Action<
   A extends keyof HTMLElementEventType,

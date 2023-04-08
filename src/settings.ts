@@ -1,8 +1,7 @@
 import './view/settings.scss';
 import * as bootstrap from 'bootstrap';
-import {
-  State, ColorPalette, BkgMessageTypes, CliMessageTypes,
-} from './types';
+import { BkgMessageTypes, CliMessageTypes } from './types';
+import type { State, ColorPalette } from './types';
 import { CustomInputElement } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 import { setToolbarIcon } from './draw-svg';

@@ -1,4 +1,4 @@
-import { Options } from './types';
+import type { Options } from './types';
 import { getLocal, getGridColStart } from './common';
 import {
   $, $$byClass, $byClass,

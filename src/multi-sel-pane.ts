@@ -1,12 +1,13 @@
-import {
+import type {
   ColorPalette, Options, Panes, State,
 } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
   addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
 } from './client';
-import {
-  Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
+import { makeAction } from './popup';
+import type {
+  Changes, Dispatch, IPubSubElement, ISubscribeElement, Store, StoreSub,
 } from './popup';
 import { getLocal, pick } from './common';
 

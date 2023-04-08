@@ -1,9 +1,10 @@
-import {
-  CliMessageTypes, Collection, historyHtmlCount, MulitiSelectables,
-  MyHistoryItem, Options, pastMSec,
+import { CliMessageTypes, historyHtmlCount, pastMSec } from './types';
+import type {
+  Collection, MulitiSelectables, MyHistoryItem, Options,
 } from './types';
-import {
-  Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
+import { makeAction } from './popup';
+import type {
+  Changes, Dispatch, IPubSubElement, States, Store, StoreSub,
 } from './popup';
 import {
   $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
@@ -16,9 +17,10 @@ import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
   postMessage, propEq, when, whichClass, map, messages, pick, pipe, isDateEq, getHtmlHistory,
 } from './common';
-import { ISearchable, SearchParams } from './search';
+import type { ISearchable, SearchParams } from './search';
 import { makeHistory } from './html';
-import { rowSetterHistory, VScrollRowSetter } from './vscroll';
+import { rowSetterHistory } from './vscroll';
+import type { VScrollRowSetter } from './vscroll';
 import { MulitiSelectablePaneBody, MulitiSelectablePaneHeader, MutiSelectableItem } from './multi-sel-pane';
 import { dialog } from './dialogs';
 

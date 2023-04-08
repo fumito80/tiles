@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import {
+import type {
   ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
 } from './types';
 import {
@@ -29,8 +29,9 @@ import {
   setBrowserFavicon,
   addChild,
 } from './client';
-import {
-  makeAction, Changes, IPubSubElement, StoreSub, Store, States,
+import { makeAction } from './popup';
+import type {
+  Changes, IPubSubElement, StoreSub, Store, States,
 } from './popup';
 import { Leaf } from './bookmarks';
 

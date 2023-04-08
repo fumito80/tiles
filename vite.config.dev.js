@@ -8,7 +8,14 @@ export default defineConfig(() => ({
   build: {
     ...build,
     mode: 'development',
-    outDir: '../dist',
+    outDir: '../vite-work',
     sourcemap: 'inline',
+    emptyOutDir: false,
+    rollupOptions: {
+      ...build.rollupOptions,
+      input: {
+        background: 'src/background.ts',
+      },
+    },
   },
 }));

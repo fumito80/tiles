@@ -1,6 +1,6 @@
 import { Canvg } from 'canvg';
 import { DOMParser } from '@xmldom/xmldom';
-import { Options } from './types';
+import type { Options } from './types';
 import {
   base64Encode, getColorWhiteness, getColorChroma,
 } from './common';
