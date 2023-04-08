@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack --config webpack.dev.js",
+    "dev": "vite build --config=vite.config.dev.js && webpack --config webpack.dev.js",
     "watch:vite": "vite build --config=vite.config.dev.js -w",
     "watch:webpack": "vite build --config=vite.config.dev.js && webpack --config webpack.dev.js -w",
-    "build:worker": "vite build --config=vite.config.worker-history.js & vite build --config=vite.config.monaco-editor-worker.js & vite build --config vite.config.monaco-css-worker.js",
+    "build:worker": "vite build --config=vite.config.monaco-editor-worker.js & vite build --config vite.config.monaco-css-worker.js",
     "build": "vite build --config=vite.config.js && webpack --config webpack.prod.js",
     "promo": "webpack --config ./promo/webpack.js -w"
   },
@@ -46,6 +46,7 @@
     "ts-loader": "^9.2.8",
     "typescript": "^4.6.3",
     "vite": "^4.2.1",
+    "vite-plugin-static-copy": "^0.13.1",
     "webpack-cli": "^4.9.2",
     "webpack-notifier": "^1.15.0",
     "zip-webpack-plugin": "^4.0.1"

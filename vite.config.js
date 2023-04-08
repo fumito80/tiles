@@ -5,10 +5,10 @@ const { root, build } = require('./vite.config.common');
 
 export default defineConfig(() => ({
   root,
+  mode: 'production',
   publicDir: 'assets',
   build: {
     ...build,
-    mode: 'production',
     outDir: '../publish',
     emptyOutDir: true,
     rollupOptions: {

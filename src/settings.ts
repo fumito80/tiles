@@ -241,13 +241,13 @@ type InitParams = {
 }
 
 async function initMonacoEditor({ el, inputMonacoEditor, selectEditorTheme }: InitParams) {
-  return import('./monaco-editor').then(({ monaco }) => {
-    const editor = monaco.editor.create(el, {
+  return import('./monaco-editor').then(({ editor: monaco }) => {
+    const editor = monaco.create(el, {
       language: 'css',
       automaticLayout: true,
     });
     inputMonacoEditor.initialize(editor);
-    selectEditorTheme.initialize(monaco.editor);
+    selectEditorTheme.initialize(monaco);
   });
 }
 

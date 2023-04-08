@@ -7,6 +7,7 @@ module.exports = {
   entry: {
     popup: './src/popup.ts',
     settings: './src/settings.ts',
+    'worker-history': './src/worker-history.ts',
   },
   output: {
     module: true,

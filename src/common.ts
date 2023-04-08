@@ -979,7 +979,7 @@ export function getHistoryData(maxResults = 99999) {
 }
 
 export async function getHistoryDataByWorker() {
-  const worker = new Worker('./worker-history.js');
+  const worker = new Worker('./worker-history.mjs', { type: 'module' });
   Promise.all(getHistoryData()).then(([histories, sessions]) => {
     worker.postMessage([histories, sessions]);
   });
