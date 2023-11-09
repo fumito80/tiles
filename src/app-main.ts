@@ -20,6 +20,7 @@ import {
   changeColorTheme,
   $,
   setFavColorMenu,
+  preShowMenu,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub,
@@ -143,6 +144,12 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   setIncludeUrl({ newValue }: Changes<'setIncludeUrl'>) {
     toggleClass('checked-include-url', newValue)(this);
   }
+  // eslint-disable-next-line class-methods-use-this
+  mousedownAppMain(_: any, e: MouseEvent) {
+    if (hasClass(e.target as HTMLElement, 'leaf-menu-button')) {
+      preShowMenu('leaf-menu', e);
+    }
+  }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
     if (!$target.closest('.fav-color-themes') && !hasClass($target, 'main-menu-button')) {
@@ -181,6 +188,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       clickAppMain: makeAction({
         target: this,
         eventType: 'click',
+        eventOnly: true,
+      }),
+      mousedownAppMain: makeAction({
+        target: this,
+        eventType: 'mousedown',
         eventOnly: true,
       }),
       multiSelPanes: makeAction({

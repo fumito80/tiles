@@ -107,6 +107,7 @@ export function storeMapping(options: Options, components: Components) {
 
   store.subscribeContext($appMain)
     .map([$appMain, 'clickAppMain'], $appMain.clickAppMain)
+    .map([$appMain, 'mousedownAppMain'], $appMain.mousedownAppMain)
     .map([$appMain, 'keydownMain'], $appMain.keydown)
     .map([$appMain, 'keyupMain'], $appMain.keyup)
     .map([$formSearch, 'searching'], $appMain.searching);

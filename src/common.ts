@@ -791,7 +791,7 @@ export function removeUrlHistory1(url: string, lastVisitTime: number = -1) {
   };
 }
 
-export function getLocaleDate(dateOrSerial?: Date | number) {
+export function getLocaleDate(dateOrSerial?: number) {
   if (dateOrSerial == null) {
     return (new Date()).toLocaleDateString();
   }
@@ -856,7 +856,7 @@ export function getColorFromBg(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
   const darkColor = '#222222';
   return colorPalette
-    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map((code) => [`#${code}`, getColorWhiteness(code)] as const)
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
 }

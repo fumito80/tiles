@@ -41,7 +41,7 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
 @keyframes hilite-fade-out {
   from {
     background-color: var(--item-hover-bg);
-    color: (--item-hover-color);
+    color: var(--item-hover-color);
   }
 }
 
@@ -74,7 +74,7 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
 @keyframes hilite-fade-in {
   to {
     background-color: var(--item-hover-bg);
-    color: (--item-hover-color);
+    color: ver(--item-hover-color);
   }
 }
 
@@ -531,7 +531,7 @@ app-main {
 [role="menu"] {
   display: none;
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   margin: 0;
   padding: 6px 0;
   width: fit-content;

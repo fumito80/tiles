@@ -473,10 +473,14 @@ app-main {
         max-width: 400px;
         overflow: hidden;
         text-overflow: ellipsis;
+
+        &.sizing {
+          display: block;
+        }
       }
 
       &:not(.match):hover {
-        >.tooltip {
+        >.tooltip:not(.sizing) {
           display: block;
           animation: 0.15s ease-in-out 0s 1 normal none running fade-in;
         }
