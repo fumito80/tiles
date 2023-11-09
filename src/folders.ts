@@ -3,7 +3,7 @@
 import { getBookmarksBase } from './bookmarks';
 import {
   $, $$byClass, $byClass, addAttr, addBookmarkFromText, addFolder, addStyle, editTitle, hasClass,
-  openFolder, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
+  openFolder, preShowMenu, removeFolder, saveStateAllPaths, selectFolder, showMenu, toggleClass,
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
 import {
@@ -32,6 +32,7 @@ export class Folders extends Bookmarks implements IPubSubElement {
     this.addEventListener('mousedown', (e) => {
       if (hasClass(e.target as HTMLElement, 'folder-menu-button')) {
         addStyle({ top: '-1000px' })(this.$foldersMenu);
+        preShowMenu('folder-menu', e);
       }
     });
     this.addEventListener('click', (e) => {

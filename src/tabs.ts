@@ -9,6 +9,7 @@ import {
   toggleElement,
   getInitialTabs,
   addBookmark,
+  preShowMenu,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
@@ -108,6 +109,7 @@ export class OpenTab extends MutiSelectableItem {
   #url!: string;
   #focused = false;
   #highlighted = false;
+  #tooltipRect?: DOMRect;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   private $title!: HTMLElement;
@@ -185,15 +187,19 @@ export class OpenTab extends MutiSelectableItem {
   setTooltipPosition() {
     const margin = 4;
     const rect = this.getBoundingClientRect();
-    const rectTT = this.$tooltip.getBoundingClientRect();
+    if (!this.#tooltipRect) {
+      addClass('sizing')(this.$tooltip);
+      this.#tooltipRect = this.$tooltip.getBoundingClientRect();
+      rmClass('sizing')(this.$tooltip);
+    }
     const rectMain = this.$main.getBoundingClientRect();
     const left = Math.min(
       rect.left - rectMain.left - 1,
-      rectMain.width - rectMain.left - rectTT.width - 5,
+      rectMain.width - rectMain.left - this.#tooltipRect.width - 5,
     );
     addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
-    if (rect.bottom + rectTT.height + margin > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - rectTT.height - margin}px`)(this.$tooltip);
+    if (rect.bottom + this.#tooltipRect.height + margin > document.body.offsetHeight) {
+      addStyle('top', `${rect.top - this.#tooltipRect.height - margin}px`)(this.$tooltip);
       return this;
     }
     addStyle('top', `${rect.bottom + margin}px`)(this.$tooltip);
@@ -229,7 +235,10 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     this.update(tab);
     pipe(
       addListener('click', showMenu(this.$tabsMenu)),
-      addListener('mousedown', () => addStyle({ top: '-1000px' })(this.$tabsMenu)),
+      addListener('mousedown', (e: MouseEvent) => {
+        addStyle({ top: '-1000px' })(this.$tabsMenu);
+        preShowMenu(this.$tabsMenu, e);
+      }),
     )($byClass('tabs-menu-button', this)!);
     return this;
   }
@@ -977,7 +986,12 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         return Math.max(0, currentWindowTop - diff);
       });
     smoothSroll($currentWindow.parentElement!, scrollTop)
-      .then(() => setAnimationClass('hilite')($currentWindow));
+      .then(() => {
+        const { animationDuration } = getComputedStyle($currentWindow);
+        if (animationDuration !== '0s') {
+          setAnimationClass('hilite')($currentWindow);
+        }
+      });
   }
   toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>) {
     if (isInit) {

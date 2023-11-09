@@ -309,19 +309,10 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilit
     if (!el) {
       return el;
     }
-    rmClass(className)(el);
-    const { animationDuration } = getComputedStyle(el);
-    const hasAnime = animationDuration !== '0s';
-    // eslint-disable-next-line no-void
-    void (el as HTMLElement).offsetWidth;
     el?.addEventListener('animationend', () => {
-      if (hasAnime) {
-        addStyle({ 'animation-duration': '0s' })(el);
-        el.addEventListener('animationend', () => {
-          setTimeout(() => rmStyle('animation-duration')(el), 100);
-        }, { once: true });
-      }
+      addStyle({ 'animation-duration': '0s' })(el);
       rmClass(className)(el);
+      setTimeout(() => rmStyle('animation-duration')(el), 200);
     }, { once: true });
     addClass(className)(el);
     return el;
@@ -748,9 +739,6 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
     e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
     const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
-    if ($target.parentElement !== $menu.parentElement) {
-      $target.insertAdjacentElement('afterend', $menu);
-    }
     rmClass('menu-right')($menu);
     const rect = $target.getBoundingClientRect();
     const { width, height } = $menu.getBoundingClientRect();
@@ -777,6 +765,14 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
       : `${rect.top + rect.height}px`;
     addStyle({ left, top })($menu);
   };
+}
+
+export function preShowMenu(menuClassOrElement: MenuClass | HTMLElement, e: MouseEvent) {
+  const $target = e.target as HTMLElement;
+  const $menu = typeof menuClassOrElement === 'string' ? $byClass(menuClassOrElement)! : menuClassOrElement;
+  if ($target.parentElement !== $menu.parentElement) {
+    $target.insertAdjacentElement('afterend', $menu);
+  }
 }
 
 export function setOpenPaths($folder: HTMLElement) {

@@ -3,7 +3,8 @@ import {
 } from './types';
 import {
   $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
-  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu,
+  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu,
+  showMenu, preShowMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -82,6 +83,9 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       showMenu($menu, true)(e);
       e.stopImmediatePropagation();
     }, true);
+    $byClass('multi-sel-menu-button', this)?.addEventListener('mousedown', (e) => {
+      preShowMenu($menu, e);
+    });
   }
   show({ newValue }: {
     newValue: {
