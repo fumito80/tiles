@@ -9,7 +9,7 @@ import {
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
 } from './popup';
-import { getLocal, pick } from './common';
+import { getLocal, pick, setEvents } from './common';
 
 export function getSelecteds() {
   return $$byClass('selected');
@@ -177,18 +177,31 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   init(settings: State['settings'], _: Options, $tmplMultiSelPane: MultiSelPane, _others?: any) {
     this.includeUrl = settings.includeUrl;
     this.$mainMenu = $byClass('main-menu', this)!;
-    $byClass('main-menu-button', this)?.addEventListener('click', (e) => {
-      const isShow = hasClass(this.$mainMenu, 'show');
-      $$byClass('main-menu').forEach(rmClass('show'));
-      if (!isShow) {
-        this.$mainMenu.classList.add('show');
-        showMenu(this.$mainMenu, true)(e);
-        getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
-      }
-    });
     this.$multiSelPane = document.importNode($tmplMultiSelPane, true);
     this.$popupMenu = $byTag('popup-menu', this);
+    if (!(this.$popupMenu instanceof PopupMenu)) {
+      throw new Error('No popup found');
+    }
     this.$multiSelPane.init(this, this.$popupMenu);
+    const $mainMenuButton = this.$mainMenu.previousElementSibling as HTMLElement;
+    if (getComputedStyle($mainMenuButton.parentElement!).display === 'none') {
+      return;
+    }
+    const { $mainMenu } = this;
+    setEvents([$mainMenuButton], {
+      click(e) {
+        const isShow = hasClass($mainMenu, 'show');
+        $$byClass('main-menu').forEach(rmClass('show'));
+        if (!isShow) {
+          $mainMenu.classList.add('show');
+          showMenu($mainMenu, true)(e);
+          getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
+        }
+      },
+      mousedown(e) {
+        preShowMenu($mainMenu, e);
+      },
+    });
   }
   selectItems({ newValue }: Changes<'selectItems'>, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
