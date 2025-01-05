@@ -1,8 +1,8 @@
-// History
+/* History */
 
 .histories {
   position: relative;
-  border-radius: $pane-radius;
+  border-radius: var(--pane-radius);
   transition: var(--xen-mode-transition);
   animation: fade-in 0.15s ease-in-out;
 
@@ -65,9 +65,10 @@
       justify-content: center;
       align-items: center;
       background-color: rgba(0, 0, 0, 0.3);
-      color: $dark-font-color;
+      color: var(--dark-font-color);
       border-radius: 2px;
       -webkit-user-drag: none;
+      -khtml-user-drag: none;
 
       &:nth-child(2) {
         margin-top: 0;
@@ -94,7 +95,7 @@
         height: 100%;
         justify-content: center;
         align-items: center;
-        color: $dark-font-color;
+        color: var(--dark-font-color);
         background-color: rgba(0, 0, 0, 0.3);
       }
     }
@@ -124,7 +125,7 @@
   width: 1px;
 }
 
-// Date collapse icon
+/* Date collapse icon */
 
 .date-collapsed {
   .icon-calendar-plus-solid {
@@ -180,7 +181,7 @@
   }
 }
 
-// History date collapse mode
+/* History date collapse mode */
 
 app-main:not(.disable-zoom-history) {
 
@@ -212,14 +213,14 @@ app-main:not(.disable-zoom-history) {
   line-height: 1;
   left: 5px;
   font-size: 1.2em;
-  color: $common-marker;
+  color: var(--common-marker);
 }
 
 .theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
   color: deepskyblue;
 }
 
-// Recently closed tabs
+/* Recently closed tabs */
 
 .history {
 
@@ -265,7 +266,7 @@ app-main:not(.disable-zoom-history) {
   }
 }
 
-// Display time
+/* Display time */
 
 .disable-zoom-history .history .time,
 app-main:not(.disable-zoom-history).zoom-pane .history .time {

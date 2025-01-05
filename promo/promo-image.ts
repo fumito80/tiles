@@ -1,4 +1,4 @@
-import '../src/view/glyphs.scss';
+import '../src/view/glyphs.css';
 
 const paletts = [
   '3D405B', 'E07A5F', '81B29A', 'F4F1DE', 'F2CC8F',
@@ -61,7 +61,7 @@ const pIndex = 9;
 
 function getColorFromBg(colorPalette: string[]) {
   return colorPalette
-    .map((code) => [`#${code}`, getColorWhiteness(code)])
+    .map((code) => [`#${code}`, getColorWhiteness(code)] as const)
     .map(([bgColor, whiteness]) => [bgColor, whiteness > lightColorWhiteness] as [string, boolean])
     .map(([bgColor, isLight]) => [bgColor, isLight ? darkColor : lightColor, isLight]);
 }

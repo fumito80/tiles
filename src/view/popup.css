@@ -1,21 +1,21 @@
-$font-color: #222222;
-$hover-color: #e8e8e9;
-$drop-folder-bgcolor: rgba(255, 255, 255, 0.5);
-$drop-folder-bgcolor-light: rgba(0, 0, 0, 0.4);
-$draggable-bgcolor: rgba(0, 123, 255, 0.7);
-$common-marker: #1a73e8;
-$pane-radius: 5px;
-
-// for light theme
-$light-folder-color: rgba(0, 0, 0, 0.5);
-
-// for dark theme
-$dark-font-color: #efefef;
-$dark-shade-bg-color: rgba(0, 0, 0, 0.6);
-$dark-folder-color: rgba(255, 255, 255, 0.8);
-$dark-icon-color: rgba(255, 255, 255, 0.5);
-
 :root {
+  --font-color: #222222;
+  --hover-color: #e8e8e9;
+  --drop-folder-bgcolor: rgba(255, 255, 255, 0.5);
+  --drop-folder-bgcolor-light: rgba(0, 0, 0, 0.4);
+  --draggable-bgcolor: rgba(0, 123, 255, 0.7);
+  --common-marker: #1a73e8;
+  --pane-radius: 5px;
+
+  /* for light theme */
+  --light-folder-color: rgba(0, 0, 0, 0.5);
+
+  /* for dark theme */
+  --dark-font-color: #efefef;
+  --dark-shade-bg-color: rgba(0, 0, 0, 0.6);
+  --dark-folder-color: rgba(255, 255, 255, 0.8);
+  --dark-icon-color: rgba(255, 255, 255, 0.5);
+
   --xen-mode-transition: all 0.05s ease-in-out;
 }
 
@@ -41,40 +41,40 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
 @keyframes hilite-fade-out {
   from {
     background-color: var(--item-hover-bg);
-    color: (--item-hover-color);
+    color: var(--item-hover-color);
   }
 }
 
 @keyframes hilite-fade-out-color {
   from {
-    color: $font-color;
+    color: var(--font-color);
   }
 }
 
 @keyframes hilite-folder-light {
   from {
-    color: $font-color;
+    color: var(--font-color);
   }
 
   to {
-    color: $light-folder-color;
+    color: var(--light-folder-color);
   }
 }
 
 @keyframes hilite-folder-dark {
   from {
-    color: $font-color;
+    color: var(--font-color);
   }
 
   to {
-    color: $dark-folder-color;
+    color: var(--dark-folder-color);
   }
 }
 
 @keyframes hilite-fade-in {
   to {
     background-color: var(--item-hover-bg);
-    color: (--item-hover-color);
+    color: ver(--item-hover-color);
   }
 }
 
@@ -82,7 +82,7 @@ $dark-icon-color: rgba(255, 255, 255, 0.5);
   transition: all 0.15s ease-in-out;
 }
 
-// body/other
+/* body/other */
 
 body {
   margin: 0;
@@ -176,7 +176,7 @@ button {
   animation-duration: 0.3s !important;
 }
 
-// Item Common
+/* Item Common */
 
 .leaf,
 open-tab,
@@ -218,7 +218,7 @@ window-header,
   }
 }
 
-// Leaf menu
+/* Leaf menu */
 
 .leaf-menu-button,
 .folder-menu-button,
@@ -246,7 +246,7 @@ window-header>button,
   }
 }
 
-// Search
+/* Search */
 
 form.form-query {
   position: relative;
@@ -409,7 +409,7 @@ app-main {
 
   &.mousedown,
   &:hover {
-    background-color: $common-marker;
+    background-color: var(--common-marker);
     transition: background-color .8s cubic-bezier(1, 0, 0, 0);
   }
 }
@@ -458,7 +458,7 @@ app-main {
       font-size: 1.1em;
       line-height: 1.1em;
       margin: 0 5px;
-      color: $font-color;
+      color: var(--font-color);
     }
 
     button {
@@ -473,7 +473,7 @@ app-main {
 
     .icon-fa-search,
     .icon-check-all {
-      color: $common-marker !important;
+      color: var(--common-marker) !important;
       padding: 1px;
       font-size: 1.2em;
     }
@@ -531,7 +531,7 @@ app-main {
 [role="menu"] {
   display: none;
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   margin: 0;
   padding: 6px 0;
   width: fit-content;
@@ -558,7 +558,7 @@ app-main {
     font-weight: 400;
     line-height: 1.25rem;
     padding: 0.15em 0.8em 0.15em 0;
-    color: $font-color;
+    color: var(--font-color);
     list-style: none;
     margin: 0;
     white-space: nowrap;
@@ -572,7 +572,7 @@ app-main {
   }
 
   >div:hover {
-    background-color: $hover-color;
+    background-color: var(--hover-color);
 
     .icon-fa-trash-alt {
       color: red;
@@ -623,12 +623,12 @@ app-main {
   }
 }
 
-// Leafs pane
+/* Leafs pane */
 
 .leafs {
   position: relative;
   overflow-y: auto;
-  border-radius: $pane-radius;
+  border-radius: var(--pane-radius);
   transition: var(--xen-mode-transition);
 
   .leaf-menu-button:focus+.leaf-menu {
@@ -681,6 +681,7 @@ app-main {
 
   .search-path .marker {
     -webkit-user-drag: none;
+    -khtml-user-drag: none;
   }
 
   .folder[id="1"]>.search-path {
@@ -706,7 +707,7 @@ app-main:not(.searching) .leafs {
   }
 }
 
-// Bookmarks
+/* Bookmarks */
 
 .leaf.search-path {
   margin-left: 30px;
@@ -716,7 +717,7 @@ app-main:not(.drag-start) .leaf:not(.selected):hover>div:not([contenteditable])+
   display: flex;
 }
 
-// Folders pane
+/* Folders pane */
 
 .folders {
   padding-top: 2px;
@@ -739,7 +740,7 @@ app-main:not(.drag-start) .leaf:not(.selected):hover>div:not([contenteditable])+
       border-radius: 3px;
 
       &::before {
-        color: $light-folder-color;
+        color: var(--light-folder-color);
         content: "\f07c";
       }
     }
@@ -830,7 +831,7 @@ app-main:not(.drag-start) .folders .marker:hover {
   }
 }
 
-// Leafs, Folders
+/* Leafs, Folders */
 
 .folders .leaf,
 .folders>.folder {
@@ -895,8 +896,8 @@ app-main:not(.drag-start) .folders .marker:hover {
       pointer-events: all;
       z-index: 3;
       padding-right: 0.3em;
-      background-color: $dark-font-color;
-      color: $font-color;
+      background-color: var(--dark-font-color);
+      color: var(--font-color);
       min-width: 50px;
     }
 
@@ -913,7 +914,7 @@ app-main:not(.drag-start) .folders .marker:hover {
     font-size: inherit;
     text-rendering: auto;
     margin-left: 1px;
-    color: $light-folder-color;
+    color: var(--light-folder-color);
     width: 1em;
   }
 }
@@ -922,8 +923,8 @@ app-main:not(.drag-start) .folders .marker:hover {
   &:focus {
     text-overflow: unset;
     padding-right: 0.3em;
-    background-color: $dark-font-color;
-    color: $font-color;
+    background-color: var(--dark-font-color);
+    color: var(--font-color);
   }
 
   &:empty::before {
@@ -932,7 +933,7 @@ app-main:not(.drag-start) .folders .marker:hover {
   }
 }
 
-// Scroll bar
+/* Scroll bar */
 
 .folders,
 .leafs,
@@ -958,7 +959,7 @@ app-main::-webkit-scrollbar {
   background-color: rgba(0, 0, 0, 0.4);
 }
 
-// Drag & Drop
+/* Drag & Drop */
 
 .drop-top.drag-enter::before,
 .drop-folder.drag-enter::before,
@@ -977,7 +978,7 @@ app-main::-webkit-scrollbar {
     content: "";
     position: absolute;
     width: 10px;
-    border-left: 6px solid $common-marker;
+    border-left: 6px solid var(--common-marker);
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
   }
@@ -1004,7 +1005,7 @@ app-main::-webkit-scrollbar {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px solid $common-marker;
+        border-top: 2px solid var(--common-marker);
       }
     }
 
@@ -1016,7 +1017,7 @@ app-main::-webkit-scrollbar {
       &.drag-enter::before {
         top: 50%;
         width: 100%;
-        border-top: 2px solid $common-marker;
+        border-top: 2px solid var(--common-marker);
       }
     }
 
@@ -1050,14 +1051,14 @@ app-main::-webkit-scrollbar {
         position: absolute;
         top: 50%;
         width: 100%;
-        border-top: 2px solid $common-marker;
+        border-top: 2px solid var(--common-marker);
       }
 
       &::after {
         content: "";
         position: absolute;
         width: 10px;
-        border-left: 6px solid $common-marker;
+        border-left: 6px solid var(--common-marker);
         border-top: 4px solid transparent;
         border-bottom: 4px solid transparent;
         top: calc(50% - 3px);
@@ -1108,14 +1109,14 @@ app-main::-webkit-scrollbar {
       height: 100%;
 
       &.drag-enter {
-        background-color: $drop-folder-bgcolor-light;
+        background-color: var(--drop-folder-bgcolor-light);
 
         ~.title {
-          color: $dark-font-color;
+          color: var(--dark-font-color);
           background-color: transparent;
 
           &::before {
-            color: $dark-folder-color !important;
+            color: var(--dark-folder-color) !important;
           }
         }
       }
@@ -1159,7 +1160,7 @@ app-main::-webkit-scrollbar {
     &.drag-enter::before {
       top: 50%;
       width: 100%;
-      border-top: 2px solid $common-marker;
+      border-top: 2px solid var(--common-marker);
     }
 
     &.drag-enter::after {
@@ -1173,7 +1174,7 @@ app-main::-webkit-scrollbar {
     height: 20%;
 
     &.drag-enter {
-      border-bottom: 2px solid $common-marker;
+      border-bottom: 2px solid var(--common-marker);
     }
 
     &.drag-enter::after {
@@ -1350,7 +1351,7 @@ app-main::-webkit-scrollbar {
   }
 }
 
-// Tabs/History X button
+/* Tabs/History X button */
 
 .tab-wrap,
 .history {
@@ -1358,7 +1359,7 @@ app-main::-webkit-scrollbar {
     margin-left: auto;
     margin-right: 2px;
     font-size: 1.3em;
-    color: $font-color;
+    color: var(--font-color);
     background-color: transparent;
     transition: background-color 0.1s;
     display: none;
@@ -1367,7 +1368,7 @@ app-main::-webkit-scrollbar {
       transition: background-color 0.1s;
       background-color: red;
       border-radius: 1px;
-      color: $dark-font-color;
+      color: var(--dark-font-color);
     }
   }
 }
@@ -1428,13 +1429,22 @@ app-main::-webkit-scrollbar {
     display: none;
   }
 
-  &.end,
-  .pin-bookmark+ {
+  &.end {
     .menu-button {
       display: block;
     }
 
     .query-wrap {
+      margin-right: 0;
+    }
+  }
+
+  .pin-bookmark {
+    +.menu-button {
+      display: block;
+    }
+
+    +.query-wrap {
       margin-right: 0;
     }
   }
@@ -1462,7 +1472,7 @@ app-main::-webkit-scrollbar {
   }
 }
 
-// Zoom
+/* Zoom */
 
 .pane-header {
 
@@ -1532,7 +1542,7 @@ app-main.zoom-pane {
   position: fixed;
   z-index: 2;
   top: calc(50% - 1em);
-  color: $dark-font-color;
+  color: var(--dark-font-color);
 
   &.icon-fa-angle-right.left {
     font-size: 2em;
@@ -1575,7 +1585,7 @@ app-main.zoom-pane {
     width: 1em;
     font-size: 1em;
     font-weight: bold;
-    color: $common-marker;
+    color: var(--common-marker);
   }
 }
 
@@ -1666,7 +1676,7 @@ app-main.zoom-pane {
   }
 }
 
-// Dialog
+/* Dialog */
 
 dialog {
   border: none;
@@ -1674,7 +1684,7 @@ dialog {
   box-shadow: rgb(0 0 0 / 20%) 0px 1px 3px 1px;
 }
 
-// resource-components
+/* resource-components */
 
 .components {
   display: none;
@@ -1684,7 +1694,7 @@ dialog {
   margin: 0 1px;
 }
 
-// Pane separator
+/* Pane separator */
 
 .pane-header::before {
   content: "";
@@ -1699,7 +1709,7 @@ dialog {
   width: 0;
 }
 
-// Reorderable Panes
+/* Reorderable Panes */
 
 .pane-header {
   &:not(.end) {
@@ -1783,7 +1793,7 @@ dialog {
   }
 }
 
-// Bookmark find tabs
+/* Bookmark find tabs */
 
 bm-leaf {
   &.domain>.leaf-menu {
@@ -1840,7 +1850,7 @@ bm-leaf {
       >div>i {
         width: auto;
         margin-right: 8px;
-        color: $common-marker;
+        color: var(--common-marker);
       }
     }
 

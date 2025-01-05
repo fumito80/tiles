@@ -600,7 +600,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     this.initTabs(
       promiseInitTabs,
       states.searching,
-      states.toggleWindowOrder || false,
+      states.toggleWindowOrder || true,
       states.pinWindows,
     );
   }
@@ -1284,7 +1284,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
         },
       }),
       toggleWindowOrder: makeAction({
-        initValue: false,
+        initValue: true,
         persistent: true,
       }),
       pinWindow: makeAction({

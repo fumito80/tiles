@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { Canvg } from 'canvg';
 import { DOMParser } from '@xmldom/xmldom';
 import { Options } from './types';
@@ -5,11 +6,18 @@ import {
   base64Encode, getColorWhiteness, getColorChroma,
 } from './common';
 
+declare const DOMParser2: {
+  prototype: globalThis.DOMParser;
+  new(): globalThis.DOMParser;
+};
+
 async function getImageData(svg: string) {
   return new Promise<ImageData>((resolve) => {
     const canvas = new OffscreenCanvas(19, 19);
-    const ctx = canvas.getContext('2d')!;
-    const canvg = Canvg.fromString(ctx, svg, { DOMParser });
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    const canvg = Canvg.fromString(ctx, svg, {
+      DOMParser: DOMParser as unknown as typeof DOMParser2,
+    });
     canvg.render({ enableRedraw: true })
       .then(() => ctx.getImageData(0, 0, 19, 19))
       .then(resolve);

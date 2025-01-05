@@ -1,4 +1,4 @@
-import { mapMessagesPtoB } from './background';
+import { mapMessagesPtoB } from './sw';
 import { HeaderLeafs, Leafs } from './bookmarks';
 import { AppMain } from './app-main';
 import { Folders } from './folders';
@@ -192,7 +192,7 @@ export const initialState = {
   lastSearchWord: '',
   queries: [] as string[],
   bmFindTabMatchMode: {} as { [key: string]: 'domain' | 'prefix' },
-  toggleWindowOrder: false,
+  toggleWindowOrder: true,
   pinWindows: {
     top: undefined as number[] | undefined,
     bottom: undefined as number[] | undefined,

@@ -1,4 +1,4 @@
-import './view/settings.scss';
+import './view/settings.css';
 import * as bootstrap from 'bootstrap';
 import {
   State, ColorPalette, BkgMessageTypes, CliMessageTypes,

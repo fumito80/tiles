@@ -1042,7 +1042,7 @@ export function addQueryHistory() {
   });
 }
 
-export const chromeEventFilter = { windowTypes: ['normal', 'app'] } as chrome.windows.WindowEventFilter;
+export const chromeEventFilter = { windowTypes: ['normal'] } as chrome.windows.WindowEventFilter;
 
 export function getHtmlHistory(htmlHistory: string) {
   return `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;

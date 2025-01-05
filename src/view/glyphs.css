@@ -82,6 +82,10 @@ i {
   content: "\f013";
 }
 
+.icon-fa-edit:before {
+  content: "\f044";
+}
+
 .icon-uniF07B:before {
   content: "\f07b";
 }
@@ -218,10 +222,6 @@ i {
   content: '\e91f';
 }
 
-.icon-rename::before {
+.icon-clipboard::before {
   content: '\e920';
-}
-
-.icon-edit::before {
-  content: '\e924';
 }

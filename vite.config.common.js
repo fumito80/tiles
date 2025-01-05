@@ -6,7 +6,7 @@ module.exports = {
   build: {
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'src/background.ts'),
+        sw: resolve(__dirname, 'src/sw.ts'),
       },
       output: {
         entryFileNames: '[name].js',

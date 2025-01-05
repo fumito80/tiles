@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 
-import './view/popup.scss';
+import './view/popup.css';
 
 import {
   HtmlBookmarks,
@@ -191,7 +191,7 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
-    toggleWindowOrder ?? false,
+    toggleWindowOrder ?? true,
     pinWindows,
   );
   const store = storeMapping(options, components);

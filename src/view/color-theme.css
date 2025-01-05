@@ -1,4 +1,4 @@
-// for Theme
+/* for Theme */
 
 body {
   background-color: var(--frame-bg);
@@ -72,7 +72,7 @@ app-main:not(.drag-start) {
   border-color: var(--item-hover-bg);
 }
 
-// Dark theme handling
+/* Dark theme handling */
 
 .theme-dark-pane {
 
@@ -93,12 +93,12 @@ app-main:not(.drag-start) {
   }
 
   .leafs .title::before {
-    color: $dark-icon-color;
+    color: var(--dark-icon-color);
   }
 
   &.zoom-pane .shade-left,
   &.zoom-pane .shade-right {
-    background-color: $dark-shade-bg-color;
+    background-color: var(--dark-shade-bg-color);
   }
 
   &.drag-start .leafs,
@@ -154,7 +154,7 @@ app-main:not(.drag-start) {
   open-window window-header {
 
     button>i {
-      color: $dark-icon-color;
+      color: var(--dark-icon-color);
     }
   }
 
@@ -164,7 +164,7 @@ app-main:not(.drag-start) {
 
   &:not(.theme-dark-key) {
     .tabs-collapsed .current-tab:not(.match)>.tab-title {
-      color: $font-color;
+      color: var(--font-color);
     }
   }
 
@@ -224,14 +224,14 @@ app-main:not(.theme-dark-pane) {
 
     .query,
     .queries {
-      color: $dark-font-color;
+      color: var(--dark-font-color);
     }
   }
 
   .folders .title::before,
   .form-query .submit>i,
   .tabs .new-window-plus>i {
-    color: $dark-icon-color;
+    color: var(--dark-icon-color);
   }
 
   .form-query,
@@ -247,7 +247,7 @@ app-main:not(.theme-dark-pane) {
 
     &.pin-bookmark::after,
     >i {
-      color: $dark-icon-color;
+      color: var(--dark-icon-color);
     }
   }
 
@@ -264,7 +264,7 @@ app-main:not(.theme-dark-pane) {
   .pane-header,
   .new-window {
     button:active::after {
-      background-color: $dark-icon-color;
+      background-color: var(--dark-icon-color);
     }
   }
 
@@ -337,7 +337,7 @@ app-main:not(.theme-dark-pane) {
       background-color: rgba(255, 255, 255, 0.3);
 
       &.drag-enter {
-        background-color: $drop-folder-bgcolor;
+        background-color: var(--drop-folder-bgcolor);
       }
     }
 
@@ -347,13 +347,13 @@ app-main:not(.theme-dark-pane) {
       height: 100%;
 
       &.drag-enter {
-        background-color: $drop-folder-bgcolor;
+        background-color: var(--drop-folder-bgcolor);
 
         &~.title {
-          color: $font-color;
+          color: var(--font-color);
 
           &::before {
-            color: $light-folder-color !important;
+            color: var(--light-folder-color) !important;
           }
         }
       }
@@ -400,7 +400,7 @@ app-main:not(.theme-dark-pane) {
     }
 
     button:active::after {
-      background-color: $dark-icon-color;
+      background-color: var(--dark-icon-color);
     }
   }
 }
@@ -437,7 +437,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
 
 .theme-dark-frame.theme-dark-pane .tabs {
   .window {
-    border-color: $dark-icon-color;
+    border-color: var(--dark-icon-color);
     border-width: 1px;
     padding: 2px;
     padding-bottom: 3px;
@@ -448,7 +448,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   .tabs-collapsed {
 
     .tab-wrap {
-      background-color: $dark-icon-color;
+      background-color: var(--dark-icon-color);
 
       &.match {
         background-color: rgba(255, 255, 255, .2) !important;
@@ -463,7 +463,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
 
 .theme-dark-key {
   .folders .open>.marker>.title::before {
-    color: $dark-folder-color !important;
+    color: var(--dark-folder-color) !important;
   }
 }
 
@@ -475,7 +475,7 @@ app-main:not(.theme-dark-hover):not(.drag-start) {
   .query,
   .queries,
   .clear-search>i {
-    color: $dark-font-color !important;
+    color: var(--dark-font-color) !important;
   }
 
   .clear-search:hover::after,
@@ -525,11 +525,11 @@ app-main:not(.theme-dark-search).searching .form-query {
   .query,
   .queries,
   .clear-search>i {
-    color: $font-color !important;
+    color: var(--font-color) !important;
   }
 }
 
-// header info & related
+/* header info & related */
 
 app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
   button {
@@ -561,7 +561,7 @@ app-main:not(.theme-dark-pane) .pane-header multi-sel-pane.show {
       }
 
       >div {
-        color: $dark-font-color;
+        color: var(--dark-font-color);
       }
 
       button {
