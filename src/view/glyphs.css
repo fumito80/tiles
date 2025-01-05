@@ -82,7 +82,7 @@ i {
   content: "\f013";
 }
 
-.icon-fa-edit:before {
+.icon-rename:before {
   content: "\f044";
 }
 
@@ -207,7 +207,7 @@ i {
 }
 
 .icon-pin::before {
-  content: '\e91f';
+  content: '\e920';
 }
 
 .icon-arrow-top-thin::before {
@@ -215,13 +215,23 @@ i {
 }
 
 .icon-pin-angle::before {
-  content: '\e921';
+  content: '\e91f';
 }
 
 .icon-minimize::before {
-  content: '\e91f';
+  content: '\e921';
 }
 
 .icon-clipboard::before {
   content: '\e920';
+}
+
+.icon-edit:before {
+  content: "\e914";
+  color: #5f6368;
+}
+
+.icon-edit-note:before {
+  content: "\e91d";
+  color: #5f6368;
 }

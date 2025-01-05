@@ -108,11 +108,13 @@ open-tab {
   }
 
   .collapse-tabs {
-    margin-right: 10px;
-
     >.icon-list {
       display: none;
     }
+  }
+
+  .focus-current-tab {
+    margin-right: 10px;
   }
 
   &.tabs-collapsed-all {
@@ -875,7 +877,8 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
 
           &:hover {
             >i::before {
-              content: '\e922';
+              content: '\e920';
+              color: black;
             }
           }
         }

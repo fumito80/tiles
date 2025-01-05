@@ -1342,6 +1342,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       addBookmarkFromTab: makeAction({
         initValue: undefined as chrome.bookmarks.BookmarkCreateArg | undefined,
       }),
+      activateWindow: makeAction({
+        initValue: '',
+      }),
     };
   }
   override connect(store: Store) {

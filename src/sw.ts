@@ -338,5 +338,8 @@ export const mapMessagesPtoB = {
 setMessageListener(mapMessagesPtoB);
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ options: initialOptions, settings: initialSettings });
+  chrome.storage.local.set({
+    options: { ...initialOptions, windowMode: true },
+    settings: initialSettings,
+  });
 });

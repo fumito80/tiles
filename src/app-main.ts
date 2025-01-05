@@ -327,10 +327,13 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }
     });
     chrome.windows.onFocusChanged.addListener((windowId) => {
-      if (windowId !== this.#windowId) {
-        store.dispatch('setCurrentWindowId', { windowId, isEventTrigger: true }, true);
+      if (windowId === this.#windowId) {
+        // store.dispatch('activateWindow');
+        // store.dispatch('resetHistory');
+        return;
       }
-    }, chromeEventFilter);
+      store.dispatch('setCurrentWindowId', { windowId, isEventTrigger: true }, true);
+    }, { windowTypes: ['normal', 'popup'] });
     chrome.storage.local.onChanged.addListener((storage) => {
       if (!storage.htmlBookmarks) {
         return;
