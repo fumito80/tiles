@@ -257,6 +257,14 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     setBrowserFavicon(colorPalette);
     $byTag('style').textContent = makeCss(this.#settings, colorPalette, css);
   }
+  minimizeOthers(changes: Changes<'windowAction'>) {
+    if (changes.newValue.type === 'minimizeOthers') {
+      this.minimize();
+    }
+  }
+  minimize() {
+    chrome.windows.update(this.#windowId, { state: 'minimized' });
+  }
   actions() {
     return {
       clickAppMain: makeAction({
@@ -327,13 +335,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       }
     });
     chrome.windows.onFocusChanged.addListener((windowId) => {
-      if (windowId === this.#windowId) {
-        // store.dispatch('activateWindow');
-        // store.dispatch('resetHistory');
-        return;
-      }
       store.dispatch('setCurrentWindowId', { windowId, isEventTrigger: true }, true);
-    }, { windowTypes: ['normal', 'popup'] });
+    }, chromeEventFilter);
     chrome.storage.local.onChanged.addListener((storage) => {
       if (!storage.htmlBookmarks) {
         return;

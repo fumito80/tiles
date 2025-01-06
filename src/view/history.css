@@ -232,7 +232,7 @@ app-main:not(.disable-zoom-history) {
   &.session-tab {
 
     &::before {
-      content: '\e914';
+      content: '\e922';
       font-family: "glyphs";
       font-size: 1.3em;
       margin-left: 1.3em;
@@ -255,7 +255,7 @@ app-main:not(.disable-zoom-history) {
 
   &.session-window {
     &::before {
-      content: '\e91d';
+      content: '\e923';
     }
 
     >.icon-fa-angle-right {

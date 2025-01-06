@@ -264,7 +264,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.promiseInitHistory = getHistoryDataByWorker();
     this.resetHistory(undefined, undefined, states);
   }
-  async resetHistory(_: any, __: any, { toggleRecentlyClosed, historyCollapseDate }: States) {
+  async resetHistory(
+    _: any,
+    __: any,
+    { toggleRecentlyClosed, historyCollapseDate }: States,
+  ) {
     const initialize = !this.#histories;
     if (initialize) {
       this.#histories = await this.promiseInitHistory;
@@ -313,8 +317,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
           setHTML(''),
         ),
       );
-      this.scrollTop = 0;
     }
+    this.scrollTop = 0;
     this.dispatchEvent(new Event('scroll'));
   }
   clearSearch(_: any, __: any, ___: any, store: StoreSub) {
