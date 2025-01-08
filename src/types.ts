@@ -68,7 +68,7 @@ export const initialSettings = {
   height: 500,
   windowSize: {
     width: 800,
-    height: 500,
+    height: 600,
     top: undefined as number | undefined,
     left: undefined as number | undefined,
   },

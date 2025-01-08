@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Colorful Navi",
+  "name": "Popup Navi",
   "version": "0.22.00",
   "default_locale": "en",
   "description": "Integrated bookmarks, tabs, and history manager. Change to your favorite colors to change your mood at work!",
@@ -13,7 +13,7 @@
     "sessions"
   ],
   "action": {
-    "default_title": "Colorful Navi",
+    "default_title": "Popup Navi",
     "default_icon": {
       "48": "p48.png",
       "128": "p128.png"
@@ -25,7 +25,7 @@
   },
   "commands": {
     "_execute_action": {
-      "description": "Colorful Navi",
+      "description": "Popup Navi",
       "suggested_key": {
         "default": "Alt+P"
       }

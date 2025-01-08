@@ -136,12 +136,12 @@ async function init(storage: Pick<State, InitStateKeys>) {
   const options = { ...initialOptions, ...storage.options, css: storage.options?.css ?? css };
   setToolbarIcon(options.colorPalette);
   makeHtmlBookmarks();
-  setHtmlHistory();
-  setLocal({
+  await setLocal({
     settings, clientState, options, lastSearchWord,
   }).then(() => {
     setPopupStyle(options);
   });
+  setHtmlHistory();
   regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
   regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
   regsterChromeEvents(updateHistory500)([chrome.sessions.onChanged]);
@@ -164,7 +164,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
   chrome.windows.create({
     url: `popup.html?css=${encoded}`,
-    type: 'popup',
+    type: 'panel',
     ...settings.windowSize,
   }).then((win) => {
     setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: tab.windowId } });
@@ -336,10 +336,3 @@ export const mapMessagesPtoB = {
 };
 
 setMessageListener(mapMessagesPtoB);
-
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({
-    options: { ...initialOptions, windowMode: true },
-    settings: initialSettings,
-  });
-});
