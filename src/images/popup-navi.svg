@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="48" height="48" fill="#1D3557">
-  <path d="M86 504 L 86 170 A 170 170 0 1 1 294 340 C 232 358 97 350 86 504 z" stroke="white" stroke-width="6" stroke-linejoin="round" />
-  <circle fill="lightpink" cx="256" cy="175" r="80" />
-</svg>

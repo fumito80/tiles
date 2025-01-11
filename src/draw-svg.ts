@@ -1,21 +1,16 @@
 /* eslint-disable no-undef */
-import { Canvg } from 'canvg';
+import { Canvg, IOptions, presets } from 'canvg';
 import { DOMParser } from '@xmldom/xmldom';
 import { Options } from './types';
-import { base64Encode, getColorChroma, getColorWhiteness } from './common';
+import { base64Encode } from './common';
 
-declare const DOMParser2: {
-  prototype: globalThis.DOMParser;
-  new(): globalThis.DOMParser;
-};
+const preset = presets.offscreen({ DOMParser });
 
 async function getImageData(svg: string) {
   return new Promise<ImageData>((resolve) => {
     const canvas = new OffscreenCanvas(19, 19);
-    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
-    const canvg = Canvg.fromString(ctx, svg, {
-      DOMParser: DOMParser as unknown as typeof DOMParser2,
-    });
+    const ctx = canvas.getContext('2d')!;
+    const canvg = Canvg.fromString(ctx, svg, preset as IOptions);
     canvg.render({ enableRedraw: true })
       .then(() => ctx.getImageData(0, 0, 19, 19))
       .then(resolve);
@@ -23,27 +18,17 @@ async function getImageData(svg: string) {
 }
 
 export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
-  const [first, ...rest] = colorPalette;
-  const outer = rest.reduce((acc, color) => {
-    const whiteness = getColorWhiteness(color);
-    if (whiteness > 0.8) {
-      return acc;
-    }
-    const whitenessAcc = getColorWhiteness(acc);
-    if (whitenessAcc > 0.8) {
-      return color;
-    }
-    if (getColorChroma(acc) >= getColorChroma(color)) {
-      return acc;
-    }
-    return color;
-  }, first);
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19" fill="#1D3557">
-      <path d="M86 504 L 86 170 A 170 170 0 1 1 294 340 C 232 358 97 350 86 504 z" stroke="white" stroke-width="6" stroke-linejoin="round" />
-      <circle fill="#${outer}" cx="256" cy="175" r="80" />
-    </svg>
-  `;
+  const [, t, T, rb, lb] = colorPalette;
+  return `  <svg id="generated-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+    <g stroke="white" stroke-width="2">
+      <rect fill="#${rb}" x="1" y="140" width="250" height="370" rx="30" />
+      <rect fill="#${lb}" x="240" y="140" width="273" height="370" rx="30" />
+      <rect fill="#${t}" x="1" y="1" width="512" height="160" rx="30" />
+    </g>
+    <path stroke="white" stroke-width="8" fill="#${T}"
+      d="M-2 140 l518 0 l0 60 l-194 0 l-60 313 l-100 0 l60 -313 l-224 0 z" />
+  </svg>
+`;
 }
 
 export function getSvgZoomIcon() {

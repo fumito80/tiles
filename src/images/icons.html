@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Russo+One&display=swap" rel="stylesheet">
+  <title>Icons Maker</title>
+  <style>
+    .racing-sans-one-regular {
+      font-family: "Racing Sans One", serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 7.5rem;
+    }
+
+    img {
+      aspect-ratio: 1;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ここから -->
+  <svg id="generated-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <rect fill="#E0FF4F" x="0" y="140" width="250" height="370" rx="40" />
+    <rect fill="#FF6663" x="230" y="140" width="283" height="370" rx="40" />
+    <rect fill="#BFD7EA" x="0" y="0" width="512" height="180" rx="40" />
+    <path fill="#0B3954" d="M0 140 l518 0 l0 60 l-194 0 l-60 310 l-100 0 l60 -310 l-224 0 z" />
+  </svg>
+  <!-- ここまで -->
+  <script>
+    function makeLink(download, img, href) {
+      const link = document.body.appendChild(document.createElement('a'));
+      link.append(img);
+      return Object.assign(link, { href, download });
+    }
+    function addImage(width, srcCanvas) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = width;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(srcCanvas, 0, 0, width, width);
+      const url = canvas.toDataURL('image/png');
+      const img = document.createElement('img');
+      img.setAttribute('width', width);
+      img.src = url;
+      makeLink('t' + width, img, url);
+    }
+    (async () => {
+      const svg = document.getElementById('generated-svg');
+      const svgData = new XMLSerializer().serializeToString(svg);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      const img = document.createElement('img');
+      img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
+
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0);
+        addImage(128, canvas);
+        addImage(48, canvas);
+        addImage(512, canvas);
+      };
+    })();
+  </script>
+</body>

@@ -40,6 +40,7 @@ import {
   setPopupStyle,
   updateSettings,
   chromeEventFilter,
+  base64Encode,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
