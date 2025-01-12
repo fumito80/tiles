@@ -18,8 +18,8 @@ async function getImageData(svg: string) {
 }
 
 export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
-  const [, frame,,, marker] = colorPalette;
-  let outerStroke = 'FEFEFE';
+  const [, frame] = colorPalette;
+  let outerStroke = 'F5F5F5';
   if (getColorWhiteness(frame) > ((getColorWhiteness('FFFFFF') - getColorWhiteness('000000')) / 2)) {
     outerStroke = '14213D';
   }
@@ -27,7 +27,7 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
     <g stroke-width="20" stroke-linejoin="round" shape-rendering="optimizeQuality">
       <path fill="#${frame}" stroke="#${outerStroke}" d="M86 504 L 86 175 A 175 175 0 1 1 260 360 l -70 0 z" />
-      <circle fill="#${marker}" cx="262" cy="185" r="80" />
+      <circle fill="#${outerStroke}" cx="262" cy="185" r="80" />
     </g>
   </svg>
 `;

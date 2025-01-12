@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Tiles",
+  "name": "Popup Navi",
   "version": "0.22.00",
   "default_locale": "en",
   "description": "Integrated browsing resource manager. Change to your favorite colors to change your mood at work!",
@@ -13,7 +13,7 @@
     "sessions"
   ],
   "action": {
-    "default_title": "Tiles",
+    "default_title": "Popup Navi",
     "default_icon": {
       "48": "t48.png",
       "128": "t128.png"
@@ -25,7 +25,7 @@
   },
   "commands": {
     "_execute_action": {
-      "description": "Tiles",
+      "description": "Popup Navi",
       "suggested_key": {
         "default": "Alt+P"
       }
