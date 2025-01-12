@@ -2,7 +2,7 @@
 import { Canvg, IOptions, presets } from 'canvg';
 import { DOMParser } from '@xmldom/xmldom';
 import { Options } from './types';
-import { base64Encode } from './common';
+import { base64Encode, getColorWhiteness } from './common';
 
 const preset = presets.offscreen({ DOMParser });
 
@@ -18,15 +18,17 @@ async function getImageData(svg: string) {
 }
 
 export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
-  const [, t, T, rb, lb] = colorPalette;
-  return `  <svg id="generated-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
-    <g stroke="white" stroke-width="2">
-      <rect fill="#${rb}" x="1" y="140" width="250" height="370" rx="30" />
-      <rect fill="#${lb}" x="240" y="140" width="273" height="370" rx="30" />
-      <rect fill="#${t}" x="1" y="1" width="512" height="160" rx="30" />
+  const [, frame,,, marker] = colorPalette;
+  let outerStroke = 'FEFEFE';
+  if (getColorWhiteness(frame) > ((getColorWhiteness('FFFFFF') - getColorWhiteness('000000')) / 2)) {
+    outerStroke = '14213D';
+  }
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+    <g stroke-width="20" stroke-linejoin="round" shape-rendering="optimizeQuality">
+      <path fill="#${frame}" stroke="#${outerStroke}" d="M86 504 L 86 175 A 175 175 0 1 1 260 360 l -70 0 z" />
+      <circle fill="#${marker}" cx="262" cy="185" r="80" />
     </g>
-    <path stroke="white" stroke-width="8" fill="#${T}"
-      d="M-2 140 l518 0 l0 60 l-194 0 l-60 313 l-100 0 l60 -313 l-224 0 z" />
   </svg>
 `;
 }
