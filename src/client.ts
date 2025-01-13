@@ -41,7 +41,7 @@ import {
   updateSettings,
   chromeEventFilter,
   base64Encode,
-  isDefined,
+  always,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -947,24 +947,19 @@ export async function updateAppZoom(value: Changes<'zoomApp'>['newValue']) {
       return Promise.reject();
     }
     return chrome.tabs.getZoom(tab.id).then((zoom) => {
-      const add = value === 'plus' ? 0.05 : -0.05;
-      return chrome.tabs.setZoom(zoom + add);
+      const newZoom = zoom + ((value === 'plus') ? 0.05 : -0.05);
+      return chrome.tabs.setZoom(newZoom).then(always(newZoom));
     });
   });
 }
 
-export function setZoomAppMenu() {
-  chrome.tabs.getCurrent().then((tab) => {
-    if (tab?.id) {
-      chrome.tabs.getZoom(tab.id).then((zoom) => {
-        const textContent = `${Math.round(zoom * 100)}%`;
-        $$byClass('menu-zoom-app')
-          .map((el) => el.querySelector('span'))
-          .filter(isDefined)
-          .forEach((el) => Object.assign(el, { textContent }));
-      });
-    }
-  });
+export async function setZoomAppMenu(zoomValue?: number) {
+  const zoom = zoomValue ?? await chrome.tabs.getCurrent()
+    .then((tab) => (tab?.id ? chrome.tabs.getZoom(tab.id) : undefined));
+  if (!zoom) {
+    return;
+  }
+  $('.show .menu-zoom-app > span')!.textContent = `${Math.round(zoom * 100)}%`;
 }
 
 export function scrollVerticalCenter($target: HTMLElement) {
