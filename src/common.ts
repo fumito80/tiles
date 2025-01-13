@@ -75,6 +75,14 @@ export function addListener<T extends keyof HTMLElementEventType>(
 
 // Others
 
+export function always<T>(value: T) {
+  return () => value;
+}
+
+export function identity<T>(value: T) {
+  return value;
+}
+
 function whenGetter<T extends any | AnyFunction>(
   valueOrFunction: T,
 ): T extends AnyFunction ? ReturnType<T> : T;
@@ -200,6 +208,10 @@ export function filter<T extends Array<any>>(
   f: (element: T[number], index: number, self: T[number][]) => boolean,
 ) {
   return (array: T) => array.filter(f) as T;
+}
+
+export function isDefined<T>(value: T | null | undefined): value is NonNullable<T> {
+  return value != null;
 }
 
 export function reduce<T extends Array<any>, U>(
@@ -661,8 +673,8 @@ export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.local, ...keyNames);
 }
 
-export async function updateSettings<T extends Partial<State['settings']>>(setting: T) {
-  return getLocal('settings').then(({ settings }) => setLocal({ settings: { ...settings, ...setting } }));
+export async function updateSettings<T extends Partial<State['settings']>>(setting: T, processer = identity<Pick<State, 'settings'>>) {
+  return getLocal('settings').then(processer).then(({ settings }) => setLocal({ settings: { ...settings, ...setting } }));
 }
 
 export function getSync<T extends Array<keyof State>>(...keyNames: T) {

@@ -4,7 +4,7 @@ import {
 import {
   $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
   addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu,
-  showMenu, preShowMenu,
+  showMenu, preShowMenu, setZoomAppMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -42,6 +42,12 @@ function clickMainMenu(e: MouseEvent, store: Store) {
     case 'settings':
       chrome.runtime.openOptionsPage();
       break;
+    case 'zoom-app-minus':
+    case 'zoom-app-plus': {
+      const [,, value] = $menu.dataset.value.split('-');
+      store.dispatch('zoomApp', value as Changes<'zoomApp'>['newValue'], true);
+      break;
+    }
     default:
   }
   if (hasClass($menu, 'fav-palette')) {
@@ -196,6 +202,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           $mainMenu.classList.add('show');
           showMenu($mainMenu, true)(e);
           getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
+          setZoomAppMenu();
         }
       },
       mousedown(e) {
@@ -221,6 +228,10 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
         }),
         deleteSelecteds: makeAction({
           initValue: '' as Panes,
+          force: true,
+        }),
+        zoomApp: makeAction({
+          initValue: '' as 'plus' | 'minus',
           force: true,
         }),
       };

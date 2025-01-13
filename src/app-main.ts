@@ -29,6 +29,8 @@ import {
   setBrowserFavicon,
   addChild,
   preShowMenu,
+  setZoomAppMenu,
+  updateAppZoom,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -182,7 +184,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   async clickAppMain(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
-    if (!$target.closest('.fav-color-themes') && !hasClass($target, 'main-menu-button')) {
+    if (!$target.closest('.menu-special') && !hasClass($target, 'main-menu-button')) {
       $('.main-menu.show')?.classList.remove('show');
     }
     if ($target.hasAttribute('contenteditable') || hasClass($target, 'query', 'icon-x')) {
@@ -267,6 +269,10 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   minimize() {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
+  }
+  // eslint-disable-next-line class-methods-use-this
+  setZoomApp(changes: Changes<'zoomApp'>) {
+    updateAppZoom(changes.newValue).then(setZoomAppMenu);
   }
   actions() {
     return {

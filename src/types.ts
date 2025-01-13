@@ -20,7 +20,7 @@ export type StoredElements = {
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
 export type MapMessagesBtoP = typeof mapMessagesBtoP;
 
-export const historyHtmlCount = 45;
+export const historyHtmlCount = 50;
 export const pastMSec = 1000 * 60 * 60 * 24 * 365;
 
 export type ColorInfo = {
@@ -169,7 +169,7 @@ export const initialOptions = {
   restoreSearching: true,
   favColorPalettes: [] as ColorPalette[],
   showMinimizeAll: true,
-  windowMode: false,
+  windowMode: true,
 };
 
 export type Panes = typeof panes[number];

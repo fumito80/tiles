@@ -41,13 +41,14 @@ import {
   updateSettings,
   chromeEventFilter,
   base64Encode,
+  isDefined,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { Dispatch } from './popup';
+import { Changes, Dispatch } from './popup';
 
 // DOM operation
 
@@ -938,6 +939,32 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
       .every(($color, i) => $color.dataset.color === colorPalette[i]));
   $selected?.classList.add('selected-palette');
   ($selected as any)?.scrollIntoViewIfNeeded();
+}
+
+export async function updateAppZoom(value: Changes<'zoomApp'>['newValue']) {
+  return chrome.tabs.getCurrent().then(async (tab) => {
+    if (!tab?.id) {
+      return Promise.reject();
+    }
+    return chrome.tabs.getZoom(tab.id).then((zoom) => {
+      const add = value === 'plus' ? 0.05 : -0.05;
+      return chrome.tabs.setZoom(zoom + add);
+    });
+  });
+}
+
+export function setZoomAppMenu() {
+  chrome.tabs.getCurrent().then((tab) => {
+    if (tab?.id) {
+      chrome.tabs.getZoom(tab.id).then((zoom) => {
+        const textContent = `${Math.round(zoom * 100)}%`;
+        $$byClass('menu-zoom-app')
+          .map((el) => el.querySelector('span'))
+          .filter(isDefined)
+          .forEach((el) => Object.assign(el, { textContent }));
+      });
+    }
+  });
 }
 
 export function scrollVerticalCenter($target: HTMLElement) {

@@ -7,6 +7,7 @@ import { FormSearch } from './search';
 import DragAndDropEvents from './drag-drop';
 import { MultiSelPane } from './multi-sel-pane';
 import { IPubSubElement, ISubscribeElement, States } from './popup';
+import { isDefined } from './common';
 
 type Action<
   A extends keyof HTMLElementEventType,
@@ -152,8 +153,8 @@ export function registerActions<T extends Actions<any>>(actions: T, options: Opt
   };
   const initPromise = Promise.all(initPromises).then(async (actionProps) => {
     const actionsAll = actionProps
-      .filter(Boolean)
-      .reduce((acc, currentValue) => ({ ...acc, ...currentValue! }), {});
+      .filter(isDefined)
+      .reduce((acc, currentValue) => ({ ...acc, ...currentValue }), {});
     chrome.storage.session.onChanged.addListener((storage) => {
       Object.entries(storage).forEach(async ([actionName, changes]) => {
         const { persistent, noStates, name } = actionsAll![actionName];

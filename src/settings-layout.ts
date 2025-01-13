@@ -2,6 +2,7 @@ import { State, InsertPosition } from './types';
 import {
   $, $byClass, addClass, hasClass, rmClass,
 } from './client';
+import { isDefined } from './common';
 
 export abstract class CustomInputElement extends HTMLElement {
   fireEvent() {
@@ -108,7 +109,7 @@ export class LayoutBookmarksPanes extends CustomInputElement {
   get value() {
     return [...this.children]
       .map((el) => (el as HTMLElement).dataset.value as BookmarksPanes)
-      .filter(Boolean);
+      .filter(isDefined);
   }
   set value(value: BookmarksPanes[]) {
     const leftEl = this.firstElementChild as HTMLElement;

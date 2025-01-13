@@ -164,7 +164,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
   chrome.windows.create({
     url: `popup.html?css=${encoded}`,
-    type: 'panel',
+    type: 'popup',
     ...settings.windowSize,
   }).then((win) => {
     setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: tab.windowId } });

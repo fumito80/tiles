@@ -1855,8 +1855,6 @@ bm-leaf {
     }
 
     &:hover {
-      background-color: transparent;
-
       >.menu-tree {
         opacity: 1;
         pointer-events: inherit;
@@ -1886,6 +1884,26 @@ bm-leaf {
   .bm-find-tab-mode>span {
     display: none;
     margin-right: 8px;
+  }
+
+  .menu-special {
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  .menu-zoom-app {
+    >span {
+      margin-left: 10px;
+    }
+
+    button {
+      margin-left: 0.5em;
+
+      +button {
+        margin-left: -0.7em;
+      }
+    }
   }
 }
 

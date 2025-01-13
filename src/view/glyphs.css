@@ -235,3 +235,11 @@ i {
   content: "\e91d";
   color: #5f6368;
 }
+
+.icon-zoom-app:before {
+  content: "\e925";
+}
+
+.icon-minus:before {
+  content: "\e926";
+}
