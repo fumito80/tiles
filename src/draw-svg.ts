@@ -1,36 +1,73 @@
-/* eslint-disable no-undef */
-import { Canvg, IOptions, presets } from 'canvg';
-import { DOMParser } from '@xmldom/xmldom';
 import { Options } from './types';
-import { base64Encode, getColorWhiteness } from './common';
+import { base64Encode } from './common';
 
-const preset = presets.offscreen({ DOMParser });
+let creating: Promise<void> | undefined;
 
-async function getImageData(svg: string) {
+async function setupOffscreenDocument(path: string) {
+  const offscreenUrl = chrome.runtime.getURL(path);
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+    documentUrls: [offscreenUrl],
+  });
+
+  if (existingContexts.length > 0) {
+    return;
+  }
+
+  if (creating) {
+    await creating;
+  } else {
+    creating = chrome.offscreen.createDocument({
+      url: path,
+      reasons: [chrome.offscreen.Reason.DOM_PARSER],
+      justification: 'reason for needing the document',
+    });
+    await creating;
+    creating = undefined;
+  }
+}
+
+export async function getImageData(svg: string) {
+  const svgData = await base64Encode(svg);
   return new Promise<ImageData>((resolve) => {
-    const canvas = new OffscreenCanvas(19, 19);
-    const ctx = canvas.getContext('2d')!;
-    const canvg = Canvg.fromString(ctx, svg, preset as IOptions);
-    canvg.render({ enableRedraw: true })
-      .then(() => ctx.getImageData(0, 0, 19, 19))
-      .then(resolve);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = new OffscreenCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.width);
+      resolve(imageData);
+    };
+    img.setAttribute('src', `data:image/svg+xml;base64,${svgData}`);
   });
 }
 
-export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
-  const [, frame] = colorPalette;
-  let outerStroke = 'F5F5F5';
-  if (getColorWhiteness(frame) > ((getColorWhiteness('FFFFFF') - getColorWhiteness('000000')) / 2)) {
-    outerStroke = '14213D';
+async function dispatchGetImageData(svg: string) {
+  if (typeof Image === 'undefined') {
+    await setupOffscreenDocument('offscreen.html');
+    const resp = await chrome.runtime.sendMessage({ type: 'getImageData', svg });
+    const imageData = Uint8ClampedArray.from(Object.values(resp.data));
+    return new ImageData(imageData, resp.width);
   }
+  return getImageData(svg);
+}
+
+export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
+  const [,,,, accent] = colorPalette;
   return `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
-    <g stroke-width="20" stroke-linejoin="round" shape-rendering="optimizeQuality" transform="scale(0.95, 0.95) translate(0, 10)">
-      <path fill="#${frame}" stroke="#${outerStroke}" d="M86 504 L 86 175 A 175 175 0 1 1 260 360 l -70 0 z" />
-      <circle fill="#${outerStroke}" cx="262" cy="185" r="65" />
-    </g>
-  </svg>
-`;
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="32" height="32" stroke-width="0" fill="whitesmoke">
+        <defs>
+          <filter id="shadow">
+            <feOffset dx="0" dy="-80"></feOffset>
+            <feGaussianBlur stdDeviation="30" result="offset-blur"></feGaussianBlur>
+            <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
+            <feFlood flood-color="#000000" flood-opacity=".4" result="color"></feFlood>
+            <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
+            <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
+          </filter>
+        </defs>
+      <rect x="0" y="0" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="184" y="0" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="368" y="0" width="144" height="144" rx="30" style="filter:url(#shadow)" fill="#${accent}"></rect><rect x="0" y="184" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="184" y="184" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="368" y="184" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="0" y="368" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="184" y="368" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect><rect x="368" y="368" width="144" height="144" rx="30" style="filter:url(#shadow)"></rect>
+    </svg>`;
 }
 
 export function getSvgZoomIcon() {
@@ -45,14 +82,8 @@ export function getSvgZoomIcon() {
   `;
 }
 
-export function setSvg(el: HTMLImageElement, svg: string) {
-  base64Encode(svg).then((base64) => {
-    el.setAttribute('href', `data:image/svg+xml;charset=utf-8;base64,${base64}`);
-  });
-}
-
 export function setToolbarIcon(colorPalette: Options['colorPalette']) {
   getSvgBrowserIcon(colorPalette)
-    .then(getImageData)
+    .then(dispatchGetImageData)
     .then((imageData) => chrome.action.setIcon({ imageData }));
 }

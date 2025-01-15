@@ -36,7 +36,6 @@ import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
 } from './popup';
 import { Leaf } from './bookmarks';
-import { getSvgBrowserIcon, setSvg } from './draw-svg';
 
 const excludeClasses = [
   'anchor',
@@ -260,7 +259,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     setBrowserFavicon(colorPalette);
     $byTag('style').textContent = makeCss(this.#settings, colorPalette, css);
     setThemeClass($byTag('app-main'), colorPalette);
-    getSvgBrowserIcon(colorPalette).then((svg) => setSvg(document.head.querySelector('[rel="icon"]')!, svg));
   }
   minimizeOthers(changes: Changes<'windowAction'>) {
     if (changes.newValue.type === 'minimizeOthers') {

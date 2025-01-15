@@ -13,6 +13,7 @@ module.exports = {
     settings: './src/settings.ts',
     'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
     'css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
+    offscreen: './src/offscreen.ts',
   },
   output: {
     globalObject: 'globalThis',

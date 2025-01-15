@@ -10,18 +10,19 @@
     "tabs",
     "history",
     "favicon",
-    "sessions"
+    "sessions",
+    "offscreen"
   ],
   "action": {
     "default_title": "Popup Navi",
     "default_icon": {
-      "48": "t48.png",
-      "128": "t128.png"
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
   },
   "icons": {
-    "48": "t48.png",
-    "128": "t128.png"
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
   "commands": {
     "_execute_action": {

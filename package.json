@@ -49,9 +49,7 @@
     "zip-webpack-plugin": "^4.0.2"
   },
   "dependencies": {
-    "@xmldom/xmldom": "^0.7.5",
     "bootstrap": "^5.3.3",
-    "canvg": "^4.0.2",
     "monaco-editor": "^0.52.2"
   },
   "volta": {

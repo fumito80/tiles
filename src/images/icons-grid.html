@@ -15,10 +15,12 @@
       justify-content: center;
       align-items: center;
     }
+
     svg {
       border: 1px solid #ccc;
       background-color: #ccc;
     }
+
     .racing-sans-one-regular {
       font-family: "Racing Sans One", serif;
       font-weight: 400;
@@ -35,20 +37,17 @@
 
 <body>
   <!-- ここから -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-    <g transform="skewX(-10) scale(0.85, 0.7) translate(98, 105)">
-      <defs>
-        <clipPath id="clip-frame">
-          <rect x="0" y="0" width="512" height="512" rx="40" />
-        </clipPath>
-      </defs>
-      <rect fill="#BFD7EA" x="0" y="0" width="512" height="180" clip-path="url(#clip-frame)" />
-      <rect fill="#14213D" x="0" y="140" width="512" height="100" clip-path="url(#clip-frame)" />
-      <rect fill="#14213D" x="216" y="197" width="80" height="315" clip-path="url(#clip-frame)" />
-      <rect fill="#BFD7EA" x="-33" y="200" width="250" height="370" rx="40" clip-path="url(#clip-frame)" />
-      <rect fill="#BFD7EA" x="296" y="200" width="283" height="370" rx="40" clip-path="url(#clip-frame)" />
-      <rect x="0" y="0" stroke="#14213D" stroke-width="20" fill="none" width="512" height="512" rx="40" />
-    </g>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+    <defs>
+      <filter id="shadow">
+        <feOffset dx='0' dy='-80' />
+        <feGaussianBlur stdDeviation='30' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#000000' flood-opacity='.4' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+    </defs>
   </svg>
   <!-- ここまで -->
   <script>
@@ -74,12 +73,41 @@
         const img2 = document.createElement('img');
         img2.setAttribute('width', width);
         img2.src = url;
-        makeLink('p' + width, img2, url);
+        makeLink('icon' + width, img2, url);
       };
       const svgData = new XMLSerializer().serializeToString(svg2);
       img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
     }
+    function makeRect(x, y, width, rx) {
+      return `<rect x="${x}" y="${y}" width="${width}" height="${width}" rx="${rx}" style="filter:url(#shadow)" />`;
+    }
+    const accentColor = '#FF6663';
+    const stroke = '#14213D';
+    const fill = 'whitesmoke';
     const [svg] = document.getElementsByTagName('svg');
+    const svgs = [];
+    const width = 512;
+    const strokeWidth = 0;
+    const gap = 40;
+    const rx = 30;
+    const rectWidth = ((512 - strokeWidth) - (gap * 2)) / 3;
+    svg.setAttribute('stroke-width', strokeWidth);
+    svg.setAttribute('stroke', stroke);
+    svg.setAttribute('fill', fill);
+    for (let y = 0; y <= 2; y += 1) {
+      for (let x = 0; x <= 2; x += 1) {
+        svgs.push(makeRect(
+          x * (rectWidth + gap) + strokeWidth / 2,
+          y * (rectWidth + gap) + strokeWidth / 2,
+          rectWidth,
+          rx,
+        ));
+      }
+    }
+    svg.insertAdjacentHTML('beforeend', svgs.join(''));
+    const [,,, rt] = [...svg.children];
+    rt.setAttribute('stroke', accentColor);
+    rt.setAttribute('fill', accentColor);
     // svg.querySelector('path').setAttribute('fill', '#E8E8E9');
     // svg.querySelector('path').setAttribute('stroke', '#222222');
     // svg.querySelector('circle').setAttribute('fill', '#1DA1F2');

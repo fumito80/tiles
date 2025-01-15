@@ -236,14 +236,14 @@ app-main:not(.theme-dark-pane) {
 
   .form-query,
   &:not(.searching) .queries-wrap::before,
-  button:not(.submit):hover::after,
-  button:not(.submit):focus::after {
+  button:not(.const-color):hover::after,
+  button:not(.const-color):focus::after {
     background-color: rgba(255, 255, 255, 0.3);
   }
 
   .form-query button:hover .icon-fa-ellipsis-v,
   .form-query button:focus .icon-fa-ellipsis-v,
-  .pane-header button:not(.submit) {
+  .pane-header button:not(.const-color) {
 
     &.pin-bookmark::after,
     >i {
@@ -254,7 +254,7 @@ app-main:not(.theme-dark-pane) {
   .form-query,
   .pane-header {
 
-    button:hover::after,
+    button:not(.const-color):hover::after,
     button:focus::after {
       background-color: rgba(255, 255, 255, 0.3);
     }
