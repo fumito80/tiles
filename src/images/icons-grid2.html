@@ -52,7 +52,7 @@
         <feOffset dx='355' dy='-355' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.8' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>

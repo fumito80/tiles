@@ -69,28 +69,30 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
     return color;
   }, first);
   return `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19" stroke-width="0" fill="#${accent}">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" stroke-width="0" fill="#${accent}">
     <defs>
-      <filter id="shadow-main">
+      <filter id="shadow">
         <feOffset dx="0" dy="0"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#000000" flood-opacity="0.5" result="color"></feFlood>
+        <feFlood flood-color="#222222" flood-opacity="0.8" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
-      <filter id="shadow-onepoint">
-        <feOffset dx="355" dy="-355"></feOffset>
+      <filter id="blend">
+        <feOffset dx="500" dy="-500"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#FFFFFF" flood-opacity=".7" result="color"></feFlood>
+        <feFlood flood-color="#FFFFFF" flood-opacity=".8" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
     </defs>
-    <path d="M36 0 l72 0 q36 0 36 36 l0 72 a20 20 0 1 0 40 0 l0 -72 q0 -36 36 -36 l72 0 q36 0 36 36 l0 72 a20 20 0 1 0 40 0 l0 -72 q0 -36 36 -36 l72 0 q36 0 36 36 l0 72 q0 36 -36 36 l-72 0 a20 20 0 1 0 0 40 l72 0 q36 0 36 36 l0 72 q0 36 -36 36 l-72 0 a20 20 0 1 0 0 40 l72 0 q36 0 36 36 l0 72 q0 36 -36 36 l-72 0 q-36 0 -36 -36 l0 -72 a20 20 0 1 0 -40 0 l0 72 q0 36 -36 36 l-72 0 q-36 0 -36 -36 l0 -72 a20 20 0 1 0 -40 0 l0 72 q0 36 -36 36 l-72 0 q-36 0 -36 -36 l0 -72 q0 -36 36 -36 l72 0 a20 20 0 1 0 0 -40 l-72 0 q-36 0 -36 -36 l0 -72 q0 -36 36 -36 l72 0 a20 20 0 1 0 0 -40 l-72 0 q-36 0 -36 -36 l0 -72 q0 -36 36 -36 z M292 144 l-72 0 a20 20 0 1 0 0 40 l72 0 a20 20 0 1 0 0 -40 z M292 328 l-72 0 a20 20 0 1 0 0 40 l72 0 a20 20 0 1 0 0 -40 z M184 292 l0 -72 a20 20 0 1 0 -40 0 l0 72 a20 20 0 1 0 40 0 z M368 292 l0 -72 a20 20 0 1 0 -40 0 l0 72 a20 20 0 1 0 40 0 z" filter="url(#shadow-onepoint) url(#shadow-main)"></path><path d="M404 0 h72 q36 0 36 36 v72 q0 36 -36 36 h-72 q-36 0 -36 -36 v-72 q0 -36 36 -36z"></path>
+    <circle fill="#${accent}" cx="300" cy="300" r="300" filter="url(#blend)"></circle>
+    <rect fill="whitesmoke" x="110" y="110" width="380" height="380" rx="45"></rect>
+    <path d=" M345 100 h110 q45 0 45 45 v110 q0 45 -45 45 h-110 q-45 0 -45 45 v110 q0 45 -45 45 h-110 q-45 0 -45 -45 v-110 q0 -45 45 -45 h110 q45 0 45 -45 v-110 q0 -45 45 -45 z" filter="url(#shadow)"></path>
   </svg>
-`;
+  `;
 }
 
 export function getSvgZoomIcon() {

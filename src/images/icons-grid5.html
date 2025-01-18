@@ -46,14 +46,19 @@
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
       <filter id="shadow-onepoint">
-        <feOffset dx='355' dy='-355' />
+        <feOffset dx='600' dy='-600' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
         <feFlood flood-color='#FFFFFF' flood-opacity='.8' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
+      <mask id="mask-rect">
+        <rect fill="white" x="0" y="0" width="600" height="600" />
+        <rect fill="black" x="110" y="110" width="380" height="380" rx="45" />
+      </mask>
     </defs>
+    <circle fill="#23AAF2" cx="300" cy="300" r="300" mask="url(#mask-rect)" filter="url(#shadow-onepoint)" />
   </svg>
   <!-- ここまで -->
   <script>
@@ -103,43 +108,25 @@
     function makeConnext(x, y, width, rx, gap) {
       return `
         M${x} ${y}
-        h${width - rx * 2}
+        h${width}
         q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
+        v${width}
         q0 ${rx} ${rx} ${rx}
-        h${width - rx * 2}
+        h${width}
         q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${rx} ${rx}
-        h${width - rx * 2}
-        q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2}
-        q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2}
-        q0 ${-rx} ${-rx} ${-rx}
-        h${-width + rx * 2}
-
-        q${-rx} 0 ${-rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2}
-        q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2}
-        q0 ${-rx} ${rx} ${-rx}
-        h${width - rx * 2}
-        q${rx} 0 ${rx} ${-rx}
-
-        v${-width + rx * 2}
-        q0 ${-rx} ${-rx} ${-rx}
-        h${-width + rx * 2}
-        q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2}
-        q0 ${-rx} ${rx} ${-rx}
+        v${width}
+        q0 ${rx} ${- rx} ${rx}
+        h${- width}
+        q${- rx} 0 ${- rx} ${- rx}
+        v${- width}
+        q0 ${- rx} ${- rx} ${- rx}
+        h${- width}
+        q${- rx} 0 ${- rx} ${- rx}
+        v${- width}
+        q0 ${- rx} ${rx} ${- rx}
         z`;
     }
-    const accentColor = '#FF6663';
+    const accentColor = '#23AAF2';
     const stroke = accentColor;
     const fill = accentColor;
     const [svg] = document.getElementsByTagName('svg');
@@ -147,17 +134,17 @@
     const width = 600;
     const strokeWidth = 0;
     const gap = 0;
-    const rx = 55;
+    const rx = 45;
     const border = 20;
-    const rectWidth = ((width - strokeWidth) - (gap * 2)) / 3;
+    const rectWidth = ((width - strokeWidth) - (gap * 2)) / 3 - rx * 2;
     svg.setAttribute('stroke-width', strokeWidth);
     svg.setAttribute('stroke', stroke);
     svg.setAttribute('fill', fill);
     svg.setAttribute('width', width);
     svg.setAttribute('height', width);
     let path = '<path d="';
-    path += makeConnext(rx + strokeWidth / 2, strokeWidth / 2, rectWidth, rx, gap);
-    path += makeRect(width / 3 * 2 + rx, strokeWidth / 2, width / 3 - strokeWidth / 2 - rx * 2, rx, gap);
+    path += makeConnext(width / 3 / 2 + rx, width / 3 / 2, rectWidth, rx, gap);
+    // path += makeRect(width / 3 * 2 + rx, strokeWidth / 2, width / 3 - strokeWidth / 2 - rx * 2, rx, gap);
     path += '" filter="url(#shadow)" />'
     path = path.replace(/\s+/g, ' ');
     svg.insertAdjacentHTML('beforeend', path);
