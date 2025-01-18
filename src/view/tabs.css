@@ -48,8 +48,9 @@ open-tab {
         width: 4px;
         height: calc(100% + 1px);
         top: 0;
-        left: -10px;
+        left: -9px;
         background-color: var(--key-bg);
+        border-radius: 10px;
       }
     }
 

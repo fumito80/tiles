@@ -75,7 +75,7 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feOffset dx="0" dy="0"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#222222" flood-opacity="0.8" result="color"></feFlood>
+        <feFlood flood-color="#000000" flood-opacity="0.8" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
@@ -83,7 +83,7 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feOffset dx="500" dy="-500"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#FFFFFF" flood-opacity=".8" result="color"></feFlood>
+        <feFlood flood-color="#FFFFFF" flood-opacity="0.7" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>

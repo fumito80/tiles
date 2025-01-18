@@ -41,7 +41,7 @@
         <feOffset dx='0' dy='0' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#222222' flood-opacity='0.8' result='color' />
+        <feFlood flood-color='#000000' flood-opacity='0.8' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
@@ -49,7 +49,7 @@
         <feOffset dx='500' dy='-500' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#FFFFFF' flood-opacity='.8' result='color' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
