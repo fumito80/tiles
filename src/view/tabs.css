@@ -891,6 +891,7 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
         width: 4px;
         height: calc(100% - 5px);
         background-color: var(--key-bg);
+        border-radius: 10px;
       }
     }
   }

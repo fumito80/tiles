@@ -371,8 +371,9 @@ app-main:not(.theme-dark-pane) {
   &.theme-dark-pane {
     .tabs open-window.current-window::before {
       top: 0;
-      left: -9px;
+      left: -8px;
       height: 100%;
+      border-radius: 10px;
     }
   }
 }

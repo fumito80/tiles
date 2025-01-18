@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Russo+One&display=swap" rel="stylesheet">
+  <title>Icons Maker</title>
+  <style>
+    body {
+      white-space: nowrap;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+    }
+
+    /* svg {
+      border: 1px solid #ccc;
+      background-color: #ccc;
+    } */
+
+    .racing-sans-one-regular {
+      font-family: "Racing Sans One", serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 7.5rem;
+    }
+
+    img {
+      aspect-ratio: 1;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ここから -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+    <defs>
+      <filter id="shadow-main">
+        <feOffset dx='0' dy='0' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#000000' flood-opacity='0.5' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+      <filter id="shadow-onepoint">
+        <feOffset dx='355' dy='-355' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+    </defs>
+  </svg>
+  <!-- ここまで -->
+  <script>
+    function makeLink(download, img, href) {
+      const link = document.body.appendChild(document.createElement('a'));
+      link.append(img);
+      return Object.assign(link, { href, download });
+    }
+    function addImage(width, svg) {
+      const svg2 = svg.cloneNode(true);
+      svg2.setAttribute('width', width);
+      svg2.setAttribute('height', width);
+      const img = document.createElement('img');
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = width;
+      const ctx = canvas.getContext('2d');
+
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0);
+        const url = canvas.toDataURL('image/png');
+        const img2 = document.createElement('img');
+        img2.setAttribute('width', width);
+        img2.src = url;
+        makeLink('icon' + width, img2, url);
+      };
+      const svgData = new XMLSerializer().serializeToString(svg2);
+      img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
+    }
+    function makeRect(x, y, width, rx) {
+      return `<path d="M${x} ${y} h${width} q${rx} 0 ${rx} ${rx} v${width} q0 ${rx} -${rx} ${rx} h-${width} q${-rx} 0 ${-rx} ${-rx} v${-width} q0 ${-rx} ${rx} ${-rx}z" />`;
+    }
+    function makeSide(width, rx, gap, hSign, vSign) {
+      function block() {
+        return `
+          l${width * hSign} ${width * vSign}
+          q${rx * hSign} ${rx * vSign} ${rx * (hSign || vSign * -1)} ${rx * (hSign + vSign)}
+          l${width * vSign * -1} ${width * hSign}
+          a${gap / 2} ${gap / 2} 0 1 0 ${gap * hSign} ${gap * vSign}
+          l${width * vSign} ${width * hSign * -1}
+          q${rx * vSign} ${rx * hSign * -1} ${rx * (hSign + vSign)} ${rx * (vSign || hSign * -1)}`;
+      }
+      return block() + block() + `
+        l${width * hSign} ${width * vSign}
+        q${rx * hSign} ${rx * vSign} ${rx * (hSign || vSign * -1)} ${rx * (hSign + vSign)}
+        `;
+    }
+    function makeGap(x, y, width, rx, gap, hSign, vSign) {
+      return `
+        M${x} ${y}
+        l${width * hSign} ${width * vSign}
+        a${gap / 2} ${gap / 2} 0 1 0 ${gap * vSign} ${gap * -hSign}
+        l${width * hSign * -1} ${width * vSign * -1}
+        a${gap / 2} ${gap / 2} 0 1 0 ${gap * -vSign} ${gap * hSign}
+        z`;
+    }
+    const accentColor = '#23AAF2';
+    // const stroke = '#14213D';
+    const fill = accentColor;
+    const width = 512;
+    const strokeWidth = 0;
+    const gap = 40;
+    const rx = 36;
+    const rectWidth = ((width - gap * 2) / 3 - strokeWidth - rx * 2);
+    const [svg] = document.getElementsByTagName('svg');
+    svg.setAttribute('stroke-width', strokeWidth);
+    // svg.setAttribute('stroke', stroke);
+    svg.setAttribute('fill', fill);
+    let path = `<path d="M${rx + strokeWidth / 2} ${strokeWidth / 2}`;
+    path += makeSide(rectWidth, rx, gap, 1, 0);
+    path += makeSide(rectWidth, rx, gap, 0, 1);
+    path += makeSide(rectWidth, rx, gap, -1, 0);
+    path += makeSide(rectWidth, rx, gap, 0, -1);
+    path += 'z ';
+    path += makeGap(rectWidth * 2 + rx * 3 + gap, rectWidth + rx * 2, rectWidth, rx, gap, -1, 0);
+    path += makeGap(rectWidth * 2 + rx * 3 + gap, rectWidth * 2 + rx * 4 + gap, rectWidth, rx, gap, -1, 0);
+    path += makeGap(rectWidth * 1 + rx * 2 + gap * 1, rectWidth * 2 + rx * 3 + gap, rectWidth, rx, gap, 0, -1);
+    path += makeGap(rectWidth * 2 + rx * 4 + gap * 2, rectWidth * 2 + rx * 3 + gap, rectWidth, rx, gap, 0, -1);
+    path += '" filter="url(#shadow-onepoint) url(#shadow-main)" />';
+    path = path.replace(/\s+/g, ' ');
+    svg.insertAdjacentHTML('beforeend', path);
+    svg.insertAdjacentHTML('beforeend', makeRect(rectWidth * 2 + rx * 5 + gap * 2, 0, rectWidth, rx));
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', width);
+    addImage(128, svg);
+    addImage(48, svg);
+  </script>
+</body>
