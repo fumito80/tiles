@@ -15,6 +15,7 @@
         <div class="split-h pane3"></div>
         <div class="split-h pane2"></div>
         <div class="split-h pane1"></div>
+        <div class="split-v pane5"></div>
         <div class="shade-left"></div>
         <div class="shade-right"></div>
         <i class="zoom-out icon-fa-angle-right left"></i>
@@ -169,6 +170,9 @@
             <div class="rows"></div>
             <div class="v-scroll-fake-bottom"></div>
         </div>
+        <div is="header-recent-tabs" class="pane-header header-recent">
+            <i class="icon-recent-tabs" title="RECENT TABS"></i>
+        </div>
         <div is="body-tabs" class="pane-body tabs">
             <div class="pin-wrap-top"></div>
             <div class="tabs-wrap">
@@ -180,6 +184,7 @@
             </div>
             <div class="pin-wrap-bottom"></div>
         </div>
+        <div is="body-recent-tabs" class="pane-body recent-tabs"></div>
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit const-color" tabindex="-1"><i class="icon-fa-search"></i></button>
             <input type="text" class="query" name="query" autofocus="true">

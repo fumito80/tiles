@@ -243,3 +243,7 @@ i {
 .icon-minus:before {
   content: "\e926";
 }
+
+.icon-drag-handle:before {
+  content: "\e927";
+}

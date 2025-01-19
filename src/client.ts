@@ -841,7 +841,7 @@ export function moveBookmarks(
       const orderedIds = position === 'afterend' ? sourceIds.reverse() : sourceIds;
       orderedIds.forEach((sourceId) => {
         const [$sourceLeafs, $sourceFolders] = [$(`.leafs ${cssid(sourceId)}`)!, $(`.folders ${cssid(sourceId)}`)!];
-        const isRootFrom = $sourceLeafs.parentElement?.id === '1';
+        const isRootFrom = $sourceLeafs?.parentElement?.id === '1';
         const isLeafFrom = hasClass($sourceLeafs, 'leaf');
         if (isLeafFrom && isRootFrom && !isRootTo) {
           $sourceFolders.remove();

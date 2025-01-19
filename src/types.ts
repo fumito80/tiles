@@ -5,6 +5,7 @@ import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
+import { RecentTabs } from './recent-tabs';
 
 export type StoredElements = {
   'app-main': AppMain,
@@ -15,6 +16,7 @@ export type StoredElements = {
   'body-tabs': Tabs,
   'header-history': HeaderHistory,
   'body-history': History,
+  'body-recent-tabs': RecentTabs,
 }
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
@@ -61,6 +63,10 @@ export const defaultWidth = {
   tabs: 325,
   leafs: 200,
   folders: 150,
+};
+
+export const defaultHeight = {
+  recentTabs: 300,
 };
 
 export const initialSettings = {
@@ -142,6 +148,7 @@ const panes = [
   'histories',
   'tabs',
   'bookmarks',
+  'recent-tabs',
 ] as const;
 
 export const initialOptions = {

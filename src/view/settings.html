@@ -78,35 +78,60 @@
             <div class="tab-pane fade" id="mix-theme" role="tabpanel" aria-labelledby="mix-theme" tabindex="0"></div>
           </div>
         </div>
-
         <div class="heading">Layout</div>
         <layout-panes name="panes">
-          <div draggable="true" data-value="histories">
-            <i class="icon-history"></i>
-            <div class="title">HISTORY</div>
-            <div>
-              <input type="checkbox" name="zoom-history" id="zoom-history"><label for="zoom-history">Xen mode</label>
+          <div draggable="true" class="column">
+            <i class="icon-drag-handle"></i>
+            <div draggable="true" data-value="histories">
+              <i class="icon-history"></i>
+              <div class="title">HISTORY</div>
+              <div>
+                <input type="checkbox" name="zoom-history" id="zoom-history"><label for="zoom-history">Xen mode</label>
+              </div>
+              <div class="droppable pane-top"></div>
+              <div class="droppable pane-bottom"></div>
             </div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
-          <div draggable="true" data-value="tabs">
-            <i class="icon-tabs"></i>
-            <div class="title">OPEN TABS</div>
-            <div>
-              <input type="checkbox" name="zoom-tabs" id="zoom-tabs"><label for="zoom-tabs">Xen mode</label>
+          <div draggable="true" class="column">
+            <i class="icon-drag-handle"></i>
+            <div draggable="true" data-value="tabs">
+              <i class="icon-tabs"></i>
+              <div class="title">OPEN TABS</div>
+              <div>
+                <input type="checkbox" name="zoom-tabs" id="zoom-tabs"><label for="zoom-tabs">Xen mode</label>
+              </div>
+              <div class="droppable pane-top"></div>
+              <div class="droppable pane-bottom"></div>
             </div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>
-          <div draggable="true" data-value="bookmarks">
-            <i class="icon-bookmarks"></i>
-            <div class="title">BOOKMARKS</div>
-            <layout-bm-panes name="bookmarks-panes">
-              <div data-value="leafs">Bookmarks</div>
-              <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
-              <div data-value="folders">Folders</div>
-            </layout-bm-panes>
+          <div draggable="true" class="column">
+            <i class="icon-drag-handle"></i>
+            <div draggable="true" data-value="recent">
+              <i class="icon-recently-closed-tab"></i>
+              <div class="title">RECENT TABS</div>
+              <div class="droppable pane-top"></div>
+              <div class="droppable pane-bottom"></div>
+            </div>
+            <div class="droppable pane-before"></div>
+            <div class="droppable pane-after"></div>
+          </div>
+          <div draggable="true" class="column">
+            <i class="icon-drag-handle"></i>
+            <div draggable="true" data-value="bookmarks">
+              <i class="icon-bookmarks"></i>
+              <div class="title">BOOKMARKS</div>
+              <layout-bm-panes name="bookmarks-panes">
+                <div data-value="leafs">Bookmarks</div>
+                <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
+                <div data-value="folders">Folders</div>
+              </layout-bm-panes>
+              <div class="droppable pane-top"></div>
+              <div class="droppable pane-bottom"></div>
+            </div>
             <div class="droppable pane-before"></div>
             <div class="droppable pane-after"></div>
           </div>

@@ -17,19 +17,12 @@ export abstract class CustomInputElement extends HTMLElement {
 
 type Panes = State['options']['panes'][number];
 
-function dragstart(e: DragEvent) {
-  const $target = e.target as HTMLElement;
-  addClass('drag-source')($target);
-  addClass('dragging')($target.parentElement);
-  e.dataTransfer!.effectAllowed = 'move';
-}
-
 export class LayoutPanes extends CustomInputElement {
   #value: Panes[] = [];
   #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
   constructor() {
     super();
-    this.addEventListener('dragstart', dragstart);
+    this.addEventListener('dragstart', this.dragstart);
     this.addEventListener('dragover', this.dragover);
     this.addEventListener('dragenter', this.dragenter);
     this.addEventListener('dragleave', this.dragleave);
@@ -53,6 +46,13 @@ export class LayoutPanes extends CustomInputElement {
     });
     this.#value = value;
   }
+  dragstart(e: DragEvent) {
+    const $target = e.target as HTMLElement;
+    addClass('drag-source')($target);
+    const className = hasClass($target, 'column') ? 'drag-column' : 'drag-cell';
+    addClass(className)(this);
+    e.dataTransfer!.effectAllowed = 'move';
+  }
   dragover(e: DragEvent) {
     if (!hasClass(e.target as HTMLElement, 'droppable')) {
       return;
@@ -71,6 +71,11 @@ export class LayoutPanes extends CustomInputElement {
       return;
     }
     clearTimeout(this.#leaveTimer);
+    if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
+      const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
+      $dest.insertAdjacentElement(position, $src);
+      return;
+    }
     const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
     $dest.insertAdjacentElement(position, $src);
   }
@@ -81,9 +86,10 @@ export class LayoutPanes extends CustomInputElement {
     }, 200);
   }
   dragend(e: DragEvent) {
+    this.classList.remove('gragging');
     const $target = e.target as HTMLElement;
     rmClass('drag-source')($target);
-    rmClass('dragging')($target.parentElement);
+    rmClass('drag-column', 'drag-cell')(this);
     if (e.dataTransfer?.dropEffect === 'none') {
       this.value = this.#value;
     }

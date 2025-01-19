@@ -329,36 +329,47 @@ label.theme {
   display: flex;
   gap: 10px;
 
-  >div {
-    position: relative;
-    border: 2px solid #222;
-    border-radius: 5px;
-    width: 120px;
-    height: 120px;
-    display: grid;
-    align-items: center;
-    justify-content: center;
+  .droppable {
+    position: absolute;
+    height: 100%;
+    width: 0;
+    transition: width 0.1s, left 0.1s;
+  }
+
+  .icon-drag-handle {
     text-align: center;
-    grid-template-rows: 40% 10% 50%;
-    background-color: aliceblue;
-    cursor: grab;
+    font-size: 1.5em;
+    cursor: ew-resize;
+  }
 
-    .title+div {
-      cursor: default;
+  .column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    >[draggable] {
+      position: relative;
+      border: 2px solid #222;
+      border-radius: 5px;
+      min-width: 120px;
+      min-height: 120px;
+      display: grid;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      grid-template-rows: 40% 10% 50%;
+      background-color: aliceblue;
+      cursor: grab;
+
+      .title+div {
+        cursor: default;
+      }
+
+      >i {
+        color: darkgray;
+      }
     }
-
-    >i {
-      color: darkgray;
-    }
-
-    >.droppable {
-      position: absolute;
-      height: 100%;
-      left: 0;
-      width: 0;
-      transition: width 0.1s, left 0.1s;
-    }
-
   }
 
   .icon-tabs {
@@ -370,7 +381,7 @@ label.theme {
     margin-right: auto;
   }
 
-  >.drag-source {
+  .drag-source {
     background-color: transparent;
     color: transparent;
     border-color: transparent;
@@ -382,22 +393,37 @@ label.theme {
       visibility: hidden;
       transition: visibility 0.01s;
     }
-
   }
 
-  &.dragging {
-
-    >div {
+  &.drag-column {
+    >.column {
       >.droppable {
         width: calc(50% + 7px);
-      }
 
-      >.pane-before {
-        left: -7px;
-      }
+        &.pane-before {
+          left: -7px;
+        }
 
-      >.pane-after {
-        left: 50%;
+        &.pane-after {
+          left: 50%;
+        }
+      }
+    }
+  }
+
+  &.drag-cell {
+    [data-value] {
+      >.droppable {
+        width: 100%;
+        height: calc(50% + 7px);
+
+        &.pane-top {
+          top: -7px;
+        }
+
+        &.pane-bottom {
+          top: 50%;
+        }
       }
     }
   }

@@ -59,6 +59,7 @@ import { storeMapping } from './store-mapping';
 import {
   ActionValue, initComponents, IPublishElement, makeAction,
 } from './store';
+import { RecentTabs } from './recent-tabs';
 
 export { makeAction, IPublishElement };
 
@@ -261,6 +262,7 @@ customElements.define('multi-sel-pane', MultiSelPane);
 customElements.define('popup-menu', PopupMenu);
 customElements.define('dialog-content', DialogContent);
 customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
+customElements.define('body-recent-tabs', RecentTabs, { extends: 'div' });
 
 export type Store = ReturnType<typeof init>;
 export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;
