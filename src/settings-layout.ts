@@ -1,4 +1,4 @@
-import { State, InsertPosition } from './types';
+import { State } from './types';
 import {
   $, $byClass, addClass, hasClass, rmClass,
 } from './client';
@@ -19,15 +19,17 @@ type Panes = State['options']['panes'][number];
 
 export class LayoutPanes extends CustomInputElement {
   #value: Panes[] = [];
-  #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
+  // #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
+  #dragging = 'dragging';
+  #dragEnter = 'drag-enter';
   constructor() {
     super();
     this.addEventListener('dragstart', this.dragstart);
     this.addEventListener('dragover', this.dragover);
     this.addEventListener('dragenter', this.dragenter);
-    this.addEventListener('dragleave', this.dragleave);
+    // this.addEventListener('dragleave', this.dragleave);
     this.addEventListener('dragend', this.dragend);
-    this.addEventListener('drop', this.drop);
+    // this.addEventListener('drop', this.drop);
   }
   get value() {
     return this.#value;
@@ -49,18 +51,20 @@ export class LayoutPanes extends CustomInputElement {
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
     addClass('drag-source')($target);
-    const className = hasClass($target, 'column') ? 'drag-column' : 'drag-cell';
-    addClass(className)(this);
+    // const className = hasClass($target, 'column') ? 'drag-column' : 'drag-cell';
+    addClass(this.#dragging)(this);
     e.dataTransfer!.effectAllowed = 'move';
   }
+  // eslint-disable-next-line class-methods-use-this
   dragover(e: DragEvent) {
     if (!hasClass(e.target as HTMLElement, 'droppable')) {
       return;
     }
-    clearTimeout(this.#leaveTimer);
+    // clearTimeout(this.#leaveTimer);
     e.preventDefault();
   }
   dragenter(e: DragEvent) {
+    rmClass(this.#dragEnter)($byClass(this.#dragEnter));
     const $dragSource = $byClass('drag-source')!;
     const $enterTarget = e.target as HTMLElement;
     if ($dragSource === $enterTarget || !hasClass($enterTarget, 'droppable')) {
@@ -70,26 +74,32 @@ export class LayoutPanes extends CustomInputElement {
     if ($src === $dest) {
       return;
     }
-    clearTimeout(this.#leaveTimer);
-    if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
-      const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
-      $dest.insertAdjacentElement(position, $src);
-      return;
-    }
-    const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
-    $dest.insertAdjacentElement(position, $src);
+    e.preventDefault();
+    addClass(this.#dragEnter)($enterTarget);
+    // clearTimeout(this.#leaveTimer);
+    // if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
+    //   const position: InsertPosition = hasClass($enterTarget, 'pane-top') ?
+    //  'beforebegin' : 'afterend';
+    //   $dest.insertAdjacentElement(position, $src);
+    //   return;
+    // }
+    // const position: InsertPosition = hasClass($enterTarget, 'pane-before') ?
+    //  'beforebegin' : 'afterend';
+    // $dest.insertAdjacentElement(position, $src);
   }
-  dragleave() {
-    clearTimeout(this.#leaveTimer);
-    this.#leaveTimer = setTimeout(() => {
-      this.value = this.#value;
-    }, 200);
-  }
+  // dragleave() {
+  //   rmClass(this.#dragEnter)($byClass(this.#dragEnter));
+  //   // clearTimeout(this.#leaveTimer);
+  //   // this.#leaveTimer = setTimeout(() => {
+  //   //   this.value = this.#value;
+  //   // }, 200);
+  // }
   dragend(e: DragEvent) {
-    this.classList.remove('gragging');
+    rmClass(this.#dragEnter)($byClass(this.#dragEnter));
+    rmClass(this.#dragging)(this);
     const $target = e.target as HTMLElement;
     rmClass('drag-source')($target);
-    rmClass('drag-column', 'drag-cell')(this);
+    rmClass(this.#dragging, 'drag-column', 'drag-cell')(this);
     if (e.dataTransfer?.dropEffect === 'none') {
       this.value = this.#value;
     }

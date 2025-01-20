@@ -381,7 +381,7 @@ label.theme {
     margin-right: auto;
   }
 
-  .drag-source {
+  .drag-source[draggable] {
     background-color: transparent;
     color: transparent;
     border-color: transparent;
@@ -395,34 +395,74 @@ label.theme {
     }
   }
 
-  &.drag-column {
-    >.column {
-      >.droppable {
-        width: calc(50% + 7px);
+  &.dragging {
+    .drag-enter.droppable::before {
+      background-color: #1A73E8 !important;
+    }
 
-        &.pane-before {
-          left: -7px;
+    >.column:not(:has(.drag-source)):not(:empty) {
+      >.droppable {
+        &::before {
+          content: '';
+          position: absolute;
+          height: 100%;
+          left: 11px;
+          background-color: lightgray;
         }
 
-        &.pane-after {
-          left: 50%;
+        &.pane-before {
+          width: 30px;
+          left: -20px;
+
+          &::before {
+            width: 8px;
+          }
         }
       }
     }
-  }
 
-  &.drag-cell {
-    [data-value] {
+    .column:has(.drag-source)+.column>.pane-before {
+      display: none;
+    }
+
+    .column:has(+.column:empty)>.pane-after,
+    .column:last-child:not(:empty)>.pane-after {
+      width: 30px;
+      right: -20px;
+
+      &::before {
+        width: 8px;
+      }
+    }
+
+    [draggable]:not(.drag-source) {
       >.droppable {
         width: 100%;
-        height: calc(50% + 7px);
+        height: 30%;
 
         &.pane-top {
-          top: -7px;
+          top: -20px;
+
+          &::before {
+            top: 9px;
+          }
         }
 
         &.pane-bottom {
-          top: 50%;
+          bottom: -20px;
+
+          &::before {
+            top: 18px;
+          }
+        }
+
+        &::before {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 8px;
+          left: 0;
+          background-color: lightgray;
         }
       }
     }
