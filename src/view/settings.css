@@ -333,7 +333,6 @@ label.theme {
     position: absolute;
     height: 100%;
     width: 0;
-    transition: width 0.1s, left 0.1s;
   }
 
   .icon-drag-handle {
@@ -353,6 +352,7 @@ label.theme {
       border: 2px solid #222;
       border-radius: 5px;
       min-width: 120px;
+      height: 100%;
       min-height: 120px;
       display: grid;
       align-items: center;
@@ -361,6 +361,7 @@ label.theme {
       grid-template-rows: 40% 10% 50%;
       background-color: aliceblue;
       cursor: grab;
+      box-sizing: border-box;
 
       .title+div {
         cursor: default;
@@ -384,7 +385,10 @@ label.theme {
   .drag-source[draggable] {
     background-color: transparent;
     color: transparent;
-    border-color: transparent;
+    /* border-color: transparent; */
+    border-style: dashed;
+    border-color: dodgerblue;
+    border-width: 3px;
     transition: background-color 0.01s, color 0.01s, border-color 0.01s;
 
     .title+div,
@@ -396,43 +400,18 @@ label.theme {
   }
 
   &.dragging {
-    .drag-enter.droppable::before {
-      background-color: #1A73E8 !important;
-    }
-
-    >.column:not(:has(.drag-source)):not(:empty) {
+    >.column {
       >.droppable {
-        &::before {
-          content: '';
-          position: absolute;
-          height: 100%;
-          left: 11px;
-          background-color: lightgray;
-        }
-
         &.pane-before {
           width: 30px;
           left: -20px;
-
-          &::before {
-            width: 8px;
-          }
         }
       }
     }
 
-    .column:has(.drag-source)+.column>.pane-before {
-      display: none;
-    }
-
-    .column:has(+.column:empty)>.pane-after,
-    .column:last-child:not(:empty)>.pane-after {
+    .column:last-child>.pane-after {
       width: 30px;
       right: -20px;
-
-      &::before {
-        width: 8px;
-      }
     }
 
     [draggable]:not(.drag-source) {
@@ -442,27 +421,10 @@ label.theme {
 
         &.pane-top {
           top: -20px;
-
-          &::before {
-            top: 9px;
-          }
         }
 
         &.pane-bottom {
           bottom: -20px;
-
-          &::before {
-            top: 18px;
-          }
-        }
-
-        &::before {
-          content: '';
-          position: absolute;
-          width: 100%;
-          height: 8px;
-          left: 0;
-          background-color: lightgray;
         }
       }
     }

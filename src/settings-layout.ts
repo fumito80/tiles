@@ -1,6 +1,6 @@
-import { State } from './types';
+import type { State, InsertPosition } from './types';
 import {
-  $, $byClass, addClass, hasClass, rmClass,
+  $, $$, $byClass, $byTag, addClass, hasClass, rmClass,
 } from './client';
 import { isDefined } from './common';
 
@@ -19,7 +19,6 @@ type Panes = State['options']['panes'][number];
 
 export class LayoutPanes extends CustomInputElement {
   #value: Panes[] = [];
-  // #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
   #dragging = 'dragging';
   #dragEnter = 'drag-enter';
   constructor() {
@@ -27,7 +26,6 @@ export class LayoutPanes extends CustomInputElement {
     document.body.addEventListener('dragstart', this.dragstart.bind(this));
     document.body.addEventListener('dragover', this.dragover.bind(this));
     document.body.addEventListener('dragenter', this.dragenter.bind(this));
-    // document.body.addEventListener('dragleave', this.dragleave.bind(this));
     document.body.addEventListener('dragend', this.dragend.bind(this));
     // document.body.addEventListener('drop', this.drop.bind(this));
   }
@@ -50,8 +48,10 @@ export class LayoutPanes extends CustomInputElement {
   }
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
-    addClass('drag-source')($target);
-    addClass(this.#dragging)(this);
+    setTimeout(() => {
+      addClass('drag-source')($target);
+      addClass(this.#dragging)(this);
+    }, 1);
     e.dataTransfer!.effectAllowed = 'move';
   }
   // eslint-disable-next-line class-methods-use-this
@@ -59,7 +59,6 @@ export class LayoutPanes extends CustomInputElement {
     if (!hasClass(e.target as HTMLElement, 'droppable')) {
       return;
     }
-    // clearTimeout(this.#leaveTimer);
     e.preventDefault();
   }
   dragenter(e: DragEvent) {
@@ -75,24 +74,23 @@ export class LayoutPanes extends CustomInputElement {
     }
     e.preventDefault();
     addClass(this.#dragEnter)($enterTarget);
-    // clearTimeout(this.#leaveTimer);
-    // if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
-    //   const position: InsertPosition = hasClass($enterTarget, 'pane-top') ?
-    //  'beforebegin' : 'afterend';
-    //   $dest.insertAdjacentElement(position, $src);
-    //   return;
-    // }
-    // const position: InsertPosition = hasClass($enterTarget, 'pane-before') ?
-    //  'beforebegin' : 'afterend';
-    // $dest.insertAdjacentElement(position, $src);
+    if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
+      const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
+      const $column = $src.parentElement!;
+      $dest.insertAdjacentElement(position, $src);
+      if (!$('[draggable]', $column)) {
+        $column.remove();
+      }
+      return;
+    }
+    const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
+    let $column = $src.parentElement!;
+    if ($$('[draggable]', $column).length > 1) {
+      $column = document.importNode($('div', $byTag<HTMLTemplateElement>('template').content)!, true);
+      $column.append($src);
+    }
+    $dest.insertAdjacentElement(position, $column);
   }
-  // dragleave() {
-  //   rmClass(this.#dragEnter)($byClass(this.#dragEnter));
-  //   // clearTimeout(this.#leaveTimer);
-  //   // this.#leaveTimer = setTimeout(() => {
-  //   //   this.value = this.#value;
-  //   // }, 200);
-  // }
   dragend(e: DragEvent) {
     rmClass(this.#dragEnter)($byClass(this.#dragEnter));
     rmClass(this.#dragging)(this);
