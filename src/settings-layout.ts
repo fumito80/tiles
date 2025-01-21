@@ -24,12 +24,12 @@ export class LayoutPanes extends CustomInputElement {
   #dragEnter = 'drag-enter';
   constructor() {
     super();
-    this.addEventListener('dragstart', this.dragstart);
-    this.addEventListener('dragover', this.dragover);
-    this.addEventListener('dragenter', this.dragenter);
-    // this.addEventListener('dragleave', this.dragleave);
-    this.addEventListener('dragend', this.dragend);
-    // this.addEventListener('drop', this.drop);
+    document.body.addEventListener('dragstart', this.dragstart.bind(this));
+    document.body.addEventListener('dragover', this.dragover.bind(this));
+    document.body.addEventListener('dragenter', this.dragenter.bind(this));
+    // document.body.addEventListener('dragleave', this.dragleave.bind(this));
+    document.body.addEventListener('dragend', this.dragend.bind(this));
+    // document.body.addEventListener('drop', this.drop.bind(this));
   }
   get value() {
     return this.#value;
@@ -51,7 +51,6 @@ export class LayoutPanes extends CustomInputElement {
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
     addClass('drag-source')($target);
-    // const className = hasClass($target, 'column') ? 'drag-column' : 'drag-cell';
     addClass(this.#dragging)(this);
     e.dataTransfer!.effectAllowed = 'move';
   }
