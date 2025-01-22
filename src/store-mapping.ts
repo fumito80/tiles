@@ -67,10 +67,6 @@ export function storeMapping(options: Options, components: Components) {
     $formSearch.resetQuery.bind($formSearch),
   );
 
-  store.actionContext($headerLeafs, 'zoomApp').map(
-    $appMain.setZoomApp.bind($appMain),
-  );
-
   store.actionContext($formSearch, 'clearSearch').map(
     $leafs.clearSearch.bind($leafs),
     $headerTabs.clearSearch.bind($headerTabs),
@@ -105,6 +101,11 @@ export function storeMapping(options: Options, components: Components) {
   store.actionContext($headerTabs, 'collapseWindowsAll').map(
     $headerTabs.toggleTabCollapsedAll.bind($headerTabs),
     $tabs.toggleTabCollapsedAll.bind($tabs),
+  );
+
+  store.actionContext($headerLeafs, 'setAppZoom').map(
+    $appMain.setAppZoom.bind($appMain),
+    $headerLeafs.setZoomAppMenu.bind($headerLeafs),
   );
 
   // focus subscribe unit

@@ -320,6 +320,9 @@ function initOthers() {
       });
     }
   });
+  chrome.tabs.setZoomSettings({
+    scope: 'per-tab',
+  });
 }
 
 const init = pipe(

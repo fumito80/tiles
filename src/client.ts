@@ -41,14 +41,13 @@ import {
   updateSettings,
   chromeEventFilter,
   base64Encode,
-  always,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { Changes, Dispatch } from './popup';
+import { Dispatch } from './popup';
 
 // DOM operation
 
@@ -939,27 +938,6 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
       .every(($color, i) => $color.dataset.color === colorPalette[i]));
   $selected?.classList.add('selected-palette');
   ($selected as any)?.scrollIntoViewIfNeeded();
-}
-
-export async function updateAppZoom(value: Changes<'zoomApp'>['newValue']) {
-  return chrome.tabs.getCurrent().then(async (tab) => {
-    if (!tab?.id) {
-      return Promise.reject();
-    }
-    return chrome.tabs.getZoom(tab.id).then((zoom) => {
-      const newZoom = zoom + ((value === 'plus') ? 0.05 : -0.05);
-      return chrome.tabs.setZoom(newZoom).then(always(newZoom));
-    });
-  });
-}
-
-export async function setZoomAppMenu(zoomValue?: number) {
-  const zoom = zoomValue ?? await chrome.tabs.getCurrent()
-    .then((tab) => (tab?.id ? chrome.tabs.getZoom(tab.id) : undefined));
-  if (!zoom) {
-    return;
-  }
-  $('.show .menu-zoom-app > span')!.textContent = `${Math.round(zoom * 100)}%`;
 }
 
 export function scrollVerticalCenter($target: HTMLElement) {

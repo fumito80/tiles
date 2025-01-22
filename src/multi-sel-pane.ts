@@ -2,14 +2,16 @@ import {
   ColorPalette, Options, Panes, State,
 } from './types';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
+  $$, $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
   addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu,
-  showMenu, preShowMenu, setZoomAppMenu,
+  showMenu, preShowMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
 } from './popup';
-import { getLocal, pick, setEvents } from './common';
+import {
+  getLocal, pick, setEvents, when,
+} from './common';
 
 export function getSelecteds() {
   return $$byClass('selected');
@@ -42,12 +44,6 @@ function clickMainMenu(e: MouseEvent, store: Store) {
     case 'settings':
       chrome.runtime.openOptionsPage();
       break;
-    case 'zoom-app-minus':
-    case 'zoom-app-plus': {
-      const [,, value] = $menu.dataset.value.split('-');
-      store.dispatch('zoomApp', value as Changes<'zoomApp'>['newValue'], true);
-      break;
-    }
     default:
   }
   if (hasClass($menu, 'fav-palette')) {
@@ -202,7 +198,6 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           $mainMenu.classList.add('show');
           showMenu($mainMenu, true)(e);
           getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
-          setZoomAppMenu();
         }
       },
       mousedown(e) {
@@ -215,6 +210,9 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
       return;
     }
     this.$multiSelPane.selectItems(newValue.count, store.dispatch);
+  }
+  setZoomAppMenu({ newValue }: Changes<'setAppZoom'>) {
+    $$('.menu-zoom-app > span', this.$mainMenu).forEach((el) => Object.assign(el, { textContent: `${Math.round(newValue * 100)}%` }));
   }
   actions() {
     if (hasClass(this, 'end')) {
@@ -230,9 +228,18 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           initValue: '' as Panes,
           force: true,
         }),
-        zoomApp: makeAction({
-          initValue: '' as 'plus' | 'minus',
-          force: true,
+        setAppZoom: makeAction({
+          initValue: 1,
+          persistent: true,
+          target: $byClass('menu-zoom-app', this.$mainMenu),
+          eventType: 'click',
+          eventProcesser: (e, currentValue) => {
+            const target = e.target as HTMLElement;
+            const newValue = currentValue + when(hasClass(target, 'zoom-app-plus')).then(0.05)
+              .when(hasClass(target, 'zoom-app-minus')).then(-0.05)
+              .else(0);
+            return (newValue < 0.5 || newValue > 1.6) ? currentValue : newValue;
+          },
         }),
       };
     }

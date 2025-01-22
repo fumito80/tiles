@@ -56,9 +56,9 @@ export class LayoutPanes extends CustomInputElement {
   }
   // eslint-disable-next-line class-methods-use-this
   dragover(e: DragEvent) {
-    if (!hasClass(e.target as HTMLElement, 'droppable')) {
-      return;
-    }
+    // if (!hasClass(e.target as HTMLElement, 'droppable')) {
+    //   return;
+    // }
     e.preventDefault();
   }
   dragenter(e: DragEvent) {

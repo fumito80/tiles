@@ -29,8 +29,6 @@ import {
   setBrowserFavicon,
   addChild,
   preShowMenu,
-  setZoomAppMenu,
-  updateAppZoom,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -125,6 +123,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           shiftKey: /Shift/.test(cmd.shortcut!),
           metaKey: /Command/.test(cmd.shortcut!),
         }));
+    });
+    chrome.tabs.setZoomSettings({
+      scope: 'per-tab',
     });
   }
   async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
@@ -269,8 +270,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
   }
   // eslint-disable-next-line class-methods-use-this
-  setZoomApp(changes: Changes<'zoomApp'>) {
-    updateAppZoom(changes.newValue).then(setZoomAppMenu);
+  setAppZoom({ newValue }: Changes<'setAppZoom'>) {
+    chrome.tabs.setZoom(newValue);
+    $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
   }
   actions() {
     return {
@@ -349,6 +351,13 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         return;
       }
       store.dispatch('updateBookmarks');
+    });
+    chrome.tabs.getCurrent().then((tab) => {
+      chrome.tabs.onZoomChange.addListener((changeInfo) => {
+        if (changeInfo.tabId === tab?.id) {
+          store.dispatch('setAppZoom', changeInfo.newZoomFactor);
+        }
+      });
     });
   }
 }
