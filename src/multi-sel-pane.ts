@@ -82,7 +82,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     addAttr('title', header.multiDeletesTitle)($deletesButton);
     header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
-      showMenu($menu, true)(e);
+      showMenu($menu, 1, true)(e);
       e.stopImmediatePropagation();
     }, true);
     $byClass('multi-sel-menu-button', this)?.addEventListener('mousedown', (e) => {
@@ -196,7 +196,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
         $$byClass('main-menu').forEach(rmClass('show'));
         if (!isShow) {
           $mainMenu.classList.add('show');
-          showMenu($mainMenu, true)(e);
+          showMenu($mainMenu, 1, true)(e);
           getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
         }
       },
@@ -235,8 +235,8 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           eventType: 'click',
           eventProcesser: (e, currentValue) => {
             const target = e.target as HTMLElement;
-            const newValue = currentValue + when(hasClass(target, 'zoom-app-plus')).then(0.05)
-              .when(hasClass(target, 'zoom-app-minus')).then(-0.05)
+            const newValue = currentValue + 0.01 * when(hasClass(target, 'zoom-app-plus')).then(1)
+              .when(hasClass(target, 'zoom-app-minus')).then(-1)
               .else(0);
             return (newValue < 0.5 || newValue > 1.6) ? currentValue : newValue;
           },

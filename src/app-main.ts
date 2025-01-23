@@ -125,6 +125,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         }));
     });
     chrome.tabs.setZoomSettings({
+      mode: 'disabled',
       scope: 'per-tab',
     });
   }
@@ -206,7 +207,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           pipe(rmClass('domain', 'prefix'), addClass(findMode))($leaf);
         }
       }
-      showMenu('leaf-menu')(e);
+      const appZoom = await store.getStates('setAppZoom');
+      showMenu('leaf-menu', appZoom)(e);
       store.dispatch('multiSelPanes', { bookmarks: false, all: false });
       return;
     }
@@ -271,7 +273,10 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   // eslint-disable-next-line class-methods-use-this
   setAppZoom({ newValue }: Changes<'setAppZoom'>) {
-    chrome.tabs.setZoom(newValue);
+    Object.assign(document.body.style, {
+      zoom: newValue,
+      height: `calc(100vh / ${newValue} - 5px)`,
+    });
     $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
   }
   actions() {
@@ -351,13 +356,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         return;
       }
       store.dispatch('updateBookmarks');
-    });
-    chrome.tabs.getCurrent().then((tab) => {
-      chrome.tabs.onZoomChange.addListener((changeInfo) => {
-        if (changeInfo.tabId === tab?.id) {
-          store.dispatch('setAppZoom', changeInfo.newZoomFactor);
-        }
-      });
     });
   }
 }

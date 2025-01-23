@@ -110,6 +110,7 @@ export class OpenTab extends MutiSelectableItem {
   #focused = false;
   #highlighted = false;
   #tooltipRect?: DOMRect;
+  #appZoom = 1;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   private $title!: HTMLElement;
@@ -197,12 +198,12 @@ export class OpenTab extends MutiSelectableItem {
       rect.left - rectMain.left - 1,
       rectMain.width - rectMain.left - this.#tooltipRect.width - 5,
     );
-    addStyle('left', `${Math.max(left, 5)}px`)(this.$tooltip);
+    addStyle('left', `calc(${Math.max(left, 5)}px / ${this.#appZoom})`)(this.$tooltip);
     if (rect.bottom + this.#tooltipRect.height + margin > document.body.offsetHeight) {
-      addStyle('top', `${rect.top - this.#tooltipRect.height - margin}px`)(this.$tooltip);
+      addStyle('top', `calc(${rect.top - this.#tooltipRect.height - margin}px / ${this.#appZoom})`)(this.$tooltip);
       return this;
     }
-    addStyle('top', `${rect.bottom + margin}px`)(this.$tooltip);
+    addStyle('top', `calc(${rect.bottom + margin}px / ${this.#appZoom})`)(this.$tooltip);
     return this;
   }
   setFocus(focused: boolean) {
@@ -213,6 +214,9 @@ export class OpenTab extends MutiSelectableItem {
     this.#highlighted = highlighted;
     this.classList.toggle('highlight', highlighted);
     return this;
+  }
+  setAppZoom(appZoom: number) {
+    this.#appZoom = appZoom;
   }
 }
 
@@ -228,13 +232,16 @@ function getModeTabFinder(srcUrl: string, mode: string) {
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
+  #appZoom = 1;
   private $tabsMenu!: HTMLElement;
   init(windowId: number, tab: chrome.tabs.Tab) {
     this.$tabsMenu = $byClass('tabs-menu', this)!;
     this.#windowId = windowId;
     this.update(tab);
     pipe(
-      addListener('click', showMenu(this.$tabsMenu)),
+      addListener('click', (e) => {
+        showMenu(this.$tabsMenu, this.#appZoom)(e);
+      }),
       addListener('mousedown', (e: MouseEvent) => {
         addStyle({ top: '-1000px' })(this.$tabsMenu);
         preShowMenu(this.$tabsMenu, e);
@@ -248,6 +255,9 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     $tab.setAttribute('title', `${tab.title}\n${decodeUrl(tab.url)}`);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
+  }
+  setAppZoom(appZoom: number) {
+    this.#appZoom = appZoom;
   }
   connect(store: Store) {
     const windowId = this.#windowId;
@@ -375,6 +385,10 @@ export class Window extends HTMLElement implements ISubscribeElement {
       this.addTabs([firstTab, ...rest], dispatch);
       dispatch('multiSelPanes', { all: false });
     });
+  }
+  setAppZoom(appZoom: number) {
+    this.getTabs().forEach(($tab) => $tab.setAppZoom(appZoom));
+    this.$header.setAppZoom(appZoom);
   }
   dispathAction({ newValue: windowAction }: Changes<'windowAction'>, dispatch: Dispatch) {
     if (windowAction?.windowId !== this.#windowId) {
@@ -1242,6 +1256,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       return;
     }
     chrome.windows.update($tab.windowId, { focused: true });
+  }
+  setAppZoom({ newValue }: Changes<'setAppZoom'>) {
+    this.getAllWindows().forEach((win) => win.setAppZoom(newValue));
   }
   override actions() {
     return {

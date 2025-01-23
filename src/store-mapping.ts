@@ -106,6 +106,8 @@ export function storeMapping(options: Options, components: Components) {
   store.actionContext($headerLeafs, 'setAppZoom').map(
     $appMain.setAppZoom.bind($appMain),
     $headerLeafs.setZoomAppMenu.bind($headerLeafs),
+    $tabs.setAppZoom.bind($tabs),
+    $folders.setAppZoom.bind($folders),
   );
 
   // focus subscribe unit

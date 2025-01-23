@@ -734,7 +734,11 @@ export function openFolder(folderId: string, incognito = false) {
 
 type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
-export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePos = false) {
+export function showMenu(
+  menuClassOrElement: MenuClass | HTMLElement,
+  appZoom: number,
+  relativePos = false,
+) {
   return (e: MouseEvent) => {
     e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
@@ -744,7 +748,7 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
     const { width, height } = $menu.getBoundingClientRect();
     if (relativePos) {
       if (rect.x - width < 5) {
-        addStyle({ left: `${$target.offsetLeft}px` })($menu);
+        addStyle({ left: `calc(${$target.offsetLeft}px / ${appZoom})` })($menu);
       }
       return;
     }
@@ -761,9 +765,9 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
         return `${rect.left - width + rect.width}px`;
       });
     const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
-      ? `${rect.top - height}px`
-      : `${rect.top + rect.height}px`;
-    addStyle({ left, top })($menu);
+      ? `calc(${rect.top - height}px / ${appZoom})`
+      : `calc(${rect.top + rect.height}px / ${appZoom})`;
+    addStyle({ left: `calc(${left} / ${appZoom})`, top })($menu);
   };
 }
 

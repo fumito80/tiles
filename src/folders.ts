@@ -7,6 +7,7 @@ import {
 } from './client';
 import { getParentElement, setEvents, whichClass } from './common';
 import {
+  Changes,
   IPubSubElement, makeAction, Store,
 } from './popup';
 import { Options } from './types';
@@ -23,6 +24,7 @@ const Bookmarks = getBookmarksBase(HTMLDivElement);
 
 export class Folders extends Bookmarks implements IPubSubElement {
   #options!: Options;
+  #appZoom = 1;
   private $foldersMenu!: HTMLElement;
   init(options: Options) {
     this.#options = options;
@@ -65,7 +67,7 @@ export class Folders extends Bookmarks implements IPubSubElement {
           break;
         }
         case 'folder-menu-button': {
-          showMenu('folder-menu')(e);
+          showMenu('folder-menu', this.#appZoom)(e);
           break;
         }
         default:
@@ -112,6 +114,9 @@ export class Folders extends Bookmarks implements IPubSubElement {
         e.preventDefault();
       },
     });
+  }
+  setAppZoom({ newValue }: Changes<'setAppZoom'>) {
+    this.#appZoom = newValue;
   }
   actions() {
     return {
