@@ -15,7 +15,7 @@ export abstract class CustomInputElement extends HTMLElement {
   abstract value: any;
 }
 
-type Panes = State['options']['panes'][number];
+type Panes = State['options']['panes2'][number];
 
 export class LayoutPanes extends CustomInputElement {
   #value: Panes[] = [];
@@ -33,17 +33,17 @@ export class LayoutPanes extends CustomInputElement {
     return this.#value;
   }
   set value(value: Panes[]) {
-    [...this.children].forEach((el, i) => {
-      const index = value.findIndex((name) => name === (el as HTMLElement).dataset.value);
-      const $checkZenMode = $<HTMLInputElement>('input[type="checkbox"]', el);
-      if ($checkZenMode) {
-        $checkZenMode.disabled = index === this.childElementCount - 1;
-      }
-      if (i === index) {
-        return;
-      }
-      this.insertBefore(el, this.children[index]);
-    });
+    // [...this.children].forEach((el, i) => {
+    //   const index = value.findIndex((name) => name === (el as HTMLElement).dataset.value);
+    //   const $checkZenMode = $<HTMLInputElement>('input[type="checkbox"]', el);
+    //   if ($checkZenMode) {
+    //     $checkZenMode.disabled = index === this.childElementCount - 1;
+    //   }
+    //   if (i === index) {
+    //     return;
+    //   }
+    //   this.insertBefore(el, this.children[index]);
+    // });
     this.#value = value;
   }
   dragstart(e: DragEvent) {
@@ -101,14 +101,15 @@ export class LayoutPanes extends CustomInputElement {
       this.value = this.#value;
     }
   }
-  drop() {
-    const newValue = [...this.children].map((el) => (el as HTMLElement).dataset.value!) as Panes[];
-    if (this.value === newValue) {
-      return;
-    }
-    this.value = newValue;
-    this.fireEvent();
-  }
+  // drop() {
+  //   const newValue = [...this.children].map((el) => (el as HTMLElement).dataset.value!)
+  //  as Panes[];
+  //   if (this.value === newValue) {
+  //     return;
+  //   }
+  //   this.value = newValue;
+  //   this.fireEvent();
+  // }
 }
 
 type BookmarksPanes = State['options']['bookmarksPanes'][number];

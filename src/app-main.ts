@@ -4,18 +4,21 @@ import {
   ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
 } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
+  setEvents,
+  // addListener, last,
+  getLocal, pipe, getNextIndex, updateSettings,
   chromeEventFilter, cssid, makeCss, pick,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
-  $byClass, $$byClass,
+  $byClass,
+  // $$byClass,
   hasClass, toggleClass,
   setResizeHandler,
-  setSplitterHandler,
-  resizeSplitHandler,
+  // setSplitterHandler,
+  // resizeSplitHandler,
   resizeHeightHandler,
-  getEndPaneMinWidth,
+  // getEndPaneMinWidth,
   showMenu,
   rmClass,
   addClass,
@@ -69,28 +72,28 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       this.#windowId = win.id!;
     });
 
-    const $paneBodies = $$byClass('pane-body', this);
-    const $endHeaderPane = last($$byClass('pane-header', this))!;
+    // const $paneBodies = $$byClass('pane-body', this);
+    // const $endHeaderPane = last($$byClass('pane-header', this))!;
 
-    $$byClass('split-h', this).forEach(($splitter, i) => {
-      const $targetPane = $paneBodies[i];
-      addListener('mousedown', (e: MouseEvent) => {
-        (e.currentTarget as HTMLElement).classList.add('mousedown');
-        const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-        const subWidth = $paneBodies
-          .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
-          .reduce((acc, el) => acc + el.offsetWidth, 0);
-        const adjustMouseX = e.clientX - $splitter.offsetLeft;
-        const handler = resizeSplitHandler(
-          $targetPane,
-          $splitter,
-          subWidth + 18,
-          adjustMouseX,
-          endPaneMinWidth,
-        );
-        setSplitterHandler(handler);
-      })($splitter);
-    });
+    // $$byClass('split-h', this).forEach(($splitter, i) => {
+    //   const $targetPane = $paneBodies[i];
+    //   addListener('mousedown', (e: MouseEvent) => {
+    //     (e.currentTarget as HTMLElement).classList.add('mousedown');
+    //     const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
+    //     const subWidth = $paneBodies
+    //       .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
+    //       .reduce((acc, el) => acc + el.offsetWidth, 0);
+    //     const adjustMouseX = e.clientX - $splitter.offsetLeft;
+    //     const handler = resizeSplitHandler(
+    //       $targetPane,
+    //       $splitter,
+    //       subWidth + 18,
+    //       adjustMouseX,
+    //       endPaneMinWidth,
+    //     );
+    //     setSplitterHandler(handler);
+    //   })($splitter);
+    // });
 
     if (!options.windowMode) {
       $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));

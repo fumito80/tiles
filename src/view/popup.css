@@ -93,8 +93,7 @@ body {
 app-main {
   position: relative;
   display: grid;
-  grid-template-columns: min-content min-content min-content min-content min-content min-content min-content 1fr;
-  grid-template-rows: min-content minmax(0, 100%);
+  grid-template-rows: 100%;
   height: 100%;
 
   .leaf,
@@ -1956,6 +1955,16 @@ bm-leaf {
       }
     }
   }
+}
+
+.bookmarks {
+  display: grid;
+  grid-template-columns: 50% minmax(0, 100%);
+}
+
+.col-grid {
+  display: grid;
+  grid-template-columns: 100%;
 }
 
 @import "./tabs";

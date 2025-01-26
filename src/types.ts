@@ -5,7 +5,7 @@ import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
-// import { RecentTabs } from './recent-tabs';
+import { RecentTabs } from './recent-tabs';
 
 export type StoredElements = {
   'app-main': AppMain,
@@ -16,7 +16,7 @@ export type StoredElements = {
   'body-tabs': Tabs,
   'header-history': HeaderHistory,
   'body-history': History,
-  // 'body-recent-tabs': RecentTabs,
+  'body-recent-tabs': RecentTabs,
 }
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
@@ -34,40 +34,14 @@ export type ColorInfo = {
 
 export const maxHeight = 570;
 
-export const paneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
+// export const paneNames = ['leafs', 'tabs', 'histories', 'folders', 'recent-tabs'] as const;
 
-type PaneWidth = {
-  name: (typeof paneNames)[number];
-  width: number,
-};
+// export type PaneLayouts = (typeof paneNames[number])[][];
 
-export type PaneLayouts = [PaneWidth, PaneWidth, PaneWidth][];
-
-export const defaultWidthes: PaneLayouts = [
-  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'leafs', width: 200 }],
-  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'folders', width: 150 }],
-  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'leafs', width: 175 }],
-  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'folders', width: 130 }],
-  [{ name: 'histories', width: 100 }, { name: 'leafs', width: 200 }, { name: 'folders', width: 150 }],
-  [{ name: 'histories', width: 100 }, { name: 'folders', width: 150 }, { name: 'leafs', width: 200 }],
-  [{ name: 'tabs', width: 300 }, { name: 'leafs', width: 150 }, { name: 'folders', width: 130 }],
-  [{ name: 'tabs', width: 300 }, { name: 'folders', width: 130 }, { name: 'leafs', width: 150 }],
-  [{ name: 'leafs', width: 150 }, { name: 'folders', width: 130 }, { name: 'tabs', width: 300 }],
-  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 150 }, { name: 'tabs', width: 300 }],
-  [{ name: 'leafs', width: 175 }, { name: 'folders', width: 130 }, { name: 'histories', width: 175 }],
-  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 175 }, { name: 'histories', width: 175 }],
-];
-
-export const defaultWidth = {
-  histories: 100,
-  tabs: 325,
-  leafs: 200,
-  folders: 150,
-};
-
-export const defaultHeight = {
-  recentTabs: 300,
-};
+type PaneSizes = {
+  widths: number[],
+  heights: number[][];
+} | undefined;
 
 export const initialSettings = {
   postPage: false,
@@ -78,13 +52,9 @@ export const initialSettings = {
     top: undefined as number | undefined,
     left: undefined as number | undefined,
   },
-  paneWidth: {
-    pane1: defaultWidth.leafs,
-    pane2: defaultWidth.tabs,
-    pane3: defaultWidth.histories,
-  },
-  paneLayouts: [] as PaneLayouts,
-  paneLayoutsWindowMode: [] as PaneLayouts,
+  paneSizes: undefined as PaneSizes,
+  // paneLayouts: [['histories'], ['tabs'], ['recent-tabs', 'folders']] as
+  //  const satisfies PaneLayouts,
   bodyColor: '#222222',
   tabs: true,
   history: true,
@@ -144,15 +114,21 @@ export const defaultColorPalette: ColorPalette = [
   'FF6663',
 ];
 
-const panes = [
+type PaneNames = [
   'histories',
   'tabs',
   'bookmarks',
-  // 'recent-tabs',
-] as const;
+  'recent-tabs',
+];
+
+const panes2 = [
+  ['histories'],
+  ['tabs'],
+  ['bookmarks', 'recent-tabs'],
+] as const satisfies (PaneNames[number])[][];
 
 export const initialOptions = {
-  panes,
+  panes2,
   bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
@@ -179,7 +155,7 @@ export const initialOptions = {
   windowMode: true,
 };
 
-export type Panes = typeof panes[number];
+export type Panes = PaneNames[number];
 export type MulitiSelectables = {
 [key in Panes]?: boolean;
 } & { all: boolean | undefined };

@@ -20,9 +20,9 @@ import {
 import {
   pipe,
   cssid,
-  getGridColStart,
+  // getGridColStart,
   last,
-  filter,
+  // filter,
   curry,
   preFaviconUrl,
   extractDomain,
@@ -35,10 +35,11 @@ import {
   $, $$,
   addStyle, addClass,
   initSplitWidth,
-  hasClass,
+  // hasClass,
   addChild,
   setHTML,
-  $$byClass, $byClass,
+  // $$byClass,
+  $byClass,
   toggleElement,
   $byTag,
   getPalettesHtml,
@@ -70,7 +71,7 @@ const sheet = document.head.appendChild(document.createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
-  initSplitWidth(settings, options);
+  initSplitWidth(settings);
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
@@ -112,34 +113,48 @@ function setBookmarksState(clState: ClientState, isSearching: boolean) {
   }
 }
 
-function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes'], prefix = '') {
-  return panes
-    .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name), [])
-    .map((name) => $byClass(prefix + name)!);
-}
+// function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes']
+// , prefix = '') {
+//   return panes
+//     .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name)
+// , [])
+//     .map((name) => $byClass(prefix + name)!);
+// }
 
 function layoutPanes(options: Options, settings: Settings, isSearching: boolean) {
-  const $appMain = $byTag('app-main') as AppMain;
-  const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
-  const $bodies = getPanes(options.panes, options.bookmarksPanes);
-  $appMain.prepend(...$headers, ...$bodies);
+  const $appMain = $byTag<AppMain>('app-main');
+  // const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
+  // const $bodies = getPanes(options.panes, options.bookmarksPanes);
+  // $appMain.prepend(...$headers, ...$bodies);
+  const $$colGrids = options.panes2
+    .reduce((acc, pane) => {
+      const panes = pane.flatMap((name) => [$byClass(`header-${name}`)!, $byClass(name)!]);
+      const grid = Object.assign(document.createElement('div'), {
+        className: 'col-grid',
+      });
+      grid.append(...panes);
+      return [...acc, grid];
+    }, [] as HTMLElement[]);
   pipe(
-    filter((el) => el && !hasClass(el, 'header-folders')),
-    last,
+    // filter((el) => el && !hasClass(el, 'header-folders')),
+    last<HTMLElement>,
     addClass('end'),
+    (el) => el?.firstElementChild as HTMLElement,
     curry($byClass)('query-wrap'),
     ($el) => addChild($byClass('form-query')!)($el!),
-  )($headers);
-  addClass('end')(last($bodies));
+  )($$colGrids);
+  $appMain.prepend(...$$colGrids);
+  // addClass('end')(last($bodies));
   // Bold Splitter
-  const $leafs = $('.histories + .leafs, .histories + .tabs');
-  if ($leafs) {
-    const gridColStart = getGridColStart($leafs);
-    const $splitter = $$byClass('split-h')[gridColStart - 1];
-    addClass('bold-separator')($splitter);
-  }
+  // const $leafs = $('.histories + .leafs, .histories + .tabs');
+  // if ($leafs) {
+  //   const gridColStart = getGridColStart($leafs);
+  //   const $splitter = $$byClass('split-h')[gridColStart - 1];
+  //   addClass('bold-separator')($splitter);
+  // }
   $appMain.init(options, settings, isSearching);
-  return [...$headers, ...$bodies].reduce((acc, pane) => {
+  return $$('[is]', $appMain).reduce((acc, pane) => {
+  // return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane?.getAttribute('is');
     if (!name) {
       return acc;
@@ -150,7 +165,7 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
 
 function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   const html = getPalettesHtml(favColorPalettes);
-  $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
+  $('.col-grid.end > .pane-header:first-child .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
 
 function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {

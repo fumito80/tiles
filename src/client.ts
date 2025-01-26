@@ -10,12 +10,10 @@ import {
   InsertPosition,
   dropAreaClasses,
   positions,
-  defaultWidth,
   ColorPalette,
   CliMessageTypes,
-  PaneLayouts,
-  paneNames,
-  defaultWidthes,
+  // PaneLayouts,
+  // paneNames,
   maxHeight,
   InitailTabs,
 } from './types';
@@ -38,7 +36,7 @@ import {
   postMessage,
   pick,
   setPopupStyle,
-  updateSettings,
+  // updateSettings,
   chromeEventFilter,
   base64Encode,
 } from './common';
@@ -108,11 +106,11 @@ export function addChild<T extends Element | null>($child: T) {
   };
 }
 
-export function addStyle(styleNames: Model): <T extends Element | undefined | null>($el: T) => T;
-export function addStyle(styleName: string, value: string):
-  <T extends Element | undefined>($el: T) => T;
-export function addStyle(styleName: string | Model, value?: string) {
-  return <T extends Element | undefined>($el: T) => {
+export function addStyle<T extends Element | undefined | null>(styleNames: Model): ($el: T) => T;
+export function addStyle<T extends Element | undefined>(styleName: string, value: string):
+  ($el: T) => T;
+export function addStyle<T extends Element | undefined>(styleName: string | Model, value?: string) {
+  return ($el: T) => {
     if (typeof styleName === 'string') {
       ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
     } else {
@@ -124,8 +122,8 @@ export function addStyle(styleName: string | Model, value?: string) {
   };
 }
 
-export function rmStyle(...styleNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmStyle<T extends Element | undefined | null>(...styleNames: string[]) {
+  return ($el: T) => {
     styleNames.forEach(
       (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
     );
@@ -133,29 +131,29 @@ export function rmStyle(...styleNames: string[]) {
   };
 }
 
-export function addAttr(attrName: string, value: string) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function addAttr<T extends Element | undefined | null>(attrName: string, value: string) {
+  return ($el: T) => {
     $el?.setAttribute(attrName, value);
     return $el ?? undefined;
   };
 }
 
-export function rmAttr(attrName: string) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmAttr<T extends Element | undefined | null>(attrName: string) {
+  return ($el: T) => {
     $el?.removeAttribute(attrName);
     return $el ?? undefined;
   };
 }
 
-export function addClass(...classNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function addClass<T extends Element | undefined | null>(...classNames: string[]) {
+  return ($el: T) => {
     $el?.classList.add(...classNames);
     return $el ?? undefined;
   };
 }
 
-export function rmClass(...classNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmClass<T extends Element | undefined | null>(...classNames: string[]) {
+  return ($el: T) => {
     $el?.classList.remove(...classNames);
     return $el ?? undefined;
   };
@@ -228,39 +226,47 @@ export function getGridTemplateColumns() {
   };
 }
 
-export function initSplitWidth(
-  { paneLayouts, paneLayoutsWindowMode, paneWidth }: Settings,
-  options: Options,
-) {
-  const layouts = options.windowMode ? paneLayoutsWindowMode : paneLayouts;
-  const $bodies = $$byClass('pane-body');
-  const [$pane1, $pane2, $pane3] = $bodies;
-  let widthes: PaneLayouts[number] | undefined;
-  if (layouts.length === 0) {
-    if (paneWidth.pane3 === defaultWidth.histories
-      && paneWidth.pane2 === defaultWidth.tabs
-      && paneWidth.pane1 === defaultWidth.leafs) {
-      [widthes] = defaultWidthes;
-    } else {
-      widthes = [$pane1, $pane2, $pane3].map(($body, i) => {
-        const name = whichClass(paneNames, $body)!;
-        const width = [paneWidth.pane3, paneWidth.pane2, paneWidth.pane1][i];
-        return { name, width };
-      }) as PaneLayouts[number];
-    }
-    const layoutType = options.windowMode ? 'paneLayoutsWindowMode' : 'paneLayouts';
-    updateSettings({ [layoutType]: [widthes!] });
-  } else {
-    widthes = layouts.find((ps) => [$pane1, $pane2, $pane3].every(
-      (pane, i) => hasClass(pane, ps[i].name),
-    ));
-    if (!widthes) {
-      widthes = defaultWidthes.find((panes) => [$pane1, $pane2, $pane3].every(
-        ($pane, i) => hasClass($pane, panes[i].name),
-      ))!;
-    }
+export function initSplitWidth({ paneSizes }: Settings) {
+  const $colGrids = $$byClass('col-grid');
+  // const [$pane1, $pane2, $pane3] = $colGrids;
+  if (!paneSizes) {
+    const width = 100 / $colGrids.length;
+    const widths = [...Array($colGrids.length - 1)].map(() => `${width}%`).join(' ');
+    $byTag('app-main')!.style.gridTemplateColumns = `${widths} minmax(0, 100%)`;
+    $colGrids.forEach(($grid) => {
+      const $header = $byClass('pane-header', $grid)!;
+      const rows = $grid.children.length / 2;
+      const percent = 100 / rows;
+      const height = `calc(${percent}% - ${$header.offsetHeight * rows}px)`;
+      const tmplColumns = [...Array(rows - 1)].map(() => `max-content ${height}`).concat('max-content minmax(0, 100%)').join(' ');
+      $grid.style.setProperty('grid-template-rows', tmplColumns);
+    });
   }
-  widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
+  // let widthes: PaneLayouts[number] | undefined;
+  // if (paneLayouts.length === 0) {
+  //   if (paneWidth.pane3 === defaultWidth.histories
+  //     && paneWidth.pane2 === defaultWidth.tabs
+  //     && paneWidth.pane1 === defaultWidth.leafs) {
+  //     [widthes] = defaultWidthes;
+  //   } else {
+  //     widthes = [$pane1, $pane2, $pane3].map(($body, i) => {
+  //       const name = whichClass(paneNames, $body)!;
+  //       const width = [paneWidth.pane3, paneWidth.pane2, paneWidth.pane1][i];
+  //       return { name, width };
+  //     }) as PaneLayouts[number];
+  //   }
+  //   // updateSettings({ paneLayouts: [widthes!] });
+  // } else {
+  //   widthes = paneLayouts.find((ps) => [$pane1, $pane2, $pane3].every(
+  //     (pane, i) => hasClass(pane, ps[i].name),
+  //   ));
+  //   if (!widthes) {
+  //     widthes = defaultWidthes.find((panes) => [$pane1, $pane2, $pane3].every(
+  //       ($pane, i) => hasClass($pane, panes[i].name),
+  //     ))!;
+  //   }
+  // }
+  // widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
 function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
@@ -269,24 +275,23 @@ function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
-export function getNewPaneWidth({ settings, options }: Pick<State, 'settings' | 'options'>) {
-  const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
-  const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
-    const name = whichClass(paneNames, $body)!;
-    const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
-    return { name, width };
-  }) as PaneLayouts[number];
-  const layouts = options.windowMode ? settings.paneLayoutsWindowMode : settings.paneLayouts;
-  const paneLayouts = layouts
-    .filter((ps) => ![$pane1, $pane2, $pane3].every(
-      (pane, i) => hasClass(pane, ps[i].name),
-    ))
-    .concat([newWidthes]);
-  if (options.windowMode) {
-    return { ...settings, paneLayoutsWindowMode: paneLayouts };
-  }
-  return { ...settings, paneLayouts };
-}
+// export function getNewPaneWidth({ settings, options }: Pick<State, 'settings' | 'options'>) {
+//   const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
+//   const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
+//     const name = whichClass(paneNames, $body)!;
+//     const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
+//     return { name, width };
+//   }) as PaneLayouts[number];
+//   const paneLayouts = settings.paneLayouts
+//     .filter((ps) => ![$pane1, $pane2, $pane3].every(
+//       (pane, i) => hasClass(pane, ps[i].name),
+//     ))
+//     .concat([newWidthes]);
+//   if (options.windowMode) {
+//     return { ...settings, paneLayoutsWindowMode: paneLayouts };
+//   }
+//   return { ...settings, paneLayouts };
+// }
 
 export function getEndPaneMinWidth($endPane: HTMLElement) {
   const queryWrapMinWidth = 70;
@@ -386,9 +391,9 @@ export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
   setMouseEventListener(mouseMoveHandler, getNewSize, true);
 }
 
-export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewPaneWidth, false);
-}
+// export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
+//   setMouseEventListener(mouseMoveHandler, getNewPaneWidth, false);
+// }
 
 export function resizeSplitHandler(
   $targetPane: HTMLElement,

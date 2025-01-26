@@ -215,7 +215,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     $$('.menu-zoom-app > span', this.$mainMenu).forEach((el) => Object.assign(el, { textContent: `${Math.round(newValue * 100)}%` }));
   }
   actions() {
-    if (hasClass(this, 'end')) {
+    if (hasClass(this.parentElement!, 'end')) {
       return {
         setIncludeUrl: makeAction({
           initValue: this.includeUrl,
