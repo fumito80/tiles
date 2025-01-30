@@ -71,7 +71,7 @@ const sheet = document.head.appendChild(document.createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
-  initSplitWidth(settings);
+  initSplitWidth(settings, options);
 
   if (options.showCloseTab) {
     addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
@@ -128,7 +128,7 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
   // $appMain.prepend(...$headers, ...$bodies);
   const $$colGrids = options.panes2
     .reduce((acc, pane) => {
-      const panes = pane.flatMap((name) => [$byClass(`header-${name}`)!, $byClass(name)!]);
+      const panes = pane.map((name) => $byClass(name)!);
       const grid = Object.assign(document.createElement('div'), {
         className: 'col-grid',
       });
@@ -136,14 +136,15 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
       return [...acc, grid];
     }, [] as HTMLElement[]);
   pipe(
-    // filter((el) => el && !hasClass(el, 'header-folders')),
     last<HTMLElement>,
     addClass('end'),
-    (el) => el?.firstElementChild as HTMLElement,
+    ($colGrid) => $byClass('pane-header', $colGrid),
     curry($byClass)('query-wrap'),
     ($el) => addChild($byClass('form-query')!)($el!),
   )($$colGrids);
-  $appMain.prepend(...$$colGrids);
+  const [first, ...rest] = $$colGrids;
+  const splited = rest.flatMap(($grid) => [Object.assign(document.createElement('div'), { className: 'split-h' }), $grid]);
+  $appMain.prepend(first, ...splited);
   // addClass('end')(last($bodies));
   // Bold Splitter
   // const $leafs = $('.histories + .leafs, .histories + .tabs');
@@ -165,7 +166,7 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
 
 function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   const html = getPalettesHtml(favColorPalettes);
-  $('.col-grid.end > .pane-header:first-child .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
+  $('.end .pane-header:first-child .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
 
 function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {

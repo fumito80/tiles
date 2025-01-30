@@ -5,18 +5,19 @@ import {
 } from './types';
 import {
   setEvents,
-  // addListener, last,
+  addListener,
   getLocal, pipe, getNextIndex, updateSettings,
   chromeEventFilter, cssid, makeCss, pick,
+  last,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
   $byClass,
-  // $$byClass,
+  $$byClass,
   hasClass, toggleClass,
   setResizeHandler,
-  // setSplitterHandler,
-  // resizeSplitHandler,
+  setSplitterHandler,
+  resizeSplitHandler,
   resizeHeightHandler,
   // getEndPaneMinWidth,
   showMenu,
@@ -48,7 +49,7 @@ const excludeClasses = [
   'collapse-tabs',
   'collapse-tab',
   'window', 'window-title', 'tab-title',
-  'history', 'history-title',
+  'history-item', 'history-title',
   'main-menu-button',
   'tabs-menu-button',
   'folder-menu-button',
@@ -63,6 +64,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
   #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>[] | undefined;
+  #appZoom!: number;
   init(options: Options, settings: Settings, isSearching: boolean) {
     this.#options = options;
     this.#settings = settings;
@@ -72,28 +74,28 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       this.#windowId = win.id!;
     });
 
-    // const $paneBodies = $$byClass('pane-body', this);
-    // const $endHeaderPane = last($$byClass('pane-header', this))!;
-
-    // $$byClass('split-h', this).forEach(($splitter, i) => {
-    //   const $targetPane = $paneBodies[i];
-    //   addListener('mousedown', (e: MouseEvent) => {
-    //     (e.currentTarget as HTMLElement).classList.add('mousedown');
-    //     const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-    //     const subWidth = $paneBodies
-    //       .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
-    //       .reduce((acc, el) => acc + el.offsetWidth, 0);
-    //     const adjustMouseX = e.clientX - $splitter.offsetLeft;
-    //     const handler = resizeSplitHandler(
-    //       $targetPane,
-    //       $splitter,
-    //       subWidth + 18,
-    //       adjustMouseX,
-    //       endPaneMinWidth,
-    //     );
-    //     setSplitterHandler(handler);
-    //   })($splitter);
-    // });
+    $$byClass('split-h').forEach(($splitter) => {
+      addListener('mousedown', (e: MouseEvent) => {
+        $splitter.classList.add('mousedown');
+        const $parent = $splitter.parentElement!;
+        const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
+        const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
+        const minWidth = 100;
+        const maxWidth = endColGridWidth - minWidth + offsetWidth;
+        const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
+        const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
+        const handler = resizeSplitHandler(
+          offsetWidth,
+          e.clientX,
+          pos,
+          $parent,
+          minWidth,
+          maxWidth,
+          this.#appZoom,
+        );
+        setSplitterHandler($parent, keyName, handler);
+      })($splitter);
+    });
 
     if (!options.windowMode) {
       $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
@@ -154,9 +156,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       changeColorTheme(palette);
     } else if (e.shiftKey && e.ctrlKey) {
       const {
-        bookmarks, tabs, histories, all: alls,
+        bookmarks, windows, history, all: alls,
       } = states.multiSelPanes ?? {};
-      const all = !(bookmarks || tabs || histories || alls);
+      const all = !(bookmarks || windows || history || alls);
       store.dispatch('multiSelPanes', { all });
     } else {
       const isShortcut = (e.key === 'Escape' && !e.shiftKey) || this.#shortcuts?.some((keys) => (
@@ -199,7 +201,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       return;
     }
     store.dispatch('multiSelPanes', {
-      bookmarks: false, tabs: false, histories: false, all: false,
+      bookmarks: false, windows: false, history: false, all: false,
     });
     if (hasClass($target, 'leaf-menu-button')) {
       if (this.#options.findTabsFirst && this.#options.bmAutoFindTabs) {
@@ -281,6 +283,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       height: `calc(100vh / ${newValue} - 5px)`,
     });
     $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
+    this.#appZoom = newValue;
   }
   actions() {
     return {
@@ -298,7 +301,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         initValue: {
           bookmarks: false,
           tabs: false,
-          histories: false,
+          history: false,
           all: false,
         } as MulitiSelectables,
       }),

@@ -29,7 +29,7 @@ app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap:hover,
 app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap.selected,
-.histories .rows>.history:not(.header-date):hover,
+.histories .rows>.history-item:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
 app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover window-header,
@@ -42,7 +42,7 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover
 .drag-source,
 .drag-source::before,
 .leaf.selected,
-.history.selected,
+.history-item.selected,
 .window:not(.tabs-collapsed) open-tab.focus {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
@@ -383,7 +383,7 @@ app-main:not(.theme-dark-pane) {
   .leaf:hover .icon-fa-ellipsis-v,
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:hover .icon-x,
-  .history:hover .icon-x,
+  .history-item:hover .icon-x,
   .window.tabs-collapsed:hover window-header>button>i,
   .window:not(.tabs-collapsed) window-header:hover>button>i,
   .folders .folder:not(.open)>.marker:hover>.title::before {

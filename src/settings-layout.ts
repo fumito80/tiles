@@ -1,8 +1,12 @@
-import type { State, InsertPosition } from './types';
+import type {
+  State, InsertPosition, Panes2, PaneNames,
+} from './types';
 import {
-  $, $$, $byClass, $byTag, addClass, hasClass, rmClass,
+  $, $$, $$byClass, $byClass, $byTag, addClass, hasClass, rmClass,
 } from './client';
-import { isDefined } from './common';
+import {
+  getLocal, isDefined, objectEqaul, updateSettings,
+} from './common';
 
 export abstract class CustomInputElement extends HTMLElement {
   fireEvent() {
@@ -15,10 +19,8 @@ export abstract class CustomInputElement extends HTMLElement {
   abstract value: any;
 }
 
-type Panes = State['options']['panes2'][number];
-
 export class LayoutPanes extends CustomInputElement {
-  #value: Panes[] = [];
+  #value: Panes2 = [];
   #dragging = 'dragging';
   #dragEnter = 'drag-enter';
   constructor() {
@@ -32,7 +34,7 @@ export class LayoutPanes extends CustomInputElement {
   get value() {
     return this.#value;
   }
-  set value(value: Panes[]) {
+  set value(value: Panes2) {
     // [...this.children].forEach((el, i) => {
     //   const index = value.findIndex((name) => name === (el as HTMLElement).dataset.value);
     //   const $checkZenMode = $<HTMLInputElement>('input[type="checkbox"]', el);
@@ -44,6 +46,11 @@ export class LayoutPanes extends CustomInputElement {
     //   }
     //   this.insertBefore(el, this.children[index]);
     // });
+    $$byClass('column', this).forEach(($col, col) => {
+      value[col]?.slice().reverse().forEach((paneName) => {
+        $col.insertAdjacentElement('afterbegin', $(`[data-value="${paneName}"]`)!);
+      });
+    });
     this.#value = value;
   }
   dragstart(e: DragEvent) {
@@ -96,9 +103,17 @@ export class LayoutPanes extends CustomInputElement {
     rmClass(this.#dragging)(this);
     const $target = e.target as HTMLElement;
     rmClass('drag-source')($target);
-    rmClass(this.#dragging, 'drag-column', 'drag-cell')(this);
-    if (e.dataTransfer?.dropEffect === 'none') {
-      this.value = this.#value;
+    // if (e.dataTransfer?.dropEffect === 'none') {
+    //   this.value = this.#value;
+    // }
+    const newValue = $$('.column:has([data-value])', this)
+      .map(($col) => [...$col.children]
+        .map(($el) => ($el as HTMLElement).dataset.value as PaneNames[number])
+        .filter(isDefined));
+    if (!objectEqaul(newValue, this.value, true)) {
+      getLocal('settings').then(({ settings: { paneSizes } }) => updateSettings({ paneSizes: { ...paneSizes, widths: [], heights: [] } }));
+      this.value = newValue;
+      this.fireEvent();
     }
   }
   // drop() {

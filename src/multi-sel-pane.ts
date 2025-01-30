@@ -82,7 +82,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     addAttr('title', header.multiDeletesTitle)($deletesButton);
     header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
-      showMenu($menu, 1, true)(e);
+      showMenu($menu, this.#header.appZoom)(e);
       e.stopImmediatePropagation();
     }, true);
     $byClass('multi-sel-menu-button', this)?.addEventListener('mousedown', (e) => {
@@ -118,7 +118,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.$count.textContent = String(count);
     if (count === 0) {
       dispatch('multiSelPanes', {
-        bookmarks: false, tabs: false, histories: false, all: true,
+        bookmarks: false, windows: false, history: false, all: true,
       }, true);
       return;
     }
@@ -171,8 +171,10 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   abstract paneName: Panes;
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
+  private $mainMenuButton!: HTMLElement;
   protected $popupMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
+  appZoom = 1;
   abstract menuClickHandler(e: MouseEvent, dispatch: Dispatch): void;
   readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -185,25 +187,25 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
       throw new Error('No popup found');
     }
     this.$multiSelPane.init(this, this.$popupMenu);
-    const $mainMenuButton = this.$mainMenu.previousElementSibling as HTMLElement;
-    if (getComputedStyle($mainMenuButton.parentElement!).display === 'none') {
+    this.$mainMenuButton = this.$mainMenu.previousElementSibling as HTMLElement;
+    if (getComputedStyle(this.$mainMenuButton.parentElement!).display === 'none') {
       return;
     }
     const { $mainMenu } = this;
-    setEvents([$mainMenuButton], {
+    setEvents([this.$mainMenuButton], {
       click(e) {
         const isShow = hasClass($mainMenu, 'show');
         $$byClass('main-menu').forEach(rmClass('show'));
         if (!isShow) {
           $mainMenu.classList.add('show');
-          showMenu($mainMenu, 1, true)(e);
+          showMenu($mainMenu, (this as MulitiSelectablePaneHeader).appZoom)(e);
           getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
         }
       },
       mousedown(e) {
         preShowMenu($mainMenu, e);
       },
-    });
+    }, undefined, this);
   }
   selectItems({ newValue }: Changes<'selectItems'>, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
@@ -213,9 +215,17 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   }
   setZoomAppMenu({ newValue }: Changes<'setAppZoom'>) {
     $$('.menu-zoom-app > span', this.$mainMenu).forEach((el) => Object.assign(el, { textContent: `${Math.round(newValue * 100)}%` }));
+    this.appZoom = newValue;
+    const isShow = hasClass(this.$mainMenu, 'show');
+    if (isShow) {
+      showMenu(this.$mainMenu, this.appZoom)({
+        target: this.$mainMenuButton,
+        stopImmediatePropagation: () => {},
+      } as unknown as MouseEvent);
+    }
   }
   actions() {
-    if (hasClass(this.parentElement!, 'end')) {
+    if (hasClass(this.parentElement!.parentElement!, 'end')) {
       return {
         setIncludeUrl: makeAction({
           initValue: this.includeUrl,

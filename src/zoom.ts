@@ -40,7 +40,7 @@ function relocateGrid(
 
 function restoreGrid($query: HTMLElement) {
   const $form = $query.parentElement!;
-  const $endTitle = $('.pane-header.end')!;
+  const $endTitle = $('.end .pane-header')!;
     $byClass('query-wrap', $endTitle)!.append($form);
     rmStyle('width', 'overflow')($form);
     $query.focus();
@@ -76,7 +76,7 @@ export function zoomOut(
     });
     addClass('zoom-fade-out')($main);
     const promise3 = getLocal('settings', 'options')
-      .then(({ settings }) => initSplitWidth(settings))
+      .then(({ settings, options }) => initSplitWidth(settings, options))
       .then(() => new Promise((resolve) => {
         $target.addEventListener('transitionend', resolve, { once: true });
       }));

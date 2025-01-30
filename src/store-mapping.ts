@@ -106,6 +106,7 @@ export function storeMapping(options: Options, components: Components) {
   store.actionContext($headerLeafs, 'setAppZoom').map(
     $appMain.setAppZoom.bind($appMain),
     $headerLeafs.setZoomAppMenu.bind($headerLeafs),
+    $headerHistory.setZoomAppMenu.bind($headerHistory),
     $tabs.setAppZoom.bind($tabs),
     $folders.setAppZoom.bind($folders),
   );

@@ -252,7 +252,7 @@ export function third<T>([,, a]: [any, any, T, ...any]) {
   return a;
 }
 
-export function init<T extends Array<any>>(args: T) {
+export function init<T>(args: T[]) {
   return args.slice(0, -1);
 }
 
@@ -1057,5 +1057,5 @@ export function addQueryHistory() {
 export const chromeEventFilter = { windowTypes: ['normal'] } as chrome.windows.WindowEventFilter;
 
 export function getHtmlHistory(htmlHistory: string) {
-  return `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
+  return `<history-item class="current-date history-item header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
 }

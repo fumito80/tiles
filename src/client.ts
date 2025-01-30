@@ -1,11 +1,11 @@
 /* eslint-disable no-redeclare */
 
 import {
-  splitterClasses,
+  // splitterClasses,
   Options,
   State,
   Settings,
-  SplitterClasses,
+  // SplitterClasses,
   Model,
   InsertPosition,
   dropAreaClasses,
@@ -16,10 +16,11 @@ import {
   // paneNames,
   maxHeight,
   InitailTabs,
+  PaneSizes,
 } from './types';
 
 import {
-  whichClass,
+  // whichClass,
   cssid,
   curry,
   getLocal,
@@ -39,6 +40,9 @@ import {
   // updateSettings,
   chromeEventFilter,
   base64Encode,
+  init,
+  always,
+  updateSettings,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -226,21 +230,36 @@ export function getGridTemplateColumns() {
   };
 }
 
-export function initSplitWidth({ paneSizes }: Settings) {
+export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
   const $colGrids = $$byClass('col-grid');
-  // const [$pane1, $pane2, $pane3] = $colGrids;
-  if (!paneSizes) {
-    const width = 100 / $colGrids.length;
-    const widths = [...Array($colGrids.length - 1)].map(() => `${width}%`).join(' ');
-    $byTag('app-main')!.style.gridTemplateColumns = `${widths} minmax(0, 100%)`;
-    $colGrids.forEach(($grid) => {
-      const $header = $byClass('pane-header', $grid)!;
-      const rows = $grid.children.length / 2;
-      const percent = 100 / rows;
-      const height = `calc(${percent}% - ${$header.offsetHeight * rows}px)`;
-      const tmplColumns = [...Array(rows - 1)].map(() => `max-content ${height}`).concat('max-content minmax(0, 100%)').join(' ');
-      $grid.style.setProperty('grid-template-rows', tmplColumns);
-    });
+  const headerHeight = $('.end .query-wrap')!.offsetHeight;
+  const $$headers = $$byClass('pane-header');
+  $$headers.forEach(($el) => $el.style.setProperty('height', `${headerHeight}px`));
+  const widths = paneSizes.widths.length === 0
+    ? init(panes2).map((pane) => (pane.some((v) => (v === 'bookmarks')) ? 40 : 30))
+    : paneSizes.widths;
+  const heights = paneSizes.heights.length === 0
+    ? panes2.map((pane) => {
+      const h = 100 / pane.length;
+      return init(panes2).map(always(h));
+    })
+    : paneSizes.heights;
+  $byTag('app-main')!.style.gridTemplateColumns = [...Array($colGrids.length - 1)]
+    .map((_, col) => `${widths[col]}% min-content`)
+    .concat('minmax(0, 100%)')
+    .join(' ');
+  $colGrids.forEach(($grid, col) => {
+    const rows = $grid.children.length;
+    // const heights = paneSizes.heights[col];
+    const tmplColumns = [...Array(rows - 1)]
+      .map((_, row) => `${heights[col][row]}%`)
+      .concat('minmax(0, 100%)')
+      .join(' ');
+    $grid.style.setProperty('grid-template-rows', tmplColumns);
+  });
+  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% auto auto`);
+  if (!paneSizes.widths.length || !paneSizes.heights.length) {
+    updateSettings({ paneSizes: { ...paneSizes, widths, heights } });
   }
   // let widthes: PaneLayouts[number] | undefined;
   // if (paneLayouts.length === 0) {
@@ -269,29 +288,46 @@ export function initSplitWidth({ paneSizes }: Settings) {
   // widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
 }
 
-function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  const $bodies = $$byClass('pane-body');
-  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
-}
-
-// export function getNewPaneWidth({ settings, options }: Pick<State, 'settings' | 'options'>) {
-//   const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
-//   const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
-//     const name = whichClass(paneNames, $body)!;
-//     const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
-//     return { name, width };
-//   }) as PaneLayouts[number];
-//   const paneLayouts = settings.paneLayouts
-//     .filter((ps) => ![$pane1, $pane2, $pane3].every(
-//       (pane, i) => hasClass(pane, ps[i].name),
-//     ))
-//     .concat([newWidthes]);
-//   if (options.windowMode) {
-//     return { ...settings, paneLayoutsWindowMode: paneLayouts };
-//   }
-//   return { ...settings, paneLayouts };
+// function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
+//   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
+//   const $bodies = $$byClass('pane-body');
+//   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
 // }
+
+export function getNewPaneWidth($parent: HTMLElement, keyName: keyof Pick<PaneSizes, 'widths' | 'bookmarks'>) {
+  return ({ settings }: Pick<State, 'settings' | 'options'>) => {
+    const gridTemplateColumnsValue = $parent.style.getPropertyValue('grid-template-columns');
+    const gridTemplateColumns = gridTemplateColumnsValue.split(' ');
+    const pos = gridTemplateColumns.findIndex((el) => el.endsWith('px'));
+    if (pos < 0) {
+      return settings;
+    }
+    const width = parseInt(gridTemplateColumns[pos], 10);
+    const appMainWidth = $parent.offsetWidth;
+    const { [keyName]: widths } = settings.paneSizes;
+    const percent = (width / appMainWidth) * 100;
+    widths.splice(pos / 2, 1, percent);
+    const newGridTemplateColumns = gridTemplateColumns
+      .reduce((acc, el, i) => ((i === pos) ? [...acc, `${percent}%`] : [...acc, el]), [] as string[])
+      .join(' ');
+    $parent.style.setProperty('grid-template-columns', newGridTemplateColumns);
+    // const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
+    // const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
+    //   const name = whichClass(paneNames, $body)!;
+    //   const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
+    //   return { name, width };
+    // }) as PaneLayouts[number];
+    // const paneLayouts = settings.paneLayouts
+    //   .filter((ps) => ![$pane1, $pane2, $pane3].every(
+    //     (pane, i) => hasClass(pane, ps[i].name),
+    //   ))
+    //   .concat([newWidthes]);
+    // if (options.windowMode) {
+    //   return { ...settings, paneLayoutsWindowMode: paneLayouts };
+    // }
+    return { ...settings, paneSizes: { ...settings.paneSizes, [keyName]: widths } };
+  };
+}
 
 export function getEndPaneMinWidth($endPane: HTMLElement) {
   const queryWrapMinWidth = 70;
@@ -391,26 +427,31 @@ export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
   setMouseEventListener(mouseMoveHandler, getNewSize, true);
 }
 
-// export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-//   setMouseEventListener(mouseMoveHandler, getNewPaneWidth, false);
-// }
+export function setSplitterHandler(
+  $parent: HTMLElement,
+  keyName: Parameters<typeof getNewPaneWidth>[1],
+  mouseMoveHandler: (e: MouseEvent) => void,
+) {
+  setMouseEventListener(mouseMoveHandler, getNewPaneWidth($parent, keyName), false);
+}
 
 export function resizeSplitHandler(
-  $targetPane: HTMLElement,
-  $splitter: HTMLElement,
-  subWidth: number,
-  adjustMouseX: number,
-  endPaneMinWidth: number,
+  startWidth: number,
+  startMouseX: number,
+  pos: number,
+  $appMain: HTMLElement,
+  minWidth: number,
+  maxWidth: number,
+  appZoom: number,
 ) {
   return (e: MouseEvent) => {
-    const className = whichClass(splitterClasses, $splitter)!;
-    const isTabs = hasClass($targetPane, 'tabs');
-    const minWidth = isTabs ? 220 : 100;
-    const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, minWidth);
-    if (document.body.offsetWidth < (width + subWidth + endPaneMinWidth)) {
-      return;
-    }
-    setSplitWidth({ [className]: width });
+    const newWidth = startWidth - (startMouseX - e.clientX) / appZoom;
+    const width = Math.min(Math.max(newWidth, minWidth), maxWidth);
+    const gridTemplateColumns = $appMain.style.getPropertyValue('grid-template-columns');
+    const newGridTemplateColumns = gridTemplateColumns.split(' ')
+      .reduce((acc, el, i) => ((i === pos * 2) ? [...acc, `${width}px`] : [...acc, el]), [] as string[])
+      .join(' ');
+    $appMain.style.setProperty('grid-template-columns', newGridTemplateColumns);
   };
 }
 

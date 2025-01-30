@@ -77,7 +77,7 @@ open-tab {
   animation-duration: .2s;
 }
 
-.pane-body.end.tabs {
+.end .pane-body.tabs {
   margin-right: 0;
 
   .pin-wrap-top,
@@ -90,15 +90,15 @@ open-tab {
   }
 }
 
-.pane-header.header-tabs {
-
-  &.end {
-    .collapse-tabs {
-      +.query-wrap {
-        margin-left: 0;
-      }
+.end .pane-header.header-tabs {
+  .collapse-tabs {
+    +.query-wrap {
+      margin-left: 0;
     }
   }
+}
+
+.pane-header.header-tabs {
 
   >button {
     margin-left: 10px;
@@ -491,7 +491,7 @@ app-main {
   }
 }
 
-app-main.drag-start>.tabs {
+app-main.drag-start .tabs {
   .tabs-collapsed window-header:not(.drag-source)~open-tab {
 
     &.highlight,

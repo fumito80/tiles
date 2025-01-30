@@ -324,7 +324,7 @@ label.theme {
 
 /* Layout */
 
-[name="panes"] {
+[name="panes2"] {
   margin: 1em;
   display: flex;
   gap: 10px;

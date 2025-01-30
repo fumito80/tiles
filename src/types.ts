@@ -34,14 +34,11 @@ export type ColorInfo = {
 
 export const maxHeight = 570;
 
-// export const paneNames = ['leafs', 'tabs', 'histories', 'folders', 'recent-tabs'] as const;
-
-// export type PaneLayouts = (typeof paneNames[number])[][];
-
-type PaneSizes = {
+export type PaneSizes = {
   widths: number[],
   heights: number[][];
-} | undefined;
+  bookmarks: number[],
+};
 
 export const initialSettings = {
   postPage: false,
@@ -52,9 +49,11 @@ export const initialSettings = {
     top: undefined as number | undefined,
     left: undefined as number | undefined,
   },
-  paneSizes: undefined as PaneSizes,
-  // paneLayouts: [['histories'], ['tabs'], ['recent-tabs', 'folders']] as
-  //  const satisfies PaneLayouts,
+  paneSizes: {
+    widths: [],
+    heights: [],
+    bookmarks: [50],
+  } as PaneSizes,
   bodyColor: '#222222',
   tabs: true,
   history: true,
@@ -114,18 +113,20 @@ export const defaultColorPalette: ColorPalette = [
   'FF6663',
 ];
 
-type PaneNames = [
-  'histories',
-  'tabs',
+export type PaneNames = [
+  'history',
+  'windows',
   'bookmarks',
   'recent-tabs',
 ];
 
+export type Panes2 = (PaneNames[number])[][];
+
 const panes2 = [
-  ['histories'],
-  ['tabs'],
+  ['history'],
+  ['windows'],
   ['bookmarks', 'recent-tabs'],
-] as const satisfies (PaneNames[number])[][];
+] as const satisfies Panes2;
 
 export const initialOptions = {
   panes2,
@@ -142,7 +143,7 @@ export const initialOptions = {
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,
   zoomTabs: false,
-  zoomHistory: true,
+  zoomHistory: false,
   zoomRatio: '0.7',
   fontSize: '0.9em',
   collapseTabs: true,

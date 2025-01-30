@@ -40,7 +40,7 @@ export function makeHistory({
 }: MyHistoryItem & { headerStyle?: string }) {
   if (headerDate) {
     const lastVisitDate = getLocaleDate(lastVisitTime);
-    return `<history-item class="history header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</history-item>`;
+    return `<history-item class="history-item header-date" draggable="true" style="${headerStyle}">${lastVisitDate}</history-item>`;
   }
   const {
     elementId, addClassName, style,
@@ -59,7 +59,7 @@ export function makeHistory({
   const date = new Date(lastVisitTime!);
   const time = getShortTime(date);
   return `
-    <history-item class="history${addClassName}" draggable="true" id="${elementId}" style="${style}">
+    <history-item class="history-item${addClassName}" draggable="true" id="${elementId}" style="${style}">
       <i class="icon-fa-angle-right"></i>
       <div class="history-title">${htmlEscape(text!)}</div><div class="time">${time}</div><i class="icon-x"></i>
     </history-item>

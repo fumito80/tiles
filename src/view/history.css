@@ -11,7 +11,7 @@
     grid-auto-rows: min-content;
     padding: 0.1em 0;
 
-    >.history {
+    >.history-item {
       margin: 0 2px;
 
       &:hover>.icon-x {
@@ -53,7 +53,7 @@
       }
     }
 
-    >.history:empty {
+    >.history-item:empty {
       display: none;
     }
 
@@ -106,7 +106,7 @@
   }
 }
 
-.pane-body.end.histories {
+.end > .pane-body.histories {
   margin-right: 4px;
 }
 
@@ -222,7 +222,7 @@ app-main:not(.disable-zoom-history) {
 
 /* Recently closed tabs */
 
-.history {
+.history-item {
 
   >.icon-fa-angle-right {
     display: none;
@@ -268,13 +268,13 @@ app-main:not(.disable-zoom-history) {
 
 /* Display time */
 
-.disable-zoom-history .history .time,
-app-main:not(.disable-zoom-history).zoom-pane .history .time {
+.disable-zoom-history .history-item .time,
+app-main:not(.disable-zoom-history).zoom-pane .history-item .time {
   display: block;
 }
 
-.zoom-center .history .time,
-app-main:not(.disable-zoom-history) .history .time {
+.zoom-center .history-item .time,
+app-main:not(.disable-zoom-history) .history-item .time {
   display: none;
 }
 

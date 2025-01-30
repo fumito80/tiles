@@ -447,7 +447,7 @@ function isOpenTab($target: HTMLElement) {
 }
 
 export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubElement {
-  readonly paneName = 'tabs';
+  readonly paneName = 'windows';
   #collapsed!: boolean;
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
@@ -541,7 +541,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
 }
 
 export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
-  readonly paneName = 'tabs';
+  readonly paneName = 'windows';
   #initPromise!: Promise<[InitailTabs, number]>;
   $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
@@ -719,8 +719,8 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       OpenTabs.forEach(($tab) => $tab.select(true));
     }
   }
-  multiSelect({ newValue: { tabs } }: { newValue: MulitiSelectables }) {
-    if (!tabs) {
+  multiSelect({ newValue: { windows } }: { newValue: MulitiSelectables }) {
+    if (!windows) {
       this.getAllTabs((tab) => tab.selected)
         .forEach((tab) => tab.select(false, true));
       this.$lastClickedTab = undefined;
@@ -739,20 +739,20 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
             return;
           }
           const { dragging, multiSelPanes } = await store.getStates();
-          const tabs = !multiSelPanes?.tabs;
+          const windows = !multiSelPanes?.windows;
           if (dragging) {
-            if (!tabs) {
+            if (!windows) {
               this.selectItems(store.dispatch);
             }
             return;
           }
-          store.dispatch('multiSelPanes', { tabs, all: false });
-          if (!tabs || multiSelPanes?.all) {
+          store.dispatch('multiSelPanes', { windows, all: false });
+          if (!windows || multiSelPanes?.all) {
             store.dispatch('multiSelPanes', { all: undefined });
             return;
           }
-          $tab?.preMultiSelect(tabs);
-          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(tabs));
+          $tab?.preMultiSelect(windows);
+          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(windows));
           this.selectItems(store.dispatch);
         },
         delayMultiSelect,
@@ -763,11 +763,11 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const $target = e.target as HTMLDivElement;
     const $tab = isOpenTab($target);
     if ($tab) {
-      const { tabs, all } = states.multiSelPanes!;
-      if (tabs || all) {
+      const { windows, all } = states.multiSelPanes!;
+      if (windows || all) {
         $tab.select();
         if (all) {
-          store.dispatch('multiSelPanes', { tabs: true, all: false });
+          store.dispatch('multiSelPanes', { windows: true, all: false });
         }
         if (e.shiftKey) {
           this.selectWithShift($tab);
@@ -785,14 +785,14 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     }
     const $window = isWindow($target);
     if ($window) {
-      const { tabs, all } = states.multiSelPanes!;
-      if (tabs || all || e.shiftKey) {
+      const { windows, all } = states.multiSelPanes!;
+      if (windows || all || e.shiftKey) {
         const openTabs = $window.getTabs();
         const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
         openTabs.map((tab) => tab.select(selectAll));
         this.selectItems(store.dispatch);
         if (all || e.shiftKey) {
-          store.dispatch('multiSelPanes', { tabs: true, all: false });
+          store.dispatch('multiSelPanes', { windows: true, all: false });
         }
         return;
       }
@@ -1149,7 +1149,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const where: InsertPosition = states.toggleWindowOrder ? 'afterbegin' : 'beforeend';
     this.$windosWrap.insertAdjacentElement(where, $win);
     $win.connect(store as Store);
-    store.dispatch('re-search', 'tabs');
+    store.dispatch('re-search', 'windows');
   }
   onRemovedWindow({ newValue: windowId }: Changes<'onRemovedWindow'>) {
     const targetWin = this.getAllWindows().find((win) => win.windowId === windowId);
