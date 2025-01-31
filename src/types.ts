@@ -311,8 +311,7 @@ export type InitailTabs = {
 
 export type PromiseInitTabs = Promise<[InitailTabs, number]>;
 
-// eslint-disable-next-line no-undef
-export type EventListenerOptions = boolean | AddEventListenerOptions;
+export type EventListenerOptions = boolean | Parameters<typeof document.addEventListener>[2];
 
 export type AbstractConstructor<T = any> = abstract new (...args: any[]) => T;
 

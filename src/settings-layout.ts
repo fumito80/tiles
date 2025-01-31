@@ -4,9 +4,7 @@ import type {
 import {
   $, $$, $$byClass, $byClass, $byTag, addClass, hasClass, rmClass,
 } from './client';
-import {
-  getLocal, isDefined, objectEqaul, updateSettings,
-} from './common';
+import { isDefined, objectEqaul, updateSettings } from './common';
 
 export abstract class CustomInputElement extends HTMLElement {
   fireEvent() {
@@ -29,23 +27,11 @@ export class LayoutPanes extends CustomInputElement {
     document.body.addEventListener('dragover', this.dragover.bind(this));
     document.body.addEventListener('dragenter', this.dragenter.bind(this));
     document.body.addEventListener('dragend', this.dragend.bind(this));
-    // document.body.addEventListener('drop', this.drop.bind(this));
   }
   get value() {
     return this.#value;
   }
   set value(value: Panes2) {
-    // [...this.children].forEach((el, i) => {
-    //   const index = value.findIndex((name) => name === (el as HTMLElement).dataset.value);
-    //   const $checkZenMode = $<HTMLInputElement>('input[type="checkbox"]', el);
-    //   if ($checkZenMode) {
-    //     $checkZenMode.disabled = index === this.childElementCount - 1;
-    //   }
-    //   if (i === index) {
-    //     return;
-    //   }
-    //   this.insertBefore(el, this.children[index]);
-    // });
     $$byClass('column', this).forEach(($col, col) => {
       value[col]?.slice().reverse().forEach((paneName) => {
         $col.insertAdjacentElement('afterbegin', $(`[data-value="${paneName}"]`)!);
@@ -63,9 +49,6 @@ export class LayoutPanes extends CustomInputElement {
   }
   // eslint-disable-next-line class-methods-use-this
   dragover(e: DragEvent) {
-    // if (!hasClass(e.target as HTMLElement, 'droppable')) {
-    //   return;
-    // }
     e.preventDefault();
   }
   dragenter(e: DragEvent) {
@@ -103,28 +86,19 @@ export class LayoutPanes extends CustomInputElement {
     rmClass(this.#dragging)(this);
     const $target = e.target as HTMLElement;
     rmClass('drag-source')($target);
-    // if (e.dataTransfer?.dropEffect === 'none') {
-    //   this.value = this.#value;
-    // }
     const newValue = $$('.column:has([data-value])', this)
       .map(($col) => [...$col.children]
         .map(($el) => ($el as HTMLElement).dataset.value as PaneNames[number])
         .filter(isDefined));
     if (!objectEqaul(newValue, this.value, true)) {
-      getLocal('settings').then(({ settings: { paneSizes } }) => updateSettings({ paneSizes: { ...paneSizes, widths: [], heights: [] } }));
+      updateSettings((settings) => ({
+        ...settings,
+        paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
+      }));
       this.value = newValue;
       this.fireEvent();
     }
   }
-  // drop() {
-  //   const newValue = [...this.children].map((el) => (el as HTMLElement).dataset.value!)
-  //  as Panes[];
-  //   if (this.value === newValue) {
-  //     return;
-  //   }
-  //   this.value = newValue;
-  //   this.fireEvent();
-  // }
 }
 
 type BookmarksPanes = State['options']['bookmarksPanes'][number];

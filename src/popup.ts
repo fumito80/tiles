@@ -20,9 +20,7 @@ import {
 import {
   pipe,
   cssid,
-  // getGridColStart,
   last,
-  // filter,
   curry,
   preFaviconUrl,
   extractDomain,
@@ -35,16 +33,15 @@ import {
   $, $$,
   addStyle, addClass,
   initSplitWidth,
-  // hasClass,
   addChild,
   setHTML,
-  // $$byClass,
   $byClass,
   toggleElement,
   $byTag,
   getPalettesHtml,
   getInitialTabs,
   setBrowserFavicon,
+  createElement,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -67,7 +64,7 @@ export { makeAction, IPublishElement };
 type Options = State['options'];
 
 const params = new URLSearchParams(document.location.search);
-const sheet = document.head.appendChild(document.createElement('style'));
+const sheet = document.head.appendChild(createElement('style'));
 sheet.textContent = params.get('css');
 
 function setOptions(settings: Settings, options: Options) {
@@ -113,26 +110,14 @@ function setBookmarksState(clState: ClientState, isSearching: boolean) {
   }
 }
 
-// function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes']
-// , prefix = '') {
-//   return panes
-//     .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name)
-// , [])
-//     .map((name) => $byClass(prefix + name)!);
-// }
-
 function layoutPanes(options: Options, settings: Settings, isSearching: boolean) {
   const $appMain = $byTag<AppMain>('app-main');
-  // const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
-  // const $bodies = getPanes(options.panes, options.bookmarksPanes);
-  // $appMain.prepend(...$headers, ...$bodies);
   const $$colGrids = options.panes2
     .reduce((acc, pane) => {
-      const panes = pane.map((name) => $byClass(name)!);
-      const grid = Object.assign(document.createElement('div'), {
-        className: 'col-grid',
-      });
-      grid.append(...panes);
+      const [first, ...rest] = pane.map((name) => $byClass(name)!);
+      const splited = rest.flatMap(($grid) => [createElement('div', { className: 'split-v' }), $grid]);
+      const grid = createElement('div', { className: 'col-grid' });
+      grid.append(first, ...splited);
       return [...acc, grid];
     }, [] as HTMLElement[]);
   pipe(
@@ -143,19 +128,10 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
     ($el) => addChild($byClass('form-query')!)($el!),
   )($$colGrids);
   const [first, ...rest] = $$colGrids;
-  const splited = rest.flatMap(($grid) => [Object.assign(document.createElement('div'), { className: 'split-h' }), $grid]);
+  const splited = rest.flatMap(($grid) => [createElement('div', { className: 'split-h' }), $grid]);
   $appMain.prepend(first, ...splited);
-  // addClass('end')(last($bodies));
-  // Bold Splitter
-  // const $leafs = $('.histories + .leafs, .histories + .tabs');
-  // if ($leafs) {
-  //   const gridColStart = getGridColStart($leafs);
-  //   const $splitter = $$byClass('split-h')[gridColStart - 1];
-  //   addClass('bold-separator')($splitter);
-  // }
   $appMain.init(options, settings, isSearching);
   return $$('[is]', $appMain).reduce((acc, pane) => {
-  // return [...$headers, ...$bodies].reduce((acc, pane) => {
     const name = pane?.getAttribute('is');
     if (!name) {
       return acc;
@@ -177,7 +153,7 @@ function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {
     }
   });
   document.body.style.setProperty('width', '100%');
-  addStyle({ 'pointer-events': 'none' })($byClass('resize-y'));
+  addStyle({ display: 'none' })($byClass('resize-y'));
   setBrowserFavicon(options.colorPalette);
 }
 

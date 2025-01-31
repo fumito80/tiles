@@ -77,19 +77,6 @@ open-tab {
   animation-duration: .2s;
 }
 
-.end .pane-body.tabs {
-  margin-right: 0;
-
-  .pin-wrap-top,
-  .pin-wrap-bottom {
-    margin-right: 4px;
-  }
-
-  .tabs-wrap {
-    margin-right: 2px;
-  }
-}
-
 .end .pane-header.header-tabs {
   .collapse-tabs {
     +.query-wrap {

@@ -192,12 +192,6 @@ export function eq<T>(a: T) {
   return (b: T) => a === b;
 }
 
-// export type Map<T extends Array<any>, U, V> = U extends T
-//   ? (f: (element: U[number], index: number, self: U) => V) => (array: T) => V[]
-//   : (f: (element: T[number], index: number, self: T) => V) => (array: T) => V[]
-
-// export const map = <T, U, V>((f) => (array) => array.map(f)) as Map<T, U, V>;
-
 export function map<T extends Array<any>, U>(
   f: (element: T[number], index: number, self: T[number][]) => U,
 ) {
@@ -673,8 +667,10 @@ export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.local, ...keyNames);
 }
 
-export async function updateSettings<T extends Partial<State['settings']>>(setting: T, processer = identity<Pick<State, 'settings'>>) {
-  return getLocal('settings').then(processer).then(({ settings }) => setLocal({ settings: { ...settings, ...setting } }));
+export async function updateSettings(
+  processer = identity<Settings>,
+) {
+  return getLocal('settings').then(({ settings }) => processer(settings)).then((settings) => setLocal({ settings }));
 }
 
 export function getSync<T extends Array<keyof State>>(...keyNames: T) {

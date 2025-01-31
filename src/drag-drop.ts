@@ -32,6 +32,7 @@ import {
   moveBookmarks,
   addFolderFromTabs,
   addBookmarksFromTabs,
+  createElement,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -293,7 +294,7 @@ function getDraggableElement(
   const itemHeight = $dragTargets[0].offsetHeight;
   $dragTargets.some(($el, i) => {
     if (itemHeight * i > 120) {
-      const $div = addChild(document.createElement('div'))($draggableClone);
+      const $div = addChild(createElement('div'))($draggableClone);
       $div.textContent = `... and ${$dragTargets.length - i} more items`;
       addStyle({ padding: '2px' })($div);
       return true;

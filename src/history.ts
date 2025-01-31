@@ -6,11 +6,9 @@ import {
   Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
 } from './popup';
 import {
-  $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
-  setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
-  addBookmark,
+  $$byTag, $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText, createElement,
+  setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle, addBookmark,
   getMessageDeleteSelecteds,
-  $$byTag,
 } from './client';
 import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
@@ -24,7 +22,7 @@ import { dialog } from './dialogs';
 
 function getRowHeight() {
   const $tester = pipe(
-    addChild(document.createElement('div')),
+    addChild(createElement('div')),
     addClass('history-item'),
     setText('A'),
   )(document.body);
@@ -626,7 +624,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         });
         this.$draggableClone.innerHTML = html.join('');
         if (cloneCount > 0) {
-          const $div = this.$draggableClone.appendChild(document.createElement('div'));
+          const $div = this.$draggableClone.appendChild(createElement('div'));
           $div.textContent = `... and ${selecteds.length - cloneCount} more items`;
           addStyle({ padding: '2px' })($div);
         }

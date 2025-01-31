@@ -1,26 +1,21 @@
 /* eslint-disable no-redeclare */
 
 import {
-  // splitterClasses,
   Options,
   State,
   Settings,
-  // SplitterClasses,
   Model,
   InsertPosition,
   dropAreaClasses,
   positions,
   ColorPalette,
   CliMessageTypes,
-  // PaneLayouts,
-  // paneNames,
   maxHeight,
   InitailTabs,
   PaneSizes,
 } from './types';
 
 import {
-  // whichClass,
   cssid,
   curry,
   getLocal,
@@ -35,14 +30,13 @@ import {
   camelToSnake,
   makeThemeCss,
   postMessage,
-  pick,
   setPopupStyle,
-  // updateSettings,
   chromeEventFilter,
   base64Encode,
   init,
   always,
   updateSettings,
+  last,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
@@ -52,6 +46,15 @@ import { AppMain } from './app-main';
 import { Dispatch } from './popup';
 
 // DOM operation
+
+// eslint-disable-next-line no-undef
+export function createElement<T extends keyof HTMLElementTagNameMap>(
+  tagName: T,
+  props: { [key: string]: string } = {},
+// eslint-disable-next-line no-undef
+): HTMLElementTagNameMap[T] {
+  return Object.assign(document.createElement(tagName), props);
+}
 
 export function $<T extends HTMLElement>(
   selector: string,
@@ -195,17 +198,15 @@ export function setHTML(html: string) {
   };
 }
 
-export function setText(text: string | null) {
+export function setText(textContent: string | null) {
   return <T extends Element | undefined>($el: T) => {
     if ($el) {
-      // eslint-disable-next-line no-param-reassign
-      $el.textContent = text;
+      Object.assign($el, { textContent });
     }
     return $el;
   };
 }
 
-// eslint-disable-next-line no-undef
 export function insertHTML(position: InsertPosition, html: string) {
   return <T extends Element | undefined | null>($el: T) => {
     $el?.insertAdjacentHTML(position, html);
@@ -219,29 +220,18 @@ export function addRules(selector: string, ruleProps: [string, string][]) {
   sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
 }
 
-export function getGridTemplateColumns() {
-  const [pane3, pane2, pane1] = $$byClass('pane-body')
-    .map((el) => el.style.getPropertyValue('width'))
-    .map((n) => Number.parseInt(n, 10));
-  return {
-    pane1,
-    pane2,
-    pane3,
-  };
-}
-
 export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
   const $colGrids = $$byClass('col-grid');
   const headerHeight = $('.end .query-wrap')!.offsetHeight;
   const $$headers = $$byClass('pane-header');
   $$headers.forEach(($el) => $el.style.setProperty('height', `${headerHeight}px`));
   const widths = paneSizes.widths.length === 0
-    ? init(panes2).map((pane) => (pane.some((v) => (v === 'bookmarks')) ? 40 : 30))
+    ? init(panes2).map(() => 100 / panes2.length)
     : paneSizes.widths;
   const heights = paneSizes.heights.length === 0
     ? panes2.map((pane) => {
       const h = 100 / pane.length;
-      return init(panes2).map(always(h));
+      return init(pane).map(always(h));
     })
     : paneSizes.heights;
   $byTag('app-main')!.style.gridTemplateColumns = [...Array($colGrids.length - 1)]
@@ -249,100 +239,20 @@ export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
     .concat('minmax(0, 100%)')
     .join(' ');
   $colGrids.forEach(($grid, col) => {
-    const rows = $grid.children.length;
-    // const heights = paneSizes.heights[col];
-    const tmplColumns = [...Array(rows - 1)]
-      .map((_, row) => `${heights[col][row]}%`)
+    const rows = ($grid.children.length - 1) / 2;
+    const tmplColumns = [...Array(rows)]
+      .map((_, row) => `${heights[col][row]}% max-content`)
       .concat('minmax(0, 100%)')
       .join(' ');
     $grid.style.setProperty('grid-template-rows', tmplColumns);
   });
   $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% auto auto`);
   if (!paneSizes.widths.length || !paneSizes.heights.length) {
-    updateSettings({ paneSizes: { ...paneSizes, widths, heights } });
+    updateSettings((settings) => ({
+      ...settings,
+      paneSizes: { ...settings.paneSizes, widths, heights },
+    }));
   }
-  // let widthes: PaneLayouts[number] | undefined;
-  // if (paneLayouts.length === 0) {
-  //   if (paneWidth.pane3 === defaultWidth.histories
-  //     && paneWidth.pane2 === defaultWidth.tabs
-  //     && paneWidth.pane1 === defaultWidth.leafs) {
-  //     [widthes] = defaultWidthes;
-  //   } else {
-  //     widthes = [$pane1, $pane2, $pane3].map(($body, i) => {
-  //       const name = whichClass(paneNames, $body)!;
-  //       const width = [paneWidth.pane3, paneWidth.pane2, paneWidth.pane1][i];
-  //       return { name, width };
-  //     }) as PaneLayouts[number];
-  //   }
-  //   // updateSettings({ paneLayouts: [widthes!] });
-  // } else {
-  //   widthes = paneLayouts.find((ps) => [$pane1, $pane2, $pane3].every(
-  //     (pane, i) => hasClass(pane, ps[i].name),
-  //   ));
-  //   if (!widthes) {
-  //     widthes = defaultWidthes.find((panes) => [$pane1, $pane2, $pane3].every(
-  //       ($pane, i) => hasClass($pane, panes[i].name),
-  //     ))!;
-  //   }
-  // }
-  // widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
-}
-
-// function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-//   const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-//   const $bodies = $$byClass('pane-body');
-//   [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
-// }
-
-export function getNewPaneWidth($parent: HTMLElement, keyName: keyof Pick<PaneSizes, 'widths' | 'bookmarks'>) {
-  return ({ settings }: Pick<State, 'settings' | 'options'>) => {
-    const gridTemplateColumnsValue = $parent.style.getPropertyValue('grid-template-columns');
-    const gridTemplateColumns = gridTemplateColumnsValue.split(' ');
-    const pos = gridTemplateColumns.findIndex((el) => el.endsWith('px'));
-    if (pos < 0) {
-      return settings;
-    }
-    const width = parseInt(gridTemplateColumns[pos], 10);
-    const appMainWidth = $parent.offsetWidth;
-    const { [keyName]: widths } = settings.paneSizes;
-    const percent = (width / appMainWidth) * 100;
-    widths.splice(pos / 2, 1, percent);
-    const newGridTemplateColumns = gridTemplateColumns
-      .reduce((acc, el, i) => ((i === pos) ? [...acc, `${percent}%`] : [...acc, el]), [] as string[])
-      .join(' ');
-    $parent.style.setProperty('grid-template-columns', newGridTemplateColumns);
-    // const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
-    // const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
-    //   const name = whichClass(paneNames, $body)!;
-    //   const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
-    //   return { name, width };
-    // }) as PaneLayouts[number];
-    // const paneLayouts = settings.paneLayouts
-    //   .filter((ps) => ![$pane1, $pane2, $pane3].every(
-    //     (pane, i) => hasClass(pane, ps[i].name),
-    //   ))
-    //   .concat([newWidthes]);
-    // if (options.windowMode) {
-    //   return { ...settings, paneLayoutsWindowMode: paneLayouts };
-    // }
-    return { ...settings, paneSizes: { ...settings.paneSizes, [keyName]: widths } };
-  };
-}
-
-export function getEndPaneMinWidth($endPane: HTMLElement) {
-  const queryWrapMinWidth = 70;
-  const minWidth = [...$endPane.children]
-    .filter((el) => !hasClass(el, 'query-wrap'))
-    .map((el) => getComputedStyle(el))
-    .map(pick('width', 'marginLeft', 'marginRight'))
-    .reduce(
-      (acc, props) => Object.values(props).reduce(
-        (sum, prop1) => sum + (Number.parseFloat(prop1) || 0),
-        acc,
-      ),
-      queryWrapMinWidth,
-    );
-  return Math.max(minWidth, 120);
 }
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in') {
@@ -392,6 +302,46 @@ export function saveStateAllPaths(id?: string) {
   setLocal({ clientState: { open, paths } });
 }
 
+function getGridTemplateProps($parent: HTMLElement, parentSize: number, columnsOrRows: 'columns' | 'rows') {
+  const gridTemplateValue = $parent.style.getPropertyValue(`grid-template-${columnsOrRows}`);
+  const gridTemplate = gridTemplateValue.split(' ');
+  const pos = gridTemplate.findIndex((el) => el.endsWith('px'));
+  if (pos < 0) {
+    return {};
+  }
+  const size = parseInt(gridTemplate[pos], 10);
+  const percent = (size / parentSize) * 100;
+  const newGridTemplate = gridTemplate
+    .reduce((acc, el, i) => ((i === pos) ? [...acc, `${percent}%`] : [...acc, el]), [] as string[])
+    .join(' ');
+  $parent.style.setProperty(`grid-template-${columnsOrRows}`, newGridTemplate);
+  return { pos, percent };
+}
+
+function getNewPaneWidth($parent: HTMLElement, keyName: keyof Pick<PaneSizes, 'widths' | 'bookmarks'>) {
+  return ({ settings }: Pick<State, 'settings'>) => {
+    const { pos, percent } = getGridTemplateProps($parent, $parent.offsetWidth, 'columns');
+    if (!percent) {
+      return settings;
+    }
+    const { [keyName]: widths } = settings.paneSizes;
+    widths.splice(pos / 2, 1, percent);
+    return { ...settings, paneSizes: { ...settings.paneSizes, [keyName]: widths } };
+  };
+}
+
+function getNewPaneHeight($parent: HTMLElement, colIndex: number) {
+  return ({ settings }: Pick<State, 'settings'>) => {
+    const { pos, percent } = getGridTemplateProps($parent, $parent.offsetHeight, 'rows');
+    if (!percent) {
+      return settings;
+    }
+    const { heights } = settings.paneSizes;
+    heights[colIndex].splice(pos / 2, 1, percent);
+    return { ...settings, paneSizes: { ...settings.paneSizes, heights } };
+  };
+}
+
 function setMouseEventListener(
   mouseMoveHandler: (e: MouseEvent) => void,
   getSettings: (state: Pick<State, 'settings' | 'options'>) => Settings,
@@ -428,31 +378,79 @@ export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
 }
 
 export function setSplitterHandler(
-  $parent: HTMLElement,
-  keyName: Parameters<typeof getNewPaneWidth>[1],
   mouseMoveHandler: (e: MouseEvent) => void,
+  mouseUpHandler: (settings: Pick<State, 'settings'>) => Settings,
 ) {
-  setMouseEventListener(mouseMoveHandler, getNewPaneWidth($parent, keyName), false);
+  setMouseEventListener(mouseMoveHandler, mouseUpHandler, false);
 }
 
 export function resizeSplitHandler(
-  startWidth: number,
-  startMouseX: number,
+  mousePosName: 'clientX' | 'clientY',
+  columnsOrRows: 'columns' | 'rows',
+  startSize: number,
+  startMousePos: number,
   pos: number,
   $appMain: HTMLElement,
-  minWidth: number,
-  maxWidth: number,
+  minSize: number,
+  maxSize: number,
   appZoom: number,
 ) {
   return (e: MouseEvent) => {
-    const newWidth = startWidth - (startMouseX - e.clientX) / appZoom;
-    const width = Math.min(Math.max(newWidth, minWidth), maxWidth);
-    const gridTemplateColumns = $appMain.style.getPropertyValue('grid-template-columns');
-    const newGridTemplateColumns = gridTemplateColumns.split(' ')
-      .reduce((acc, el, i) => ((i === pos * 2) ? [...acc, `${width}px`] : [...acc, el]), [] as string[])
+    const newSize = startSize - (startMousePos - e[mousePosName]) / appZoom;
+    const size = Math.min(Math.max(newSize, minSize), maxSize);
+    const gridTemplate = $appMain.style.getPropertyValue(`grid-template-${columnsOrRows}`);
+    const newGridTemplate = gridTemplate.split(' ')
+      .reduce((acc, el, i) => ((i === pos * 2) ? [...acc, `${size}px`] : [...acc, el]), [] as string[])
       .join(' ');
-    $appMain.style.setProperty('grid-template-columns', newGridTemplateColumns);
+    $appMain.style.setProperty(`grid-template-${columnsOrRows}`, newGridTemplate);
   };
+}
+
+export function splitHMouseDownHandler(e: MouseEvent, appZoom: number) {
+  const $splitter = e.target as HTMLElement;
+  $splitter.classList.add('mousedown');
+  const $parent = $splitter.parentElement!;
+  const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
+  const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
+  const minWidth = 100;
+  const maxWidth = endColGridWidth - minWidth + offsetWidth;
+  const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
+  const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
+  const handler = resizeSplitHandler(
+    'clientX',
+    'columns',
+    offsetWidth,
+    e.clientX,
+    pos,
+    $parent,
+    minWidth,
+    maxWidth,
+    appZoom,
+  );
+  setSplitterHandler(handler, getNewPaneWidth($parent, keyName));
+}
+
+export function splitVMouseDownHandler(e: MouseEvent, appZoom: number, colIndex: number) {
+  const $splitter = e.target as HTMLElement;
+  $splitter.classList.add('mousedown');
+  const $parent = $splitter.parentElement!;
+  const { offsetHeight } = $splitter.previousElementSibling as HTMLElement;
+  const endColGridHeight = ($parent.lastElementChild as HTMLElement).offsetHeight;
+  const minHeight = 100;
+  const maximumHeight = endColGridHeight - minHeight + offsetHeight;
+  const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-v')).indexOf($splitter);
+  const handler = resizeSplitHandler(
+    'clientY',
+    'rows',
+    offsetHeight,
+    e.clientY,
+    pos,
+    $parent,
+    minHeight,
+    maximumHeight,
+    appZoom,
+  );
+  setSplitterHandler(handler, getNewPaneHeight($parent, colIndex));
 }
 
 export function resizeHeightHandler(e: MouseEvent) {
@@ -650,8 +648,7 @@ export function selectFolder(
     }
     return;
   }
-  // eslint-disable-next-line no-param-reassign
-  $leafs.scrollTop = 0;
+  Object.assign($leafs, { scrollTop: 0 });
   $$byClass('open').forEach(rmClass('open'));
   folders.forEach(addClass('open'));
   saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
@@ -958,9 +955,7 @@ export function setBrowserFavicon(colorPalette: ColorPalette) {
     .then((base64svg) => {
       let link = $('link[rel="icon"]') as HTMLLinkElement;
       if (!link) {
-        link = Object.assign(document.head.appendChild(document.createElement('link')), {
-          rel: 'icon',
-        });
+        link = Object.assign(document.head.appendChild(createElement('link', { rel: 'icon' })));
       }
       link.href = `data:image/svg+xml;base64,${base64svg}`;
     });

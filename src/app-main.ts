@@ -4,11 +4,9 @@ import {
   ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
 } from './types';
 import {
-  setEvents,
-  addListener,
+  setEvents, addListener,
   getLocal, pipe, getNextIndex, updateSettings,
   chromeEventFilter, cssid, makeCss, pick,
-  last,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -16,10 +14,7 @@ import {
   $$byClass,
   hasClass, toggleClass,
   setResizeHandler,
-  setSplitterHandler,
-  resizeSplitHandler,
   resizeHeightHandler,
-  // getEndPaneMinWidth,
   showMenu,
   rmClass,
   addClass,
@@ -33,6 +28,8 @@ import {
   setBrowserFavicon,
   addChild,
   preShowMenu,
+  splitHMouseDownHandler,
+  splitVMouseDownHandler,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -61,7 +58,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #settings!: Settings;
   #randomPalettes = [] as ColorPalette[];
   #randomPalettesIndex = 0;
-  // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
   #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>[] | undefined;
   #appZoom!: number;
@@ -72,29 +68,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     setThemeClass(this, options.colorPalette);
     chrome.windows.getCurrent().then((win) => {
       this.#windowId = win.id!;
-    });
-
-    $$byClass('split-h').forEach(($splitter) => {
-      addListener('mousedown', (e: MouseEvent) => {
-        $splitter.classList.add('mousedown');
-        const $parent = $splitter.parentElement!;
-        const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
-        const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
-        const minWidth = 100;
-        const maxWidth = endColGridWidth - minWidth + offsetWidth;
-        const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
-        const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
-        const handler = resizeSplitHandler(
-          offsetWidth,
-          e.clientX,
-          pos,
-          $parent,
-          minWidth,
-          maxWidth,
-          this.#appZoom,
-        );
-        setSplitterHandler($parent, keyName, handler);
-      })($splitter);
     });
 
     if (!options.windowMode) {
@@ -132,6 +105,16 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     chrome.tabs.setZoomSettings({
       mode: 'disabled',
       scope: 'per-tab',
+    });
+
+    $$byClass('split-h').forEach(($splitter) => {
+      addListener('mousedown', (e) => splitHMouseDownHandler(e, this.#appZoom))($splitter);
+    });
+
+    const $colGrids = $$byClass('col-grid');
+    $$byClass('split-v').forEach(($splitter) => {
+      const colIndex = $colGrids.findIndex(($colGrid) => $colGrid === $splitter.parentElement);
+      addListener('mousedown', (e) => splitVMouseDownHandler(e, this.#appZoom, colIndex))($splitter);
     });
   }
   async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
@@ -237,7 +220,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>, _: any, __: any, store: StoreSub) {
     if (popupWindow.state === 'normal' && popupWindow.focused) {
       const windowSize = pick('width', 'height', 'top', 'left')(popupWindow) as NonNullable<Settings['windowSize']>;
-      updateSettings({ windowSize });
+      updateSettings((settings) => ({ ...settings, windowSize }));
       store.dispatch('updateWindowHeight', popupWindow.height);
     }
   }
@@ -276,7 +259,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   minimize() {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
   }
-  // eslint-disable-next-line class-methods-use-this
   setAppZoom({ newValue }: Changes<'setAppZoom'>) {
     Object.assign(document.body.style, {
       zoom: newValue,
@@ -340,7 +322,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       focusWindow: {},
     };
   }
-  // eslint-disable-next-line class-methods-use-this
   connect(store: Store) {
     if (!this.#options.windowMode) {
       chrome.windows.onFocusChanged.addListener((windowId) => {

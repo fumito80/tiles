@@ -360,7 +360,8 @@ app-main:not(.theme-dark-pane) {
     }
   }
 
-  .split-h {
+  .split-h,
+  .split-v {
 
     &.mousedown,
     &:hover {
