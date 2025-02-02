@@ -151,7 +151,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
 getLocal(...initStateKeys).then(init);
 
 chrome.action.onClicked.addListener(async (tab) => {
-  const { settings, options } = await getLocal('settings', 'options');
+  const { settings, options, setAppZoom } = await getLocal('settings', 'options', 'setAppZoom');
   if (!options.windowMode) {
     return;
   }
@@ -163,7 +163,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   const variables = makeThemeCss(options.colorPalette);
   const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
   chrome.windows.create({
-    url: `popup.html?css=${encoded}`,
+    url: `popup.html?css=${encoded}&width=unset&height=unset&zoom=${setAppZoom}`,
     type: 'popup',
     ...settings.windowSize,
   }).then((win) => {

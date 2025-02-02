@@ -7,6 +7,7 @@ import {
   setEvents, addListener,
   getLocal, pipe, getNextIndex, updateSettings,
   chromeEventFilter, cssid, makeCss, pick,
+  setPopupStyle,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
@@ -205,13 +206,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
     store.dispatch('focusQuery');
   }
-  // eslint-disable-next-line class-methods-use-this
   async changeFocusedWindow({ newValue: windowId }: Changes<'changeFocusedWindow'>) {
-    const { options: { windowMode } } = await getLocal('options');
-    if (windowMode) {
-      return;
-    }
-    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    if (this.#options.windowMode || windowId === chrome.windows.WINDOW_ID_NONE) {
       return;
     }
     window.close();
@@ -260,12 +256,17 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
   }
   setAppZoom({ newValue }: Changes<'setAppZoom'>) {
+    const [width, height] = this.#options.windowMode
+      ? ['unset', `calc(100vh / ${newValue} - 5px)`]
+      : [`${this.#settings.width / newValue}px`, `${this.#settings.height / newValue}px`];
     Object.assign(document.body.style, {
+      width,
+      height,
       zoom: newValue,
-      height: `calc(100vh / ${newValue} - 5px)`,
     });
     $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
     this.#appZoom = newValue;
+    setPopupStyle(this.#options);
   }
   actions() {
     return {

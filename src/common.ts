@@ -901,14 +901,18 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
     chrome.action.setPopup({ popup: '' });
     return;
   }
-  getLocal('settings').then(({ settings }) => {
+  getLocal('settings', 'setAppZoom').then(({ settings, setAppZoom }) => {
+    const width = `${settings.width / setAppZoom}px`;
+    const height = `${settings.height / setAppZoom}px`;
     const encoded = encodeURIComponent(makeCss(settings, colorPalette, css));
-    chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
-    getPopup().then((popup) => {
-      if (popup) {
+    const popup = `popup.html?css=${encoded}&width=${width}&height=${height}&zoom=${setAppZoom}`;
+    chrome.action.setPopup({ popup });
+    getPopup().then((popupWindow) => {
+      if (popupWindow) {
         postMessage({ type: BkgMessageTypes.terminateWindowMode });
       }
     });
+    return popup;
   });
 }
 

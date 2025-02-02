@@ -42,6 +42,7 @@ export type PaneSizes = {
 
 export const initialSettings = {
   postPage: false,
+  width: 800,
   height: 500,
   windowSize: {
     width: 800,
@@ -186,6 +187,7 @@ export const initialState = {
     currentWindowId: undefined,
   } as WindowModeInfo,
   updatedHistory: Date.now(),
+  setAppZoom: 1,
 };
 
 export type State = typeof initialState;

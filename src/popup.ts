@@ -67,6 +67,11 @@ const params = new URLSearchParams(document.location.search);
 const sheet = document.head.appendChild(createElement('style'));
 sheet.textContent = params.get('css');
 
+const width = params.get('width') || 'unset';
+const height = params.get('height') || 'unset';
+const zoom = params.get('zoom') || 'unset';
+Object.assign(document.body.style, { width, height, zoom });
+
 function setOptions(settings: Settings, options: Options) {
   initSplitWidth(settings, options);
 
