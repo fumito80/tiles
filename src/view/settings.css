@@ -373,7 +373,8 @@ label.theme {
     }
   }
 
-  .icon-tabs {
+  .icon-tabs,
+  .icon-recently-closed-tab {
     font-size: 1.3em;
   }
 
