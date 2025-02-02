@@ -31,13 +31,26 @@ export class LayoutPanes extends CustomInputElement {
   get value() {
     return this.#value;
   }
-  set value(value: Panes2) {
-    $$byClass('column', this).forEach(($col, col) => {
-      value[col]?.slice().reverse().forEach((paneName) => {
-        $col.insertAdjacentElement('afterbegin', $(`[data-value="${paneName}"]`)!);
+  set value(columns: Panes2) {
+    columns.forEach((column) => {
+      const $column = this.appendChild(document.importNode($('.column', $byTag<HTMLTemplateElement>('template').content)!, true));
+      column.slice().reverse().forEach((paneName) => {
+        $column.insertAdjacentElement('afterbegin', $(`[data-value="${paneName}"]`)!);
       });
     });
-    this.#value = value;
+    this.resetAutoWiderElement();
+    this.#value = columns;
+  }
+  resetAutoWiderElement() {
+    const $hidden = $byClass('hidden')!;
+    const $$columns = $$byClass('column', this);
+    $$byClass('auto-wider').forEach(($autoWider) => {
+      const $column = $$columns[Number($autoWider.dataset.no) - 1];
+      $column?.append($autoWider);
+      if (!$column) {
+        $hidden.append($autoWider);
+      }
+    });
   }
   dragstart(e: DragEvent) {
     const $target = e.target as HTMLElement;
@@ -63,23 +76,27 @@ export class LayoutPanes extends CustomInputElement {
       return;
     }
     e.preventDefault();
+    const $hidden = $byClass('hidden')!;
     addClass(this.#dragEnter)($enterTarget);
     if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
       const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
       const $column = $src.parentElement!;
       $dest.insertAdjacentElement(position, $src);
       if (!$('[draggable]', $column)) {
+        $hidden.append(...$$byClass('auto-wider', $column)!);
         $column.remove();
       }
+      this.resetAutoWiderElement();
       return;
     }
     const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
     let $column = $src.parentElement!;
     if ($$('[draggable]', $column).length > 1) {
-      $column = document.importNode($('div', $byTag<HTMLTemplateElement>('template').content)!, true);
-      $column.append($src);
+      $column = document.importNode($('.column', $byTag<HTMLTemplateElement>('template').content)!, true);
+      $column.prepend($src);
     }
     $dest.insertAdjacentElement(position, $column);
+    this.resetAutoWiderElement();
   }
   dragend(e: DragEvent) {
     rmClass(this.#dragEnter)($byClass(this.#dragEnter));
@@ -95,7 +112,7 @@ export class LayoutPanes extends CustomInputElement {
         ...settings,
         paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
       }));
-      this.value = newValue;
+      this.#value = newValue;
       this.fireEvent();
     }
   }

@@ -80,60 +80,38 @@
         </div>
         <div class="heading">Layout</div>
         <layout-panes name="panes2">
-          <div class="column">
-            <div draggable="true" data-value="history">
-              <i class="icon-history"></i>
-              <div class="title">HISTORY</div>
-              <div>
-                <input type="checkbox" name="zoom-history" id="zoom-history"><label for="zoom-history">Xen mode</label>
-              </div>
-              <div class="droppable pane-top"></div>
-              <div class="droppable pane-bottom"></div>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+          <div draggable="true" data-value="history">
+            <i class="icon-history"></i>
+            <div class="title">HISTORY</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
-          <div class="column">
-            <div draggable="true" data-value="windows">
-              <i class="icon-tabs"></i>
-              <div class="title">OPEN TABS</div>
-              <div>
-                <input type="checkbox" name="zoom-tabs" id="zoom-tabs"><label for="zoom-tabs">Xen mode</label>
-              </div>
-              <div class="droppable pane-top"></div>
-              <div class="droppable pane-bottom"></div>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+          <div draggable="true" data-value="windows">
+            <i class="icon-tabs"></i>
+            <div class="title">OPEN TABS</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
-          <div class="column">
-            <div draggable="true" data-value="recent-tabs">
-              <i class="icon-recently-closed-tab"></i>
-              <div class="title">RECENT TABS</div>
-              <div class="droppable pane-top"></div>
-              <div class="droppable pane-bottom"></div>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+          <div draggable="true" data-value="recent-tabs">
+            <i class="icon-recently-closed-tab"></i>
+            <div class="title">RECENT TABS</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
-          <div class="column">
-            <div draggable="true" data-value="bookmarks">
-              <i class="icon-bookmarks"></i>
-              <div class="title">BOOKMARKS</div>
-              <layout-bm-panes name="bookmarks-panes">
-                <div data-value="leafs">Bookmarks</div>
-                <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
-                <div data-value="folders">Folders</div>
-              </layout-bm-panes>
-              <div class="droppable pane-top"></div>
-              <div class="droppable pane-bottom"></div>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+          <div draggable="true" data-value="bookmarks">
+            <i class="icon-bookmarks"></i>
+            <div class="title">BOOKMARKS</div>
+            <layout-bm-panes name="bookmarks-panes">
+              <div data-value="leafs">Bookmarks</div>
+              <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
+              <div data-value="folders">Folders</div>
+            </layout-bm-panes>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
         </layout-panes>
         <label class="item">
-          <input type="checkbox" class="bullet" tabindex="-1">Xen mode display ratio:
+          <input type="checkbox" class="bullet" tabindex="-1">Auto wider display ratio:
           <select name="zoom-ratio" class="form-control ms-2">
             <option value="0.5">50%</option>
             <option value="0.6">60%</option>
@@ -213,7 +191,20 @@
           </div>
         </div>
         <input is="monaco-editor" type="hidden" name="css">
-
+        <div class="d-none hidden">
+          <div class="auto-wider" data-no="1">
+            <input type="checkbox" name="wider1" id="wider1"><label for="wider1">Auto wider</label>
+          </div>
+          <div class="auto-wider" data-no="2">
+            <input type="checkbox" name="wider2" id="wider2"><label for="wider2">Auto wider</label>
+          </div>
+          <div class="auto-wider" data-no="3">
+            <input type="checkbox" name="wider3" id="wider3"><label for="wider3">Auto wider</label>
+          </div>
+          <div class="auto-wider" data-no="4">
+            <input type="checkbox" name="wider4" id="wider4"><label for="wider4">Auto wider</label>
+          </div>
+        </div>
       </form>
     </article>
   </main>

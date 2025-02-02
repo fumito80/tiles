@@ -401,11 +401,9 @@ label.theme {
 
   &.dragging {
     >.column {
-      >.droppable {
-        &.pane-before {
-          width: 30px;
-          left: -20px;
-        }
+      >.droppable.pane-before {
+        width: 30px;
+        left: -20px;
       }
     }
 
@@ -523,4 +521,17 @@ label.theme {
   border-color: var(--bs-btn-disabled-border-color);
   opacity: var(--bs-btn-disabled-opacity);
   cursor: pointer;
+}
+
+.column:last-child .auto-wider {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.column:first-child:last-child .auto-wider {
+  display: none;
+}
+
+.auto-wider {
+  text-align: center;
 }
