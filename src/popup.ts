@@ -42,6 +42,7 @@ import {
   getInitialTabs,
   setBrowserFavicon,
   createElement,
+  hasClass,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -135,6 +136,14 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
   const [first, ...rest] = $$colGrids;
   const splited = rest.flatMap(($grid) => [createElement('div', { className: 'split-h' }), $grid]);
   $appMain.prepend(first, ...splited);
+  const [left, right] = options.bookmarksPanes;
+  const $bmLeft = $byClass(left)!;
+  if (!hasClass($bmLeft.previousElementSibling!, 'header-bookmarks')) {
+    const $bmLeftAfter = $bmLeft.nextElementSibling;
+    const $bmRight = $byClass(right)!;
+    $bmLeft.parentElement!.insertBefore($bmLeft, $bmRight);
+    $bmLeft.parentElement!.insertBefore($bmRight, $bmLeftAfter);
+  }
   $appMain.init(options, settings, isSearching);
   return $$('[is]', $appMain).reduce((acc, pane) => {
     const name = pane?.getAttribute('is');

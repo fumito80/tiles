@@ -76,14 +76,13 @@ export class LayoutPanes extends CustomInputElement {
       return;
     }
     e.preventDefault();
-    const $hidden = $byClass('hidden')!;
     addClass(this.#dragEnter)($enterTarget);
     if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
       const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
       const $column = $src.parentElement!;
       $dest.insertAdjacentElement(position, $src);
       if (!$('[draggable]', $column)) {
-        $hidden.append(...$$byClass('auto-wider', $column)!);
+        $byClass('hidden')!.append(...$$byClass('auto-wider', $column)!);
         $column.remove();
       }
       this.resetAutoWiderElement();
@@ -113,6 +112,10 @@ export class LayoutPanes extends CustomInputElement {
         paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
       }));
       this.#value = newValue;
+      $$<HTMLInputElement>('.hidden input[type="checkbox"], .column:last-child input[type="checkbox"]').forEach(($el) => {
+        // eslint-disable-next-line no-param-reassign
+        $el.checked = false;
+      });
       this.fireEvent();
     }
   }
