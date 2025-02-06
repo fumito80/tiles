@@ -72,16 +72,22 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     });
 
     if (!options.windowMode) {
-      $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
+      $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler(this.#appZoom)));
     }
 
+    const $$colGrids = $$byClass('col-grid', this);
     const panes = [
-      ...(options.zoomHistory ? [$byClass('histories', this)!] : []),
-      ...(options.zoomTabs ? [$byClass('tabs', this)!] : []),
+      ...(options.wider1 ? [$$colGrids[0]] : []),
+      ...(options.wider2 ? [$$colGrids[1]] : []),
     ];
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
-    toggleClass('disable-zoom-history', !options.zoomHistory)(this);
-    toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
+    const [zoomTabs, zoomHistory] = panes
+      .reduce<[boolean, boolean]>(([tabs, history], $colGrid) => ([
+        tabs || !!$byClass('windows', $colGrid),
+        history || !!$byClass('history', $colGrid),
+      ]), [false, false] as const);
+    toggleClass('disable-zoom-history', !zoomHistory)(this);
+    toggleClass('disable-zoom-tabs', !zoomTabs)(this);
     getLocal('settings', 'options').then(({ settings: { palettes } }) => {
       const palettesAll = Object.values(palettes)
         .flatMap((palette) => palette.map((p) => p.map((pp) => pp.color) as ColorPalette));
@@ -244,7 +250,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   applyStyle({ newValue: { css, colorPalette } }: Changes<'applyStyle'>) {
     setBrowserFavicon(colorPalette);
-    $byTag('style').textContent = makeCss(this.#settings, colorPalette, css);
+    const [sheet] = document.adoptedStyleSheets;
+    sheet.replace(makeCss(this.#settings, colorPalette, css));
     setThemeClass($byTag('app-main'), colorPalette);
   }
   minimizeOthers(changes: Changes<'windowAction'>) {

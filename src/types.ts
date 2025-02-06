@@ -145,8 +145,6 @@ export const initialOptions = {
   colorPalette: defaultColorPalette,
   wider1: false,
   wider2: false,
-  wider3: false,
-  wider4: false,
   zoomRatio: '0.7',
   fontSize: '0.9em',
   collapseTabs: true,

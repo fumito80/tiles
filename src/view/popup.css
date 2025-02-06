@@ -1500,8 +1500,7 @@ app-main::-webkit-scrollbar {
 .zoom-pane {
 
   .resize-x,
-  .split-h,
-  .split-v {
+  .split-h {
     cursor: default;
 
     &:hover {
@@ -1667,23 +1666,23 @@ app-main:not(.disable-zoom-history) {
   }
 }
 
-.zoom-center {
+/* .zoom-center {
   .pane-header:first-child {
     >i:first-of-type~* {
       display: none !important;
     }
   }
-}
+} */
 
 app-main.zoom-pane {
-  .pane-header {
+  /* .pane-header {
 
     .pin-bookmark,
     .pin-bookmark+.menu-button {
       display: none;
       visibility: hidden;
     }
-  }
+  } */
 
   &:not(.zoom-center) {
     .pane-header:nth-child(2) {
@@ -1734,9 +1733,9 @@ dialog {
     margin-right: 10px;
   }
 
-  .pin-bookmark {
+  /* .pin-bookmark {
     margin-left: auto;
-  }
+  } */
 }
 
 .pane-header {
@@ -1959,11 +1958,16 @@ bm-leaf {
   display: grid;
   grid-template-columns: 100%;
   overflow: auto;
+  transition: var(--xen-mode-transition);
 
   >div {
     display: grid;
     grid-template-rows: max-content minmax(0, 100%);
   }
+}
+
+.zoom-pane .col-grid {
+  width: fit-content;
 }
 
 @import "./tabs";

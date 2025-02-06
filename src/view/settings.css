@@ -375,6 +375,11 @@ label.theme {
 
   .icon-tabs,
   .icon-recently-closed-tab {
+    font-size: 1.4em;
+  }
+
+  .icon-bookmarks,
+  .icon-history {
     font-size: 1.3em;
   }
 
@@ -524,7 +529,9 @@ label.theme {
   cursor: pointer;
 }
 
-.column:last-child .auto-wider {
+.auto-wider.dummy,
+.column:last-child .auto-wider,
+[data-value="bookmarks"]~.auto-wider {
   visibility: hidden;
   pointer-events: none;
 }

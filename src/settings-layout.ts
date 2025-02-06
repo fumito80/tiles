@@ -112,7 +112,7 @@ export class LayoutPanes extends CustomInputElement {
         paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
       }));
       this.#value = newValue;
-      $$<HTMLInputElement>('.hidden input[type="checkbox"], .column:last-child input[type="checkbox"]').forEach(($el) => {
+      $$<HTMLInputElement>('.hidden input[type="checkbox"], .column:last-child input[type="checkbox"], [data-value="bookmarks"]~.auto-wider input[type="checkbox"]').forEach(($el) => {
         // eslint-disable-next-line no-param-reassign
         $el.checked = false;
       });

@@ -221,10 +221,6 @@ export function addRules(selector: string, ruleProps: [string, string][]) {
 }
 
 export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
-  const $colGrids = $$byClass('col-grid');
-  const headerHeight = $('.end .query-wrap')!.offsetHeight;
-  const $$headers = $$byClass('pane-header');
-  $$headers.forEach(($el) => $el.style.setProperty('height', `${headerHeight}px`));
   const widths = paneSizes.widths.length === 0
     ? init(panes2).map(() => 100 / panes2.length)
     : paneSizes.widths;
@@ -234,17 +230,18 @@ export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
       return init(pane).map(always(h));
     })
     : paneSizes.heights;
+  const $colGrids = $$byClass('col-grid');
   $byTag('app-main')!.style.gridTemplateColumns = [...Array($colGrids.length - 1)]
     .map((_, col) => `${widths[col]}% min-content`)
     .concat('minmax(0, 100%)')
     .join(' ');
   $colGrids.forEach(($grid, col) => {
     const rows = ($grid.children.length - 1) / 2;
-    const tmplColumns = [...Array(rows)]
+    const tmplRows = [...Array(rows)]
       .map((_, row) => `${heights[col][row]}% max-content`)
       .concat('minmax(0, 100%)')
       .join(' ');
-    $grid.style.setProperty('grid-template-rows', tmplColumns);
+    $grid.style.setProperty('grid-template-rows', tmplRows);
   });
   $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% auto auto`);
   if (!paneSizes.widths.length || !paneSizes.heights.length) {
@@ -453,12 +450,14 @@ export function splitVMouseDownHandler(e: MouseEvent, appZoom: number, colIndex:
   setSplitterHandler(handler, getNewPaneHeight($parent, colIndex));
 }
 
-export function resizeHeightHandler(e: MouseEvent) {
-  const height = Math.min(e.clientY - 6, maxHeight);
-  if (height < 200) {
-    return;
-  }
-  addStyle('height', `${height}px`)(document.body);
+export function resizeHeightHandler(appZoom: number) {
+  return (e: MouseEvent) => {
+    const height = Math.min(e.clientY - 6, maxHeight) / appZoom;
+    if (height < 200) {
+      return;
+    }
+    addStyle('height', `${height}px`)(document.body);
+  };
 }
 
 export function setAnimationFolder(className: string) {

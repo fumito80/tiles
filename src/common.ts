@@ -839,16 +839,16 @@ export function camelToSnake(value: string) {
   return value.split('').map((s) => [s, s.toLowerCase()]).map(([s, smallS]) => (s === smallS ? s : `-${smallS}`)).join('');
 }
 
-export function getGridColStart($target: HTMLElement) {
-  let gridColStart = 0;
-  for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
-    if (!$prev.classList.contains('pane-body')) {
-      break;
-    }
-    gridColStart += 1;
-  }
-  return gridColStart;
-}
+// export function getGridColStart($target: HTMLElement) {
+//   let gridColStart = 0;
+//   for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
+//     if (!$prev.classList.contains('pane-body')) {
+//       break;
+//     }
+//     gridColStart += 1;
+//   }
+//   return gridColStart;
+// }
 
 export function getColorFromBg(colorPalette: ColorPalette) {
   const lightColor = '#efefef';

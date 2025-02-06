@@ -43,6 +43,7 @@ import {
   setBrowserFavicon,
   createElement,
   hasClass,
+  $$byClass,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -65,8 +66,9 @@ export { makeAction, IPublishElement };
 type Options = State['options'];
 
 const params = new URLSearchParams(document.location.search);
-const sheet = document.head.appendChild(createElement('style'));
-sheet.textContent = params.get('css');
+const sheet = new CSSStyleSheet();
+sheet.replace(params.get('css')!);
+document.adoptedStyleSheets = [sheet];
 
 const width = params.get('width') || 'unset';
 const height = params.get('height') || 'unset';
@@ -144,6 +146,10 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
     $bmLeft.parentElement!.insertBefore($bmLeft, $bmRight);
     $bmLeft.parentElement!.insertBefore($bmRight, $bmLeftAfter);
   }
+  const headerHeight = $$byClass('query-wrap').find(($el) => $el.offsetHeight > 0)?.offsetHeight ?? 0;
+  const sheet2 = new CSSStyleSheet();
+  sheet2.insertRule(`.pane-header { height: ${headerHeight}px; }`);
+  document.adoptedStyleSheets = [sheet, sheet2];
   $appMain.init(options, settings, isSearching);
   return $$('[is]', $appMain).reduce((acc, pane) => {
     const name = pane?.getAttribute('is');

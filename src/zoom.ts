@@ -1,7 +1,7 @@
 import { Options } from './types';
-import { getLocal, getGridColStart } from './common';
+import { getLocal } from './common';
 import {
-  $, $$byClass, $byClass,
+  $, $byClass, $$byClass,
   initSplitWidth, addStyle, addClass, rmStyle, rmClass, hasClass,
 } from './client';
 
@@ -27,12 +27,8 @@ function getZoomingElements({ $main, ...rest }: ZoomingElementsArgs): ZoomingEle
   };
 }
 
-function relocateGrid(
-  $target: HTMLElement,
-  $query: HTMLElement,
-) {
-  const gridColStart = getGridColStart($target);
-  const $header = $$byClass('pane-header')[gridColStart];
+function relocateGrid($target: HTMLElement, $query: HTMLElement) {
+  const $header = $byClass('pane-header', $target);
   const $form = $query.parentElement!;
   $byClass('query-wrap', $header)!.append($form);
   $query.focus();
@@ -41,9 +37,9 @@ function relocateGrid(
 function restoreGrid($query: HTMLElement) {
   const $form = $query.parentElement!;
   const $endTitle = $('.end .pane-header')!;
-    $byClass('query-wrap', $endTitle)!.append($form);
-    rmStyle('width', 'overflow')($form);
-    $query.focus();
+  $byClass('query-wrap', $endTitle)!.append($form);
+  rmStyle('width', 'overflow')($form);
+  $query.focus();
 }
 
 export function zoomOut(
@@ -78,6 +74,7 @@ export function zoomOut(
     const promise3 = getLocal('settings', 'options')
       .then(({ settings, options }) => initSplitWidth(settings, options))
       .then(() => new Promise((resolve) => {
+        rmStyle('width')($target);
         $target.addEventListener('transitionend', resolve, { once: true });
       }));
     if (mouseenter) {
@@ -111,9 +108,22 @@ async function enterZoom(
   if (hasClass($main, 'zoom-pane')) {
     return;
   }
-  const gridColStart = getGridColStart($target);
-  const isCenter = gridColStart !== 0;
+  // const gridColStart = getGridColStart($target);
+  const gridCol = $$byClass('col-grid').indexOf($target);
+  const isCenter = gridCol !== 0;
   const width = $main.offsetWidth * zoomRatio;
+  const gridTemplateColumns = $main.style.getPropertyValue('grid-template-columns');
+  let colWidthPer = '';
+  const newValue = gridTemplateColumns.split(' ').map((el, i) => {
+    if (i === gridCol * 2) {
+      colWidthPer = el;
+      return 'auto';
+    }
+    return el;
+  }).join(' ');
+  const currentWidth = $main.offsetWidth * (parseFloat(colWidthPer) / 100);
+  $main.style.setProperty('grid-template-columns', newValue);
+  addStyle('width', `${currentWidth}px`)($target);
   const promise1 = new Promise<void>((resolve) => {
     $target.addEventListener('transitionend', () => {
       addClass('zoom-pane')($main);
@@ -123,7 +133,7 @@ async function enterZoom(
   });
   const $safetyZoneRight = $byClass('safety-zone-right')!;
   rmStyle('width')($safetyZoneRight);
-  addStyle('width', `${width}px`)($target);
+  setTimeout(() => addStyle('width', `${width}px`)($target), 0);
   addStyle('left', `${$target.offsetLeft + width + 4}px`)($shadeRight);
   addStyle('left', `calc(-100% + ${$target.offsetLeft - 4}px)`)($shadeLeft);
   let shiftSafetyZone: number;
@@ -151,11 +161,12 @@ async function enterZoom(
     clearTimeoutZoom();
     const $shade = ev.target as HTMLElement;
     if (hasClass($shade, 'shade-left')) {
-      const $leftPane = $target.previousElementSibling as HTMLElement;
-      if ((options.zoomHistory && hasClass($leftPane, 'histories'))
-        || (options.zoomTabs && hasClass($leftPane, 'tabs'))) {
+      // const $leftPane = $target.previousElementSibling as HTMLElement;
+      if (options.wider1) {
+      // if ((options.zoomHistory && hasClass($leftPane, 'histories'))
+      //   || (options.zoomTabs && hasClass($leftPane, 'tabs'))) {
         await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
-        enterZoom($leftPane, elements, zoomRatio, options);
+        enterZoom($target, elements, zoomRatio, options);
         return;
       }
     }
