@@ -28,8 +28,7 @@ import {
   addQueryHistory,
   getHtmlHistory,
   map,
-  getPopup,
-  makeThemeCss,
+  createOrPopup,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -150,26 +149,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
 
 getLocal(...initStateKeys).then(init);
 
-chrome.action.onClicked.addListener(async (tab) => {
-  const { settings, options, setAppZoom } = await getLocal('settings', 'options', 'setAppZoom');
-  if (!options.windowMode) {
-    return;
-  }
-  const popup = await getPopup();
-  if (popup) {
-    chrome.windows.update(popup.windowId, { focused: true });
-    return;
-  }
-  const variables = makeThemeCss(options.colorPalette);
-  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
-  chrome.windows.create({
-    url: `popup.html?css=${encoded}&width=unset&height=unset&zoom=${setAppZoom}`,
-    type: 'popup',
-    ...settings.windowSize,
-  }).then((win) => {
-    setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: tab.windowId } });
-  });
-});
+chrome.action.onClicked.addListener((tab) => createOrPopup(tab.windowId));
 
 // Messagings popup to background
 
@@ -197,7 +177,7 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.getSvgBrowserFavicon]: ({ payload }: PayloadAction<ColorPalette>) => (
     getSvgBrowserIcon(payload)
   ),
-  [CliMessageTypes.updateWindow]: ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
+  [CliMessageTypes.updateWindow]: async ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
     const { windowId, updateInfo } = payload;
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
       return Promise.reject();
@@ -213,7 +193,9 @@ export const mapMessagesPtoB = {
       }
     });
   },
-  [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
+  [CliMessageTypes.setThemeColor]: async (
+    { payload: colorPalette }: PayloadAction<ColorPalette>,
+  ) => {
     setToolbarIcon(colorPalette);
     return getLocal('options').then(({ options }) => {
       const { css, windowMode } = options;

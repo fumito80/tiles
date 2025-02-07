@@ -1059,3 +1059,28 @@ export const chromeEventFilter = { windowTypes: ['normal'] } as chrome.windows.W
 export function getHtmlHistory(htmlHistory: string) {
   return `<history-item class="current-date history-item header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
 }
+
+export async function createOrPopup(windowId: number, refresh = false) {
+  const {
+    settings, options, setAppZoom, windowModeInfo,
+  } = await getLocal('settings', 'options', 'setAppZoom', 'windowModeInfo');
+  const variables = makeThemeCss(options.colorPalette);
+  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
+  const url = `popup.html?css=${encoded}&width=unset&height=unset&zoom=${setAppZoom}`;
+  getPopup().then((popup) => {
+    if (!popup) {
+      chrome.windows.create({ url, type: 'popup', ...settings.windowSize }).then((win) => {
+        setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: windowId } });
+      });
+      return;
+    }
+    if (refresh) {
+      setLocal({ windowModeInfo: { ...windowModeInfo, currentWindowId: windowId } });
+    }
+    chrome.tabs.update(
+      popup.id!,
+      { url: refresh ? url : undefined },
+      () => chrome.windows.update(popup.windowId, { focused: true }),
+    );
+  });
+}

@@ -520,12 +520,13 @@ label.theme {
   }
 }
 
-.item:has([name="window-mode"]:not(:checked))+div .apply-settings {
-  color: var(--bs-btn-disabled-color);
+.apply-settings {
+  transition: all .2s;
+}
+
+main:has([name="window-mode"]:not(:checked)) .apply-settings {
   pointer-events: none;
-  background-color: var(--bs-btn-disabled-bg);
-  border-color: var(--bs-btn-disabled-border-color);
-  opacity: var(--bs-btn-disabled-opacity);
+  opacity: 0;
   cursor: pointer;
 }
 

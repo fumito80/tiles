@@ -17,8 +17,7 @@ import {
   setPopupStyle,
   getLocal,
   postMessage,
-  makeThemeCss,
-  getPopup,
+  createOrPopup,
 } from './common';
 import {
   $, $$, $byTag, $byClass, $byId,
@@ -295,20 +294,7 @@ function initOthers() {
   }
   $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
   $byClass('apply-settings')?.addEventListener('click', () => {
-    getLocal('options').then(({ options }) => {
-      const variables = makeThemeCss(options.colorPalette);
-      const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
-      const url = `popup.html?css=${encoded}`;
-      getPopup().then((popup) => {
-        if (popup) {
-          chrome.tabs.update(
-            popup.id!,
-            { url },
-            () => chrome.windows.update(popup.windowId, { focused: true }),
-          );
-        }
-      });
-    });
+    chrome.windows.getCurrent().then((win) => createOrPopup(win.id!, true));
   });
   findPalette(colorPalette.value);
   chrome.runtime.onMessage.addListener((message) => {
