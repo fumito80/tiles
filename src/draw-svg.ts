@@ -56,11 +56,11 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
   const [first, ...rest] = colorPalette;
   const accent = rest.reduce((acc, color) => {
     const whiteness = getColorWhiteness(color);
-    if (whiteness > 0.8) {
+    if (whiteness > 0.6) {
       return acc;
     }
     const whitenessAcc = getColorWhiteness(acc);
-    if (whitenessAcc > 0.8) {
+    if (whitenessAcc > 0.6) {
       return color;
     }
     if (getColorChroma(acc) >= getColorChroma(color)) {
@@ -80,19 +80,18 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
       <filter id="blend">
-        <feOffset dx="500" dy="-500"></feOffset>
+        <feOffset dx="600" dy="-600"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#FFFFFF" flood-opacity="0.7" result="color"></feFlood>
+        <feFlood flood-color="#FFFFFF" flood-opacity=".7" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
     </defs>
-    <circle fill="#${accent}" cx="300" cy="300" r="300" filter="url(#blend)"></circle>
-    <rect fill="whitesmoke" x="110" y="110" width="380" height="380" rx="45"></rect>
-    <path d=" M345 100 h110 q45 0 45 45 v110 q0 45 -45 45 h-110 q-45 0 -45 45 v110 q0 45 -45 45 h-110 q-45 0 -45 -45 v-110 q0 -45 45 -45 h110 q45 0 45 -45 v-110 q0 -45 45 -45 z" filter="url(#shadow)"></path>
+    <rect fill="#${accent}" x="20" y="20" width="560" height="560" rx="120" filter="url(#blend)"></rect>
+    <path d=" M190 60 h100 q45 0 45 45 v100 q0 45 45 45 h70 q45 0 45 45 v70 q0 45 -45 45 h-70 q-45 0 -45 45 v40 q0 45 -45 45 h-40 q-45 0 -45 -45 v-40 q0 -45 45 -45 h40 q45 0 45 -45 v-70 q0 -45 -45 -45 h-100 q-45 0 -45 -45 v-100 q0 -45 45 -45 z" filter="url(#shadow)"></path>
   </svg>
-  `;
+`;
 }
 
 export function getSvgZoomIcon() {

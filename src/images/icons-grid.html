@@ -4,9 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Russo+One&display=swap" rel="stylesheet">
   <title>Icons Maker</title>
   <style>
     body {
@@ -14,6 +11,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      gap: 30px;
     }
 
     svg {
@@ -37,17 +35,26 @@
 
 <body>
   <!-- ここから -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19">
     <defs>
       <filter id="shadow">
-        <feOffset dx='0' dy='-80' />
-        <feGaussianBlur stdDeviation='30' result='offset-blur' />
+        <feOffset dx='0' dy='0' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#000000' flood-opacity='.4' result='color' />
+        <feFlood flood-color='#000000' flood-opacity='0.8' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+      <filter id="blend">
+        <feOffset dx='600' dy='-600' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
     </defs>
+    <rect fill="#23AAF2" x="20" y="20" width="560" height="560" rx="120" filter="url(#blend)"></rect>
   </svg>
   <!-- ここまで -->
   <script>
@@ -78,41 +85,59 @@
       const svgData = new XMLSerializer().serializeToString(svg2);
       img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
     }
-    function makeRect(x, y, width, rx) {
-      return `<rect x="${x}" y="${y}" width="${width}" height="${width}" rx="${rx}" style="filter:url(#shadow)" />`;
+    function makeConnext(x, y, width, rx, gap) {
+      return `
+        M${x} ${y}
+        h${width - rx * 2 + 30}
+        q${rx} 0 ${rx} ${rx}
+        v${width - rx * 2 + 30}
+        q0 ${rx} ${rx} ${rx}
+
+        h${width - rx * 2}
+        q${rx} 0 ${rx} ${rx}
+        v${width - rx * 2}
+        q0 ${rx} ${-rx} ${rx}
+        h${-width + rx * 2}
+
+        q${-rx} 0 ${-rx} ${rx}
+        v${width - rx * 2 - 30}
+        q0 ${rx} ${-rx} ${rx}
+        h${-width + rx * 2 + 30}
+        q${-rx} 0 ${-rx} ${-rx}
+        v${-width + rx * 2 + 30}
+        q0 ${-rx} ${rx} ${-rx}
+        h${width - rx * 2 - 30}
+        q${rx} 0 ${rx} ${-rx}
+
+        v${-width + rx * 2}
+        q0 ${-rx} ${-rx} ${-rx}
+        h${-width + rx * 2 - 30}
+        q${-rx} 0 ${-rx} ${-rx}
+        v${-width + rx * 2 - 30}
+        q0 ${-rx} ${rx} ${-rx}
+        z`;
     }
-    const accentColor = '#FF6663';
-    const stroke = '#14213D';
-    const fill = 'whitesmoke';
+    const accentColor = 'dodgerblue';
+    const stroke = accentColor;
+    const fill = accentColor;
     const [svg] = document.getElementsByTagName('svg');
     const svgs = [];
-    const width = 512;
+    const width = 600;
     const strokeWidth = 0;
-    const gap = 40;
-    const rx = 30;
-    const rectWidth = ((512 - strokeWidth) - (gap * 2)) / 3;
+    const gap = 0;
+    const rx = 45;
+    const border = 20;
+    const rectWidth = 160;
     svg.setAttribute('stroke-width', strokeWidth);
     svg.setAttribute('stroke', stroke);
     svg.setAttribute('fill', fill);
-    for (let y = 0; y <= 2; y += 1) {
-      for (let x = 0; x <= 2; x += 1) {
-        svgs.push(makeRect(
-          x * (rectWidth + gap) + strokeWidth / 2,
-          y * (rectWidth + gap) + strokeWidth / 2,
-          rectWidth,
-          rx,
-        ));
-      }
-    }
-    svg.insertAdjacentHTML('beforeend', svgs.join(''));
-    const [,,, rt] = [...svg.children];
-    rt.setAttribute('stroke', accentColor);
-    rt.setAttribute('fill', accentColor);
-    // svg.querySelector('path').setAttribute('fill', '#E8E8E9');
-    // svg.querySelector('path').setAttribute('stroke', '#222222');
-    // svg.querySelector('circle').setAttribute('fill', '#1DA1F2');
-    svg.setAttribute('width', '512');
-    svg.setAttribute('height', '512');
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', width);
+    let path = '<path d="';
+    path += makeConnext(190, (width - rectWidth * 3) / 2, rectWidth, rx, gap);
+    path += '" filter="url(#shadow)" />'
+    path = path.replace(/\s+/g, ' ');
+    svg.insertAdjacentHTML('beforeend', path);
     addImage(128, svg);
     addImage(48, svg);
   </script>
