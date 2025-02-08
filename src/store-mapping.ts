@@ -9,6 +9,7 @@ import { HeaderTabs, Tabs } from './tabs';
 import DragAndDropEvents from './drag-drop';
 import { registerActions } from './store';
 import { Options } from './types';
+import { $ } from './client';
 
 type Components = {
   $appMain: AppMain,
@@ -59,9 +60,11 @@ export function storeMapping(options: Options, components: Components) {
 
   // Dispatch actions
 
+  const $mainMenuHeader = $('.col-grid.end .pane-header') as HeaderLeafs | HeaderTabs | HeaderHistory;
+
   // Broadcast type
 
-  store.actionContext($headerLeafs, 'setIncludeUrl').map(
+  store.actionContext($mainMenuHeader, 'setIncludeUrl').map(
     $appMain.setIncludeUrl.bind($appMain),
     $history.setIncludeUrl.bind($history),
     $formSearch.resetQuery.bind($formSearch),
@@ -103,10 +106,11 @@ export function storeMapping(options: Options, components: Components) {
     $tabs.toggleTabCollapsedAll.bind($tabs),
   );
 
-  store.actionContext($headerLeafs, 'setAppZoom').map(
+  store.actionContext($mainMenuHeader, 'setAppZoom').map(
     $appMain.setAppZoom.bind($appMain),
     $headerLeafs.setZoomAppMenu.bind($headerLeafs),
     $headerHistory.setZoomAppMenu.bind($headerHistory),
+    $headerTabs.setZoomAppMenu.bind($headerTabs),
     $tabs.setAppZoom.bind($tabs),
     $folders.setAppZoom.bind($folders),
   );

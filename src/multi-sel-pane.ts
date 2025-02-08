@@ -2,9 +2,8 @@ import {
   ColorPalette, Options, Panes, State,
 } from './types';
 import {
-  $$, $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
-  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu,
-  showMenu, preShowMenu,
+  $, $$, $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
+  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu, preShowMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
@@ -174,7 +173,7 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   private $mainMenuButton!: HTMLElement;
   protected $popupMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
-  appZoom = 1;
+  #appZoom!: number;
   abstract menuClickHandler(e: MouseEvent, dispatch: Dispatch): void;
   readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -215,17 +214,20 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   }
   setZoomAppMenu({ newValue }: Changes<'setAppZoom'>) {
     $$('.menu-zoom-app > span', this.$mainMenu).forEach((el) => Object.assign(el, { textContent: `${Math.round(newValue * 100)}%` }));
-    this.appZoom = newValue;
+    this.#appZoom = newValue;
     const isShow = hasClass(this.$mainMenu, 'show');
     if (isShow) {
-      showMenu(this.$mainMenu, this.appZoom)({
+      showMenu(this.$mainMenu, this.#appZoom)({
         target: this.$mainMenuButton,
         stopImmediatePropagation: () => {},
       } as unknown as MouseEvent);
     }
   }
+  get appZoom() {
+    return this.#appZoom;
+  }
   actions() {
-    if (hasClass(this.parentElement!.parentElement!, 'end')) {
+    if ($('.col-grid.end .pane-header') === this) {
       return {
         setIncludeUrl: makeAction({
           initValue: this.includeUrl,
