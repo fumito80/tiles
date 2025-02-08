@@ -339,7 +339,7 @@ function getNewPaneHeight($parent: HTMLElement, colIndex: number) {
   };
 }
 
-function setMouseEventListener(
+export function setMouseEventListener(
   mouseMoveHandler: (e: MouseEvent) => void,
   getSettings: (state: Pick<State, 'settings' | 'options'>) => Settings,
   resizeHeight: boolean,
@@ -362,16 +362,11 @@ function setMouseEventListener(
   }, { once: true });
 }
 
-function getNewSize({ settings }: Pick<State, 'settings'>) {
+export function setPopupHeight({ settings }: Pick<State, 'settings'>) {
   return {
     ...settings,
-    width: document.body.offsetWidth,
     height: document.body.offsetHeight,
   };
-}
-
-export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewSize, true);
 }
 
 export function setSplitterHandler(
@@ -403,56 +398,60 @@ export function resizeSplitHandler(
   };
 }
 
-export function splitHMouseDownHandler(e: MouseEvent, appZoom: number) {
-  const $splitter = e.target as HTMLElement;
-  $splitter.classList.add('mousedown');
-  const $parent = $splitter.parentElement!;
-  const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
-  const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
-  const minWidth = 100;
-  const maxWidth = endColGridWidth - minWidth + offsetWidth;
-  const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
-  const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
-  const handler = resizeSplitHandler(
-    'clientX',
-    'columns',
-    offsetWidth,
-    e.clientX,
-    pos,
-    $parent,
-    minWidth,
-    maxWidth,
-    appZoom,
-  );
-  setSplitterHandler(handler, getNewPaneWidth($parent, keyName));
-}
-
-export function splitVMouseDownHandler(e: MouseEvent, appZoom: number, colIndex: number) {
-  const $splitter = e.target as HTMLElement;
-  $splitter.classList.add('mousedown');
-  const $parent = $splitter.parentElement!;
-  const { offsetHeight } = $splitter.previousElementSibling as HTMLElement;
-  const endColGridHeight = ($parent.lastElementChild as HTMLElement).offsetHeight;
-  const minHeight = 100;
-  const maximumHeight = endColGridHeight - minHeight + offsetHeight;
-  const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-v')).indexOf($splitter);
-  const handler = resizeSplitHandler(
-    'clientY',
-    'rows',
-    offsetHeight,
-    e.clientY,
-    pos,
-    $parent,
-    minHeight,
-    maximumHeight,
-    appZoom,
-  );
-  setSplitterHandler(handler, getNewPaneHeight($parent, colIndex));
-}
-
-export function resizeHeightHandler(appZoom: number) {
+export function splitColMouseDownHandler($main: AppMain) {
   return (e: MouseEvent) => {
-    const height = Math.min(e.clientY - 6, maxHeight) / appZoom;
+    const $splitter = e.target as HTMLElement;
+    $splitter.classList.add('mousedown');
+    const $parent = $splitter.parentElement!;
+    const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
+    const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
+    const minWidth = 100;
+    const maxWidth = endColGridWidth - minWidth + offsetWidth;
+    const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
+    const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
+    const handler = resizeSplitHandler(
+      'clientX',
+      'columns',
+      offsetWidth,
+      e.clientX,
+      pos,
+      $parent,
+      minWidth,
+      maxWidth,
+      $main.appZoom,
+    );
+    setSplitterHandler(handler, getNewPaneWidth($parent, keyName));
+  };
+}
+
+export function splitRowMouseDownHandler($main: AppMain, colIndex: number) {
+  return (e: MouseEvent) => {
+    const $splitter = e.target as HTMLElement;
+    $splitter.classList.add('mousedown');
+    const $parent = $splitter.parentElement!;
+    const { offsetHeight } = $splitter.previousElementSibling as HTMLElement;
+    const endColGridHeight = ($parent.lastElementChild as HTMLElement).offsetHeight;
+    const minHeight = 100;
+    const maximumHeight = endColGridHeight - minHeight + offsetHeight;
+    const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-v')).indexOf($splitter);
+    const handler = resizeSplitHandler(
+      'clientY',
+      'rows',
+      offsetHeight,
+      e.clientY,
+      pos,
+      $parent,
+      minHeight,
+      maximumHeight,
+      $main.appZoom,
+    );
+    setSplitterHandler(handler, getNewPaneHeight($parent, colIndex));
+  };
+}
+
+export function resizeHeightHandler($main: AppMain) {
+  return (e: MouseEvent) => {
+    const height = Math.min(e.clientY, maxHeight) / $main.appZoom;
     if (height < 200) {
       return;
     }
@@ -962,7 +961,7 @@ export function setBrowserFavicon(colorPalette: ColorPalette) {
 
 export async function changeColorTheme(colorPalette: ColorPalette) {
   const ruleText = makeThemeCss(colorPalette);
-  const sheet = document.styleSheets[1];
+  const [sheet] = document.adoptedStyleSheets;
   const root = [...sheet.cssRules].findIndex((rule) => (rule as any).selectorText === ':root');
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);

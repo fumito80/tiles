@@ -88,6 +88,10 @@ body {
   margin: 0;
   margin-right: 0;
   font-size: 0.9em;
+
+  &:has(.resize-y.mousedown) {
+    cursor: s-resize;
+  }
 }
 
 app-main {
@@ -152,7 +156,6 @@ button {
   }
 }
 
-.resize-x,
 .split-h {
   height: 100%;
   width: 4px;
@@ -408,8 +411,20 @@ app-main {
     background-color: rgba(0, 0, 0, 0.1);
   }
 
-  &:has(.mousedown) div:not(.mousedown):not(.col-grid):not(.bookmarks) {
-    pointer-events: none;
+  &:has(.split-h.mousedown) {
+    cursor: col-resize;
+
+    div:not(.mousedown):not(.col-grid):not(.bookmarks) {
+      pointer-events: none;
+    }
+  }
+
+  &:has(.split-v.mousedown) {
+    cursor: row-resize;
+
+    div:not(.mousedown):not(.col-grid):not(.bookmarks) {
+      pointer-events: none;
+    }
   }
 }
 
@@ -423,6 +438,7 @@ app-main {
 
 .split-h,
 .split-v {
+
   &.mousedown,
   &:hover {
     background-color: var(--common-marker);
@@ -1499,7 +1515,6 @@ app-main::-webkit-scrollbar {
 
 .zoom-pane {
 
-  .resize-x,
   .split-h {
     cursor: default;
 

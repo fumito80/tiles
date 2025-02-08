@@ -4,17 +4,15 @@ import {
   ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
 } from './types';
 import {
-  setEvents, addListener,
-  getLocal, pipe, getNextIndex, updateSettings,
-  chromeEventFilter, cssid, makeCss, pick,
-  setPopupStyle,
+  setEvents, getLocal, pipe, getNextIndex, updateSettings,
+  chromeEventFilter, cssid, makeCss, pick, setPopupStyle,
+  addListener,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
   $byClass,
   $$byClass,
   hasClass, toggleClass,
-  setResizeHandler,
   resizeHeightHandler,
   showMenu,
   rmClass,
@@ -29,8 +27,10 @@ import {
   setBrowserFavicon,
   addChild,
   preShowMenu,
-  splitHMouseDownHandler,
-  splitVMouseDownHandler,
+  splitColMouseDownHandler,
+  splitRowMouseDownHandler,
+  setMouseEventListener,
+  setPopupHeight,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -71,10 +71,6 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       this.#windowId = win.id!;
     });
 
-    if (!options.windowMode) {
-      $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler(this.#appZoom)));
-    }
-
     const $$colGrids = $$byClass('col-grid', this);
     const panes = [
       ...(options.wider1 ? [$$colGrids[0]] : []),
@@ -114,15 +110,18 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       scope: 'per-tab',
     });
 
-    $$byClass('split-h').forEach(($splitter) => {
-      addListener('mousedown', (e) => splitHMouseDownHandler(e, this.#appZoom))($splitter);
+    $$byClass('split-h').forEach(addListener('mousedown', splitColMouseDownHandler(this)));
+
+    $$byClass('col-grid').forEach(($colGrid, i) => {
+      $$byClass('split-v', $colGrid).forEach(addListener('mousedown', splitRowMouseDownHandler(this, i)));
     });
 
-    const $colGrids = $$byClass('col-grid');
-    $$byClass('split-v').forEach(($splitter) => {
-      const colIndex = $colGrids.findIndex(($colGrid) => $colGrid === $splitter.parentElement);
-      addListener('mousedown', (e) => splitVMouseDownHandler(e, this.#appZoom, colIndex))($splitter);
-    });
+    if (!options.windowMode) {
+      $byClass('resize-y')?.addEventListener('mousedown', (e) => {
+        (e.target as HTMLElement).classList.add('mousedown');
+        setMouseEventListener(resizeHeightHandler(this), setPopupHeight, true);
+      });
+    }
   }
   async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
     if (e.key === 'F2') {
@@ -274,6 +273,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
     this.#appZoom = newValue;
     setPopupStyle(this.#options);
+  }
+  get appZoom() {
+    return this.#appZoom;
   }
   actions() {
     return {
