@@ -439,6 +439,8 @@ app-main {
 .split-h,
 .split-v {
 
+  z-index: 2;
+
   &.mousedown,
   &:hover {
     background-color: var(--common-marker);
