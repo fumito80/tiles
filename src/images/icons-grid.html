@@ -54,7 +54,6 @@
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
     </defs>
-    <rect fill="#23AAF2" x="20" y="20" width="560" height="560" rx="120" filter="url(#blend)"></rect>
   </svg>
   <!-- ここまで -->
   <script>
@@ -88,9 +87,9 @@
     function makeConnext(x, y, width, rx, gap) {
       return `
         M${x} ${y}
-        h${width - rx * 2 + 30}
+        h${width - rx * 2 + 20}
         q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2 + 30}
+        v${width - rx * 2 + 20}
         q0 ${rx} ${rx} ${rx}
 
         h${width - rx * 2}
@@ -100,24 +99,32 @@
         h${-width + rx * 2}
 
         q${-rx} 0 ${-rx} ${rx}
-        v${width - rx * 2 - 30}
+        v${width - rx * 2 - 20}
         q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2 + 30}
+        h${-width + rx * 2 + 20}
         q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2 + 30}
+        v${-width + rx * 2 + 20}
         q0 ${-rx} ${rx} ${-rx}
-        h${width - rx * 2 - 30}
+        h${width - rx * 2 - 20}
         q${rx} 0 ${rx} ${-rx}
 
         v${-width + rx * 2}
         q0 ${-rx} ${-rx} ${-rx}
-        h${-width + rx * 2 - 30}
+        h${-width + rx * 2 - 20}
         q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2 - 30}
+        v${-width + rx * 2 - 20}
         q0 ${-rx} ${rx} ${-rx}
         z`;
     }
-    const accentColor = 'dodgerblue';
+    const accentColor = '#274c77';
+    // const complementaryColor = ((rgb) => {
+    //   const [r, g, b] = rgb.slice(1).map((x) => parseInt(x, 16));
+    //   const ref = Math.max(r, g, b) + Math.min(r, g, b);
+    //   return [r, g, b]
+    //     .map((x) => (ref - x).toString(16))
+    //     .join('').replace(/^/, '#');
+    // })(/#(..)(..)(..)/.exec(accentColor))
+    const backgroundBaseColor = accentColor;
     const stroke = accentColor;
     const fill = accentColor;
     const [svg] = document.getElementsByTagName('svg');
@@ -125,7 +132,7 @@
     const width = 600;
     const strokeWidth = 0;
     const gap = 0;
-    const rx = 45;
+    const rx = 40;
     const border = 20;
     const rectWidth = 160;
     svg.setAttribute('stroke-width', strokeWidth);
@@ -133,7 +140,9 @@
     svg.setAttribute('fill', fill);
     svg.setAttribute('width', width);
     svg.setAttribute('height', width);
-    let path = '<path d="';
+    let path = `<rect fill="${backgroundBaseColor}" x="20" y="20" width="560" height="560" rx="130" filter="url(#blend)"></rect>`;
+    svg.insertAdjacentHTML('beforeend', path);
+    path = '<path d="';
     path += makeConnext(190, (width - rectWidth * 3) / 2, rectWidth, rx, gap);
     path += '" filter="url(#shadow)" />'
     path = path.replace(/\s+/g, ' ');

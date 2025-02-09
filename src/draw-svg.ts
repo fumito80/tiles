@@ -53,21 +53,12 @@ async function dispatchGetImageData(svg: string) {
 }
 
 export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
-  const [first, ...rest] = colorPalette;
-  const accent = rest.reduce((acc, color) => {
-    const whiteness = getColorWhiteness(color);
-    if (whiteness > 0.6) {
-      return acc;
-    }
-    const whitenessAcc = getColorWhiteness(acc);
-    if (whitenessAcc > 0.6) {
-      return color;
-    }
-    if (getColorChroma(acc) >= getColorChroma(color)) {
-      return acc;
-    }
-    return color;
-  }, first);
+  const [accent] = colorPalette
+    .filter((color) => getColorWhiteness(color) < 0.7)
+    .sort((a, b) => Math.sign(getColorChroma(b) - getColorChroma(a)));
+  // const [r, g, b] = /(..)(..)(..)/.exec(accent)!.slice(1).map((x) => parseInt(x, 16));
+  // const ref = Math.max(r, g, b) + Math.min(r, g, b);
+  // const complementary = [r, g, b].map((x) => (ref - x).toString(16).padStart(2, '0')).join('');
   return `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" stroke-width="0" fill="#${accent}">
     <defs>
@@ -88,8 +79,7 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
     </defs>
-    <rect fill="#${accent}" x="20" y="20" width="560" height="560" rx="120" filter="url(#blend)"></rect>
-    <path d=" M190 60 h100 q45 0 45 45 v100 q0 45 45 45 h70 q45 0 45 45 v70 q0 45 -45 45 h-70 q-45 0 -45 45 v40 q0 45 -45 45 h-40 q-45 0 -45 -45 v-40 q0 -45 45 -45 h40 q45 0 45 -45 v-70 q0 -45 -45 -45 h-100 q-45 0 -45 -45 v-100 q0 -45 45 -45 z" filter="url(#shadow)"></path>
+    <rect fill="#${accent}" x="20" y="20" width="560" height="560" rx="130" filter="url(#blend)"></rect><path d=" M190 60 h100 q40 0 40 40 v100 q0 40 40 40 h80 q40 0 40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 40 v60 q0 40 -40 40 h-60 q-40 0 -40 -40 v-60 q0 -40 40 -40 h60 q40 0 40 -40 v-80 q0 -40 -40 -40 h-100 q-40 0 -40 -40 v-100 q0 -40 40 -40 z" filter="url(#shadow)"></path>
   </svg>
 `;
 }
