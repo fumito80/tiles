@@ -10,7 +10,8 @@ body {
 open-window,
 .histories .rows .current-date,
 .histories .rows .current-date::before,
-.current-window window-header::after {
+.current-window window-header::after,
+.body-recent-tabs {
   background-color: var(--pane-bg);
   color: var(--pane-color);
 }
@@ -43,7 +44,8 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover
 .drag-source::before,
 .leaf.selected,
 .history-item.selected,
-.window:not(.tabs-collapsed) open-tab.focus {
+.window:not(.tabs-collapsed) open-tab.focus,
+.body-recent-tabs open-tab:hover {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 

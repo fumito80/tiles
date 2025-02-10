@@ -971,7 +971,8 @@ app-main:not(.drag-start) .folders .marker:hover {
 .tabs,
 .tabs-wrap,
 open-window,
-.histories {
+.histories,
+.body-recent-tabs {
   &::-webkit-scrollbar {
     width: 8px;
   }
@@ -1452,7 +1453,8 @@ app-main::-webkit-scrollbar {
     }
   }
 
-  .icon-tabs {
+  .icon-tabs,
+  .icon-recent-tabs {
     transform: scale(1.15);
   }
 
@@ -1986,6 +1988,21 @@ bm-leaf {
 
 .zoom-pane .col-grid {
   width: fit-content;
+}
+
+/* Leafs pane */
+
+.body-recent-tabs {
+  position: relative;
+  overflow-y: auto;
+  border-radius: var(--pane-radius);
+  transition: var(--xen-mode-transition);
+  padding: 2px;
+
+  .tab-wrap[data-file]::before,
+  .tab-wrap[data-initial]::before {
+    margin-left: 2px;
+  }
 }
 
 @import "./tabs";

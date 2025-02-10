@@ -5,7 +5,7 @@ import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
-import { RecentTabs } from './recent-tabs';
+import { HeaderRecentTabs, RecentTabs } from './recent-tabs';
 
 export type StoredElements = {
   'app-main': AppMain,
@@ -17,6 +17,7 @@ export type StoredElements = {
   'header-history': HeaderHistory,
   'body-history': History,
   'body-recent-tabs': RecentTabs,
+  'header-recent-tabs': HeaderRecentTabs,
 }
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;

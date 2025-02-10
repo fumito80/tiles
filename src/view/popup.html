@@ -205,8 +205,15 @@
                         <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                     </div>
                 </div>
+                <popup-menu role="menu">
+                    <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
+                    </div>
+                    <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Re-open in incognito
+                        window
+                    </div>
+                </popup-menu>
             </div>
-            <div is="body-recent-tabs" class="pane-body recent-tabs"></div>
+            <div is="body-recent-tabs" class="pane-body body-recent-tabs"></div>
         </div>
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit const-color" tabindex="-1"><i class="icon-fa-search"></i></button>

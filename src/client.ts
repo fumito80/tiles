@@ -988,10 +988,8 @@ export function scrollVerticalCenter($target: HTMLElement) {
   $container.scrollTop = $target.offsetTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
 }
 
-export function getInitialTabs() {
-  const promiseCurrentWindowId = chrome.windows.getCurrent(chromeEventFilter)
-    .then((win) => win.id!);
-  const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
+export async function getAllWindows() {
+  return new Promise<InitailTabs>((resolve) => {
     chrome.windows.getAll({ ...chromeEventFilter, populate: true }, (wins) => {
       const windows = wins.map((win) => ({
         windowId: win.id!,
@@ -1000,5 +998,11 @@ export function getInitialTabs() {
       resolve(windows);
     });
   });
+}
+
+export function getInitialTabs() {
+  const promiseCurrentWindowId = chrome.windows.getCurrent(chromeEventFilter)
+    .then((win) => win.id!);
+  const promiseInitTabs = getAllWindows();
   return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }

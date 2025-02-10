@@ -336,6 +336,8 @@ export function initComponents(
   const $headerTabs = compos['header-tabs'];
   const $headerHistory = compos['header-history'];
   const $history = compos['body-history'];
+  const $headerRecentTabs = compos['header-recent-tabs'];
+  const $recentTabs = compos['body-recent-tabs'];
   // Initialize component
   const dragAndDropEvents = new DragAndDropEvents($appMain);
   $tabs.init(
@@ -353,6 +355,8 @@ export function initComponents(
   $headerHistory.init(settings, options, $tmplMultiSelPane);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
   $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
+  $recentTabs.init($template, options, isSearching, promiseInitTabs);
+  $headerRecentTabs.init(settings, options, $tmplMultiSelPane);
   return {
     $appMain,
     $leafs,
@@ -364,6 +368,8 @@ export function initComponents(
     $history,
     $headerHistory,
     dragAndDropEvents,
+    $recentTabs,
+    $headerRecentTabs,
   };
 }
 

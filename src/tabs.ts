@@ -20,7 +20,7 @@ import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, States, Store, StoreSub,
 } from './popup';
 import {
-  CliMessageTypes, InitailTabs, MulitiSelectables, Options, PayloadUpdateWindow,
+  CliMessageTypes, MulitiSelectables, Options, PayloadUpdateWindow,
   PromiseInitTabs, SetCurrentWindow, State,
 } from './types';
 import { Leaf } from './bookmarks';
@@ -110,6 +110,7 @@ export class OpenTab extends MutiSelectableItem {
   #focused = false;
   #highlighted = false;
   #tooltipRect?: DOMRect;
+  #lastAccessed?: number;
   #appZoom = 1;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
@@ -121,6 +122,7 @@ export class OpenTab extends MutiSelectableItem {
     this.$title = $byClass('tab-title', this)!;
     this.$title.textContent = tab.title!;
     this.#tabId = tab.id!;
+    this.#lastAccessed = tab.lastAccessed;
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
     this.setCurrent(tab.active);
@@ -157,6 +159,12 @@ export class OpenTab extends MutiSelectableItem {
   }
   get highlighted() {
     return this.#highlighted;
+  }
+  get lastAccessed() {
+    return this.#lastAccessed;
+  }
+  set lastAccessed(lastAccessed: number | undefined) {
+    this.#lastAccessed = lastAccessed;
   }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
@@ -436,7 +444,7 @@ function isWindow($target: HTMLElement) {
   return undefined;
 }
 
-function isOpenTab($target: HTMLElement) {
+export function isOpenTab($target: HTMLElement) {
   if ($target instanceof OpenTab) {
     return $target;
   }
@@ -542,7 +550,7 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
 
 export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
   readonly paneName = 'windows';
-  #initPromise!: Promise<[InitailTabs, number]>;
+  #initPromise!: PromiseInitTabs;
   $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
   #options!: Options;

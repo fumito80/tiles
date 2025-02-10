@@ -10,6 +10,7 @@ import DragAndDropEvents from './drag-drop';
 import { registerActions } from './store';
 import { Options } from './types';
 import { $ } from './client';
+import { HeaderRecentTabs, RecentTabs } from './recent-tabs';
 
 type Components = {
   $appMain: AppMain,
@@ -22,6 +23,8 @@ type Components = {
   $history: History,
   $formSearch: FormSearch,
   dragAndDropEvents: DragAndDropEvents,
+  $headerRecentTabs: HeaderRecentTabs,
+  $recentTabs: RecentTabs,
 };
 
 export function storeMapping(options: Options, components: Components) {
@@ -36,6 +39,8 @@ export function storeMapping(options: Options, components: Components) {
     $history,
     $formSearch,
     dragAndDropEvents,
+    $recentTabs,
+    $headerRecentTabs,
   } = components;
 
   // Actions
@@ -50,6 +55,8 @@ export function storeMapping(options: Options, components: Components) {
     ...$history.actions(),
     ...$headerHistory.actions(),
     ...dragAndDropEvents.actions(),
+    ...$recentTabs.actions(),
+    ...$headerRecentTabs.actions(),
   };
 
   // Build store
@@ -60,7 +67,7 @@ export function storeMapping(options: Options, components: Components) {
 
   // Dispatch actions
 
-  const $mainMenuHeader = $('.col-grid.end .pane-header') as HeaderLeafs | HeaderTabs | HeaderHistory;
+  const $mainMenuHeader = $('.col-grid.end .pane-header') as HeaderLeafs | HeaderTabs | HeaderHistory | HeaderRecentTabs;
 
   // Broadcast type
 
@@ -111,6 +118,7 @@ export function storeMapping(options: Options, components: Components) {
     $headerLeafs.setZoomAppMenu.bind($headerLeafs),
     $headerHistory.setZoomAppMenu.bind($headerHistory),
     $headerTabs.setZoomAppMenu.bind($headerTabs),
+    $headerRecentTabs.setZoomAppMenu.bind($headerRecentTabs),
     $tabs.setAppZoom.bind($tabs),
     $folders.setAppZoom.bind($folders),
   );
@@ -194,6 +202,13 @@ export function storeMapping(options: Options, components: Components) {
     .map('addBookmarksHistories', $history.addBookmarks)
     .map('openWindowFromHistory', $history.openWindowFromHistory)
     .map('updateHistory', $history.refreshHistory);
+
+  store.subscribeContext($recentTabs)
+    .map([$recentTabs, 'clickRecentTab'], $recentTabs.clickRecentTab)
+    .map([$tabs, 'onCreatedWindow'], $recentTabs.refresh)
+    .map([$tabs, 'onRemovedWindow'], $recentTabs.refresh)
+    .map([$tabs, 'onUpdateTab'], $recentTabs.refresh)
+    .map([$tabs, 'onActivatedTab'], $recentTabs.onActivated);
 
   store.context($formSearch)
     .map('inputQuery', $formSearch.inputQuery)
