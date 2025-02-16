@@ -163,13 +163,15 @@ export function storeMapping(options: Options, components: Components) {
     .map([$tabs, 'openTabsFromHistory'], $tabs.openTabsFromHistory)
     .map([$tabs, 'activateTab'], $tabs.activateTab)
     .map([$leafs, 'mouseoverLeafs'], $tabs.mouseoverLeaf)
-    .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeaf)
+    .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeafOrRecentTabs)
     .map([$leafs, 'nextTabByWheel'], $tabs.nextTabByWheel)
     .map([$leafs, 'mouseoverMenuTabsFind'], $tabs.mouseoverMenuTabsFind)
     .map([$leafs, 'mouseoutMenuTabsFind'], $tabs.clearFocus)
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$appMain, 'focusWindow'], $tabs.focusWindow)
-    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
+    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeafOrRecentTabs)
+    .map([$recentTabs, 'mouseoverRecentTabs'], $tabs.mouseoverRecentTabs)
+    .map([$recentTabs, 'mouseoutRecentTabs'], $tabs.mouseoutLeafOrRecentTabs);
 
   store.subscribeContext($history)
     .map([$appMain, 'updateWindowHeight'], $history.resetHistory);

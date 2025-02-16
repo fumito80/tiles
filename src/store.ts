@@ -354,8 +354,13 @@ export function initComponents(
   $headerTabs.init(settings, options, $tmplMultiSelPane, toggleWindowOrder);
   $headerHistory.init(settings, options, $tmplMultiSelPane);
   $history.init(promiseInitHistory, options, htmlHistory, isSearching);
-  $formSearch.init([$leafs, $tabs, $history], settings.includeUrl, options, lastSearchWord);
   $recentTabs.init($template, options, isSearching, promiseInitTabs);
+  $formSearch.init(
+    [$leafs, $tabs, $history, $recentTabs],
+    settings.includeUrl,
+    options,
+    lastSearchWord,
+  );
   $headerRecentTabs.init(settings, options, $tmplMultiSelPane);
   return {
     $appMain,

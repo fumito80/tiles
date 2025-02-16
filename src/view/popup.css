@@ -1990,7 +1990,7 @@ bm-leaf {
   width: fit-content;
 }
 
-/* Leafs pane */
+/* Recent-Tabs */
 
 .body-recent-tabs {
   position: relative;
@@ -2002,6 +2002,30 @@ bm-leaf {
   .tab-wrap[data-file]::before,
   .tab-wrap[data-initial]::before {
     margin-left: 2px;
+  }
+
+  .unmatch {
+    display: none;
+  }
+}
+
+.tabs-collapsed open-tab.highlight.match-recent-tab {
+  background-position-x: 5px !important;
+
+  &.match {
+    background-position-x: 25px !important;
+
+    >i {
+      &::after {
+        content: unset !important;
+      }
+    }
+  }
+
+  &:not(.match)>i {
+    &::before {
+      content: unset !important;
+    }
   }
 }
 

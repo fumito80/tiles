@@ -1,6 +1,8 @@
 /* eslint-disable import/prefer-default-export */
-import { $, getAllWindows } from './client';
-import { decodeUrl } from './common';
+import {
+  $, $$byClass, $$byTag, getAllWindows, rmClass, toggleClass,
+} from './client';
+import { decodeUrl, pipe } from './common';
 import { MulitiSelectablePaneBody, MulitiSelectablePaneHeader } from './multi-sel-pane';
 import {
   Changes,
@@ -66,6 +68,7 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
   #lastTabs!: { [tabId: string]: OpenTab };
   private $tmplOpenTab!: OpenTab;
   private promiseInitTabs!: Promise<InitailTabs>;
+  private promiseReadyTabs = Promise.withResolvers();
   private promiseOnActivated = Promise.resolve();
   private timerRefresh = 0;
   init(
@@ -96,7 +99,8 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
       .then((tabs) => this.addTabs(tabs, store.dispatch))
       .then((tabs) => {
         this.#lastTabs = tabs.reduce((acc, tab) => ({ ...acc, [tab.tabId]: tab }), {});
-      });
+      })
+      .then(this.promiseReadyTabs.resolve);
   }
   refresh(_: any, __: any, ___: any, store: StoreSub) {
     if (!this.#lastTabs) {
@@ -153,13 +157,22 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
     this.prepend($target);
     chrome.tabs.get(tabId).then($target.update.bind($target));
   }
-  search({ reFilter, includeUrl }: SearchParams, dispatch: Dispatch) {
-    this.#reFilter = reFilter;
-    this.#includeUrl = includeUrl;
-    dispatch('historyCollapseDate', { collapsed: false }, true);
+  search({ reFilter, searchSelector, includeUrl }: SearchParams) {
+    if (!reFilter) {
+      return;
+    }
+    this.promiseReadyTabs.promise.then(() => {
+      const tester = includeUrl
+        ? (tab: OpenTab) => reFilter.test(tab.textContent + tab.url)
+        : (tab: OpenTab) => reFilter.test(tab.text!);
+      $$byClass<OpenTab>(searchSelector, this).forEach((tab) => {
+        const isMatch = tester(tab);
+        pipe(toggleClass('match', isMatch), toggleClass('unmatch', !isMatch))(tab);
+      });
+    });
   }
   clearSearch() {
-    this.#includeUrl = false;
+    $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
   }
   // eslint-disable-next-line class-methods-use-this
   deletesHandler($selecteds: HTMLElement[], dispatch: Dispatch) {
@@ -225,6 +238,18 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
         target: this,
         eventType: 'click',
         eventOnly: true,
+      }),
+      mouseoverRecentTabs: makeAction({
+        target: this,
+        eventType: 'mouseover',
+        eventOnly: true,
+        noStates: true,
+      }),
+      mouseoutRecentTabs: makeAction({
+        target: this,
+        eventType: 'mouseout',
+        eventOnly: true,
+        noStates: true,
       }),
     };
   }

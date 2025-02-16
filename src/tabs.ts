@@ -907,9 +907,9 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       this.findTabs(finder, store.dispatch, $leaf.id);
     }, this.#bmAutoFindTabsDelay);
   }
-  async mouseoutLeaf(_: any, e: MouseEvent, __: any, store: StoreSub) {
-    const $leaf = (e.target as HTMLElement).parentElement;
-    if (!($leaf instanceof Leaf)) {
+  async mouseoutLeafOrRecentTabs(_: any, e: MouseEvent, __: any, store: StoreSub) {
+    const $target = (e.target as HTMLElement).parentElement;
+    if (!($target instanceof Leaf) && !($target instanceof OpenTab)) {
       return;
     }
     clearTimeout(this.#timerMouseoverLeaf);
@@ -925,10 +925,37 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     const finder = getModeTabFinder(url, menu === 'bm-find-prefix' ? 'prefix' : 'domain');
     this.findTabs(finder, store.dispatch);
   }
+  mouseoverRecentTabs(_: any, e: MouseEvent, __: any, store: StoreSub) {
+    const $tab = (e.target as HTMLElement).parentElement;
+    if (!($tab instanceof OpenTab)) {
+      return;
+    }
+    clearTimeout(this.#timerMouseoverLeaf);
+    this.#timerMouseoverLeaf = setTimeout(async () => {
+      const dragging = await store.getStates('dragging');
+      if (dragging) {
+        return;
+      }
+      const $target = $<OpenTab>(`#tab-${$tab.tabId}:not(.unmatch)`, this);
+      if ($target) {
+        this.#lastScrollTops = {
+          windowsWrap: this.$tabsWrap.scrollTop,
+          pinWrap: this.$pinWrap.firstElementChild?.scrollTop,
+          pinWrapB: this.$pinWrapB.firstElementChild?.scrollTop,
+        };
+        $target.setHighlight(true);
+        $target.setFocus(true);
+        $target.classList.add('match-recent-tab');
+        this.scrollToFocused($target);
+        // dispatch('setWheelHighlightTab', { leafId, searches });
+      }
+    }, this.#bmAutoFindTabsDelay);
+  }
   async clearFocus(_: any, __: any, ___: any, store: StoreSub) {
     this.getAllTabs().forEach(($tab) => {
       $tab.setFocus(false);
       $tab.setHighlight(false);
+      $tab.classList.remove('match-recent-tab');
     });
     store.dispatch('setWheelHighlightTab', { searches: undefined });
     if (this.#lastScrollTops == null) {
