@@ -116,12 +116,14 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       $$byClass('split-v', $colGrid).forEach(addListener('mousedown', splitRowMouseDownHandler(this, i)));
     });
 
-    if (!options.windowMode) {
-      $byClass('resize-y')?.addEventListener('mousedown', (e) => {
-        (e.target as HTMLElement).classList.add('mousedown');
-        setMouseEventListener(resizeHeightHandler(this), setPopupHeight, true);
-      });
+    if (options.windowMode) {
+      return;
     }
+
+    $byClass('resize-y')?.addEventListener('mousedown', (e) => {
+      (e.target as HTMLElement).classList.add('mousedown');
+      setMouseEventListener(resizeHeightHandler(this), setPopupHeight, true);
+    });
   }
   async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
     if (e.key === 'F2') {
@@ -211,7 +213,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
     store.dispatch('focusQuery');
   }
-  async changeFocusedWindow({ newValue: windowId }: Changes<'changeFocusedWindow'>) {
+  async changeFocusedWindow({ newValue: { windowId } }: Changes<'changeFocusedWindow'>) {
     if (this.#options.windowMode || windowId === chrome.windows.WINDOW_ID_NONE) {
       return;
     }
@@ -313,7 +315,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         noStates: true,
       }),
       changeFocusedWindow: makeAction({
-        initValue: 0,
+        initValue: undefined as { windowId: number } | undefined,
         force: true,
       }),
       resizeWindow: makeAction({
@@ -335,7 +337,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   connect(store: Store) {
     if (!this.#options.windowMode) {
       chrome.windows.onFocusChanged.addListener((windowId) => {
-        store.dispatch('changeFocusedWindow', windowId, true);
+        store.dispatch('changeFocusedWindow', { windowId }, true);
       }, chromeEventFilter);
       return;
     }

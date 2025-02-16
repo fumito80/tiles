@@ -192,7 +192,7 @@ open-tab {
   }
 }
 
-.tab-wrap[data-initial]::before {
+.tab-wrap:not([style])[data-initial]::before {
   content: attr(data-initial);
   font-size: 13.5px;
   width: 18px;

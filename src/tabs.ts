@@ -79,7 +79,6 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
     return {
       'data-initial': htmlEscape(tab.title!.substring(0, 1)),
       'data-file': 'yes',
-      style: '',
     };
   }
   if (!url?.startsWith('http')) {
@@ -88,7 +87,6 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
   }
   return {
     'data-initial': htmlEscape(tab.title!.substring(0, 1)),
-    style: '',
   };
 }
 
@@ -102,15 +100,24 @@ function getTooltip(tab: chrome.tabs.Tab) {
   return `${tab.title}\n${schemeAdd}${domain}`;
 }
 
+// eslint-disable-next-line no-use-before-define
+function setTitle(tab: OpenTab | chrome.tabs.Tab, $target: Element) {
+  const lastAccessed = (new Date(tab.lastAccessed!)).toLocaleString();
+  const title = `${tab.title}\n${lastAccessed}\n${htmlEscape(tab.url!)}`;
+  $target.setAttribute('title', title);
+}
+
 export class OpenTab extends MutiSelectableItem {
   #tabId!: number;
   #incognito!: boolean;
   #active!: boolean;
   #url!: string;
+  #title!: string;
   #focused = false;
   #highlighted = false;
   #tooltipRect?: DOMRect;
   #lastAccessed?: number;
+  #faviconUrl? = 'empty';
   #appZoom = 1;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
@@ -121,17 +128,15 @@ export class OpenTab extends MutiSelectableItem {
     this.$tooltip = $byClass('tooltip', this)!;
     this.$title = $byClass('tab-title', this)!;
     this.$title.textContent = tab.title!;
+    this.#title = tab.title!;
     this.#tabId = tab.id!;
-    this.#lastAccessed = tab.lastAccessed;
     this.id = `tab-${tab.id}`;
     this.#incognito = tab.incognito;
     this.setCurrent(tab.active);
     this.#url = decodeUrl(tab.url || tab.pendingUrl);
-    const [, $tab,, $tooltip] = [...this.children];
-    const tooltip = getTooltip(tab);
-    $tooltip.textContent = tooltip;
-    $tab.setAttribute('title', `${tab.title}\n${htmlEscape(this.#url)}`);
-    Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
+    const [,,, $tooltip] = [...this.children];
+    $tooltip.textContent = getTooltip(tab);
+    this.update(tab);
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
     return this;
@@ -154,6 +159,9 @@ export class OpenTab extends MutiSelectableItem {
   get url() {
     return this.#url;
   }
+  override get title() {
+    return this.#title;
+  }
   get focused() {
     return this.#focused;
   }
@@ -166,6 +174,9 @@ export class OpenTab extends MutiSelectableItem {
   set lastAccessed(lastAccessed: number | undefined) {
     this.#lastAccessed = lastAccessed;
   }
+  get faviconUrl() {
+    return this.#faviconUrl;
+  }
   getParentWindow() {
     // eslint-disable-next-line no-use-before-define
     return this.parentElement as Window;
@@ -174,12 +185,18 @@ export class OpenTab extends MutiSelectableItem {
     this.#active = isCurrent;
     this.classList.toggle('current-tab', isCurrent);
   }
-  gotoTab() {
+  async gotoTab() {
     if (this.checkMultiSelect()) {
       return;
     }
-    chrome.windows.update(this.windowId, { focused: true });
+    const temporaryTab = this.isCurrent
+      ? await chrome.tabs.create({ windowId: this.windowId, active: true })
+      : undefined;
     chrome.tabs.update(this.tabId, { active: true });
+    if (temporaryTab) {
+      chrome.tabs.remove(temporaryTab.id!);
+    }
+    chrome.windows.update(this.windowId, { focused: true });
   }
   closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
@@ -226,6 +243,20 @@ export class OpenTab extends MutiSelectableItem {
   setAppZoom(appZoom: number) {
     this.#appZoom = appZoom;
   }
+  setTitle() {
+    const [, $tab] = [...this.children];
+    setTitle(this, $tab);
+  }
+  update(tab: chrome.tabs.Tab) {
+    if (this.faviconUrl !== tab.favIconUrl) {
+      Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
+      this.#faviconUrl = tab.favIconUrl;
+    }
+    if (this.lastAccessed !== tab.lastAccessed) {
+      this.lastAccessed = tab.lastAccessed;
+      this.setTitle();
+    }
+  }
 }
 
 function getModeTabFinder(srcUrl: string, mode: string) {
@@ -260,7 +291,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   update(tab: chrome.tabs.Tab) {
     const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
     $tab.textContent = tab.title!;
-    $tab.setAttribute('title', `${tab.title}\n${decodeUrl(tab.url)}`);
+    setTitle(tab, $tab);
     toggleClass('show', tab.incognito)($iconIncognito);
     Object.entries(getTabFaviconAttr(tab)).forEach(([k, v]) => this.setAttribute(k, v));
   }
@@ -553,6 +584,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
   #initPromise!: PromiseInitTabs;
   $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
+  #timerOnActivated: ReturnType<typeof setTimeout> = 0;
   #options!: Options;
   #promiseSwitchTabEnd = Promise.resolve();
   #bmAutoFindTabsDelay = 500;
@@ -1199,23 +1231,26 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       $win.reloadTabs(store.dispatch);
     }
   }
-  async onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>, _: any, __: any, store: StoreSub) {
+  onActivatedTab({ newValue: tabId }: Changes<'onActivatedTab'>, _: any, __: any, store: StoreSub) {
     if (!tabId) {
       return;
     }
-    const tab = await chrome.tabs.get(tabId).catch(() => undefined);
-    if (!tab) {
-      return;
-    }
-    const $win = this.getAllWindows().find((win) => win.windowId === tab.windowId);
-    if (!$win || !tab) {
-      return;
-    }
-    if (tab.active) {
-      $win.setCurrentTab(tabId);
-      return;
-    }
-    $win.reloadTabs(store.dispatch);
+    clearTimeout(this.#timerOnActivated);
+    this.#timerOnActivated = setTimeout(async () => {
+      const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+      if (!tab) {
+        return;
+      }
+      const $win = this.getAllWindows().find((win) => win.windowId === tab.windowId);
+      if (!$win || !tab) {
+        return;
+      }
+      if (tab.active) {
+        $win.setCurrentTab(tabId);
+        return;
+      }
+      $win.reloadTabs(store.dispatch);
+    }, 200);
   }
   getCurrentTab() {
     const $currentTab = this.getAllWindows()
@@ -1392,10 +1427,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     chrome.tabs.onRemoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
     chrome.tabs.onMoved.addListener((_, { windowId }) => store.dispatch('onUpdateTab', windowId, true));
     chrome.tabs.onDetached.addListener((_, { oldWindowId: windowId }) => store.dispatch('onUpdateTab', windowId, true));
-    let timerOnActivated: ReturnType<typeof setTimeout>;
-    chrome.tabs.onActivated.addListener(({ tabId }) => {
-      clearTimeout(timerOnActivated);
-      timerOnActivated = setTimeout(() => store.dispatch('onActivatedTab', tabId, true), 200);
-    });
+    chrome.tabs.onActivated.addListener(({ tabId }) => store.dispatch('onActivatedTab', tabId, true));
   }
 }

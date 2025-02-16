@@ -79,7 +79,7 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
     </defs>
-    <rect fill="#${accent}" x="20" y="20" width="560" height="560" rx="130" filter="url(#blend)"></rect><path d=" M200 60 h80 q40 0 40 40 v80 q0 40 40 40 h80 q40 0 40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 h80 q40 0 40 -40 v-80 q0 -40 -40 -40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 z" filter="url(#shadow)"></path>
+    <circle fill="#${accent}" cx="300" cy="300" r="290" filter="url(#blend)"></circle><path d=" M220 60 h80 q40 0 40 40 v80 q0 40 40 40 h80 q40 0 40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 h80 q40 0 40 -40 v-80 q0 -40 -40 -40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 z" filter="url(#shadow)"></path>
   </svg>
 `;
 }

@@ -1060,7 +1060,7 @@ export function getHtmlHistory(htmlHistory: string) {
   return `<history-item class="current-date history-item header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
 }
 
-export async function createOrPopup(windowId: number, refresh = false) {
+export async function createOrPopup(windowId: number | undefined, refresh = false) {
   const {
     settings, options, setAppZoom, windowModeInfo,
   } = await getLocal('settings', 'options', 'setAppZoom', 'windowModeInfo');
@@ -1070,11 +1070,16 @@ export async function createOrPopup(windowId: number, refresh = false) {
   getPopup().then((popup) => {
     if (!popup) {
       chrome.windows.create({ url, type: 'popup', ...settings.windowSize }).then((win) => {
-        setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: windowId } });
+        setLocal({
+          windowModeInfo: {
+            popupWindowId: win.id!,
+            currentWindowId: windowId ?? windowModeInfo.currentWindowId,
+          },
+        });
       });
       return;
     }
-    if (refresh) {
+    if (refresh && windowId) {
       setLocal({ windowModeInfo: { ...windowModeInfo, currentWindowId: windowId } });
     }
     chrome.tabs.update(

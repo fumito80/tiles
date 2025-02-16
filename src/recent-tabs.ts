@@ -1,7 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 import { $, getAllWindows } from './client';
+import { decodeUrl } from './common';
 import { MulitiSelectablePaneBody, MulitiSelectablePaneHeader } from './multi-sel-pane';
 import {
+  Changes,
   Dispatch, IPubSubElement, States, Store, StoreSub, makeAction,
 } from './popup';
 import { ISearchable, SearchParams } from './search';
@@ -61,7 +63,7 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
   #isSearching = false;
   #reFilter: RegExp | undefined;
   #includeUrl: Boolean | undefined;
-  #sortedTabs!: OpenTab[];
+  #lastTabs!: { [tabId: string]: OpenTab };
   private $tmplOpenTab!: OpenTab;
   private promiseInitTabs!: Promise<InitailTabs>;
   private promiseOnActivated = Promise.resolve();
@@ -93,55 +95,63 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
         .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0)))
       .then((tabs) => this.addTabs(tabs, store.dispatch))
       .then((tabs) => {
-        this.#sortedTabs = tabs.sort((a, b) => a.tabId - b.tabId);
+        this.#lastTabs = tabs.reduce((acc, tab) => ({ ...acc, [tab.tabId]: tab }), {});
       });
   }
   refresh(_: any, __: any, ___: any, store: StoreSub) {
-    if (!this.#sortedTabs) {
+    if (!this.#lastTabs) {
       this.initTabs(store);
       return;
     }
     clearTimeout(this.timerRefresh);
     this.timerRefresh = setTimeout(() => {
       getAllWindows().then((windows) => {
-        const newTabs = windows.flatMap((win) => win.tabs);
-        let same = false;
-        if (newTabs.length === this.#sortedTabs.length) {
-          same = newTabs.sort((a, b) => a.id! - b.id!).every(
-            (tab, i) => tab.id === this.#sortedTabs[i].tabId || tab.url === this.#sortedTabs[i].url,
-          );
+        const newTabs: { [tabId: string]: chrome.tabs.Tab } = windows
+          .flatMap((win) => win.tabs)
+          .reduce((acc, tab) => ({ ...acc, [tab.id!]: tab }), {});
+        let matches = true;
+        let matchesLastAccessed = true;
+        Object.entries(newTabs).forEach(([k, newTab]) => {
+          const lastTab = this.#lastTabs[k];
+          if (!lastTab) {
+            this.prepend(this.addTab(newTab, store.dispatch));
+            matches = false;
+            return;
+          }
+          matchesLastAccessed = matchesLastAccessed && newTab.lastAccessed! > lastTab.lastAccessed!;
+          if (newTab.title !== lastTab.title
+            || decodeUrl(newTab.url || newTab.pendingUrl) !== lastTab.url) {
+            const $newTab = this.addTab(newTab, store.dispatch);
+            lastTab.replaceWith($newTab);
+            matches = false;
+            return;
+          }
+          lastTab.update(newTab);
+        });
+        let removes = [];
+        if (Object.keys(newTabs).length !== Object.keys(this.#lastTabs).length) {
+          removes = Object.entries(this.#lastTabs)
+            .filter(([k]) => !newTabs[k])
+            .map(([, v]) => v.remove());
         }
-        if (!same) {
-          this.promiseInitTabs = Promise.resolve(windows);
-          this.innerHTML = '';
-          this.initTabs(store);
+        if (!matchesLastAccessed) {
+          const sortedTabs = ([...this.children] as OpenTab[]).sort((a, b) => a.tabId - b.tabId);
+          this.append(...sortedTabs.slice().sort((a, b) => (b.lastAccessed!) - (a.lastAccessed!)));
+        }
+        if (!matches || removes.length > 0) {
+          this.#lastTabs = ([...this.children] as OpenTab[])
+            .reduce((acc, tab) => ({ ...acc, [tab.tabId]: tab }), {});
         }
       });
     }, 500);
   }
-  onActivated() {
-    this.promiseOnActivated = this.promiseOnActivated.then(getAllWindows).then((windows) => {
-      const newTabs = windows.flatMap((win) => win.tabs).sort((a, b) => a.id! - b.id!);
-      let i = 0;
-      let j = 0;
-      while (newTabs[i] && this.#sortedTabs[j]) {
-        const diff = newTabs[i].id! - this.#sortedTabs[j].tabId;
-        if (diff === 0) {
-          this.#sortedTabs[j].lastAccessed = newTabs[i].lastAccessed;
-          i += 1;
-          j += 1;
-        } else if (diff > 0) {
-          // this.#sortedTabs[j].remove();
-          j += 1;
-        } else {
-          // this.appendChild(this.addTab(newTabs[i], store.dispatch));
-          i += 1;
-        }
-      }
-      this.#sortedTabs = ([...this.children] as OpenTab[]).sort((a, b) => a.tabId - b.tabId);
-      this.append(...this.#sortedTabs.slice()
-        .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0)));
-    });
+  async onActivated({ newValue: tabId }: Changes<'onActivatedTab'>) {
+    const $target = this.#lastTabs[tabId];
+    if (!$target) {
+      return;
+    }
+    this.prepend($target);
+    chrome.tabs.get(tabId).then($target.update.bind($target));
   }
   search({ reFilter, includeUrl }: SearchParams, dispatch: Dispatch) {
     this.#reFilter = reFilter;
@@ -198,8 +208,14 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
       //   return;
       // }
       const { windowId } = ($(`.windows #tab-${$tab.tabId}`) as OpenTab);
-      chrome.windows.update(windowId, { focused: true });
+      const temporaryTab = $tab.isCurrent
+        ? await chrome.tabs.create({ windowId, active: true })
+        : undefined;
       chrome.tabs.update($tab.tabId!, { active: true });
+      if (temporaryTab) {
+        chrome.tabs.remove(temporaryTab.id!);
+      }
+      chrome.windows.update(windowId, { focused: true });
     }
   }
   override actions() {

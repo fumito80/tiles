@@ -966,12 +966,12 @@ export async function changeColorTheme(colorPalette: ColorPalette) {
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
-  postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette });
-  getLocal('options').then(({ options }) => {
-    if (options.windowMode) {
-      setBrowserFavicon(colorPalette);
-    }
-  });
+  return postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette })
+    .then(({ options }) => {
+      if (options.windowMode) {
+        setBrowserFavicon(colorPalette);
+      }
+    });
 }
 
 export function setFavColorMenu(colorPalette: ColorPalette) {
