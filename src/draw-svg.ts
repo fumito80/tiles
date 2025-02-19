@@ -56,9 +56,8 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
   const [accent] = colorPalette
     .filter((color) => getColorWhiteness(color) < 0.7)
     .sort((a, b) => Math.sign(getColorChroma(b) - getColorChroma(a)));
-  // const [r, g, b] = /(..)(..)(..)/.exec(accent)!.slice(1).map((x) => parseInt(x, 16));
-  // const ref = Math.max(r, g, b) + Math.min(r, g, b);
-  // const complementary = [r, g, b].map((x) => (ref - x).toString(16).padStart(2, '0')).join('');
+  const [r, g, b] = /(..)(..)(..)/.exec(accent)!.slice(1).map((x) => parseInt(x, 16));
+  const shade = [r, g, b].map((x) => Math.floor(x * 0.6).toString(16).padStart(2, '0')).join('');
   return `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" stroke-width="0" fill="#${accent}">
     <defs>
@@ -66,11 +65,11 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feOffset dx="0" dy="0"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
-        <feFlood flood-color="#000000" flood-opacity="0.8" result="color"></feFlood>
+        <feFlood flood-color="#222222" flood-opacity="0.8" result="color"></feFlood>
         <feComposite operator="in" in="color" in2="inverse" result="shadow"></feComposite>
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
-      <filter id="blend">
+      <filter id="hue">
         <feOffset dx="600" dy="-600"></feOffset>
         <feGaussianBlur stdDeviation="10" result="offset-blur"></feGaussianBlur>
         <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"></feComposite>
@@ -79,7 +78,11 @@ export async function getSvgBrowserIcon(colorPalette: Options['colorPalette']) {
         <feComposite operator="over" in="shadow" in2="SourceGraphic"></feComposite>
       </filter>
     </defs>
-    <circle fill="#${accent}" cx="300" cy="300" r="290" filter="url(#blend)"></circle><path d=" M220 60 h80 q40 0 40 40 v80 q0 40 40 40 h80 q40 0 40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 40 v80 q0 40 -40 40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 h80 q40 0 40 -40 v-80 q0 -40 -40 -40 h-80 q-40 0 -40 -40 v-80 q0 -40 40 -40 z" filter="url(#shadow)"></path>
+    <path fill="#${accent}" filter="url(#hue)" d="
+      M 20 140 A 150 150 0 0 1 140 20 Q 300 -10 460 20 A 150 150 0 0 1 580 140 Q 610 300 580 460 A 150 150 0 0 1 460 580 Q 300 610 140 580 A 150 150 0 0 1 20 460 Q -10 300 20 140 z
+    "></path>
+    <path fill="#${shade}" d=" M160 100 h13.333333333333343 q60 0 60 60 v13.333333333333343 q0 60 60 60 h13.333333333333343 q60 0 60 60 v13.333333333333343 q0 60 60 60 h13.333333333333343 q60 0 60 60 v13.333333333333343 q0 60 -60 60 h-13.333333333333343 q-60 0 -60 -60 v-13.333333333333343 q0 -60 -60 -60 h-13.333333333333343 q-60 0 -60 60 v13.333333333333343 q0 60 -60 60 h-13.333333333333343 q-60 0 -60 -60 v-13.333333333333343 q0 -60 60 -60 h13.333333333333343 q60 0 60 -60 v-13.333333333333343 q0 -60 -60 -60 h-13.333333333333343 q-60 0 -60 -60 v-13.333333333333343 q0 -60 60 -60 z" filter="url(#shadow)"></path>
+    <circle fill="#${accent}" cx="430" cy="170" r="70" filter="url(#shadow)"></circle>
   </svg>
 `;
 }
