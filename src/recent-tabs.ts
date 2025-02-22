@@ -256,6 +256,8 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
   override connect(store: Store) {
     super.connect(store);
     // this.$header.connect(store);
-    // this.initTabs(store);
+    if (!this.#options.windowMode) {
+      this.initTabs(store);
+    }
   }
 }

@@ -4,8 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://unpkg.com/zdog@1/dist/zdog.dist.min.js"></script>
-  <script src="zdog.js" defer></script>
   <title>Icons Maker</title>
   <style>
     body {
@@ -17,8 +15,8 @@
     }
 
     svg {
-      /* border: 1px solid #ccc; */
-      background-color: #ccc;
+      border: 1px solid #eee;
+      /* background-color: #ccc; */
     }
 
     .racing-sans-one-regular {
@@ -37,7 +35,7 @@
 
 <body>
   <!-- ここから -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" id="zdog-svg" transform="rotate(90)">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" id="zdog-svg">
     <defs>
       <filter id="shadow">
         <feOffset dx='0' dy='0' />
@@ -52,14 +50,6 @@
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
         <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
-        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
-        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
-      </filter>
-      <filter id="gradiation">
-        <feOffset dx='0' dy='0' />
-        <feGaussianBlur stdDeviation='10' result='offset-blur' />
-        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#000000' flood-opacity='0.8' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
@@ -159,8 +149,8 @@
     svg.insertAdjacentHTML('beforeend', path);
     svg.insertAdjacentHTML('beforeend', path);
     path = '<path d="';
-    path += makeConnet(180, (width - rectWidth * 3) / 2, rectWidth, rx, gap);
-    path += '" filter="url(#shadow)" transform="rotate(90) scale(1,1) translate(0,-600) skewX(5) skewY(5)" fill="url(#Gradient1)" />'
+    path += makeConnet(200, (width - rectWidth * 3) / 2, rectWidth, rx, gap);
+    path += '" filter="url(#shadow)" transform="rotate(90) translate(0,-600)" fill="url(#Gradient1)" />'
     path = path.replace(/\s+/g, ' ');
     svg.insertAdjacentHTML('beforeend', path);
     addImage(128, svg);

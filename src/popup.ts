@@ -146,10 +146,6 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
     $bmLeft.parentElement!.insertBefore($bmLeft, $bmRight);
     $bmLeft.parentElement!.insertBefore($bmRight, $bmLeftAfter);
   }
-  const headerHeight = $$byClass('query-wrap').find(($el) => $el.offsetHeight > 0)?.offsetHeight ?? 0;
-  const sheet2 = new CSSStyleSheet();
-  sheet2.insertRule(`.pane-header { height: ${headerHeight}px; }`);
-  document.adoptedStyleSheets = [sheet, sheet2];
   $appMain.init(options, settings, isSearching);
   return $$('[is]', $appMain).reduce((acc, pane) => {
     const name = pane?.getAttribute('is');
@@ -175,6 +171,20 @@ function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {
   document.body.style.setProperty('width', '100%');
   addStyle({ display: 'none' })($byClass('resize-y'));
   setBrowserFavicon(options.colorPalette);
+}
+
+function setHeaderHeight() {
+  const $$queryWrap = $$byClass('query-wrap');
+  let headerHeight = 0;
+  for (let i = ($$queryWrap.length - 1); i >= 0; i -= 1) {
+    headerHeight = $$queryWrap[i].offsetHeight;
+    if (headerHeight > 0) {
+      const sheet2 = new CSSStyleSheet();
+      sheet2.insertRule(`.pane-header { height: ${headerHeight}px; }`);
+      document.adoptedStyleSheets = [sheet, sheet2];
+      break;
+    }
+  }
 }
 
 function init([{
@@ -218,6 +228,8 @@ function init([{
     store.dispatch('resetHistory');
   }
   setFavThemeMenu(options.favColorPalettes);
+  setHeaderHeight();
+  Promise.all([promiseInitTabs, promiseInitHistory]).then(setHeaderHeight);
   return store;
 }
 
