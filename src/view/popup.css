@@ -2012,6 +2012,11 @@ bm-leaf {
 .tabs-collapsed open-tab.highlight.match-recent-tab {
   background-position-x: 5px !important;
 
+  &[data-file]::before,
+  &[data-initial]::before {
+    margin-left: 5px !important;
+  }
+
   &.match {
     background-position-x: 25px !important;
 

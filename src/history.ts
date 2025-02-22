@@ -256,8 +256,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', { collapsed: false }, true);
   }
-  refreshHistory(_: any, __: any, states: States, store: StoreSub) {
-    store.dispatch('multiSelPanes', { all: false });
+  refreshHistory(_: any, __: any, states: States) {
     this.#histories = undefined;
     this.promiseInitHistory = getHistoryDataByWorker();
     this.resetHistory(undefined, undefined, states);

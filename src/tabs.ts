@@ -77,7 +77,7 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
   }
   if (tab.url?.startsWith('file://')) {
     return {
-      'data-initial': htmlEscape(tab.title!.substring(0, 1)),
+      'data-initial': htmlEscape(tab.title!.substring(0, 1)).substring(0, 1),
       'data-file': 'yes',
     };
   }
@@ -86,7 +86,7 @@ export function getTabFaviconAttr(tab: chrome.tabs.Tab) {
     return { style };
   }
   return {
-    'data-initial': htmlEscape(tab.title!.substring(0, 1)),
+    'data-initial': htmlEscape(tab.title!.substring(0, 1)).substring(0, 1),
   };
 }
 
