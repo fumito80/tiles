@@ -4,8 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://unpkg.com/zdog@1/dist/zdog.dist.min.js"></script>
-  <script src="zdog.js" defer></script>
   <title>Icons Maker</title>
   <style>
     body {
@@ -17,7 +15,7 @@
     }
 
     svg {
-      /* border: 1px solid #ccc; */
+      border: 1px solid #ccc;
       background-color: #ccc;
     }
 
@@ -37,13 +35,13 @@
 
 <body>
   <!-- ここから -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19" id="zdog-svg" transform="rotate(90)">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="19" height="19">
     <defs>
       <filter id="shadow">
         <feOffset dx='0' dy='0' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#000000' flood-opacity='0.8' result='color' />
+        <feFlood flood-color='#222222' flood-opacity='0.8' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
@@ -55,18 +53,6 @@
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
-      <filter id="gradiation">
-        <feOffset dx='0' dy='0' />
-        <feGaussianBlur stdDeviation='10' result='offset-blur' />
-        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#000000' flood-opacity='0.8' result='color' />
-        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
-        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
-      </filter>
-      <linearGradient id="Gradient1" x1="1" x2="1" y1="0" y2="0.6" spreadMethod="pad">
-        <stop offset="0%" stop-color="#0067C0" />
-        <stop offset="100%" stop-color="red" />
-      </linearGradient>
     </defs>
   </svg>
   <!-- ここまで -->
@@ -98,15 +84,30 @@
       const svgData = new XMLSerializer().serializeToString(svg2);
       img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
     }
+    function makeBorder(width, rx, border) {
+      return `<rect x="${border / 2}" y="${border / 2}" width="${width - border}" height="${width - border}" rx="${rx}" stroke-width="${border}" fill="none" clip-path="url(#clip-frame)" />`;
+    }
+    function makeRect(x, y, width, rx, gap) {
+      // return `<rect x="${x}" y="${y}" width="${width}" height="${width}" rx="${rx}" filter="url(#shadow1)" />`;
+      return `M${x} ${y}
+        h${width}
+        q${rx} 0 ${rx} ${rx}
+        v${width}
+        q0 ${rx} ${-rx} ${rx}
+        h${-width}
+        q${-rx} 0 ${-rx} ${-rx}
+        v${-width}
+        q0 ${-rx} ${rx} ${-rx}
+        z`;
+    }
     function makeConnet(x, y, width, rx, gap) {
-      const resizing = 30;
       return `
         M${x} ${y}
-        h${width - rx * 2 + resizing}
-        q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2 + resizing}
-        q0 ${rx} ${rx} ${rx}
+        h${width - rx * 2}
 
+        q${rx} 0 ${rx} ${-rx}
+        v${-width + rx * 2}
+        q0 ${-rx} ${rx} ${-rx}
         h${width - rx * 2}
         q${rx} 0 ${rx} ${rx}
         v${width - rx * 2}
@@ -114,55 +115,75 @@
         h${-width + rx * 2}
 
         q${-rx} 0 ${-rx} ${rx}
-        v${width - rx * 2 - resizing}
-        q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2 + resizing}
-        q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2 + resizing}
-        q0 ${-rx} ${rx} ${-rx}
-        h${width - rx * 2 - resizing}
-        q${rx} 0 ${rx} ${-rx}
 
+        v${width - rx * 2}
+        q0 ${rx} ${rx} ${rx}
+        h${width - rx * 2}
+        q${rx} 0 ${rx} ${rx}
+        v${width - rx * 2}
+        
+        q0 ${rx} ${-rx} ${rx}
+        h${-width + rx * 2}
+        q${-rx} 0 ${-rx} ${-rx}
         v${-width + rx * 2}
         q0 ${-rx} ${-rx} ${-rx}
-        h${-width + rx * 2 - resizing}
+        h${-width + rx * 2}
+
         q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2 - resizing}
+        v${-width + rx * 2}
         q0 ${-rx} ${rx} ${-rx}
         z`;
     }
+    // const accentColor = '#FF6663';
     const accentColor = '0067C0';
+    const backgroundBaseColor = accentColor;
     const [r, g, b] = /(..)(..)(..)/.exec(accentColor).slice(1).map((x) => parseInt(x, 16));
     const shade = [r, g, b].map((x) => Math.floor(x * 0.6).toString(16).padStart(2, '0')).join('');
-    const backgroundBaseColor = accentColor;
     const stroke = accentColor;
     const fill = accentColor;
     const [svg] = document.getElementsByTagName('svg');
-    const [stopS, stopE] = [...svg.querySelector('#Gradient1').children];
-    stopS.setAttribute('stop-color', `#${shade}`);
-    stopE.setAttribute('stop-color', `#${accentColor}`);
+    const svgs = [];
     const width = 600;
+    const gridWidth = 500;
+    const topPlus = 160;
     const strokeWidth = 0;
     const gap = 0;
-    const rx = 55;
+    const rx = 70;
     const border = 20;
-    const rectWidth = 155;
+    const rectWidth = ((gridWidth - strokeWidth) - (gap * 2)) / 3;
     svg.setAttribute('stroke-width', strokeWidth);
     svg.setAttribute('stroke', stroke);
     svg.setAttribute('fill', fill);
     svg.setAttribute('width', width);
     svg.setAttribute('height', width);
-    // let path = `<rect fill="${backgroundBaseColor}" x="20" y="20" width="560" height="560" rx="130" filter="url(#blend)"></rect>`;
     let path = `<path fill="#${backgroundBaseColor}" filter="url(#hue)" d="
       M 20 140 A 150 150 0 0 1 140 20 Q 300 -10 460 20 A 150 150 0 0 1 580 140 Q 610 300 580 460 A 150 150 0 0 1 460 580 Q 300 610 140 580 A 150 150 0 0 1 20 460 Q -10 300 20 140 z
-    " transform="scale(1,0.9) translate(0,35)" />`;
+    " />`;
     svg.insertAdjacentHTML('beforeend', path);
-    svg.insertAdjacentHTML('beforeend', path);
-    path = '<path d="';
-    path += makeConnet(180, (width - rectWidth * 3) / 2, rectWidth, rx, gap);
-    path += '" filter="url(#shadow)" transform="rotate(90) scale(1,1) translate(0,-600) skewX(5) skewY(5)" fill="url(#Gradient1)" />'
+    path =`<path fill="#${shade}" d="`;
+    path += makeConnet(
+      rx + strokeWidth / 2 + ((width - gridWidth) / 2),
+      strokeWidth / 2 + ((width - gridWidth) / 2) + topPlus,
+      rectWidth,
+      rx,
+      gap,
+    );
+    path += '" filter="url(#shadow)" />'
+    // path += '<path d="';
+    // path += makeRect(
+    //   gridWidth / 3 * 2 + rx + ((width - gridWidth) / 2),
+    //   strokeWidth / 2 + ((width - gridWidth) / 2) + topPlus,
+    //   gridWidth / 3 - strokeWidth / 2 - rx * 2,
+    //   rx,
+    //   gap,
+    // );
+    // path += `" fill="#${accentColor}" filter="url(#shadow)" />`
+    // path += `<circle fill="#${accentColor}" cx="320" cy="${0 + topPlus}" r="90" filter="url(#shadow)" />`;
     path = path.replace(/\s+/g, ' ');
     svg.insertAdjacentHTML('beforeend', path);
+    // svg.insertAdjacentHTML('beforeend', makeBorder(width, 0, 20));
+    // const clip = document.getElementById('clip-frame');
+    // clip.insertAdjacentHTML('beforeend', `<rect x="0" y="0" width="${width}" height="${width}" rx="100" />`);
     addImage(128, svg);
     addImage(48, svg);
   </script>
