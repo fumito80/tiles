@@ -115,10 +115,8 @@ export class OpenTab extends MutiSelectableItem {
   #title!: string;
   #focused = false;
   #highlighted = false;
-  #tooltipRect?: DOMRect;
   #lastAccessed?: number;
   #faviconUrl? = 'empty';
-  #appZoom = 1;
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   private $title!: HTMLElement;
@@ -151,7 +149,7 @@ export class OpenTab extends MutiSelectableItem {
     return this.#active;
   }
   get windowId() {
-    return this.getParentWindow().windowId;
+    return this.parentWindow.windowId;
   }
   get text() {
     return this.$title.textContent;
@@ -177,7 +175,7 @@ export class OpenTab extends MutiSelectableItem {
   get faviconUrl() {
     return this.#faviconUrl;
   }
-  getParentWindow() {
+  get parentWindow() {
     const $window = this.parentElement;
     // eslint-disable-next-line no-use-before-define
     if ($window instanceof Window) {
@@ -218,22 +216,21 @@ export class OpenTab extends MutiSelectableItem {
   setTooltipPosition() {
     const margin = 4;
     const rect = this.getBoundingClientRect();
-    if (!this.#tooltipRect) {
-      addClass('sizing')(this.$tooltip);
-      this.#tooltipRect = this.$tooltip.getBoundingClientRect();
-      rmClass('sizing')(this.$tooltip);
-    }
+    addClass('sizing')(this.$tooltip);
+    const tooltipRect = this.$tooltip.getBoundingClientRect();
+    rmClass('sizing')(this.$tooltip);
     const rectMain = this.$main.getBoundingClientRect();
     const left = Math.min(
       rect.left - rectMain.left - 1,
-      rectMain.width - rectMain.left - this.#tooltipRect.width - 5,
+      rectMain.width - rectMain.left - tooltipRect.width - 5,
     );
-    addStyle('left', `calc(${Math.max(left, 5)}px / ${this.#appZoom})`)(this.$tooltip);
-    if (rect.bottom + this.#tooltipRect.height + margin > document.body.offsetHeight) {
-      addStyle('top', `calc(${rect.top - this.#tooltipRect.height - margin}px / ${this.#appZoom})`)(this.$tooltip);
+    const { appZoom } = this.parentWindow;
+    addStyle('left', `calc(${Math.max(left, 5)}px / ${appZoom})`)(this.$tooltip);
+    if (rect.bottom + tooltipRect.height + margin > document.body.offsetHeight) {
+      addStyle('top', `calc(${rect.top - tooltipRect.height - margin}px / ${appZoom})`)(this.$tooltip);
       return this;
     }
-    addStyle('top', `calc(${rect.bottom + margin}px / ${this.#appZoom})`)(this.$tooltip);
+    addStyle('top', `calc(${rect.bottom + margin}px / ${appZoom})`)(this.$tooltip);
     return this;
   }
   setFocus(focused: boolean) {
@@ -244,9 +241,6 @@ export class OpenTab extends MutiSelectableItem {
     this.#highlighted = highlighted;
     this.classList.toggle('highlight', highlighted);
     return this;
-  }
-  setAppZoom(appZoom: number) {
-    this.#appZoom = appZoom;
   }
   setTitle() {
     const [, $tab] = [...this.children];
@@ -361,6 +355,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
   #isSearching = false;
   #isCurrent = false;
+  #appZoom = 1;
   private tabs!: chrome.tabs.Tab[];
   private $tmplTab!: OpenTab;
   private $header!: WindowHeader;
@@ -389,6 +384,9 @@ export class Window extends HTMLElement implements ISubscribeElement {
   }
   get isCurrent() {
     return this.#isCurrent;
+  }
+  get appZoom() {
+    return this.#appZoom;
   }
   setCurrent(isCurrent: boolean) {
     this.#isCurrent = isCurrent;
@@ -431,7 +429,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     });
   }
   setAppZoom(appZoom: number) {
-    this.getTabs().forEach(($tab) => $tab.setAppZoom(appZoom));
+    this.#appZoom = appZoom;
     this.$header.setAppZoom(appZoom);
   }
   dispathAction({ newValue: windowAction }: Changes<'windowAction'>, dispatch: Dispatch) {
@@ -885,7 +883,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     });
   }
   async scrollToFocused($target: OpenTab) {
-    const $parentWindow = $target.getParentWindow();
+    const $parentWindow = $target.parentWindow;
     await this.#promiseSmoothScroll;
     if (!$parentWindow.closest('.tabs-wrap')) {
       scrollVerticalCenter($target);
@@ -1001,7 +999,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     }
     if (!focused || !target) {
       const tabs = this.getAllTabs();
-      const findIndex = tabs.findIndex((tab) => tab.isCurrent && tab.getParentWindow().isCurrent);
+      const findIndex = tabs.findIndex((tab) => tab.isCurrent && tab.parentWindow.isCurrent);
       const sorted = [
         ...tabs.slice(findIndex + 1),
         ...tabs.slice(0, findIndex + 1),
@@ -1062,7 +1060,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     if (!$currentTab) {
       return;
     }
-    const $currentWindow = $currentTab.getParentWindow();
+    const $currentWindow = $currentTab.parentWindow;
     if (!$currentWindow.closest('.tabs-wrap')) {
       setAnimationClass('hilite')($currentWindow);
       return;
@@ -1301,7 +1299,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     if (!$tab) {
       return;
     }
-    const tabIndex = $tab.getParentWindow().getTabs().findIndex((tab) => tab.tabId === $tab.tabId);
+    const tabIndex = $tab.parentWindow.getTabs().findIndex((tab) => tab.tabId === $tab.tabId);
     const index = decode(
       this.#options.newTabPosition,
       ['le', 0],
