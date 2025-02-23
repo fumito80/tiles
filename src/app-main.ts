@@ -147,9 +147,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       changeColorTheme(palette);
     } else if (e.shiftKey && e.ctrlKey) {
       const {
-        bookmarks, windows, history, all: alls,
+        bookmarks, windows, history, 'recent-tabs': recentTabs, all: alls,
       } = states.multiSelPanes ?? {};
-      const all = !(bookmarks || windows || history || alls);
+      const all = !(bookmarks || windows || history || recentTabs || alls);
       store.dispatch('multiSelPanes', { all });
     } else {
       const isShortcut = (e.key === 'Escape' && !e.shiftKey) || this.#shortcuts?.some((keys) => (
@@ -192,7 +192,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       return;
     }
     store.dispatch('multiSelPanes', {
-      bookmarks: false, windows: false, history: false, all: false,
+      bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: false,
     });
     if (hasClass($target, 'leaf-menu-button')) {
       if (this.#options.findTabsFirst && this.#options.bmAutoFindTabs) {
@@ -272,7 +272,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       height,
       zoom: newValue,
     });
-    $byClass('draggable-clone')!.style.maxWidth = `calc(200px / ${newValue})`;
+    $byClass('draggable-clone')!.style.maxWidth = `calc(300px / ${newValue} / ${devicePixelRatio})`;
     this.#appZoom = newValue;
     setPopupStyle(this.#options);
   }
@@ -294,10 +294,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       multiSelPanes: makeAction({
         initValue: {
           bookmarks: false,
-          tabs: false,
+          windows: false,
           history: false,
+          'recent-tabs': false,
           all: false,
-        } as MulitiSelectables,
+        } satisfies MulitiSelectables as MulitiSelectables,
       }),
       keydownMain: makeAction({
         initValue: {

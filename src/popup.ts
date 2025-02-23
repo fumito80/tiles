@@ -79,7 +79,7 @@ function setOptions(settings: Settings, options: Options) {
   initSplitWidth(settings, options);
 
   if (options.showCloseTab) {
-    addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
+    addStyle('--show-close-tab', 'inline-block')($byTag('app-main')!);
   }
   if (options.showDeleteHistory) {
     addStyle('--show-delete-history', 'inline-block')($byClass('histories')!);

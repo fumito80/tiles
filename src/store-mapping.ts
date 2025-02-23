@@ -89,6 +89,7 @@ export function storeMapping(options: Options, components: Components) {
     $tabs.multiSelect.bind($tabs),
     $headerHistory.multiSelPanes.bind($headerHistory),
     $history.multiSelect.bind($history),
+    $recentTabs.multiSelect.bind($recentTabs),
     $formSearch.multiSelPanes.bind($formSearch),
   );
 
@@ -206,11 +207,13 @@ export function storeMapping(options: Options, components: Components) {
     .map('updateHistory', $history.refreshHistory);
 
   store.subscribeContext($recentTabs)
-    .map([$recentTabs, 'clickRecentTab'], $recentTabs.clickRecentTab)
+    .map([$recentTabs, 'clickRecentTab'], $recentTabs.clickItem)
     .map([$tabs, 'onCreatedWindow'], $recentTabs.refresh)
     .map([$tabs, 'onRemovedWindow'], $recentTabs.refresh)
     .map([$tabs, 'onUpdateTab'], $recentTabs.refresh)
-    .map([$tabs, 'onActivatedTab'], $recentTabs.onActivated);
+    .map([$tabs, 'onActivatedTab'], $recentTabs.onActivated)
+    .map([$recentTabs, 'mousedownRecentTabs'], $recentTabs.mousedownItem)
+    .map([$recentTabs, 'mouseupRecentTabs'], $recentTabs.mouseupItem);
 
   store.context($formSearch)
     .map('inputQuery', $formSearch.inputQuery)

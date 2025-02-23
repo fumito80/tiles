@@ -350,7 +350,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       .when(className === 'pin-bookmark')
       .then(() => {
         store.dispatch('multiSelPanes', {
-          bookmarks: false, windows: false, history: false, all: false,
+          bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: false,
         });
         const $source = $('.current-window .current-tab')!;
         return [[$source], [$source.id]] as const;

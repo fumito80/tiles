@@ -1992,6 +1992,12 @@ bm-leaf {
 
 /* Recent-Tabs */
 
+.pane-header.header-recent-tabs {
+  .multi-sel-menu-button {
+    display: none;
+  }
+}
+
 .body-recent-tabs {
   position: relative;
   overflow-y: auto;
@@ -2006,6 +2012,19 @@ bm-leaf {
 
   .unmatch {
     display: none;
+  }
+
+  .tab-wrap:not(.selected):hover>.icon-x {
+    display: var(--show-close-tab, none);
+  }
+
+}
+
+app-main:not(.searching):not(.drag-start) {
+  .body-recent-tabs {
+    .tab-wrap.selected:active {
+      filter: opacity(0.7);
+    }
   }
 }
 

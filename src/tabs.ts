@@ -178,8 +178,13 @@ export class OpenTab extends MutiSelectableItem {
     return this.#faviconUrl;
   }
   getParentWindow() {
+    const $window = this.parentElement;
     // eslint-disable-next-line no-use-before-define
-    return this.parentElement as Window;
+    if ($window instanceof Window) {
+      return $window;
+    }
+    // eslint-disable-next-line no-use-before-define
+    return $(`.windows #tab-${this.tabId}`)?.parentElement as Window;
   }
   setCurrent(isCurrent: boolean) {
     this.#active = isCurrent;
@@ -579,10 +584,154 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
   }
 }
 
-export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
-  readonly paneName = 'windows';
+export abstract class TabsBase extends MulitiSelectablePaneBody {
+  protected $lastClickedTab!: OpenTab | undefined;
+  abstract getAllTabs(filter?: (tab: OpenTab) => boolean): OpenTab[];
+  clickItem(_: any, e: MouseEvent, states: States, store: StoreSub) {
+    const $target = e.target as HTMLDivElement;
+    const $tab = isOpenTab($target);
+    if ($tab) {
+      const { [this.paneName]: paneState, all } = states.multiSelPanes!;
+      if (paneState || all) {
+        $tab.select();
+        if (all) {
+          store.dispatch('multiSelPanes', { [this.paneName]: true, all: false });
+        }
+        if (e.shiftKey) {
+          this.selectWithShift($tab);
+        }
+        this.selectItems(store.dispatch);
+        this.$lastClickedTab = $tab;
+        return;
+      }
+      if (all == null) {
+        store.dispatch('multiSelPanes', { all: false });
+        return;
+      }
+      $tab.gotoTab();
+      return;
+    }
+    const $window = isWindow($target);
+    if ($window) {
+      const { windows, all } = states.multiSelPanes!;
+      if (windows || all || e.shiftKey) {
+        const openTabs = $window.getTabs();
+        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
+        openTabs.map((tab) => tab.select(selectAll));
+        this.selectItems(store.dispatch);
+        if (all || e.shiftKey) {
+          store.dispatch('multiSelPanes', { windows: true, all: false });
+        }
+        return;
+      }
+      if (all == null) {
+        store.dispatch('multiSelPanes', { all: false });
+        return;
+      }
+      const [$tab1, ...rest] = $window.getTabs();
+      if ($tab1.checkMultiSelect()) {
+        rest.forEach(($tab2) => $tab2.checkMultiSelect());
+        this.selectItems(store.dispatch);
+        return;
+      }
+      chrome.windows.update($window.windowId, { focused: true });
+    }
+  }
+  selectItems(dispatch: Dispatch, precount?: number) {
+    const count = precount ?? $$byClass('selected', this).length;
+    dispatch('selectItems', { paneName: this.paneName, count }, true);
+  }
+  mousedownItem(_: any, e: MouseEvent, __: any, store: StoreSub) {
+    const $target = e.target as HTMLDivElement;
+    const $tab = isOpenTab($target);
+    const $window = isWindow($target);
+    const { offsetX } = e;
+    if ($tab || $window) {
+      clearTimeout(this.timerMultiSelect);
+      this.timerMultiSelect = setTimeout(
+        async () => {
+          if ($window && offsetX >= $window.clientWidth) {
+            return;
+          }
+          const { dragging, multiSelPanes } = await store.getStates();
+          const paneState = !multiSelPanes![this.paneName];
+          if (dragging) {
+            if (!paneState) {
+              this.selectItems(store.dispatch);
+            }
+            return;
+          }
+          store.dispatch('multiSelPanes', { [this.paneName]: paneState, all: false });
+          if (!paneState || multiSelPanes?.all) {
+            store.dispatch('multiSelPanes', { all: undefined });
+            return;
+          }
+          $tab?.preMultiSelect(paneState);
+          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(paneState));
+          this.selectItems(store.dispatch);
+        },
+        delayMultiSelect,
+      );
+    }
+  }
+  selectWithShift($target: OpenTab) {
+    if (
+      this.$lastClickedTab !== $target
+      && this.$lastClickedTab?.parentElement === $target.parentElement
+    ) {
+      const OpenTabs = [] as OpenTab[];
+      let started = false;
+      for (
+        let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
+        next != null;
+        next = next.nextElementSibling
+      ) {
+        if (next === $target || next === this.$lastClickedTab) {
+          if (started) {
+            OpenTabs.push(next as OpenTab);
+            break;
+          }
+          started = true;
+        }
+        if (started && next instanceof OpenTab) {
+          OpenTabs.push(next);
+        }
+      }
+      OpenTabs.forEach(($tab) => $tab.select(true));
+    }
+  }
+  deletesHandler($selecteds: HTMLElement[], dispatch: Dispatch) {
+    const removeds = $selecteds
+      .filter(($el): $el is OpenTab => $el instanceof OpenTab)
+      .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
+    const [promises, $tabs] = removeds.reduce(
+      ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
+      [[], []] as [Promise<void>[], OpenTab[]],
+    );
+    Promise.all(promises).then(() => {
+      $tabs
+        .map(($tab) => {
+          const { windowId } = $tab;
+          $tab.remove();
+          return windowId;
+        })
+        .filter((id, i, ids) => ids.indexOf(id) === i)
+        .forEach((windowId) => dispatch('windowAction', { type: 'closeTab', windowId }, true));
+      this.selectItems(dispatch);
+    });
+  }
+  multiSelect({ newValue: { [this.paneName]: paneState } }: { newValue: MulitiSelectables }) {
+    if (!paneState) {
+      this.getAllTabs((tab) => tab.selected)
+        .forEach((tab) => tab.select(false, true));
+      this.$lastClickedTab = undefined;
+    }
+  }
+}
+
+export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
+  override readonly paneName = 'windows';
   #initPromise!: PromiseInitTabs;
-  $lastClickedTab!: OpenTab | undefined;
   #timerMouseoverLeaf: number | undefined;
   #timerOnActivated: ReturnType<typeof setTimeout> = 0;
   #options!: Options;
@@ -680,7 +829,7 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
       ...this.$pinWrapB.children,
     ] as Window[];
   }
-  getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
+  override getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
     return this.getAllWindows().flatMap(($win) => $win.getTabs()).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams, dispatch: Dispatch) {
@@ -711,147 +860,6 @@ export class Tabs extends MulitiSelectablePaneBody implements IPubSubElement, IS
     store.dispatch('openHistories', {
       elementIds: [], index: index == null ? undefined : index + 1, windowId, incognito: false,
     });
-  }
-  // eslint-disable-next-line class-methods-use-this
-  deletesHandler($selecteds: HTMLElement[], dispatch: Dispatch) {
-    const removeds = $selecteds
-      .filter(($el): $el is OpenTab => $el instanceof OpenTab)
-      .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
-    const [promises, $tabs] = removeds.reduce(
-      ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
-      [[], []] as [Promise<void>[], OpenTab[]],
-    );
-    Promise.all(promises).then(() => {
-      $tabs
-        .map(($tab) => {
-          const { windowId } = $tab;
-          $tab.remove();
-          return windowId;
-        })
-        .filter((id, i, ids) => ids.indexOf(id) === i)
-        .forEach((windowId) => dispatch('windowAction', { type: 'closeTab', windowId }, true));
-      this.selectItems(dispatch);
-    });
-  }
-  selectWithShift($target: OpenTab) {
-    if (
-      this.$lastClickedTab !== $target
-      && this.$lastClickedTab?.parentElement === $target.parentElement
-    ) {
-      const OpenTabs = [] as OpenTab[];
-      let started = false;
-      for (
-        let next = $target.parentElement?.firstElementChild as OpenTab | Element | null;
-        next != null;
-        next = next.nextElementSibling
-      ) {
-        if (next === $target || next === this.$lastClickedTab) {
-          if (started) {
-            OpenTabs.push(next as OpenTab);
-            break;
-          }
-          started = true;
-        }
-        if (started && next instanceof OpenTab) {
-          OpenTabs.push(next);
-        }
-      }
-      OpenTabs.forEach(($tab) => $tab.select(true));
-    }
-  }
-  multiSelect({ newValue: { windows } }: { newValue: MulitiSelectables }) {
-    if (!windows) {
-      this.getAllTabs((tab) => tab.selected)
-        .forEach((tab) => tab.select(false, true));
-      this.$lastClickedTab = undefined;
-    }
-  }
-  mousedownItem(_: any, e: MouseEvent, __: any, store: StoreSub) {
-    const $target = e.target as HTMLDivElement;
-    const $tab = isOpenTab($target);
-    const $window = isWindow($target);
-    const { offsetX } = e;
-    if ($tab || $window) {
-      clearTimeout(this.timerMultiSelect);
-      this.timerMultiSelect = setTimeout(
-        async () => {
-          if ($window && offsetX >= $window.clientWidth) {
-            return;
-          }
-          const { dragging, multiSelPanes } = await store.getStates();
-          const windows = !multiSelPanes?.windows;
-          if (dragging) {
-            if (!windows) {
-              this.selectItems(store.dispatch);
-            }
-            return;
-          }
-          store.dispatch('multiSelPanes', { windows, all: false });
-          if (!windows || multiSelPanes?.all) {
-            store.dispatch('multiSelPanes', { all: undefined });
-            return;
-          }
-          $tab?.preMultiSelect(windows);
-          $window?.getTabs().forEach(($tab2) => $tab2.preMultiSelect(windows));
-          this.selectItems(store.dispatch);
-        },
-        delayMultiSelect,
-      );
-    }
-  }
-  async clickItem(_: any, e: MouseEvent, states: States, store: StoreSub) {
-    const $target = e.target as HTMLDivElement;
-    const $tab = isOpenTab($target);
-    if ($tab) {
-      const { windows, all } = states.multiSelPanes!;
-      if (windows || all) {
-        $tab.select();
-        if (all) {
-          store.dispatch('multiSelPanes', { windows: true, all: false });
-        }
-        if (e.shiftKey) {
-          this.selectWithShift($tab);
-        }
-        this.selectItems(store.dispatch);
-        this.$lastClickedTab = $tab;
-        return;
-      }
-      if (all == null) {
-        store.dispatch('multiSelPanes', { all: false });
-        return;
-      }
-      $tab.gotoTab();
-      return;
-    }
-    const $window = isWindow($target);
-    if ($window) {
-      const { windows, all } = states.multiSelPanes!;
-      if (windows || all || e.shiftKey) {
-        const openTabs = $window.getTabs();
-        const selectAll = openTabs.length / 2 >= openTabs.filter((tab) => tab.selected).length;
-        openTabs.map((tab) => tab.select(selectAll));
-        this.selectItems(store.dispatch);
-        if (all || e.shiftKey) {
-          store.dispatch('multiSelPanes', { windows: true, all: false });
-        }
-        return;
-      }
-      if (all == null) {
-        store.dispatch('multiSelPanes', { all: false });
-        return;
-      }
-      const [$tab1, ...rest] = $window.getTabs();
-      if ($tab1.checkMultiSelect()) {
-        rest.forEach(($tab2) => $tab2.checkMultiSelect());
-        this.selectItems(store.dispatch);
-        return;
-      }
-      chrome.windows.update($window.windowId, { focused: true });
-    }
-  }
-  selectItems(dispatch: Dispatch, precount?: number) {
-    const count = precount ?? $$byClass('selected', this).length;
-    dispatch('selectItems', { paneName: this.paneName, count }, true);
   }
   findTabs(finder: (tab: OpenTab) => boolean, dispatch: Dispatch, leafId?: string) {
     const $founds = this

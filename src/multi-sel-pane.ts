@@ -1,5 +1,5 @@
 import {
-  ColorPalette, Options, Panes, State,
+  ColorPalette, MulitiSelectables, Options, Panes, State,
 } from './types';
 import {
   $, $$, $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
@@ -88,11 +88,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
       preShowMenu($menu, e);
     });
   }
-  show({ newValue }: {
-    newValue: {
-      leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean,
-    }
-  }) {
+  show({ newValue }: { newValue: MulitiSelectables }) {
     const { all } = newValue;
     const [, show] = Object.entries(newValue).find(([key]) => key === this.#header.paneName) || [];
     if (!show && !all) {
@@ -117,7 +113,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.$count.textContent = String(count);
     if (count === 0) {
       dispatch('multiSelPanes', {
-        bookmarks: false, windows: false, history: false, all: true,
+        bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: true,
       }, true);
       return;
     }

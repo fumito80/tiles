@@ -1,75 +1,35 @@
-/* eslint-disable import/prefer-default-export */
 import {
   $, $$byClass, $$byTag, getAllWindows, rmClass, toggleClass,
 } from './client';
 import { decodeUrl, pipe } from './common';
-import { MulitiSelectablePaneBody, MulitiSelectablePaneHeader } from './multi-sel-pane';
+import { MulitiSelectablePaneHeader } from './multi-sel-pane';
 import {
-  Changes,
-  Dispatch, IPubSubElement, States, Store, StoreSub, makeAction,
+  Changes, Dispatch, IPubSubElement, Store, StoreSub, makeAction,
 } from './popup';
 import { ISearchable, SearchParams } from './search';
-import { isOpenTab, OpenTab } from './tabs';
+import { OpenTab, TabsBase } from './tabs';
 import { InitailTabs, Options, PromiseInitTabs } from './types';
 
-export class HeaderRecentTabs extends MulitiSelectablePaneHeader implements IPubSubElement {
+export class HeaderRecentTabs extends MulitiSelectablePaneHeader {
   readonly paneName = 'recent-tabs';
-  // multiSelPanes({ newValue }: Changes<'multiSelPanes'>) {
-  //   const isMultiSelect = Object.values(newValue).some((value) => !!value);
-  //   $$byTag('button', this).forEach(toggleClass('hidden', isMultiSelect));
-  // }
   readonly multiDeletesTitle = 'Close selected tabs';
   // eslint-disable-next-line class-methods-use-this
-  async menuClickHandler(e: MouseEvent) {
+  menuClickHandler(e: MouseEvent) {
     const $target = e.target as HTMLElement;
     switch ($target.dataset.value) {
-      case 'open-incognito':
-      case 'open-new-window': {
-        break;
-      }
       default:
     }
   }
-  override actions() {
-    return {
-      ...super.actions(),
-      // historyCollapseDate: makeAction({
-      //   initValue: {
-      //     collapsed: false,
-      //     jumpDate: '',
-      //   } as {
-      //     collapsed: boolean,
-      //     jumpDate?: string,
-      //   },
-      //   target: $byClass('collapse-history-date', this),
-      //   eventType: 'click',
-      //   eventProcesser: (_, { collapsed }) => ({ jumpDate: '', collapsed: !collapsed }),
-      // }),
-      // toggleRecentlyClosed: makeAction({
-      //   initValue: false,
-      //   target: $byClass('toggle-recently-closed', this),
-      //   eventType: 'click',
-      //   eventProcesser: (_, currentValue) => !currentValue,
-      // }),
-    };
-  }
-  override connect(store: Store) {
-    super.connect(store);
-    // this.store = store;
-  }
 }
 
-export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
-  readonly paneName = 'recent-tabs';
+export class RecentTabs extends TabsBase implements IPubSubElement, ISearchable {
+  override readonly paneName = 'recent-tabs';
   #options!: Options;
   #isSearching = false;
-  #reFilter: RegExp | undefined;
-  #includeUrl: Boolean | undefined;
   #lastTabs!: { [tabId: string]: OpenTab };
   private $tmplOpenTab!: OpenTab;
   private promiseInitTabs!: Promise<InitailTabs>;
   private promiseReadyTabs = Promise.withResolvers();
-  private promiseOnActivated = Promise.resolve();
   private timerRefresh = 0;
   init(
     $template: DocumentFragment,
@@ -139,11 +99,11 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
             .map(([, v]) => v.remove());
         }
         if (!matchesLastAccessed) {
-          const sortedTabs = ([...this.children] as OpenTab[]).sort((a, b) => a.tabId - b.tabId);
+          const sortedTabs = this.getAllTabs().sort((a, b) => a.tabId - b.tabId);
           this.append(...sortedTabs.slice().sort((a, b) => (b.lastAccessed!) - (a.lastAccessed!)));
         }
         if (!matches || removes.length > 0) {
-          this.#lastTabs = ([...this.children] as OpenTab[])
+          this.#lastTabs = this.getAllTabs()
             .reduce((acc, tab) => ({ ...acc, [tab.tabId]: tab }), {});
         }
       });
@@ -156,6 +116,9 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
     }
     this.prepend($target);
     chrome.tabs.get(tabId).then($target.update.bind($target));
+  }
+  override getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
+    return ([...this.children] as OpenTab[]).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     if (!reFilter) {
@@ -173,63 +136,6 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
   }
   clearSearch() {
     $$byTag('open-tab', this).forEach(rmClass('match', 'unmatch'));
-  }
-  // eslint-disable-next-line class-methods-use-this
-  deletesHandler($selecteds: HTMLElement[], dispatch: Dispatch) {
-    const removeds = $selecteds
-      .filter(($el): $el is OpenTab => $el instanceof OpenTab)
-      .map(($tab) => [chrome.tabs.remove($tab.tabId), $tab] as [Promise<void>, OpenTab]);
-    const [promises, $tabs] = removeds.reduce(
-      ([pp, tt], [p, t]) => [[...pp, p], [...tt, t]],
-      [[], []] as [Promise<void>[], OpenTab[]],
-    );
-    Promise.all(promises).then(() => {
-      $tabs
-        .map(($tab) => {
-          const { windowId } = $tab;
-          $tab.remove();
-          return windowId;
-        })
-        .filter((id, i, ids) => ids.indexOf(id) === i)
-        .forEach((windowId) => dispatch('windowAction', { type: 'closeTab', windowId }, true));
-      // this.selectItems(dispatch);
-    });
-  }
-  // eslint-disable-next-line class-methods-use-this
-  async clickRecentTab(_: any, e: MouseEvent, states: States, store: StoreSub) {
-    const $target = e.target as HTMLDivElement;
-    const $tab = isOpenTab($target);
-    if ($tab) {
-      const { windows, all } = states.multiSelPanes!;
-      if (windows || all) {
-        $tab.select();
-        if (all) {
-          store.dispatch('multiSelPanes', { windows: true, all: false });
-        }
-        // if (e.shiftKey) {
-        //   this.selectWithShift($target);
-        // }
-        // this.selectItems(store.dispatch);
-        // this.$lastClickedTab = $target;
-        return;
-      }
-      if (all == null) {
-        store.dispatch('multiSelPanes', { all: false });
-        return;
-      }
-      // if (this.checkMultiSelect()) {
-      //   return;
-      // }
-      const { windowId } = ($(`.windows #tab-${$tab.tabId}`) as OpenTab);
-      const temporaryTab = $tab.isCurrent
-        ? await chrome.tabs.create({ windowId, active: true })
-        : undefined;
-      chrome.tabs.update($tab.tabId!, { active: true });
-      if (temporaryTab) {
-        chrome.tabs.remove(temporaryTab.id!);
-      }
-      chrome.windows.update(windowId, { focused: true });
-    }
   }
   override actions() {
     return {
@@ -251,11 +157,22 @@ export class RecentTabs extends MulitiSelectablePaneBody implements IPubSubEleme
         eventOnly: true,
         noStates: true,
       }),
+      mousedownRecentTabs: makeAction({
+        target: this,
+        eventType: 'mousedown',
+        eventOnly: true,
+        noStates: true,
+      }),
+      mouseupRecentTabs: makeAction({
+        target: this,
+        eventType: 'mouseup',
+        eventOnly: true,
+        noStates: true,
+      }),
     };
   }
   override connect(store: Store) {
     super.connect(store);
-    // this.$header.connect(store);
     if (!this.#options.windowMode) {
       this.initTabs(store);
     }
