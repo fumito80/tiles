@@ -148,7 +148,6 @@ export const initialOptions = {
   wider2: false,
   zoomRatio: '0.7',
   fontSize: '0.9em',
-  collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
   bmAutoFindTabs: true,
   bmAutoFindTabsDelay: '500',
@@ -156,6 +155,7 @@ export const initialOptions = {
   favColorPalettes: [] as ColorPalette[],
   showMinimizeAll: true,
   windowMode: true,
+  autoMinimizeApp: false,
 };
 
 export type Panes = PaneNames[number];
@@ -183,6 +183,7 @@ export const initialState = {
     top: undefined as number[] | undefined,
     bottom: undefined as number[] | undefined,
   },
+  windowStates: [] as { collapsed: boolean }[],
   windowModeInfo: {
     popupWindowId: undefined,
     currentWindowId: undefined,
@@ -310,6 +311,7 @@ export type HTMLElementEventType = HTMLElementEventMap;
 export type InitailTabs = {
   windowId: number,
   tabs: chrome.tabs.Tab[];
+  order: number,
 }[];
 
 export type PromiseInitTabs = Promise<[InitailTabs, number]>;

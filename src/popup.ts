@@ -15,6 +15,7 @@ import {
   PayloadAction,
   ApplyStyle,
   WindowModeInfo,
+  initialState,
 } from './types';
 
 import {
@@ -187,17 +188,17 @@ function setHeaderHeight() {
   }
 }
 
-function init([{
-  settings,
-  htmlBookmarks,
-  clientState,
-  options,
-  htmlHistory,
-  lastSearchWord,
-  toggleWindowOrder,
-  pinWindows,
-  windowModeInfo,
-}, promiseInitTabs]: [State, PromiseInitTabs]) {
+function init([{ settings, options, ...states }, promiseInitTabs]: [State, PromiseInitTabs]) {
+  const {
+    htmlBookmarks,
+    clientState,
+    htmlHistory,
+    lastSearchWord,
+    toggleWindowOrder,
+    pinWindows,
+    windowModeInfo,
+    windowStates,
+  } = { ...initialState, ...states };
   if (options.windowMode) {
     initWindowMode(options, windowModeInfo);
   }
@@ -213,8 +214,9 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
-    toggleWindowOrder ?? true,
+    toggleWindowOrder,
     pinWindows,
+    windowStates,
   );
   const store = storeMapping(options, components);
   setOptions(settings, options);

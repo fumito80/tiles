@@ -33,6 +33,7 @@ import {
   addFolderFromTabs,
   addBookmarksFromTabs,
   createElement,
+  getChildren,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -273,7 +274,7 @@ function checkDroppable(e: DragEvent) {
 
 function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch']) {
   const $source = $byId(sourceId);
-  const [$title1, $title2, $title3] = [...$source.children] as HTMLElement[];
+  const [$title1, $title2, $title3] = getChildren($source);
   const value = when(includeUrl)
     .then(() => {
       let url = extractUrl($source.style.backgroundImage);

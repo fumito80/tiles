@@ -9,6 +9,7 @@ import {
   $$byTag, $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText, createElement,
   setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle, addBookmark,
   getMessageDeleteSelecteds,
+  getChildren,
 } from './client';
 import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
@@ -307,7 +308,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       $$byClass('init').forEach(rmClass('init'));
     }
     if (this.#reFilter || !initialize) {
-      [...this.$rows?.children || []].forEach(
+      getChildren(this.$rows).forEach(
         pipe(
           rmStyle('background-image'),
           rmAttr('title'),
@@ -648,12 +649,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const vScrollHeight = this.#rowHeight * data.length;
     addStyle('height', `${vScrollHeight - this.offsetHeight + padding}px`)(this.$fakeBottom);
     const setter = rowSetter(isShowFixedHeader);
-    const children = [...this.$rows.children] as HTMLElement[];
     this.vScrollData = data;
     this.vScrollHandler = () => {
       const rowTop = -(this.scrollTop % this.#rowHeight);
       const dataTop = Math.floor(this.scrollTop / this.#rowHeight);
-      children.forEach(setter(this.vScrollData, rowTop, dataTop));
+      getChildren(this.$rows).forEach(setter(this.vScrollData, rowTop, dataTop));
     };
     this.addEventListener('scroll', this.vScrollHandler);
   }

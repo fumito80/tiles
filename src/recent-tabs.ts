@@ -1,5 +1,5 @@
 import {
-  $, $$byClass, $$byTag, getAllWindows, rmClass, toggleClass,
+  $, $$byClass, $$byTag, getAllWindows, getChildren, rmClass, toggleClass,
 } from './client';
 import { decodeUrl, pipe } from './common';
 import { MulitiSelectablePaneHeader } from './multi-sel-pane';
@@ -118,7 +118,7 @@ export class RecentTabs extends TabsBase implements IPubSubElement, ISearchable 
     chrome.tabs.get(tabId).then($target.update.bind($target));
   }
   override getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
-    return ([...this.children] as OpenTab[]).filter(filter);
+    return getChildren<OpenTab>(this).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams) {
     if (!reFilter) {

@@ -2,7 +2,7 @@ import type {
   State, InsertPosition, Panes2, PaneNames,
 } from './types';
 import {
-  $, $$, $$byClass, $byClass, $byTag, addClass, hasClass, rmClass,
+  $, $$, $$byClass, $byClass, $byTag, addClass, getChildren, hasClass, rmClass,
 } from './client';
 import { isDefined, objectEqaul, updateSettings } from './common';
 
@@ -103,7 +103,7 @@ export class LayoutPanes extends CustomInputElement {
     const $target = e.target as HTMLElement;
     rmClass('drag-source')($target);
     const newValue = $$('.column:has([data-value])', this)
-      .map(($col) => [...$col.children]
+      .map(($col) => getChildren($col)
         .map(($el) => ($el as HTMLElement).dataset.value as PaneNames[number])
         .filter(isDefined));
     if (!objectEqaul(newValue, this.value, true)) {
@@ -130,8 +130,8 @@ export class LayoutBookmarksPanes extends CustomInputElement {
     this.#btnFlip.addEventListener('click', this.flipBmPanes.bind(this));
   }
   get value() {
-    return [...this.children]
-      .map((el) => (el as HTMLElement).dataset.value as BookmarksPanes)
+    return getChildren(this)
+      .map((el) => el.dataset.value as BookmarksPanes)
       .filter(isDefined);
   }
   set value(value: BookmarksPanes[]) {

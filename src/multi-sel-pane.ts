@@ -119,7 +119,7 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     }
     this.$count.textContent = String(count);
     rmClass('pre')(this);
-    const maxWidth = ([...this.children] as HTMLElement[])
+    const maxWidth = getChildren(this)
       .map(getElementWidth)
       .reduce((acc, width) => acc + width, 0);
     this.style.setProperty('max-width', `${Math.ceil(maxWidth)}px`);

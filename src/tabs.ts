@@ -7,13 +7,14 @@ import {
   toggleClass, setAnimationClass, showMenu, setText, getChildren,
   scrollVerticalCenter,
   toggleElement,
-  getInitialTabs,
   addBookmark,
   preShowMenu,
+  getAllWindows,
 } from './client';
 import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
+  isDefined,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -117,6 +118,7 @@ export class OpenTab extends MutiSelectableItem {
   #highlighted = false;
   #lastAccessed?: number;
   #faviconUrl? = 'empty';
+  #dispatch!: Store['dispatch'];
   private $main!: HTMLElement;
   private $tooltip!: HTMLElement;
   private $title!: HTMLElement;
@@ -132,8 +134,9 @@ export class OpenTab extends MutiSelectableItem {
     this.#incognito = tab.incognito;
     this.setCurrent(tab.active);
     this.#url = decodeUrl(tab.url || tab.pendingUrl);
-    const [,,, $tooltip] = [...this.children];
+    const [,,, $tooltip] = getChildren(this);
     $tooltip.textContent = getTooltip(tab);
+    this.#dispatch = dispatch;
     this.update(tab);
     addListener('mouseover', this.setTooltipPosition)(this);
     addListener('click', this.closeTab(dispatch))($byClass('icon-x', this)!);
@@ -200,6 +203,7 @@ export class OpenTab extends MutiSelectableItem {
       chrome.tabs.remove(temporaryTab.id!);
     }
     chrome.windows.update(this.windowId, { focused: true });
+    this.#dispatch('minimizeApp');
   }
   closeTab(dispatch: Store['dispatch']) {
     return (e: MouseEvent) => {
@@ -243,7 +247,7 @@ export class OpenTab extends MutiSelectableItem {
     return this;
   }
   setTitle() {
-    const [, $tab] = [...this.children];
+    const [, $tab] = getChildren(this);
     setTitle(this, $tab);
   }
   update(tab: chrome.tabs.Tab) {
@@ -270,11 +274,13 @@ function getModeTabFinder(srcUrl: string, mode: string) {
 
 export class WindowHeader extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
+  #order!: number;
   #appZoom = 1;
   private $tabsMenu!: HTMLElement;
-  init(windowId: number, tab: chrome.tabs.Tab) {
+  init(windowId: number, tab: chrome.tabs.Tab, order: number) {
     this.$tabsMenu = $byClass('tabs-menu', this)!;
     this.#windowId = windowId;
+    this.#order = order;
     this.update(tab);
     pipe(
       addListener('click', (e) => {
@@ -288,7 +294,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
     return this;
   }
   update(tab: chrome.tabs.Tab) {
-    const [$iconIncognito, $tab] = [...this.children] as HTMLElement[];
+    const [$iconIncognito, $tab] = getChildren(this);
     $tab.textContent = tab.title!;
     setTitle(tab, $tab);
     toggleClass('show', tab.incognito)($iconIncognito);
@@ -297,8 +303,14 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   setAppZoom(appZoom: number) {
     this.#appZoom = appZoom;
   }
+  get order() {
+    return this.#order;
+  }
+  get windowId() {
+    return this.#windowId;
+  }
   connect(store: Store) {
-    const windowId = this.#windowId;
+    const { windowId, order } = this;
     const buttons = ['collapse-tab', 'unpin-window', 'minimize-others'] as const;
     setEvents($$byTag('button', this), {
       click(e) {
@@ -311,7 +323,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
           })
           .case('unpin-window')
           .then(() => {
-            store.dispatch('pinWindow', { windowId, method: 'sub' });
+            store.dispatch('pinWindow', { order, method: 'sub' });
           })
           .case('minimize-others')
           .then(() => {
@@ -325,8 +337,8 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
         const $target = e.target as HTMLElement;
         switch ($target.dataset.value) {
           case 'add-new-tab': {
-            chrome.tabs.create({ windowId: this.#windowId });
-            chrome.windows.update(this.#windowId, { focused: true });
+            chrome.tabs.create({ windowId });
+            chrome.windows.update(windowId, { focused: true });
             break;
           }
           case 'close-window':
@@ -335,7 +347,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
           case 'pin-window-top':
           case 'pin-window-bottom':
             store.dispatch('pinWindow', {
-              windowId,
+              order,
               place: $target.dataset.value === 'pin-window-top' ? 'top' : 'bottom',
               method: 'add',
             }, true);
@@ -353,6 +365,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
 
 export class Window extends HTMLElement implements ISubscribeElement {
   #windowId!: number;
+  #order!: number;
   #isSearching = false;
   #isCurrent = false;
   #appZoom = 1;
@@ -361,32 +374,40 @@ export class Window extends HTMLElement implements ISubscribeElement {
   private $header!: WindowHeader;
   init(
     windowId: number,
+    order: number,
     tmplTab: OpenTab,
     tabs: chrome.tabs.Tab[],
-    collapseTabs: boolean,
+    collapsed: boolean,
     isSearching: boolean,
     isCurrent: boolean,
   ) {
     this.$header = this.firstElementChild as WindowHeader;
-    this.switchCollapseIcon(collapseTabs);
+    this.switchCollapseIcon(collapsed);
     this.#windowId = windowId;
+    this.#order = order;
     this.$tmplTab = tmplTab;
     this.tabs = tabs;
     this.#isSearching = isSearching;
     this.id = `win-${windowId}`;
     this.setCurrent(isCurrent);
     const [firstTab] = tabs;
-    this.$header.init(windowId, firstTab);
+    this.$header.init(windowId, firstTab, order);
     return this;
   }
   get windowId() {
     return this.#windowId;
+  }
+  get order() {
+    return this.#order;
   }
   get isCurrent() {
     return this.#isCurrent;
   }
   get appZoom() {
     return this.#appZoom;
+  }
+  get isCollapsed() {
+    return hasClass(this, 'tabs-collapsed');
   }
   setCurrent(isCurrent: boolean) {
     this.#isCurrent = isCurrent;
@@ -409,7 +430,7 @@ export class Window extends HTMLElement implements ISubscribeElement {
     return this;
   }
   getTabs() {
-    const [, ...$tabs] = [...this.children];
+    const [, ...$tabs] = getChildren(this);
     return $tabs as OpenTab[];
   }
   clearTabs() {
@@ -490,7 +511,6 @@ export function isOpenTab($target: HTMLElement) {
 
 export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubElement {
   readonly paneName = 'windows';
-  #collapsed!: boolean;
   private $buttonCollapse!: HTMLElement;
   private $buttonPrevWin!: HTMLElement;
   private $buttonNextWin!: HTMLElement;
@@ -506,11 +526,9 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$searchesTabs = $byClass('searches-tabs', this)!;
     this.$searchesBms = $byClass('searches-bookmarks', this)!;
     this.$tabOrderAsc = $byClass('tab-order-asc', this)!;
-    this.#collapsed = options.collapseTabs;
     toggleElement(options.showMinimizeAll, '')($byClass('minimize-all', this)!);
     toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
-    this.toggleTabCollapsedAll({ newValue: options.collapseTabs });
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   toggleTabCollapsedAll({ newValue: collapsed }: { newValue: boolean }) {
@@ -548,10 +566,10 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     return {
       ...super.actions(),
       collapseWindowsAll: makeAction<boolean, 'click'>({
-        initValue: this.#collapsed,
+        initValue: false,
         target: this.$buttonCollapse,
         eventType: 'click',
-        eventProcesser: (_, currentValue) => !currentValue,
+        eventProcesser: (_, collapsed) => !collapsed,
       }),
       scrollPrevWindow: makeAction({
         target: this.$buttonPrevWin,
@@ -755,6 +773,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     promiseInitTabs: PromiseInitTabs,
     windowOrderAsc: boolean,
     pinWindows: States['pinWindows'],
+    windowStates: States['windowStates'],
   ) {
     this.setEvent();
     this.$tmplOpenTab = $('open-tab', $template) as OpenTab;
@@ -768,21 +787,21 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     if (windowOrderAsc) {
       this.$tabsWrap.insertBefore(this.$newWindow, this.$windosWrap);
     }
-    this.initTabs(promiseInitTabs, isSearching, windowOrderAsc, pinWindows);
+    this.initTabs(promiseInitTabs, isSearching, windowOrderAsc, pinWindows, windowStates);
     this.#bmAutoFindTabsDelay = parseInt(options.bmAutoFindTabsDelay, 10) || 0;
     return this;
   }
-  initTabs(promiseInitTabs: PromiseInitTabs, isSearching: boolean, windowOrderAsc: boolean, pinWindows: States['pinWindows']) {
+  initTabs(promiseInitTabs: PromiseInitTabs, isSearching: boolean, windowOrderAsc: boolean, pinWindows: States['pinWindows'], windowStates: States['windowStates']) {
     this.#initPromise = promiseInitTabs.then(([initWindows, currentWindowId]) => {
-      const ordered = windowOrderAsc ? initWindows.concat().reverse() : initWindows;
-      const $windows = ordered
+      const $windows = (windowOrderAsc ? initWindows.concat().reverse() : initWindows)
         .map((win) => {
           const $window = document.importNode(this.$tmplWindow, true);
           const $win = $window.init(
             win.windowId,
+            win.order,
             this.$tmplOpenTab,
             win.tabs!,
-            this.#options.collapseTabs,
+            windowStates![win.order]?.collapsed ?? true,
             isSearching,
             win.windowId === currentWindowId,
           );
@@ -792,43 +811,31 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       [
         [this.$pinWrap, pinWindows?.top] as const,
         [this.$pinWrapB, pinWindows?.bottom] as const,
-      ].forEach(([$container, windowIds]) => {
+      ].forEach(([$container, orders]) => {
         $container.append(
           ...$windows
-            .filter(($win) => windowIds?.includes($win.windowId))
+            .filter(($win) => orders?.includes($win.order))
             .map(($win) => $win.switchCollapseIcon(true)),
         );
       });
       return [initWindows, currentWindowId];
     });
   }
-  refreshTabs(_: any, __: any, states: States) {
-    const promiseInitTabs = getInitialTabs();
-    this.$windosWrap.innerHTML = '';
-    this.$pinWrap.innerHTML = '';
-    this.$pinWrap.innerHTML = '';
-    this.initTabs(
-      promiseInitTabs,
-      states.searching,
-      states.toggleWindowOrder || true,
-      states.pinWindows,
-    );
+  get windows() {
+    return [
+      ...getChildren(this.$pinWrap),
+      ...getChildren(this.$windosWrap),
+      ...getChildren(this.$pinWrapB),
+    ] as Window[];
   }
   setEvent() {
     $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   getWindows() {
-    return [...this.$windosWrap.children] as Window[];
-  }
-  getAllWindows() {
-    return [
-      ...this.$pinWrap.children,
-      ...this.$windosWrap.children,
-      ...this.$pinWrapB.children,
-    ] as Window[];
+    return getChildren<Window>(this.$windosWrap);
   }
   override getAllTabs(filter: (tab: OpenTab) => boolean = () => true) {
-    return this.getAllWindows().flatMap(($win) => $win.getTabs()).filter(filter);
+    return this.windows.flatMap(($win) => $win.getTabs()).filter(filter);
   }
   search({ reFilter, searchSelector, includeUrl }: SearchParams, dispatch: Dispatch) {
     if (!reFilter) {
@@ -852,7 +859,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     $$byClass('empty', this).forEach(rmClass('empty'));
   }
   openTabsFromHistory(_: any, __: any, ___: any, store: StoreSub) {
-    const currentWindow = this.getAllWindows().find((win) => win.isCurrent);
+    const currentWindow = this.windows.find((win) => win.isCurrent);
     const index = currentWindow?.getTabs().findIndex((tab) => tab.isCurrent);
     const { windowId } = currentWindow!;
     store.dispatch('openHistories', {
@@ -1092,7 +1099,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     this.$tabsWrap.scrollTop = 0;
   }
   getWindowById(windowId: number) {
-    return this.getAllWindows().find((win) => win.windowId === windowId);
+    return this.windows.find((win) => win.windowId === windowId);
   }
   async translateWindow(
     $pinContainer: HTMLElement,
@@ -1119,12 +1126,12 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     const { top: pinsTop, bottom: pinsBottom } = states.pinWindows || {};
     const newState = when(newValue.method === 'add')
       .then(() => ({
-        top: newValue.place === 'top' ? [newValue.windowId!] : pinsTop,
-        bottom: newValue.place === 'bottom' ? [newValue.windowId!] : pinsBottom,
+        top: newValue.place === 'top' ? [newValue.order!] : pinsTop,
+        bottom: newValue.place === 'bottom' ? [newValue.order!] : pinsBottom,
       }))
       .else(() => {
         const [top, bottom] = [pinsTop, pinsBottom]
-          .map((pin) => pin?.filter((winId) => winId !== newValue.windowId));
+          .map((pin) => pin?.filter((order) => order !== newValue.order));
         return { top, bottom };
       });
     store.dispatch('pinWindows', newState);
@@ -1133,13 +1140,13 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     if (isInit) {
       return;
     }
-    const $top = this.getWindows().find(($win) => newValue.top?.includes($win.windowId));
+    const $top = this.getWindows().find(($win) => newValue.top?.includes($win.order));
     if ($top) {
       const translate = $top.offsetTop - this.$tabsWrap.scrollTop;
       this.translateWindow(this.$pinWrap, $top, -translate, newValue, states.toggleWindowOrder!);
       return;
     }
-    const $bottom = this.getWindows().find(($win) => newValue.bottom?.includes($win.windowId));
+    const $bottom = this.getWindows().find(($win) => newValue.bottom?.includes($win.order));
     if ($bottom) {
       const translate = this.offsetHeight - $bottom.offsetTop - $bottom.offsetHeight
         + this.$tabsWrap.scrollTop;
@@ -1152,17 +1159,16 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     const pinStates = [...pinWindows?.top || [], ...pinWindows?.bottom || []];
     const $targets = getChildren(this.$pinWrap).concat(getChildren(this.$pinWrapB))
       .filter(($el): $el is Window => $el instanceof Window)
-      .filter(($pin) => !pinStates.includes($pin.windowId));
+      .filter(($pin) => !pinStates.includes($pin.order));
     if ($targets.length === 0) {
       return;
     }
-    const windowIds = await chrome.windows.getAll(chromeEventFilter)
-      .then((wins) => (windowOrderAsc ? wins.concat().reverse() : wins))
-      .then((wins) => wins.map((win) => win.id!))
-      .then((winIds) => winIds.filter((winId) => !pinStates.includes(winId)));
-    const $allWindows = this.getAllWindows();
-    windowIds.forEach((windowId) => {
-      this.$windosWrap.appendChild($allWindows.find(($win) => $win.windowId === windowId)!);
+    await getAllWindows().then((wins) => {
+      const newOrders = (windowOrderAsc ? wins.concat().reverse() : wins)
+        .filter((win) => !pinStates.includes(win.order))
+        .map((win) => this.windows.find(($win) => $win.windowId === win.windowId))
+        .filter(isDefined);
+      this.$windosWrap.append(...newOrders);
     });
     if (effect) {
       $targets.forEach(setAnimationClass('hilite'));
@@ -1174,15 +1180,19 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       await this.clearFocus(undefined, undefined, undefined, store);
     }
   }
-  toggleTabCollapsedAll({ newValue }: Changes<'collapseWindowsAll'>) {
+  toggleTabCollapsedAll({ newValue }: Changes<'collapseWindowsAll'>, _: any, __: any, store: StoreSub) {
     this.getWindows().forEach((win) => win.switchCollapseIcon(newValue));
+    this.resetWindowState(store);
   }
   dispatchWindowActions(changes: Changes<'windowAction'>, _: any, __: any, store: StoreSub) {
-    this.getAllWindows().forEach((win) => win.dispathAction(changes, store.dispatch));
+    this.windows.forEach((win) => win.dispathAction(changes, store.dispatch));
+    if (changes.newValue.type === 'collapseWindow') {
+      this.resetWindowState(store);
+    }
   }
   checkAllCollapsed(_: any, __: any, ___: any, store: StoreSub) {
     const windows = this.getWindows();
-    const collapseds = windows.filter((win) => hasClass(win, 'tabs-collapsed'));
+    const collapseds = windows.filter((win) => win.isCollapsed);
     if (collapseds.length === windows.length) {
       store.dispatch('collapseWindowsAll', true);
     } else if (collapseds.length === 0) {
@@ -1190,7 +1200,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     }
   }
   minimizeAll() {
-    this.getAllWindows()
+    this.windows
       .filter(($win) => {
         if ($win.isCurrent) {
           chrome.windows.update($win.windowId, { focused: true });
@@ -1201,20 +1211,30 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       .forEach(($win) => chrome.windows.update($win.windowId, { state: 'minimized' }));
   }
   clearCurrentWindow() {
-    this.getAllWindows().forEach((win) => win.setCurrent(false));
+    this.windows.forEach((win) => win.setCurrent(false));
+  }
+  resetWindowState(store: StoreSub) {
+    getAllWindows().then((wins) => {
+      const newStates = wins
+        .map((win) => !!this.windows.find(($win) => $win.windowId === win.windowId)?.isCollapsed)
+        .map((collapsed) => ({ collapsed }));
+      store.dispatch('windowStates', newStates);
+    });
   }
   async onCreatedWindow({ newValue: newWin }: Changes<'onCreatedWindow'>, _: any, states: States, store: StoreSub) {
     this.clearCurrentWindow();
-    const win = await chrome.windows.get(newWin?.id!, { populate: true }).catch(() => undefined);
+    const win = await getAllWindows()
+      .then((wins) => wins.find((winInfo) => winInfo.windowId === newWin?.id));
     if (!win) {
       return;
     }
     const $window = document.importNode(this.$tmplWindow, true);
     const $win = $window.init(
-      win.id!,
+      win.windowId,
+      win.order,
       this.$tmplOpenTab,
       win.tabs!,
-      Boolean(states.collapseWindowsAll),
+      true,
       states.searching,
       true,
     );
@@ -1223,10 +1243,12 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     this.$windosWrap.insertAdjacentElement(where, $win);
     $win.connect(store as Store);
     store.dispatch('re-search', 'windows');
+    this.resetWindowState(store);
   }
-  onRemovedWindow({ newValue: windowId }: Changes<'onRemovedWindow'>) {
-    const targetWin = this.getAllWindows().find((win) => win.windowId === windowId);
+  onRemovedWindow({ newValue: windowId }: Changes<'onRemovedWindow'>, _: any, __: States, store: StoreSub) {
+    const targetWin = this.windows.find((win) => win.windowId === windowId);
     targetWin?.remove();
+    this.resetWindowState(store);
   }
   setCurrentWindow(windowId: number) {
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
@@ -1237,7 +1259,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       });
       return;
     }
-    const currentWin = this.getAllWindows().find((win) => win.windowId === windowId);
+    const currentWin = this.windows.find((win) => win.windowId === windowId);
     if (currentWin) {
       this.clearCurrentWindow();
       currentWin?.setCurrent(true);
@@ -1259,7 +1281,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     postMessage({ type: CliMessageTypes.updateWindow, payload });
   }
   refreshWindow({ newValue: windowId }: Changes<'onUpdateTab'>, _: any, __: any, store: StoreSub) {
-    const $win = this.getAllWindows().find((win) => win.windowId === windowId);
+    const $win = this.windows.find((win) => win.windowId === windowId);
     if ($win) {
       $win.reloadTabs(store.dispatch);
     }
@@ -1274,7 +1296,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       if (!tab) {
         return;
       }
-      const $win = this.getAllWindows().find((win) => win.windowId === tab.windowId);
+      const $win = this.windows.find((win) => win.windowId === tab.windowId);
       if (!$win || !tab) {
         return;
       }
@@ -1286,7 +1308,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     }, 200);
   }
   getCurrentTab() {
-    const $currentTab = this.getAllWindows()
+    const $currentTab = this.windows
       .find((win) => win.isCurrent)
       ?.getTabs().find((tab) => tab.isCurrent);
     if (!$currentTab) {
@@ -1334,7 +1356,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     chrome.windows.update($tab.windowId, { focused: true });
   }
   setAppZoom({ newValue }: Changes<'setAppZoom'>) {
-    this.getAllWindows().forEach((win) => win.setAppZoom(newValue));
+    this.windows.forEach((win) => win.setAppZoom(newValue));
   }
   override actions() {
     return {
@@ -1396,10 +1418,10 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       }),
       pinWindow: makeAction({
         initValue: {
-          windowId: null,
+          order: null,
           method: null,
         } as {
-          windowId: number | null,
+          order: number | null,
           place?: 'top' | 'bottom',
           method: 'add' | 'sub' | null,
         },
@@ -1409,6 +1431,10 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
           top: undefined as number[] | undefined,
           bottom: undefined as number[] | undefined,
         },
+        persistent: true,
+      }),
+      windowStates: makeAction({
+        initValue: [] as State['windowStates'],
         persistent: true,
       }),
       setCurrentWindowId: makeAction({
@@ -1438,12 +1464,14 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       activateWindow: makeAction({
         initValue: '',
       }),
+      minimizeApp: {},
     };
   }
   override connect(store: Store) {
     super.connect(store);
     this.#initPromise.then(() => {
-      this.getAllWindows().forEach(($window) => $window.connect(store));
+      this.windows.forEach(($window) => $window.connect(store));
+      this.checkAllCollapsed(undefined, undefined, undefined, store);
     });
     if (!this.#options.windowMode) {
       return;

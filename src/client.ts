@@ -271,6 +271,13 @@ export async function getBookmark(id: string) {
   return chrome.bookmarks.get(id).then(([tab]) => tab);
 }
 
+export function getChildren<T extends HTMLElement>($target: HTMLElement) {
+  if ($target == null) {
+    return [];
+  }
+  return [...$target.children] as T[];
+}
+
 export function setHasChildren($target: HTMLElement) {
   $target.setAttribute('data-children', String($target.children.length - 1));
 }
@@ -408,7 +415,7 @@ export function splitColMouseDownHandler($main: AppMain) {
     const minWidth = 100;
     const maxWidth = endColGridWidth - minWidth + offsetWidth;
     const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
-    const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
+    const pos = getChildren($parent).filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
     const handler = resizeSplitHandler(
       'clientX',
       'columns',
@@ -914,10 +921,6 @@ export function getMessageDeleteSelecteds(count: number) {
   return `Are you sure you want to delete ${count} selected items?`;
 }
 
-export function getChildren($target: Element) {
-  return [...$target.children] as HTMLElement[];
-}
-
 export function getOffsetHeight($target: HTMLElement) {
   return Number.parseFloat(getComputedStyle($target).height);
 }
@@ -988,12 +991,13 @@ export function scrollVerticalCenter($target: HTMLElement) {
   $container.scrollTop = $target.offsetTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
 }
 
-export async function getAllWindows() {
+export async function getAllWindows(populate = true) {
   return new Promise<InitailTabs>((resolve) => {
-    chrome.windows.getAll({ ...chromeEventFilter, populate: true }, (wins) => {
-      const windows = wins.map((win) => ({
+    chrome.windows.getAll({ ...chromeEventFilter, populate }, (wins) => {
+      const windows = wins.map((win, order) => ({
         windowId: win.id!,
         tabs: win.tabs!,
+        order,
       }));
       resolve(windows);
     });

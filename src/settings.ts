@@ -48,7 +48,7 @@ class ColorPaletteClass extends CustomInputElement {
   #inputs: HTMLInputElement[];
   constructor() {
     super();
-    this.#inputs = [...this.children] as HTMLInputElement[];
+    this.#inputs = getChildren<HTMLInputElement>(this);
     this.#inputs.forEach(addListener('change', () => {
       this.value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
     }));
@@ -59,7 +59,7 @@ class ColorPaletteClass extends CustomInputElement {
   set value(value: ColorPalette) {
     this.#value = value;
     value.forEach((color, i) => {
-      const input = this.children[i] as HTMLInputElement;
+      const input = getChildren<HTMLInputElement>(this)[i];
       input.value = `#${color}`;
     });
     this.fireEvent();
@@ -327,7 +327,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
   insertHTML('beforeend', theme.dark)($byId('dark-theme'));
   insertHTML('beforeend', theme.other)($byId('mix-theme'));
 
-  const $selected = $$('.tab-pane > div').find((el) => ([...el.children] as HTMLElement[]).every(
+  const $selected = $$('.tab-pane > div').find((el) => getChildren(el).every(
     (color, i) => color.dataset.color === options.colorPalette[i],
   ));
   if ($selected) {
@@ -344,8 +344,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
     if (!hasClass($target.parentElement ?? undefined, 'tab-pane')) {
       return;
     }
-    const palette = ([...$target.children] as HTMLElement[])
-      .map((el) => el.dataset.color as string) as ColorPalette;
+    const palette = getChildren($target).map((el) => el.dataset.color as string) as ColorPalette;
     $byTag<ColorPaletteClass>('color-palette')!.value = palette;
     findPalette(palette);
   })($byClass('tab-content')!);

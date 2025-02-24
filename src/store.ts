@@ -322,6 +322,7 @@ export function initComponents(
   isSearching: boolean,
   toggleWindowOrder: boolean,
   pinWindows: States['pinWindows'],
+  windowStates: States['windowStates'],
 ) {
   // Template
   const $template = $byTag<HTMLTemplateElement>('template').content;
@@ -347,6 +348,7 @@ export function initComponents(
     promiseInitTabs,
     toggleWindowOrder,
     pinWindows,
+    windowStates,
   );
   $leafs.init(options);
   $folders.init(options);
