@@ -133,7 +133,7 @@ export function storeMapping(options: Options, components: Components) {
     .map([$formSearch, 'searching'], $appMain.searching)
     .map([$headerTabs, 'minimizeAll'], $appMain.minimize)
     .map([$tabs, 'windowAction'], $appMain.minimizeOthers)
-    .map([$tabs, 'minimizeApp'], $appMain.minimize);
+    .map([$tabs, 'minimizeApp'], $appMain.autoMinimize);
 
   store.subscribeContext($leafs)
     .map([$leafs, 'clickLeafs'], $leafs.clickItem)

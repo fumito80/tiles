@@ -263,6 +263,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   minimize() {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
   }
+  autoMinimize() {
+    if (this.#options.windowMode && this.#options.autoMinimizeApp) {
+      this.minimize();
+    }
+  }
   setAppZoom({ newValue }: Changes<'setAppZoom'>) {
     const [width, height] = this.#options.windowMode
       ? ['unset', `calc(100vh / ${newValue} - 5px)`]

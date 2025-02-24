@@ -339,6 +339,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
           case 'add-new-tab': {
             chrome.tabs.create({ windowId });
             chrome.windows.update(windowId, { focused: true });
+            store.dispatch('minimizeApp');
             break;
           }
           case 'close-window':
@@ -529,7 +530,6 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     toggleElement(options.showMinimizeAll, '')($byClass('minimize-all', this)!);
     toggleClass('window-order-asc', windowOrderAsc)(this);
     $byClass('tabs-info', this)?.insertAdjacentElement('afterbegin', this.$multiSelPane);
-    $byClass('new-window-plus', this)!.addEventListener('click', () => chrome.windows.create());
   }
   toggleTabCollapsedAll({ newValue: collapsed }: { newValue: boolean }) {
     toggleClass('tabs-collapsed-all', collapsed)(this);
@@ -597,6 +597,13 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
         eventOnly: true,
       }),
     };
+  }
+  override connect(store: Store) {
+    super.connect(store);
+    $byClass('new-window-plus', this)!.addEventListener('click', () => {
+      chrome.windows.create();
+      store.dispatch('minimizeApp');
+    });
   }
 }
 
@@ -1316,7 +1323,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     }
     return $currentTab;
   }
-  addNewTab({ newValue: url }: Changes<'addNewTab'>) {
+  addNewTab({ newValue: url }: Changes<'addNewTab'>, _: any, __: any, store: StoreSub) {
     const $tab = this.getCurrentTab();
     if (!$tab) {
       return;
@@ -1329,6 +1336,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
       ['ls', tabIndex],
     );
     chrome.tabs.create({ index, url, windowId: $tab.windowId });
+    store.dispatch('minimizeApp');
   }
   replaceCurrentTab({ newValue: url }: Changes<'replaceCurrentTab'>) {
     const $tab = this.getCurrentTab();
