@@ -207,6 +207,7 @@ export const CliMessageTypes = {
   restoreSession: 'cl-restore-session',
   updateWindow: 'cl-update-window',
   getSvgBrowserFavicon: 'cl-get-svg-favicon',
+  changeWindowMode: 'cl-change-window-mode',
 } as const;
 
 export const BkgMessageTypes = {

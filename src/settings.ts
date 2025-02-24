@@ -188,6 +188,10 @@ function saveOptions(inputs: Inputs) {
       setPopupStyle(payload);
       postMessage({ type: BkgMessageTypes.applyStyle, payload });
     }
+    if (name === 'window-mode') {
+      const payload = windowMode;
+      postMessage({ type: CliMessageTypes.changeWindowMode, payload });
+    }
   };
 }
 

@@ -140,7 +140,7 @@ async function init(storage: Pick<State, InitStateKeys>) {
   }).then(() => {
     setPopupStyle(options);
   });
-  setHtmlHistory();
+  await setHtmlHistory();
   regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
   regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
   regsterChromeEvents(updateHistory500)([chrome.sessions.onChanged]);
@@ -315,6 +315,12 @@ export const mapMessagesPtoB = {
         return false;
       });
     }),
+  [CliMessageTypes.changeWindowMode]: ({ payload: windowMode }: PayloadAction<boolean>) => {
+    if (!windowMode) {
+      return setHtmlHistory();
+    }
+    return Promise.resolve();
+  },
 };
 
 setMessageListener(mapMessagesPtoB);
