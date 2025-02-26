@@ -196,7 +196,7 @@ app-main:not(.theme-dark-pane) {
 
   .pin-wrap-top,
   .pin-wrap-bottom {
-    .unpin-window {
+    button.unpin-window {
       >i {
         color: rgba(0, 0, 0, 0.5) !important;
       }

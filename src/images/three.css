@@ -1,11 +1,13 @@
 body {
 	margin: 0;
-	background-color: #000;
-	color: #fff;
+	color: #fff !important;
 	font-family: Monospace;
 	font-size: 13px;
 	line-height: 24px;
 	overscroll-behavior: none;
+	background-color: white !important;
+  display: flex;
+  justify-content: center;
 }
 
 a {
@@ -35,6 +37,7 @@ button {
 	user-select: none;
 	pointer-events: none;
 	z-index: 1; /* TODO Solve this in HTML */
+	display: none;
 }
 
 a, button, input, select {
@@ -88,4 +91,8 @@ a, button, input, select {
 	background-color: #f00;
 	margin-top: 20px;
 	padding: 10px;
+}
+
+.container {
+	width: fit-content;
 }
