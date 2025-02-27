@@ -3,7 +3,7 @@ import * as bootstrap from 'bootstrap';
 import {
   State, ColorPalette, BkgMessageTypes, CliMessageTypes,
 } from './types';
-import { CustomInputElement } from './settings-layout';
+import { CustomInputElement, LayoutPanes } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 import { setToolbarIcon } from './draw-svg';
 import {
@@ -298,6 +298,7 @@ function initOthers() {
   }
   $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
   $byClass('apply-settings')?.addEventListener('click', () => {
+    $byTag<LayoutPanes>('layout-panes').update(true);
     chrome.windows.getCurrent().then((win) => createOrPopup(win.id!, true));
   });
   findPalette(colorPalette.value);

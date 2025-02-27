@@ -100,22 +100,27 @@ export class LayoutPanes extends CustomInputElement {
   dragend(e: DragEvent) {
     rmClass(this.#dragEnter)($byClass(this.#dragEnter));
     rmClass(this.#dragging)(this);
-    const $target = e.target as HTMLElement;
-    rmClass('drag-source')($target);
+    rmClass('drag-source')(e.target as HTMLElement);
+    const windowMode = ((this.parentElement as HTMLFormElement)['window-mode'] as HTMLInputElement).checked;
+    this.update(!windowMode);
+  }
+  update(applyValue = false) {
     const newValue = $$('.column:has([data-value])', this)
       .map(($col) => getChildren($col)
         .map(($el) => ($el as HTMLElement).dataset.value as PaneNames[number])
         .filter(isDefined));
     if (!objectEqaul(newValue, this.value, true)) {
-      updateSettings((settings) => ({
-        ...settings,
-        paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
-      }));
-      this.#value = newValue;
       $$<HTMLInputElement>('.hidden input[type="checkbox"], .column:last-child input[type="checkbox"], [data-value="bookmarks"]~.auto-wider input[type="checkbox"]').forEach(($el) => {
         // eslint-disable-next-line no-param-reassign
         $el.checked = false;
       });
+      if (applyValue) {
+        updateSettings((settings) => ({
+          ...settings,
+          paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
+        }));
+        this.#value = newValue;
+      }
       this.fireEvent();
     }
   }
