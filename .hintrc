@@ -25,6 +25,7 @@
     "not and_ff <= 126",
     "not firefox <= 126",
     "not ios_saf <= 18.2",
-    "not safari <= 18.2"
+    "not safari <= 18.2",
+    "not chrome <= 109"
   ]
 }

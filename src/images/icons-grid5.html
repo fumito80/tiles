@@ -142,14 +142,14 @@
     svg.setAttribute('fill', fill);
     svg.setAttribute('width', width);
     svg.setAttribute('height', width);
+    let path = `<circle fill="#${backgroundBaseColor}" filter="url(#hue)" cx="250" cy="300" r="240" />`;
     // let path = `<rect fill="${backgroundBaseColor}" x="20" y="20" width="560" height="560" rx="130" filter="url(#blend)"></rect>`;
-    let path = `<path fill="#${backgroundBaseColor}" filter="url(#hue)" d="
-      M 310 50 A 250 250 0 1 1 130 430 z
-    " transform="scale(1,1) translate(0,0)" />`;
-    svg.insertAdjacentHTML('beforeend', path);
+    // let path = `<path fill="#${backgroundBaseColor}" filter="url(#hue)" d="
+    //   M 310 50 A 250 250 0 1 1 130 430 z
+    // " transform="scale(1,1) translate(0,0)" />`;
     svg.insertAdjacentHTML('beforeend', path);
     path = '<path d="';
-    path += makeConnet(180, (width - rectWidth * 3) / 2 + 20, rectWidth, rx, gap);
+    path += makeConnet(180, (width - rectWidth * 3) / 2 - 20, rectWidth, rx, gap);
     path += '" filter="url(#shadow)" transform="rotate(90) translate(0,-600)" fill="url(#Gradient1)" />'
     path = path.replace(/\s+/g, ' ');
     svg.insertAdjacentHTML('beforeend', path);

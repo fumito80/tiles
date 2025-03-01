@@ -155,7 +155,7 @@ export const initialOptions = {
   favColorPalettes: [] as ColorPalette[],
   showMinimizeAll: true,
   windowMode: true,
-  autoMinimizeApp: true,
+  autoMinimizeApp: false,
 };
 
 export type Panes = PaneNames[number];

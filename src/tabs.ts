@@ -658,6 +658,7 @@ export abstract class TabsBase extends MulitiSelectablePaneBody {
         return;
       }
       chrome.windows.update($window.windowId, { focused: true });
+      store.dispatch('minimizeApp');
     }
   }
   selectItems(dispatch: Dispatch, precount?: number) {
