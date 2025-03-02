@@ -243,7 +243,7 @@ export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
       .join(' ');
     $grid.style.setProperty('grid-template-rows', tmplRows);
   });
-  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% auto auto`);
+  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% max-content auto`);
   if (!paneSizes.widths.length || !paneSizes.heights.length) {
     updateSettings((settings) => ({
       ...settings,

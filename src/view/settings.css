@@ -530,17 +530,13 @@ main:has([name="window-mode"]:not(:checked)) .apply-settings {
   cursor: pointer;
 }
 
+.auto-wider {
+  text-align: center;
+}
+
 .auto-wider.dummy,
-.column:last-child .auto-wider,
+.column:not(:first-child) .auto-wider,
 [data-value="bookmarks"]~.auto-wider {
   visibility: hidden;
   pointer-events: none;
-}
-
-.column:first-child:last-child .auto-wider {
-  display: none;
-}
-
-.auto-wider {
-  text-align: center;
 }

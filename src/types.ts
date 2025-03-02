@@ -111,11 +111,11 @@ export type ColorPalette = [
 ];
 
 export const defaultColorPalette: ColorPalette = [
-  '102542',
-  'F87060',
-  'CDD7D6',
-  'B3A394',
   'FFFFFF',
+  'CDD7D6',
+  '102542',
+  'B3A394',
+  'F87060',
 ];
 
 export type PaneNames = [
@@ -130,7 +130,7 @@ export type Panes2 = (PaneNames[number])[][];
 const panes2 = [
   ['history'],
   ['windows'],
-  ['bookmarks', 'recent-tabs'],
+  ['recent-tabs', 'bookmarks'],
 ] as const satisfies Panes2;
 
 export const initialOptions = {
@@ -138,7 +138,7 @@ export const initialOptions = {
   zoomTabs: false, // Discarded
   zoomHistory: true, // Discarded
   panes2,
-  bookmarksPanes: ['leafs', 'folders'] as const,
+  bookmarksPanes: ['folders', 'leafs'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
   showSwitchTabsWin: false,

@@ -125,7 +125,7 @@ type InitStateKeys = keyof Pick<
 
 function migrate(storage: Pick<State, InitStateKeys>) {
   const { settings, options } = storage;
-  if (settings.paneLayouts?.length === 0) {
+  if (!settings || settings.paneLayouts?.length === 0) {
     return storage;
   }
   const panes = options.panes
