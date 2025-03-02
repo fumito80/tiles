@@ -10,7 +10,8 @@ body {
 open-window,
 .histories .rows .current-date,
 .histories .rows .current-date::before,
-.current-window window-header::after {
+.current-window window-header::after,
+.body-recent-tabs {
   background-color: var(--pane-bg);
   color: var(--pane-color);
 }
@@ -29,7 +30,7 @@ app-main:not(.drag-start) .leaf:hover,
 app-main:not(.drag-start) .folders .marker:not(.hilite):hover::before,
 app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap:hover,
 app-main:not(.drag-start) open-window:not(.tabs-collapsed) .tab-wrap.selected,
-.histories .rows>.history:not(.header-date):hover,
+.histories .rows>.history-item:not(.header-date):hover,
 .date-collapsed~.histories .header-date:hover,
 .date-collapsed~.histories .current-date:hover::after,
 app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover window-header,
@@ -42,8 +43,10 @@ app-main:not(.drag-start) .window.tabs-collapsed:not(:has(open-tab:hover)):hover
 .drag-source,
 .drag-source::before,
 .leaf.selected,
-.history.selected,
-.window:not(.tabs-collapsed) open-tab.focus {
+.history-item.selected,
+.window:not(.tabs-collapsed) open-tab.focus,
+.body-recent-tabs open-tab:hover,
+.body-recent-tabs open-tab.selected {
   background-color: var(--item-hover-bg);
   color: var(--item-hover-color);
 
@@ -78,7 +81,8 @@ app-main:not(.drag-start) {
 
   .leafs,
   .histories,
-  open-window {
+  open-window,
+  .body-recent-tabs {
     &::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, .3);
     }
@@ -86,7 +90,8 @@ app-main:not(.drag-start) {
 
   .leafs,
   .histories,
-  open-window {
+  open-window,
+  .body-recent-tabs {
     &::-webkit-scrollbar-thumb:hover {
       background-color: rgba(255, 255, 255, .5);
     }
@@ -171,17 +176,17 @@ app-main:not(.drag-start) {
   .pin-wrap-top,
   .pin-wrap-bottom {
     .unpin-window {
-      >i {
+      >i::before {
         color: rgba(255, 255, 255, 0.5) !important;
       }
 
       &:hover::after,
       &:focus::after {
-        background-color: rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.3) !important;
       }
 
       &:active::after {
-        background-color: rgba(255, 255, 255, 0.5);
+        background-color: rgba(255, 255, 255, 0.5) !important;
       }
     }
   }
@@ -191,7 +196,7 @@ app-main:not(.theme-dark-pane) {
 
   .pin-wrap-top,
   .pin-wrap-bottom {
-    .unpin-window {
+    button.unpin-window {
       >i {
         color: rgba(0, 0, 0, 0.5) !important;
       }
@@ -274,10 +279,10 @@ app-main:not(.theme-dark-pane) {
   &:not(.searching) .queries {
     &::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, .3);
+    }
 
-      &:hover {
-        background-color: rgba(255, 255, 255, .5);
-      }
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(255, 255, 255, .5);
     }
   }
 
@@ -360,7 +365,8 @@ app-main:not(.theme-dark-pane) {
     }
   }
 
-  .split-h {
+  .split-h,
+  .split-v {
 
     &.mousedown,
     &:hover {
@@ -383,7 +389,7 @@ app-main:not(.theme-dark-pane) {
   .leaf:hover .icon-fa-ellipsis-v,
   .marker:hover .icon-fa-ellipsis-v,
   .tab-wrap:hover .icon-x,
-  .history:hover .icon-x,
+  .history-item:hover .icon-x,
   .window.tabs-collapsed:hover window-header>button>i,
   .window:not(.tabs-collapsed) window-header:hover>button>i,
   .folders .folder:not(.open)>.marker:hover>.title::before {

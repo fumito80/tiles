@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Popup Navi",
+  "name": "TempoGrid",
   "version": "0.22.00",
   "default_locale": "en",
   "description": "Integrated browsing resource manager. Change to your favorite colors to change your mood at work!",
@@ -14,7 +14,7 @@
     "offscreen"
   ],
   "action": {
-    "default_title": "Popup Navi",
+    "default_title": "TempoGrid",
     "default_icon": {
       "48": "icon48.png",
       "128": "icon128.png"
@@ -26,7 +26,7 @@
   },
   "commands": {
     "_execute_action": {
-      "description": "Popup Navi",
+      "description": "TempoGrid",
       "suggested_key": {
         "default": "Alt+P"
       }

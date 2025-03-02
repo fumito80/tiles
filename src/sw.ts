@@ -28,8 +28,7 @@ import {
   addQueryHistory,
   getHtmlHistory,
   map,
-  getPopup,
-  makeThemeCss,
+  createOrPopup,
 } from './common';
 
 import { makeLeaf, makeNode, makeHistory as makeHtmlHistory } from './html';
@@ -123,7 +122,38 @@ type InitStateKeys = keyof Pick<
   State,
   'settings' | 'clientState' | 'options' | 'lastSearchWord'
 >;
-const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options', 'lastSearchWord'];
+
+function migrate(storage: Pick<State, InitStateKeys>) {
+  const { settings, options } = storage;
+  if (settings.paneLayouts?.length === 0) {
+    return storage;
+  }
+  const panes = options.panes
+    .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? options.bookmarksPanes[0] : name), []);
+  const widths = settings.paneLayouts
+    .find((ps) => panes.every((pane, i) => pane === ps[i]?.name))!
+    .map((paneWidth) => (paneWidth.width / initialSettings.width) * 100);
+  const mapping = {
+    histories: ['history'],
+    tabs: ['windows'],
+    bookmarks: ['bookmarks', 'recent-tabs'],
+  };
+  const panes2 = options.panes
+    .map((pane) => mapping[pane as keyof typeof mapping]) as typeof initialOptions.panes2;
+  const [firstPane, secondPane] = options.panes;
+  const wider1 = (options.zoomHistory && firstPane === 'histories')
+    || (options.zoomTabs && firstPane === 'tabs');
+  const wider2 = (options.zoomHistory && secondPane === 'histories')
+    || (options.zoomTabs && secondPane === 'tabs');
+  settings.paneLayouts = [];
+  return {
+    ...storage,
+    options: {
+      ...options, panes2, wider1, wider2, windowMode: false,
+    },
+    settings: { ...settings, paneSizes: { ...initialSettings.paneSizes, widths } },
+  } as const satisfies Pick<State, InitStateKeys>;
+}
 
 async function init(storage: Pick<State, InitStateKeys>) {
   const css = await fetch('./default.css').then((resp) => resp.text());
@@ -141,35 +171,20 @@ async function init(storage: Pick<State, InitStateKeys>) {
   }).then(() => {
     setPopupStyle(options);
   });
-  setHtmlHistory();
+  await setHtmlHistory();
   regsterChromeEvents(updateHistory1500)([chrome.history.onVisited]);
   regsterChromeEvents(updateHistory500)([chrome.history.onVisitRemoved]);
   regsterChromeEvents(updateHistory500)([chrome.sessions.onChanged]);
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
 }
 
-getLocal(...initStateKeys).then(init);
+const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options', 'lastSearchWord'];
 
-chrome.action.onClicked.addListener(async (tab) => {
-  const { settings, options } = await getLocal('settings', 'options');
-  if (!options.windowMode) {
-    return;
-  }
-  const popup = await getPopup();
-  if (popup) {
-    chrome.windows.update(popup.windowId, { focused: true });
-    return;
-  }
-  const variables = makeThemeCss(options.colorPalette);
-  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
-  chrome.windows.create({
-    url: `popup.html?css=${encoded}`,
-    type: 'popup',
-    ...settings.windowSize,
-  }).then((win) => {
-    setLocal({ windowModeInfo: { popupWindowId: win.id!, currentWindowId: tab.windowId } });
-  });
-});
+getLocal(...initStateKeys)
+  .then(migrate)
+  .then(init);
+
+chrome.action.onClicked.addListener((tab) => createOrPopup(tab.windowId));
 
 // Messagings popup to background
 
@@ -197,7 +212,7 @@ export const mapMessagesPtoB = {
   [CliMessageTypes.getSvgBrowserFavicon]: ({ payload }: PayloadAction<ColorPalette>) => (
     getSvgBrowserIcon(payload)
   ),
-  [CliMessageTypes.updateWindow]: ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
+  [CliMessageTypes.updateWindow]: async ({ payload }: PayloadAction<PayloadUpdateWindow>) => {
     const { windowId, updateInfo } = payload;
     if (windowId === chrome.windows.WINDOW_ID_NONE) {
       return Promise.reject();
@@ -213,7 +228,9 @@ export const mapMessagesPtoB = {
       }
     });
   },
-  [CliMessageTypes.setThemeColor]: ({ payload: colorPalette }: PayloadAction<ColorPalette>) => {
+  [CliMessageTypes.setThemeColor]: async (
+    { payload: colorPalette }: PayloadAction<ColorPalette>,
+  ) => {
     setToolbarIcon(colorPalette);
     return getLocal('options').then(({ options }) => {
       const { css, windowMode } = options;
@@ -333,6 +350,12 @@ export const mapMessagesPtoB = {
         return false;
       });
     }),
+  [CliMessageTypes.changeWindowMode]: ({ payload: windowMode }: PayloadAction<boolean>) => {
+    if (!windowMode) {
+      return setHtmlHistory();
+    }
+    return Promise.resolve();
+  },
 };
 
 setMessageListener(mapMessagesPtoB);

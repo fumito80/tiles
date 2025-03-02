@@ -9,6 +9,8 @@ import { HeaderTabs, Tabs } from './tabs';
 import DragAndDropEvents from './drag-drop';
 import { registerActions } from './store';
 import { Options } from './types';
+import { $ } from './client';
+import { HeaderRecentTabs, RecentTabs } from './recent-tabs';
 
 type Components = {
   $appMain: AppMain,
@@ -21,6 +23,8 @@ type Components = {
   $history: History,
   $formSearch: FormSearch,
   dragAndDropEvents: DragAndDropEvents,
+  $headerRecentTabs: HeaderRecentTabs,
+  $recentTabs: RecentTabs,
 };
 
 export function storeMapping(options: Options, components: Components) {
@@ -35,6 +39,8 @@ export function storeMapping(options: Options, components: Components) {
     $history,
     $formSearch,
     dragAndDropEvents,
+    $recentTabs,
+    $headerRecentTabs,
   } = components;
 
   // Actions
@@ -49,6 +55,8 @@ export function storeMapping(options: Options, components: Components) {
     ...$history.actions(),
     ...$headerHistory.actions(),
     ...dragAndDropEvents.actions(),
+    ...$recentTabs.actions(),
+    ...$headerRecentTabs.actions(),
   };
 
   // Build store
@@ -59,16 +67,14 @@ export function storeMapping(options: Options, components: Components) {
 
   // Dispatch actions
 
+  const $mainMenuHeader = $('.col-grid.end .pane-header') as HeaderLeafs | HeaderTabs | HeaderHistory | HeaderRecentTabs;
+
   // Broadcast type
 
-  store.actionContext($headerLeafs, 'setIncludeUrl').map(
+  store.actionContext($mainMenuHeader, 'setIncludeUrl').map(
     $appMain.setIncludeUrl.bind($appMain),
     $history.setIncludeUrl.bind($history),
     $formSearch.resetQuery.bind($formSearch),
-  );
-
-  store.actionContext($headerLeafs, 'zoomApp').map(
-    $appMain.setZoomApp.bind($appMain),
   );
 
   store.actionContext($formSearch, 'clearSearch').map(
@@ -83,6 +89,7 @@ export function storeMapping(options: Options, components: Components) {
     $tabs.multiSelect.bind($tabs),
     $headerHistory.multiSelPanes.bind($headerHistory),
     $history.multiSelect.bind($history),
+    $recentTabs.multiSelect.bind($recentTabs),
     $formSearch.multiSelPanes.bind($formSearch),
   );
 
@@ -107,6 +114,16 @@ export function storeMapping(options: Options, components: Components) {
     $tabs.toggleTabCollapsedAll.bind($tabs),
   );
 
+  store.actionContext($mainMenuHeader, 'setAppZoom').map(
+    $appMain.setAppZoom.bind($appMain),
+    $headerLeafs.setZoomAppMenu.bind($headerLeafs),
+    $headerHistory.setZoomAppMenu.bind($headerHistory),
+    $headerTabs.setZoomAppMenu.bind($headerTabs),
+    $headerRecentTabs.setZoomAppMenu.bind($headerRecentTabs),
+    $tabs.setAppZoom.bind($tabs),
+    $folders.setAppZoom.bind($folders),
+  );
+
   // focus subscribe unit
 
   store.subscribeContext($appMain)
@@ -115,7 +132,8 @@ export function storeMapping(options: Options, components: Components) {
     .map([$appMain, 'keydownMain'], $appMain.keydown)
     .map([$formSearch, 'searching'], $appMain.searching)
     .map([$headerTabs, 'minimizeAll'], $appMain.minimize)
-    .map([$tabs, 'windowAction'], $appMain.minimizeOthers);
+    .map([$tabs, 'windowAction'], $appMain.minimizeOthers)
+    .map([$tabs, 'minimizeApp'], $appMain.autoMinimize);
 
   store.subscribeContext($leafs)
     .map([$leafs, 'clickLeafs'], $leafs.clickItem)
@@ -147,13 +165,15 @@ export function storeMapping(options: Options, components: Components) {
     .map([$tabs, 'openTabsFromHistory'], $tabs.openTabsFromHistory)
     .map([$tabs, 'activateTab'], $tabs.activateTab)
     .map([$leafs, 'mouseoverLeafs'], $tabs.mouseoverLeaf)
-    .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeaf)
+    .map([$leafs, 'mouseoutLeafs'], $tabs.mouseoutLeafOrRecentTabs)
     .map([$leafs, 'nextTabByWheel'], $tabs.nextTabByWheel)
     .map([$leafs, 'mouseoverMenuTabsFind'], $tabs.mouseoverMenuTabsFind)
     .map([$leafs, 'mouseoutMenuTabsFind'], $tabs.clearFocus)
     .map([$folders, 'mouseoverFolders'], $tabs.mouseoverLeaf)
     .map([$appMain, 'focusWindow'], $tabs.focusWindow)
-    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeaf);
+    .map([$folders, 'mouseoutFolders'], $tabs.mouseoutLeafOrRecentTabs)
+    .map([$recentTabs, 'mouseoverRecentTabs'], $tabs.mouseoverRecentTabs)
+    .map([$recentTabs, 'mouseoutRecentTabs'], $tabs.mouseoutLeafOrRecentTabs);
 
   store.subscribeContext($history)
     .map([$appMain, 'updateWindowHeight'], $history.resetHistory);
@@ -186,6 +206,15 @@ export function storeMapping(options: Options, components: Components) {
     .map('addBookmarksHistories', $history.addBookmarks)
     .map('openWindowFromHistory', $history.openWindowFromHistory)
     .map('updateHistory', $history.refreshHistory);
+
+  store.subscribeContext($recentTabs)
+    .map([$recentTabs, 'clickRecentTab'], $recentTabs.clickItem)
+    .map([$tabs, 'onCreatedWindow'], $recentTabs.refresh)
+    .map([$tabs, 'onRemovedWindow'], $recentTabs.refresh)
+    .map([$tabs, 'onUpdateTab'], $recentTabs.refresh)
+    .map([$tabs, 'onActivatedTab'], $recentTabs.onActivated)
+    .map([$recentTabs, 'mousedownRecentTabs'], $recentTabs.mousedownItem)
+    .map([$recentTabs, 'mouseupRecentTabs'], $recentTabs.mouseupItem);
 
   store.context($formSearch)
     .map('inputQuery', $formSearch.inputQuery)

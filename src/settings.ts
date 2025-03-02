@@ -3,7 +3,7 @@ import * as bootstrap from 'bootstrap';
 import {
   State, ColorPalette, BkgMessageTypes, CliMessageTypes,
 } from './types';
-import { CustomInputElement } from './settings-layout';
+import { CustomInputElement, LayoutPanes } from './settings-layout';
 import { InputMonacoEditor, SelectEditorTheme } from './monaco-editor';
 import { setToolbarIcon } from './draw-svg';
 import {
@@ -17,8 +17,7 @@ import {
   setPopupStyle,
   getLocal,
   postMessage,
-  makeThemeCss,
-  getPopup,
+  createOrPopup,
 } from './common';
 import {
   $, $$, $byTag, $byClass, $byId,
@@ -49,7 +48,7 @@ class ColorPaletteClass extends CustomInputElement {
   #inputs: HTMLInputElement[];
   constructor() {
     super();
-    this.#inputs = [...this.children] as HTMLInputElement[];
+    this.#inputs = getChildren<HTMLInputElement>(this);
     this.#inputs.forEach(addListener('change', () => {
       this.value = this.#inputs.map((input) => input.value.substring(1)) as ColorPalette;
     }));
@@ -60,7 +59,7 @@ class ColorPaletteClass extends CustomInputElement {
   set value(value: ColorPalette) {
     this.#value = value;
     value.forEach((color, i) => {
-      const input = this.children[i] as HTMLInputElement;
+      const input = getChildren<HTMLInputElement>(this)[i];
       input.value = `#${color}`;
     });
     this.fireEvent();
@@ -189,6 +188,10 @@ function saveOptions(inputs: Inputs) {
       setPopupStyle(payload);
       postMessage({ type: BkgMessageTypes.applyStyle, payload });
     }
+    if (name === 'window-mode') {
+      const payload = windowMode;
+      postMessage({ type: CliMessageTypes.changeWindowMode, payload });
+    }
   };
 }
 
@@ -295,20 +298,8 @@ function initOthers() {
   }
   $byClass('add-fav-palette')?.addEventListener('click', () => favPalettes.add(colorPalette.value));
   $byClass('apply-settings')?.addEventListener('click', () => {
-    getLocal('options').then(({ options }) => {
-      const variables = makeThemeCss(options.colorPalette);
-      const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
-      const url = `popup.html?css=${encoded}`;
-      getPopup().then((popup) => {
-        if (popup) {
-          chrome.tabs.update(
-            popup.id!,
-            { url },
-            () => chrome.windows.update(popup.windowId, { focused: true }),
-          );
-        }
-      });
-    });
+    $byTag<LayoutPanes>('layout-panes').update(true);
+    chrome.windows.getCurrent().then((win) => createOrPopup(win.id!, true));
   });
   findPalette(colorPalette.value);
   chrome.runtime.onMessage.addListener((message) => {
@@ -319,6 +310,9 @@ function initOthers() {
         colorPalette.value = getNewColorPalette(colorPalette.value, options.colorPalette);
       });
     }
+  });
+  chrome.tabs.setZoomSettings({
+    scope: 'per-tab',
   });
 }
 
@@ -338,7 +332,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
   insertHTML('beforeend', theme.dark)($byId('dark-theme'));
   insertHTML('beforeend', theme.other)($byId('mix-theme'));
 
-  const $selected = $$('.tab-pane > div').find((el) => ([...el.children] as HTMLElement[]).every(
+  const $selected = $$('.tab-pane > div').find((el) => getChildren(el).every(
     (color, i) => color.dataset.color === options.colorPalette[i],
   ));
   if ($selected) {
@@ -355,8 +349,7 @@ getLocal('settings', 'options').then(({ settings: { theme }, options }) => {
     if (!hasClass($target.parentElement ?? undefined, 'tab-pane')) {
       return;
     }
-    const palette = ([...$target.children] as HTMLElement[])
-      .map((el) => el.dataset.color as string) as ColorPalette;
+    const palette = getChildren($target).map((el) => el.dataset.color as string) as ColorPalette;
     $byTag<ColorPaletteClass>('color-palette')!.value = palette;
     findPalette(palette);
   })($byClass('tab-content')!);

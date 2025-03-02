@@ -4,18 +4,16 @@ import {
   ApplyStyle, ColorPalette, MulitiSelectables, Options, Settings,
 } from './types';
 import {
-  setEvents, addListener, last, getLocal, pipe, getNextIndex, updateSettings,
-  chromeEventFilter, cssid, makeCss, pick,
+  setEvents, getLocal, pipe, getNextIndex, updateSettings,
+  chromeEventFilter, cssid, makeCss, pick, setPopupStyle,
+  addListener,
 } from './common';
 import { setZoomSetting } from './zoom';
 import {
-  $byClass, $$byClass,
+  $byClass,
+  $$byClass,
   hasClass, toggleClass,
-  setResizeHandler,
-  setSplitterHandler,
-  resizeSplitHandler,
   resizeHeightHandler,
-  getEndPaneMinWidth,
   showMenu,
   rmClass,
   addClass,
@@ -29,8 +27,10 @@ import {
   setBrowserFavicon,
   addChild,
   preShowMenu,
-  setZoomAppMenu,
-  updateAppZoom,
+  splitColMouseDownHandler,
+  splitRowMouseDownHandler,
+  setMouseEventListener,
+  setPopupHeight,
 } from './client';
 import {
   makeAction, Changes, IPubSubElement, StoreSub, Store, States,
@@ -47,7 +47,7 @@ const excludeClasses = [
   'collapse-tabs',
   'collapse-tab',
   'window', 'window-title', 'tab-title',
-  'history', 'history-title',
+  'history-item', 'history-title',
   'main-menu-button',
   'tabs-menu-button',
   'folder-menu-button',
@@ -59,9 +59,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   #settings!: Settings;
   #randomPalettes = [] as ColorPalette[];
   #randomPalettesIndex = 0;
-  // #timerResizeWindow!: ReturnType<typeof setTimeout>;
   #windowId!: number;
   #shortcuts!: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>[] | undefined;
+  #appZoom!: number;
   init(options: Options, settings: Settings, isSearching: boolean) {
     this.#options = options;
     this.#settings = settings;
@@ -71,40 +71,19 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       this.#windowId = win.id!;
     });
 
-    const $paneBodies = $$byClass('pane-body', this);
-    const $endHeaderPane = last($$byClass('pane-header', this))!;
-
-    $$byClass('split-h', this).forEach(($splitter, i) => {
-      const $targetPane = $paneBodies[i];
-      addListener('mousedown', (e: MouseEvent) => {
-        (e.currentTarget as HTMLElement).classList.add('mousedown');
-        const endPaneMinWidth = getEndPaneMinWidth($endHeaderPane);
-        const subWidth = $paneBodies
-          .filter((el) => el !== $targetPane && !hasClass(el, 'end'))
-          .reduce((acc, el) => acc + el.offsetWidth, 0);
-        const adjustMouseX = e.clientX - $splitter.offsetLeft;
-        const handler = resizeSplitHandler(
-          $targetPane,
-          $splitter,
-          subWidth + 18,
-          adjustMouseX,
-          endPaneMinWidth,
-        );
-        setSplitterHandler(handler);
-      })($splitter);
-    });
-
-    if (!options.windowMode) {
-      $byClass('resize-y')?.addEventListener('mousedown', () => setResizeHandler(resizeHeightHandler));
-    }
-
+    const $$colGrids = $$byClass('col-grid', this);
     const panes = [
-      ...(options.zoomHistory ? [$byClass('histories', this)!] : []),
-      ...(options.zoomTabs ? [$byClass('tabs', this)!] : []),
+      ...(options.wider1 ? [$$colGrids[0]] : []),
+      ...(options.wider2 ? [$$colGrids[1]] : []),
     ];
     setEvents([...panes], { mouseenter: setZoomSetting(this, options) });
-    toggleClass('disable-zoom-history', !options.zoomHistory)(this);
-    toggleClass('disable-zoom-tabs', !options.zoomTabs)(this);
+    const [zoomTabs, zoomHistory] = panes
+      .reduce<[boolean, boolean]>(([tabs, history], $colGrid) => ([
+        tabs || !!$byClass('windows', $colGrid),
+        history || !!$byClass('history', $colGrid),
+      ]), [false, false] as const);
+    toggleClass('disable-zoom-history', !zoomHistory)(this);
+    toggleClass('disable-zoom-tabs', !zoomTabs)(this);
     getLocal('settings', 'options').then(({ settings: { palettes } }) => {
       const palettesAll = Object.values(palettes)
         .flatMap((palette) => palette.map((p) => p.map((pp) => pp.color) as ColorPalette));
@@ -125,6 +104,25 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           shiftKey: /Shift/.test(cmd.shortcut!),
           metaKey: /Command/.test(cmd.shortcut!),
         }));
+    });
+    chrome.tabs.setZoomSettings({
+      mode: 'disabled',
+      scope: 'per-tab',
+    });
+
+    $$byClass('split-h').forEach(addListener('mousedown', splitColMouseDownHandler(this)));
+
+    $$byClass('col-grid').forEach(($colGrid, i) => {
+      $$byClass('split-v', $colGrid).forEach(addListener('mousedown', splitRowMouseDownHandler(this, i)));
+    });
+
+    if (options.windowMode) {
+      return;
+    }
+
+    $byClass('resize-y')?.addEventListener('mousedown', (e) => {
+      (e.target as HTMLElement).classList.add('mousedown');
+      setMouseEventListener(resizeHeightHandler(this), setPopupHeight, true);
     });
   }
   async keydown({ newValue: e }: Changes<'keydownMain'>, _: any, states: States, store: StoreSub) {
@@ -149,9 +147,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       changeColorTheme(palette);
     } else if (e.shiftKey && e.ctrlKey) {
       const {
-        bookmarks, tabs, histories, all: alls,
+        bookmarks, windows, history, 'recent-tabs': recentTabs, all: alls,
       } = states.multiSelPanes ?? {};
-      const all = !(bookmarks || tabs || histories || alls);
+      const all = !(bookmarks || windows || history || recentTabs || alls);
       store.dispatch('multiSelPanes', { all });
     } else {
       const isShortcut = (e.key === 'Escape' && !e.shiftKey) || this.#shortcuts?.some((keys) => (
@@ -194,7 +192,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       return;
     }
     store.dispatch('multiSelPanes', {
-      bookmarks: false, tabs: false, histories: false, all: false,
+      bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: false,
     });
     if (hasClass($target, 'leaf-menu-button')) {
       if (this.#options.findTabsFirst && this.#options.bmAutoFindTabs) {
@@ -205,7 +203,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           pipe(rmClass('domain', 'prefix'), addClass(findMode))($leaf);
         }
       }
-      showMenu('leaf-menu')(e);
+      const appZoom = await store.getStates('setAppZoom');
+      showMenu('leaf-menu', appZoom)(e);
       store.dispatch('multiSelPanes', { bookmarks: false, all: false });
       return;
     }
@@ -214,13 +213,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
     }
     store.dispatch('focusQuery');
   }
-  // eslint-disable-next-line class-methods-use-this
-  async changeFocusedWindow({ newValue: windowId }: Changes<'changeFocusedWindow'>) {
-    const { options: { windowMode } } = await getLocal('options');
-    if (windowMode) {
-      return;
-    }
-    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+  async changeFocusedWindow({ newValue: { windowId } }: Changes<'changeFocusedWindow'>) {
+    if (this.#options.windowMode || windowId === chrome.windows.WINDOW_ID_NONE) {
       return;
     }
     window.close();
@@ -229,7 +223,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   resizeWindow({ newValue: popupWindow }: Changes<'resizeWindow'>, _: any, __: any, store: StoreSub) {
     if (popupWindow.state === 'normal' && popupWindow.focused) {
       const windowSize = pick('width', 'height', 'top', 'left')(popupWindow) as NonNullable<Settings['windowSize']>;
-      updateSettings({ windowSize });
+      updateSettings((settings) => ({ ...settings, windowSize }));
       store.dispatch('updateWindowHeight', popupWindow.height);
     }
   }
@@ -257,7 +251,8 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   }
   applyStyle({ newValue: { css, colorPalette } }: Changes<'applyStyle'>) {
     setBrowserFavicon(colorPalette);
-    $byTag('style').textContent = makeCss(this.#settings, colorPalette, css);
+    const [sheet] = document.adoptedStyleSheets;
+    sheet.replace(makeCss(this.#settings, colorPalette, css));
     setThemeClass($byTag('app-main'), colorPalette);
   }
   minimizeOthers(changes: Changes<'windowAction'>) {
@@ -268,9 +263,26 @@ export class AppMain extends HTMLElement implements IPubSubElement {
   minimize() {
     chrome.windows.update(this.#windowId, { state: 'minimized' });
   }
-  // eslint-disable-next-line class-methods-use-this
-  setZoomApp(changes: Changes<'zoomApp'>) {
-    updateAppZoom(changes.newValue).then(setZoomAppMenu);
+  autoMinimize() {
+    if (this.#options.windowMode && this.#options.autoMinimizeApp) {
+      this.minimize();
+    }
+  }
+  setAppZoom({ newValue }: Changes<'setAppZoom'>) {
+    const [width, height] = this.#options.windowMode
+      ? ['unset', `calc(100vh / ${newValue} - 5px)`]
+      : [`${this.#settings.width / newValue}px`, `${this.#settings.height / newValue}px`];
+    Object.assign(document.body.style, {
+      width,
+      height,
+      zoom: newValue,
+    });
+    $byClass('draggable-clone')!.style.maxWidth = `calc(300px / ${newValue} / ${devicePixelRatio})`;
+    this.#appZoom = newValue;
+    setPopupStyle(this.#options);
+  }
+  get appZoom() {
+    return this.#appZoom;
   }
   actions() {
     return {
@@ -287,10 +299,11 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       multiSelPanes: makeAction({
         initValue: {
           bookmarks: false,
-          tabs: false,
-          histories: false,
+          windows: false,
+          history: false,
+          'recent-tabs': false,
           all: false,
-        } as MulitiSelectables,
+        } satisfies MulitiSelectables as MulitiSelectables,
       }),
       keydownMain: makeAction({
         initValue: {
@@ -308,7 +321,7 @@ export class AppMain extends HTMLElement implements IPubSubElement {
         noStates: true,
       }),
       changeFocusedWindow: makeAction({
-        initValue: 0,
+        initValue: undefined as { windowId: number } | undefined,
         force: true,
       }),
       resizeWindow: makeAction({
@@ -327,11 +340,10 @@ export class AppMain extends HTMLElement implements IPubSubElement {
       focusWindow: {},
     };
   }
-  // eslint-disable-next-line class-methods-use-this
   connect(store: Store) {
     if (!this.#options.windowMode) {
       chrome.windows.onFocusChanged.addListener((windowId) => {
-        store.dispatch('changeFocusedWindow', windowId, true);
+        store.dispatch('changeFocusedWindow', { windowId }, true);
       }, chromeEventFilter);
       return;
     }

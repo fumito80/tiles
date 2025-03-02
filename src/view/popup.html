@@ -6,15 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="popup.css">
     <script src="popup.js" async></script>
-    <title>Popup Navi</title>
+    <title>TempoGrid</title>
 </head>
 
-<body style="overflow: hidden; min-width: 500px; width: 800px">
+<body style="overflow: hidden; width: 800px">
     <app-main>
-        <div class="resize-x"></div>
-        <div class="split-h pane3"></div>
-        <div class="split-h pane2"></div>
-        <div class="split-h pane1"></div>
         <div class="shade-left"></div>
         <div class="shade-right"></div>
         <i class="zoom-out icon-fa-angle-right left"></i>
@@ -23,162 +19,201 @@
     </app-main>
     <div class="resize-y"></div>
     <div class="components">
-        <div is="header-history" class="pane-header header-histories">
-            <i class="icon-history" title="HISTORY"></i>
-            <button class="toggle-recently-closed init" type="button" title="Toggle display of recently closed tabs"><i
-                    class="icon-recently-closed-tab"></i></button>
-            <button class="collapse-history-date init" type="button" title="Toggle collapse by date">
-                <i class="icon-calendar-plus-solid"></i>
-                <i class="icon-calendar-minus-solid"></i>
-            </button>
-            <div class="query-wrap"></div>
-            <div class="menu-button">
-                <button class="main-menu-button" type="button">
-                    <i class="icon-fa-ellipsis-v"></i>
+        <div class="history">
+            <div is="header-history" class="pane-header header-histories">
+                <i class="icon-history" title="HISTORY"></i>
+                <button class="toggle-recently-closed init" type="button" title="Toggle display of recently closed tabs"><i
+                        class="icon-recently-closed-tab"></i></button>
+                <button class="collapse-history-date init" type="button" title="Toggle collapse by date">
+                    <i class="icon-calendar-plus-solid"></i>
+                    <i class="icon-calendar-minus-solid"></i>
                 </button>
-                <div class="main-menu" role="menu">
-                    <div role="menuitem" class="include-url" title="Or search title only"><i
-                            class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
-                        title="Other ways to start: Long press item/Press Ctrl+Shift key">
-                        <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+                <div class="query-wrap"></div>
+                <div class="menu-button">
+                    <button class="main-menu-button" type="button">
+                        <i class="icon-fa-ellipsis-v"></i>
+                    </button>
+                    <div class="main-menu" role="menu">
+                        <div role="menuitem" class="include-url" title="Or search title only"><i
+                                class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
+                            title="Other ways to start: Long press item/Press Ctrl+Shift key">
+                            <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-parent fav-color-themes"
+                            title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
+                                class="icon-color-palette"></i>Favorite
+                            color themes
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="zoom-app-minus const-color" type="button" title="-5%"><i class="icon-minus"></i></button><button class="zoom-app-plus const-color" type="button" title="+5%"><i class="icon-plus"></i></button></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                     </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-parent fav-color-themes"
-                        title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
-                            class="icon-color-palette"></i>Favorite
-                        color themes
-                    </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="const-color" type="button" data-value="zoom-app-minus" title="-5%"><i class="icon-minus"></i></button><button class="const-color" type="button" data-value="zoom-app-plus" title="+5%"><i class="icon-plus"></i></button></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
+                <popup-menu role="menu">
+                    <div role="menuitem" class="open-new-window"><i class="icon-new-window"></i>Open in new window
+                    </div>
+                    <div role="menuitem" class="open-incognito"><i class="icon-incognito"></i>Open in incognito window
+                    </div>
+                </popup-menu>
             </div>
-            <popup-menu role="menu">
-                <!-- <div role="menuitem" class="open-new-tab"><i class="icon-tab-plus"></i>Open in new tab</div> -->
-                <div role="menuitem" class="open-new-window"><i class="icon-new-window"></i>Open in new window
-                </div>
-                <div role="menuitem" class="open-incognito"><i class="icon-incognito"></i>Open in incognito window
-                </div>
-            </popup-menu>
+            <div is="body-history" class="pane-body histories v-scroll init">
+                <div class="rows"></div>
+                <div class="v-scroll-fake-bottom"></div>
+            </div>    
         </div>
-        <div is="header-tabs" class="pane-header header-tabs window-order-asc">
-            <i class="icon-tabs" title="OPEN TABS"></i>
-            <div class="tabs-info">
-                <div class="searches-tabs"><i class="icon-fa-search"></i>
-                    <div class="count-selected"></div>
-                    <!-- <button class="wheel-select-tab">
-                        <i class="icon-mouse"></i>
-                    </button> -->
-                </div>
-                <div class="searches-bookmarks"><i class="bookmark-find"></i>
-                    <div class="count-selected"></div>
-                </div>
-            </div>
-            <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
-                    class="icon-plus"></i></button>
-            <button class="minimize-all" title="Minimize others"><i class="icon-minimize"></i></button>
-            <button class="tab-order-asc" type="button" title="Toggle asc/desc of windows order by created"><i
-                    class="icon-sort-desc"></i></button>
-            <button class="win-prev" type="button" title="Previous window"><i class="icon-arrow-up"></i></button>
-            <button class="win-next" type="button" title="Next window"><i class="icon-arrow-down"></i></button>
-            <button class="collapse-tabs" type="button" title="Toggle icon/list view of all windows"><i
-                    class="icon-list"></i><i class="icon-grid"></i></button>
-            <button class="focus-current-tab" type="button" title="Scroll to current window and highlight"><i
-                    class="icon-current-tab"></i></button>
-            <div class="query-wrap"></div>
-            <div class="menu-button">
-                <button class="main-menu-button" type="button">
-                    <i class="icon-fa-ellipsis-v"></i>
-                </button>
-                <div class="main-menu" role="menu">
-                    <div role="menuitem" class="include-url" title="Or search title only"><i
-                            class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
-                        title="Other ways to start: Long press item/Press Ctrl+Shift key">
-                        <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+        <div class="windows">
+            <div is="header-tabs" class="pane-header header-tabs window-order-asc">
+                <i class="icon-tabs" title="OPEN TABS"></i>
+                <div class="tabs-info">
+                    <div class="searches-tabs"><i class="icon-fa-search"></i>
+                        <div class="count-selected"></div>
                     </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-parent fav-color-themes"
-                        title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
-                            class="icon-color-palette"></i>Favorite
-                        color themes
+                    <div class="searches-bookmarks"><i class="bookmark-find"></i>
+                        <div class="count-selected"></div>
                     </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="const-color" type="button" data-value="zoom-app-minus" title="-5%"><i class="icon-minus"></i></button><button class="const-color" type="button" data-value="zoom-app-plus" title="+5%"><i class="icon-plus"></i></button></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
+                <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
+                        class="icon-plus"></i></button>
+                <button class="minimize-all" title="Minimize others"><i class="icon-minimize"></i></button>
+                <button class="tab-order-asc" type="button" title="Toggle asc/desc of windows order by created"><i
+                        class="icon-sort-desc"></i></button>
+                <button class="win-prev" type="button" title="Previous window"><i class="icon-arrow-up"></i></button>
+                <button class="win-next" type="button" title="Next window"><i class="icon-arrow-down"></i></button>
+                <button class="collapse-tabs" type="button" title="Toggle icon/list view of all windows"><i
+                        class="icon-list"></i><i class="icon-grid"></i></button>
+                <button class="focus-current-tab" type="button" title="Scroll to current window and highlight"><i
+                        class="icon-current-tab"></i></button>
+                <div class="query-wrap"></div>
+                <div class="menu-button">
+                    <button class="main-menu-button" type="button">
+                        <i class="icon-fa-ellipsis-v"></i>
+                    </button>
+                    <div class="main-menu" role="menu">
+                        <div role="menuitem" class="include-url" title="Or search title only"><i
+                                class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
+                            title="Other ways to start: Long press item/Press Ctrl+Shift key">
+                            <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-parent fav-color-themes"
+                            title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
+                                class="icon-color-palette"></i>Favorite
+                            color themes
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="zoom-app-minus const-color" type="button" title="-5%"><i class="icon-minus"></i></button><button class="zoom-app-plus const-color" type="button" title="+5%"><i class="icon-plus"></i></button></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
+                    </div>
+                </div>
+                <popup-menu role="menu">
+                    <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
+                    </div>
+                    <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Re-open in incognito
+                        window
+                    </div>
+                </popup-menu>
             </div>
-            <popup-menu role="menu">
-                <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
+            <div is="body-tabs" class="pane-body tabs">
+                <div class="pin-wrap-top"></div>
+                <div class="tabs-wrap">
+                    <div class="windows-wrap"></div>
+                    <div class="new-window">
+                        <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
+                                class="icon-plus"></i></button>
+                    </div>
                 </div>
-                <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Re-open in incognito
-                    window
-                </div>
-            </popup-menu>
+                <div class="pin-wrap-bottom"></div>
+            </div>    
         </div>
-        <div is="header-leafs" class="pane-header header-leafs">
-            <i class="icon-bookmarks" title="BOOKMARKS"></i>
-            <div class="query-wrap"></div>
-            <button class="pin-bookmark" title="Click to bookmark current page or works as drag & drop it" type="button"
-                draggable="true"></button>
-            <div class="menu-button">
-                <button class="main-menu-button" type="button">
-                    <i class="icon-fa-ellipsis-v"></i>
-                </button>
-                <div class="main-menu" role="menu">
-                    <div role="menuitem" data-value="add-bookmark-text"><i class="icon-bookmarks"></i>Add new bookmark
+        <div class="bookmarks">
+            <div is="header-leafs" class="pane-header header-bookmarks">
+                <i class="icon-bookmarks" title="BOOKMARKS"></i>
+                <div class="query-wrap"></div>
+                <button class="pin-bookmark" title="Click to bookmark current page or works as drag & drop it" type="button"
+                    draggable="true"></button>
+                <div class="menu-button">
+                    <button class="main-menu-button" type="button">
+                        <i class="icon-fa-ellipsis-v"></i>
+                    </button>
+                    <div class="main-menu" role="menu">
+                        <div role="menuitem" data-value="add-bookmark-text"><i class="icon-bookmarks"></i>Add new bookmark
+                        </div>
+                        <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="include-url" title="Or search title only"><i
+                                class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
+                            title="Other ways to start: Long press item/Press Ctrl+Shift key">
+                            <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-parent fav-color-themes"
+                            title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
+                                class="icon-color-palette"></i>Favorite
+                            color themes
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="zoom-app-minus const-color" type="button" title="-5%"><i class="icon-minus"></i></button><button class="zoom-app-plus const-color" type="button" title="+5%"><i class="icon-plus"></i></button></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                     </div>
-                    <div role="menuitem" data-value="add-folder"><i class="icon-fa-folder-plus"></i>Add new folder</div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="include-url" title="Or search title only"><i
-                            class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
-                        title="Other ways to start: Long press item/Press Ctrl+Shift key">
-                        <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
-                    </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-parent fav-color-themes"
-                        title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
-                            class="icon-color-palette"></i>Favorite
-                        color themes
-                    </div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="const-color" type="button" data-value="zoom-app-minus" title="-5%"><i class="icon-minus"></i></button><button class="const-color" type="button" data-value="zoom-app-plus" title="+5%"><i class="icon-plus"></i></button></div>
-                    <hr aria-hidden="true">
-                    <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
                 </div>
+                <popup-menu role="menu">
+                    <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
+                    </div>
+                    <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Open in incognito window
+                    </div>
+                </popup-menu>
             </div>
-            <popup-menu role="menu">
-                <!-- <div role="menuitem" data-value="open-new-tab"><i class="icon-tab-plus"></i>Open in new tab</div> -->
-                <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
-                </div>
-                <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Open in incognito window
-                </div>
-            </popup-menu>
+            <div is="body-leafs" class="pane-body leafs"></div>
+            <div class="split-h split-bookmarks"></div>
+            <div is="body-folders" class="pane-body folders"></div>
         </div>
-        <div class="pane-header header-folders"></div>
-        <div is="body-leafs" class="pane-body leafs"></div>
-        <div is="body-folders" class="pane-body folders"></div>
-        <div is="body-history" class="pane-body histories v-scroll init">
-            <div class="rows"></div>
-            <div class="v-scroll-fake-bottom"></div>
-        </div>
-        <div is="body-tabs" class="pane-body tabs">
-            <div class="pin-wrap-top"></div>
-            <div class="tabs-wrap">
-                <div class="windows-wrap"></div>
-                <div class="new-window">
-                    <button class="new-window-plus" title="Open new window/Drop item to open in new window"><i
-                            class="icon-plus"></i></button>
+        <div class="recent-tabs">
+            <div is="header-recent-tabs" class="pane-header header-recent-tabs">
+                <i class="icon-recent-tabs" title="RECENT TABS"></i>
+                <div class="query-wrap"></div>
+                <div class="menu-button">
+                    <button class="main-menu-button" type="button">
+                        <i class="icon-fa-ellipsis-v"></i>
+                    </button>
+                    <div class="main-menu" role="menu">
+                        <div role="menuitem" class="include-url" title="Or search title only"><i
+                                class="icon-fa-search"></i>Searches both URL and title<i class="icon-check-solid"></i></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="start-multi-select" class="start-multi-select"
+                            title="Other ways to start: Long press item/Press Ctrl+Shift key">
+                            <i class="icon-check-all"></i>Multi-select mode<i class="icon-info"></i>
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-parent fav-color-themes"
+                            title="Press F2 for rotate favorites&#13;&#10;Press F8 for randomly pick from palettes"><i
+                                class="icon-color-palette"></i>Favorite
+                            color themes
+                        </div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" class="menu-special menu-zoom-app"><i class="icon-zoom-app"></i>Zoom<span></span><button class="zoom-app-minus const-color" type="button" title="-5%"><i class="icon-minus"></i></button><button class="zoom-app-plus const-color" type="button" title="+5%"><i class="icon-plus"></i></button></div>
+                        <hr aria-hidden="true">
+                        <div role="menuitem" data-value="settings"><i class="icon-fa-cog"></i>Settings</div>
+                    </div>
                 </div>
+                <popup-menu role="menu">
+                    <div role="menuitem" data-value="open-new-window"><i class="icon-new-window"></i>Open in new window
+                    </div>
+                    <div role="menuitem" data-value="open-incognito"><i class="icon-incognito"></i>Re-open in incognito
+                        window
+                    </div>
+                </popup-menu>
             </div>
-            <div class="pin-wrap-bottom"></div>
+            <div is="body-recent-tabs" class="pane-body body-recent-tabs"></div>
         </div>
         <form is="form-search" class="form-query" autocomplete="off">
             <button type="submit" class="submit const-color" tabindex="-1"><i class="icon-fa-search"></i></button>
@@ -240,7 +275,6 @@
             <window-header class="tabs-header">
                 <i class="icon-incognito"></i>
                 <div class="window-title" title=""></div>
-                <!-- <button class="minimize-others" title="Focus and minimize others"><i class="icon-minimize"></i></button> -->
                 <button class="collapse-tab"><i class="icon-list" title="Show list view"></i><i class="icon-grid"
                         title="Show icon view"></i></button>
                 <button class="tabs-menu-button"><i class="icon-fa-ellipsis-v"></i></button>
@@ -251,7 +285,6 @@
                     <div role="menuitem" data-value="pin-window-bottom"><i class="icon-pin-angle"></i>Pin
                         bottom
                     </div>
-                    <!-- <hr aria-hidden="true"> -->
                     <div role="menuitem" data-value="add-new-tab"><i class="icon-plus"></i>Add new tab</div>
                     <hr aria-hidden="true">
                     <div role="menuitem" data-value="close-window"><i class="icon-close"></i>Close window</div>

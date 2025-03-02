@@ -1,4 +1,4 @@
-import { $byClass, $byTag } from './client';
+import { $byClass, $byTag, createElement } from './client';
 
 const dialogStyle = `
   h4 {
@@ -75,18 +75,18 @@ export class DialogContent extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'closed' });
-    const style = this.shadow.appendChild(document.createElement('style'));
+    const style = this.shadow.appendChild(createElement('style'));
     style.textContent = dialogStyle;
-    this.$title = this.shadow.appendChild(document.createElement('h4'));
-    this.$text = this.shadow.appendChild(document.createElement('div'));
-    this.$name = this.shadow.appendChild(document.createElement('input'));
+    this.$title = this.shadow.appendChild(createElement('h4'));
+    this.$text = this.shadow.appendChild(createElement('div'));
+    this.$name = this.shadow.appendChild(createElement('input'));
     this.$name.type = 'text';
-    this.$captionUrl = this.shadow.appendChild(document.createElement('div'));
-    this.$url = this.shadow.appendChild(document.createElement('textarea'));
-    this.$cancelButton = this.shadow.appendChild(document.createElement('button'));
+    this.$captionUrl = this.shadow.appendChild(createElement('div'));
+    this.$url = this.shadow.appendChild(createElement('textarea'));
+    this.$cancelButton = this.shadow.appendChild(createElement('button'));
     this.$cancelButton.textContent = 'Cancel';
     this.$cancelButton.addEventListener('click', () => this.cancelListener());
-    const $okButton = this.shadow.appendChild(document.createElement('button'));
+    const $okButton = this.shadow.appendChild(createElement('button'));
     $okButton.textContent = 'OK';
     $okButton.addEventListener('click', () => this.okListener());
     this.$url.addEventListener('keydown', this.ok.bind(this));

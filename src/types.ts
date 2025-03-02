@@ -5,6 +5,7 @@ import { Folders } from './folders';
 import { HeaderHistory, History } from './history';
 import { mapMessagesBtoP } from './popup';
 import { HeaderTabs, Tabs } from './tabs';
+import { HeaderRecentTabs, RecentTabs } from './recent-tabs';
 
 export type StoredElements = {
   'app-main': AppMain,
@@ -15,6 +16,8 @@ export type StoredElements = {
   'body-tabs': Tabs,
   'header-history': HeaderHistory,
   'body-history': History,
+  'body-recent-tabs': RecentTabs,
+  'header-recent-tabs': HeaderRecentTabs,
 }
 
 export type MapMessagesPtoB = typeof mapMessagesPtoB;
@@ -32,39 +35,24 @@ export type ColorInfo = {
 
 export const maxHeight = 570;
 
-export const paneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
+export type PaneSizes = {
+  widths: number[],
+  heights: number[][];
+  bookmarks: number[],
+};
 
-type PaneWidth = {
-  name: (typeof paneNames)[number];
+export const oldPaneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
+
+type OldPaneWidth = {
+  name: (typeof oldPaneNames)[number];
   width: number,
 };
 
-export type PaneLayouts = [PaneWidth, PaneWidth, PaneWidth][];
-
-export const defaultWidthes: PaneLayouts = [
-  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'leafs', width: 200 }],
-  [{ name: 'histories', width: 100 }, { name: 'tabs', width: 325 }, { name: 'folders', width: 150 }],
-  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'leafs', width: 175 }],
-  [{ name: 'tabs', width: 300 }, { name: 'histories', width: 175 }, { name: 'folders', width: 130 }],
-  [{ name: 'histories', width: 100 }, { name: 'leafs', width: 200 }, { name: 'folders', width: 150 }],
-  [{ name: 'histories', width: 100 }, { name: 'folders', width: 150 }, { name: 'leafs', width: 200 }],
-  [{ name: 'tabs', width: 300 }, { name: 'leafs', width: 150 }, { name: 'folders', width: 130 }],
-  [{ name: 'tabs', width: 300 }, { name: 'folders', width: 130 }, { name: 'leafs', width: 150 }],
-  [{ name: 'leafs', width: 150 }, { name: 'folders', width: 130 }, { name: 'tabs', width: 300 }],
-  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 150 }, { name: 'tabs', width: 300 }],
-  [{ name: 'leafs', width: 175 }, { name: 'folders', width: 130 }, { name: 'histories', width: 175 }],
-  [{ name: 'folders', width: 130 }, { name: 'leafs', width: 175 }, { name: 'histories', width: 175 }],
-];
-
-export const defaultWidth = {
-  histories: 100,
-  tabs: 325,
-  leafs: 200,
-  folders: 150,
-};
+export type OldPaneLayouts = [OldPaneWidth, OldPaneWidth, OldPaneWidth][];
 
 export const initialSettings = {
   postPage: false,
+  width: 800,
   height: 500,
   windowSize: {
     width: 800,
@@ -72,20 +60,12 @@ export const initialSettings = {
     top: undefined as number | undefined,
     left: undefined as number | undefined,
   },
-  paneWidth: {
-    pane1: defaultWidth.leafs,
-    pane2: defaultWidth.tabs,
-    pane3: defaultWidth.histories,
-  },
-  paneLayouts: [] as PaneLayouts,
-  paneLayoutsWindowMode: [] as PaneLayouts,
-  bodyColor: '#222222',
-  tabs: true,
-  history: true,
-  historyMax: {
-    rows: 30,
-    days: null,
-  },
+  paneLayouts: [] as OldPaneLayouts, // Discarded
+  paneSizes: {
+    widths: [],
+    heights: [],
+    bookmarks: [50],
+  } as PaneSizes,
   includeUrl: false,
   theme: {
     light: '',
@@ -131,21 +111,33 @@ export type ColorPalette = [
 ];
 
 export const defaultColorPalette: ColorPalette = [
-  'FEFFFE',
-  'BFD7EA',
-  '0B3954',
-  'E0FF4F',
-  'FF6663',
+  '102542',
+  'F87060',
+  'CDD7D6',
+  'B3A394',
+  'FFFFFF',
 ];
 
-const panes = [
-  'histories',
-  'tabs',
+export type PaneNames = [
+  'history',
+  'windows',
   'bookmarks',
-] as const;
+  'recent-tabs',
+];
+
+export type Panes2 = (PaneNames[number])[][];
+
+const panes2 = [
+  ['history'],
+  ['windows'],
+  ['bookmarks', 'recent-tabs'],
+] as const satisfies Panes2;
 
 export const initialOptions = {
-  panes,
+  panes: [] as unknown as ('histories' | 'tabs' | 'bookmarks')[], // Discarded
+  zoomTabs: false, // Discarded
+  zoomHistory: true, // Discarded
+  panes2,
   bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',
   showCloseTab: true,
@@ -158,11 +150,10 @@ export const initialOptions = {
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,
-  zoomTabs: false,
-  zoomHistory: true,
+  wider1: false,
+  wider2: false,
   zoomRatio: '0.7',
   fontSize: '0.9em',
-  collapseTabs: true,
   exclusiveOpenBmFolderTree: true,
   bmAutoFindTabs: true,
   bmAutoFindTabsDelay: '500',
@@ -170,9 +161,10 @@ export const initialOptions = {
   favColorPalettes: [] as ColorPalette[],
   showMinimizeAll: true,
   windowMode: true,
+  autoMinimizeApp: false,
 };
 
-export type Panes = typeof panes[number];
+export type Panes = PaneNames[number];
 export type MulitiSelectables = {
 [key in Panes]?: boolean;
 } & { all: boolean | undefined };
@@ -197,11 +189,13 @@ export const initialState = {
     top: undefined as number[] | undefined,
     bottom: undefined as number[] | undefined,
   },
+  windowStates: [] as { collapsed: boolean }[],
   windowModeInfo: {
     popupWindowId: undefined,
     currentWindowId: undefined,
   } as WindowModeInfo,
   updatedHistory: Date.now(),
+  setAppZoom: 1,
 };
 
 export type State = typeof initialState;
@@ -219,6 +213,7 @@ export const CliMessageTypes = {
   restoreSession: 'cl-restore-session',
   updateWindow: 'cl-update-window',
   getSvgBrowserFavicon: 'cl-get-svg-favicon',
+  changeWindowMode: 'cl-change-window-mode',
 } as const;
 
 export const BkgMessageTypes = {
@@ -323,12 +318,12 @@ export type HTMLElementEventType = HTMLElementEventMap;
 export type InitailTabs = {
   windowId: number,
   tabs: chrome.tabs.Tab[];
+  order: number,
 }[];
 
 export type PromiseInitTabs = Promise<[InitailTabs, number]>;
 
-// eslint-disable-next-line no-undef
-export type EventListenerOptions = boolean | AddEventListenerOptions;
+export type EventListenerOptions = boolean | Parameters<typeof document.addEventListener>[2];
 
 export type AbstractConstructor<T = any> = abstract new (...args: any[]) => T;
 

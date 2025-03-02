@@ -32,6 +32,8 @@ import {
   moveBookmarks,
   addFolderFromTabs,
   addBookmarksFromTabs,
+  createElement,
+  getChildren,
 } from './client';
 import { clearTimeoutZoom, zoomOut } from './zoom';
 import { Window } from './tabs';
@@ -41,7 +43,7 @@ import {
 import { dialog } from './dialogs';
 import { MutiSelectableItem } from './multi-sel-pane';
 
-const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history', 'window', 'tabs-header', 'pin-bookmark'] as const;
+const sourceClasses = ['leaf', 'marker', 'tab-wrap', 'history-item', 'window', 'tabs-header', 'pin-bookmark'] as const;
 type SourceClass = (typeof sourceClasses)[number];
 
 function getSubTree(id: string) {
@@ -176,7 +178,7 @@ async function dropWithTabs(
       if (!sourceWindowIds.includes($destWindow?.id)) {
         $destWindow.reloadTabs(dispatch);
       }
-      dispatch('re-search', 'tabs', true);
+      dispatch('re-search', 'windows', true);
       $byClass('tabs')!.dispatchEvent(new Event('mouseenter'));
     });
 }
@@ -242,7 +244,7 @@ function checkDroppable(e: DragEvent) {
     return undefined;
   }
   const dragSource = whichClass(sourceClasses, $dragSource) || '';
-  if (dropAreaClass === 'query' && !['leaf', 'tab-wrap', 'history'].includes(dragSource)) {
+  if (dropAreaClass === 'query' && !['leaf', 'tab-wrap', 'history-item'].includes(dragSource)) {
     return undefined;
   }
   const dropPane = whichClass(panes, $dropArea.closest('.folders, .leafs, .tabs') as HTMLElement);
@@ -254,14 +256,14 @@ function checkDroppable(e: DragEvent) {
   }
   const dragPanes = whichClass(panes, $dragSource.closest('.folders, .leafs, .tabs') as HTMLElement);
   if (dropAreaClass === 'leafs') {
-    return ['leaf', 'tab-wrap', 'history', 'tabs-header'].includes(dragSource)
+    return ['leaf', 'tab-wrap', 'history-item', 'tabs-header'].includes(dragSource)
       && !hasClass($byTag('app-main'), 'searching')
       && !(dragPanes === 'leafs' && $(`.leafs ${cssid($dragSource.id)}:last-of-type`))
       && !$('.leafs .selected:last-of-type');
   }
   if (
     dropPane === 'folders'
-    && ['leaf', 'tab-wrap', 'history'].includes(dragSource)
+    && ['leaf', 'tab-wrap', 'history-item'].includes(dragSource)
     && ['drop-bottom', 'drop-top'].includes(dropAreaClass)
     && hasClass($dropArea.parentElement?.parentElement?.parentElement || undefined, 'folder')
   ) {
@@ -272,7 +274,7 @@ function checkDroppable(e: DragEvent) {
 
 function search(sourceId: string, includeUrl: boolean, dispatch: Store['dispatch']) {
   const $source = $byId(sourceId);
-  const [$title1, $title2, $title3] = [...$source.children] as HTMLElement[];
+  const [$title1, $title2, $title3] = getChildren($source);
   const value = when(includeUrl)
     .then(() => {
       let url = extractUrl($source.style.backgroundImage);
@@ -293,7 +295,7 @@ function getDraggableElement(
   const itemHeight = $dragTargets[0].offsetHeight;
   $dragTargets.some(($el, i) => {
     if (itemHeight * i > 120) {
-      const $div = addChild(document.createElement('div'))($draggableClone);
+      const $div = addChild(createElement('div'))($draggableClone);
       $div.textContent = `... and ${$dragTargets.length - i} more items`;
       addStyle({ padding: '2px' })($div);
       return true;
@@ -349,7 +351,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       .when(className === 'pin-bookmark')
       .then(() => {
         store.dispatch('multiSelPanes', {
-          bookmarks: false, tabs: false, histories: false, all: false,
+          bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: false,
         });
         const $source = $('.current-window .current-tab')!;
         return [[$source], [$source.id]] as const;
@@ -361,7 +363,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       });
     const $main = $byTag('app-main')!;
     if (hasClass($main, 'zoom-pane')) {
-      const $zoomPane = $dragTargets[0]?.closest('.histories, .tabs') as HTMLElement;
+      const $zoomPane = $dragTargets[0]?.closest('.col-grid') as HTMLElement;
       setTimeout(zoomOut($zoomPane, { $main }), 100);
     } else {
       clearTimeoutZoom();
@@ -371,7 +373,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       addClass('drag-source'),
     ));
     document.body.append(...$$('[role="menu"]:not(.menu-tree)'));
-    const $draggable = when(className === 'history')
+    const $draggable = when(className === 'history-item')
       .then(() => {
         const $draggableClone = $byClass('draggable-clone')!;
         if ($draggableClone.children.length > 1) {
@@ -414,7 +416,7 @@ export default class DragAndDropEvents implements IPubSubElement {
     setHTML('')($byClass('draggable-clone')!);
     if (e.dataTransfer?.dropEffect === 'none') {
       const className = whichClass(sourceClasses, (e.target as HTMLElement));
-      const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history', 'histories']);
+      const paneClass = decode(className, ['tab-wrap', 'tabs'], ['history-item', 'histories']);
       $byClass(paneClass ?? null)?.dispatchEvent(new Event('mouseenter'));
     }
     store.dispatch('dragging', false);
@@ -455,7 +457,7 @@ export default class DragAndDropEvents implements IPubSubElement {
       bookmarkDest = { parentId, index };
     }
     // from history
-    if (sourceClass === 'history') {
+    if (sourceClass === 'history-item') {
       await dropFromHistory($dropTarget, sourceIds, dropAreaClass, bookmarkDest, store.dispatch);
       store.dispatch('multiSelPanes', { all: false });
       return;

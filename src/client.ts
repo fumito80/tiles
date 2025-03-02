@@ -1,27 +1,21 @@
 /* eslint-disable no-redeclare */
 
 import {
-  splitterClasses,
   Options,
   State,
   Settings,
-  SplitterClasses,
   Model,
   InsertPosition,
   dropAreaClasses,
   positions,
-  defaultWidth,
   ColorPalette,
   CliMessageTypes,
-  PaneLayouts,
-  paneNames,
-  defaultWidthes,
   maxHeight,
   InitailTabs,
+  PaneSizes,
 } from './types';
 
 import {
-  whichClass,
   cssid,
   curry,
   getLocal,
@@ -36,21 +30,31 @@ import {
   camelToSnake,
   makeThemeCss,
   postMessage,
-  pick,
   setPopupStyle,
-  updateSettings,
   chromeEventFilter,
   base64Encode,
+  init,
   always,
+  updateSettings,
+  last,
 } from './common';
 
 import { makeLeaf, makeNode } from './html';
 import { Leaf } from './bookmarks';
 import { dialog } from './dialogs';
 import { AppMain } from './app-main';
-import { Changes, Dispatch } from './popup';
+import { Dispatch } from './popup';
 
 // DOM operation
+
+// eslint-disable-next-line no-undef
+export function createElement<T extends keyof HTMLElementTagNameMap>(
+  tagName: T,
+  props: { [key: string]: string } = {},
+// eslint-disable-next-line no-undef
+): HTMLElementTagNameMap[T] {
+  return Object.assign(document.createElement(tagName), props);
+}
 
 export function $<T extends HTMLElement>(
   selector: string,
@@ -109,11 +113,11 @@ export function addChild<T extends Element | null>($child: T) {
   };
 }
 
-export function addStyle(styleNames: Model): <T extends Element | undefined | null>($el: T) => T;
-export function addStyle(styleName: string, value: string):
-  <T extends Element | undefined>($el: T) => T;
-export function addStyle(styleName: string | Model, value?: string) {
-  return <T extends Element | undefined>($el: T) => {
+export function addStyle<T extends Element | undefined | null>(styleNames: Model): ($el: T) => T;
+export function addStyle<T extends Element | undefined>(styleName: string, value: string):
+  ($el: T) => T;
+export function addStyle<T extends Element | undefined>(styleName: string | Model, value?: string) {
+  return ($el: T) => {
     if (typeof styleName === 'string') {
       ($el as unknown as HTMLElement)?.style?.setProperty(styleName, value!);
     } else {
@@ -125,8 +129,8 @@ export function addStyle(styleName: string | Model, value?: string) {
   };
 }
 
-export function rmStyle(...styleNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmStyle<T extends Element | undefined | null>(...styleNames: string[]) {
+  return ($el: T) => {
     styleNames.forEach(
       (styleName) => ($el as unknown as HTMLElement)?.style?.removeProperty(styleName),
     );
@@ -134,29 +138,29 @@ export function rmStyle(...styleNames: string[]) {
   };
 }
 
-export function addAttr(attrName: string, value: string) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function addAttr<T extends Element | undefined | null>(attrName: string, value: string) {
+  return ($el: T) => {
     $el?.setAttribute(attrName, value);
     return $el ?? undefined;
   };
 }
 
-export function rmAttr(attrName: string) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmAttr<T extends Element | undefined | null>(attrName: string) {
+  return ($el: T) => {
     $el?.removeAttribute(attrName);
     return $el ?? undefined;
   };
 }
 
-export function addClass(...classNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function addClass<T extends Element | undefined | null>(...classNames: string[]) {
+  return ($el: T) => {
     $el?.classList.add(...classNames);
     return $el ?? undefined;
   };
 }
 
-export function rmClass(...classNames: string[]) {
-  return <T extends Element | undefined | null>($el: T) => {
+export function rmClass<T extends Element | undefined | null>(...classNames: string[]) {
+  return ($el: T) => {
     $el?.classList.remove(...classNames);
     return $el ?? undefined;
   };
@@ -194,17 +198,15 @@ export function setHTML(html: string) {
   };
 }
 
-export function setText(text: string | null) {
+export function setText(textContent: string | null) {
   return <T extends Element | undefined>($el: T) => {
     if ($el) {
-      // eslint-disable-next-line no-param-reassign
-      $el.textContent = text;
+      Object.assign($el, { textContent });
     }
     return $el;
   };
 }
 
-// eslint-disable-next-line no-undef
 export function insertHTML(position: InsertPosition, html: string) {
   return <T extends Element | undefined | null>($el: T) => {
     $el?.insertAdjacentHTML(position, html);
@@ -218,91 +220,36 @@ export function addRules(selector: string, ruleProps: [string, string][]) {
   sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
 }
 
-export function getGridTemplateColumns() {
-  const [pane3, pane2, pane1] = $$byClass('pane-body')
-    .map((el) => el.style.getPropertyValue('width'))
-    .map((n) => Number.parseInt(n, 10));
-  return {
-    pane1,
-    pane2,
-    pane3,
-  };
-}
-
-export function initSplitWidth(
-  { paneLayouts, paneLayoutsWindowMode, paneWidth }: Settings,
-  options: Options,
-) {
-  const layouts = options.windowMode ? paneLayoutsWindowMode : paneLayouts;
-  const $bodies = $$byClass('pane-body');
-  const [$pane1, $pane2, $pane3] = $bodies;
-  let widthes: PaneLayouts[number] | undefined;
-  if (layouts.length === 0) {
-    if (paneWidth.pane3 === defaultWidth.histories
-      && paneWidth.pane2 === defaultWidth.tabs
-      && paneWidth.pane1 === defaultWidth.leafs) {
-      [widthes] = defaultWidthes;
-    } else {
-      widthes = [$pane1, $pane2, $pane3].map(($body, i) => {
-        const name = whichClass(paneNames, $body)!;
-        const width = [paneWidth.pane3, paneWidth.pane2, paneWidth.pane1][i];
-        return { name, width };
-      }) as PaneLayouts[number];
-    }
-    const layoutType = options.windowMode ? 'paneLayoutsWindowMode' : 'paneLayouts';
-    updateSettings({ [layoutType]: [widthes!] });
-  } else {
-    widthes = layouts.find((ps) => [$pane1, $pane2, $pane3].every(
-      (pane, i) => hasClass(pane, ps[i].name),
-    ));
-    if (!widthes) {
-      widthes = defaultWidthes.find((panes) => [$pane1, $pane2, $pane3].every(
-        ($pane, i) => hasClass($pane, panes[i].name),
-      ))!;
-    }
+export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
+  const widths = paneSizes.widths.length === 0
+    ? init(panes2).map(() => 100 / panes2.length)
+    : paneSizes.widths;
+  const heights = paneSizes.heights.length === 0
+    ? panes2.map((pane) => {
+      const h = 100 / pane.length;
+      return init(pane).map(always(h));
+    })
+    : paneSizes.heights;
+  const $colGrids = $$byClass('col-grid');
+  $byTag('app-main')!.style.gridTemplateColumns = [...Array($colGrids.length - 1)]
+    .map((_, col) => `${widths[col]}% min-content`)
+    .concat('minmax(0, 100%)')
+    .join(' ');
+  $colGrids.forEach(($grid, col) => {
+    const rows = ($grid.children.length - 1) / 2;
+    const tmplRows = [...Array(rows)]
+      .map((_, row) => `${heights[col][row]}% max-content`)
+      .concat('minmax(0, 100%)')
+      .join(' ');
+    $grid.style.setProperty('grid-template-rows', tmplRows);
+  });
+  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% auto auto`);
+  if (!paneSizes.widths.length || !paneSizes.heights.length) {
+    updateSettings((settings) => ({
+      ...settings,
+      paneSizes: { ...settings.paneSizes, widths, heights },
+    }));
   }
-  widthes.forEach(({ width }, i) => addStyle('width', `${width}px`)($bodies[i]));
-}
-
-function setSplitWidth(newPaneWidth: Partial<SplitterClasses>) {
-  const { pane1, pane2, pane3 } = { ...getGridTemplateColumns(), ...newPaneWidth };
-  const $bodies = $$byClass('pane-body');
-  [pane3, pane2, pane1].forEach((width, i) => addStyle('width', `${width}px`)($bodies[i]));
-}
-
-export function getNewPaneWidth({ settings, options }: Pick<State, 'settings' | 'options'>) {
-  const [$pane1, $pane2, $pane3] = $$byClass('pane-body');
-  const newWidthes = [$pane1, $pane2, $pane3].map(($body) => {
-    const name = whichClass(paneNames, $body)!;
-    const width = Number.parseInt($body.style.getPropertyValue('width'), 10);
-    return { name, width };
-  }) as PaneLayouts[number];
-  const layouts = options.windowMode ? settings.paneLayoutsWindowMode : settings.paneLayouts;
-  const paneLayouts = layouts
-    .filter((ps) => ![$pane1, $pane2, $pane3].every(
-      (pane, i) => hasClass(pane, ps[i].name),
-    ))
-    .concat([newWidthes]);
-  if (options.windowMode) {
-    return { ...settings, paneLayoutsWindowMode: paneLayouts };
-  }
-  return { ...settings, paneLayouts };
-}
-
-export function getEndPaneMinWidth($endPane: HTMLElement) {
-  const queryWrapMinWidth = 70;
-  const minWidth = [...$endPane.children]
-    .filter((el) => !hasClass(el, 'query-wrap'))
-    .map((el) => getComputedStyle(el))
-    .map(pick('width', 'marginLeft', 'marginRight'))
-    .reduce(
-      (acc, props) => Object.values(props).reduce(
-        (sum, prop1) => sum + (Number.parseFloat(prop1) || 0),
-        acc,
-      ),
-      queryWrapMinWidth,
-    );
-  return Math.max(minWidth, 120);
 }
 
 export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in') {
@@ -322,6 +269,13 @@ export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilit
 
 export async function getBookmark(id: string) {
   return chrome.bookmarks.get(id).then(([tab]) => tab);
+}
+
+export function getChildren<T extends HTMLElement>($target: HTMLElement) {
+  if ($target == null) {
+    return [];
+  }
+  return [...$target.children] as T[];
 }
 
 export function setHasChildren($target: HTMLElement) {
@@ -352,7 +306,47 @@ export function saveStateAllPaths(id?: string) {
   setLocal({ clientState: { open, paths } });
 }
 
-function setMouseEventListener(
+function getGridTemplateProps($parent: HTMLElement, parentSize: number, columnsOrRows: 'columns' | 'rows') {
+  const gridTemplateValue = $parent.style.getPropertyValue(`grid-template-${columnsOrRows}`);
+  const gridTemplate = gridTemplateValue.split(' ');
+  const pos = gridTemplate.findIndex((el) => el.endsWith('px'));
+  if (pos < 0) {
+    return {};
+  }
+  const size = parseInt(gridTemplate[pos], 10);
+  const percent = (size / parentSize) * 100;
+  const newGridTemplate = gridTemplate
+    .reduce((acc, el, i) => ((i === pos) ? [...acc, `${percent}%`] : [...acc, el]), [] as string[])
+    .join(' ');
+  $parent.style.setProperty(`grid-template-${columnsOrRows}`, newGridTemplate);
+  return { pos, percent };
+}
+
+function getNewPaneWidth($parent: HTMLElement, keyName: keyof Pick<PaneSizes, 'widths' | 'bookmarks'>) {
+  return ({ settings }: Pick<State, 'settings'>) => {
+    const { pos, percent } = getGridTemplateProps($parent, $parent.offsetWidth, 'columns');
+    if (!percent) {
+      return settings;
+    }
+    const { [keyName]: widths } = settings.paneSizes;
+    widths.splice(pos / 2, 1, percent);
+    return { ...settings, paneSizes: { ...settings.paneSizes, [keyName]: widths } };
+  };
+}
+
+function getNewPaneHeight($parent: HTMLElement, colIndex: number) {
+  return ({ settings }: Pick<State, 'settings'>) => {
+    const { pos, percent } = getGridTemplateProps($parent, $parent.offsetHeight, 'rows');
+    if (!percent) {
+      return settings;
+    }
+    const { heights } = settings.paneSizes;
+    heights[colIndex].splice(pos / 2, 1, percent);
+    return { ...settings, paneSizes: { ...settings.paneSizes, heights } };
+  };
+}
+
+export function setMouseEventListener(
   mouseMoveHandler: (e: MouseEvent) => void,
   getSettings: (state: Pick<State, 'settings' | 'options'>) => Settings,
   resizeHeight: boolean,
@@ -375,47 +369,101 @@ function setMouseEventListener(
   }, { once: true });
 }
 
-function getNewSize({ settings }: Pick<State, 'settings'>) {
+export function setPopupHeight({ settings }: Pick<State, 'settings'>) {
   return {
     ...settings,
-    width: document.body.offsetWidth,
     height: document.body.offsetHeight,
   };
 }
 
-export function setResizeHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewSize, true);
-}
-
-export function setSplitterHandler(mouseMoveHandler: (e: MouseEvent) => void) {
-  setMouseEventListener(mouseMoveHandler, getNewPaneWidth, false);
+export function setSplitterHandler(
+  mouseMoveHandler: (e: MouseEvent) => void,
+  mouseUpHandler: (settings: Pick<State, 'settings'>) => Settings,
+) {
+  setMouseEventListener(mouseMoveHandler, mouseUpHandler, false);
 }
 
 export function resizeSplitHandler(
-  $targetPane: HTMLElement,
-  $splitter: HTMLElement,
-  subWidth: number,
-  adjustMouseX: number,
-  endPaneMinWidth: number,
+  mousePosName: 'clientX' | 'clientY',
+  columnsOrRows: 'columns' | 'rows',
+  startSize: number,
+  startMousePos: number,
+  pos: number,
+  $appMain: HTMLElement,
+  minSize: number,
+  maxSize: number,
+  appZoom: number,
 ) {
   return (e: MouseEvent) => {
-    const className = whichClass(splitterClasses, $splitter)!;
-    const isTabs = hasClass($targetPane, 'tabs');
-    const minWidth = isTabs ? 220 : 100;
-    const width = Math.max(e.clientX - adjustMouseX - $targetPane.offsetLeft, minWidth);
-    if (document.body.offsetWidth < (width + subWidth + endPaneMinWidth)) {
-      return;
-    }
-    setSplitWidth({ [className]: width });
+    const newSize = startSize - (startMousePos - e[mousePosName]) / appZoom;
+    const size = Math.min(Math.max(newSize, minSize), maxSize);
+    const gridTemplate = $appMain.style.getPropertyValue(`grid-template-${columnsOrRows}`);
+    const newGridTemplate = gridTemplate.split(' ')
+      .reduce((acc, el, i) => ((i === pos * 2) ? [...acc, `${size}px`] : [...acc, el]), [] as string[])
+      .join(' ');
+    $appMain.style.setProperty(`grid-template-${columnsOrRows}`, newGridTemplate);
   };
 }
 
-export function resizeHeightHandler(e: MouseEvent) {
-  const height = Math.min(e.clientY - 6, maxHeight);
-  if (height < 200) {
-    return;
-  }
-  addStyle('height', `${height}px`)(document.body);
+export function splitColMouseDownHandler($main: AppMain) {
+  return (e: MouseEvent) => {
+    const $splitter = e.target as HTMLElement;
+    $splitter.classList.add('mousedown');
+    const $parent = $splitter.parentElement!;
+    const { offsetWidth } = $splitter.previousElementSibling as HTMLElement;
+    const endColGridWidth = last($$(':scope>[is],.col-grid', $parent))!.offsetWidth;
+    const minWidth = 100;
+    const maxWidth = endColGridWidth - minWidth + offsetWidth;
+    const keyName = hasClass($splitter, 'split-bookmarks') ? 'bookmarks' : 'widths';
+    const pos = getChildren($parent).filter(($el) => hasClass($el, 'split-h')).indexOf($splitter);
+    const handler = resizeSplitHandler(
+      'clientX',
+      'columns',
+      offsetWidth,
+      e.clientX,
+      pos,
+      $parent,
+      minWidth,
+      maxWidth,
+      $main.appZoom,
+    );
+    setSplitterHandler(handler, getNewPaneWidth($parent, keyName));
+  };
+}
+
+export function splitRowMouseDownHandler($main: AppMain, colIndex: number) {
+  return (e: MouseEvent) => {
+    const $splitter = e.target as HTMLElement;
+    $splitter.classList.add('mousedown');
+    const $parent = $splitter.parentElement!;
+    const { offsetHeight } = $splitter.previousElementSibling as HTMLElement;
+    const endColGridHeight = ($parent.lastElementChild as HTMLElement).offsetHeight;
+    const minHeight = 100;
+    const maximumHeight = endColGridHeight - minHeight + offsetHeight;
+    const pos = [...$parent.children].filter(($el) => hasClass($el, 'split-v')).indexOf($splitter);
+    const handler = resizeSplitHandler(
+      'clientY',
+      'rows',
+      offsetHeight,
+      e.clientY,
+      pos,
+      $parent,
+      minHeight,
+      maximumHeight,
+      $main.appZoom,
+    );
+    setSplitterHandler(handler, getNewPaneHeight($parent, colIndex));
+  };
+}
+
+export function resizeHeightHandler($main: AppMain) {
+  return (e: MouseEvent) => {
+    const height = Math.min(e.clientY, maxHeight) / $main.appZoom;
+    if (height < 200) {
+      return;
+    }
+    addStyle('height', `${height}px`)(document.body);
+  };
 }
 
 export function setAnimationFolder(className: string) {
@@ -605,8 +653,7 @@ export function selectFolder(
     }
     return;
   }
-  // eslint-disable-next-line no-param-reassign
-  $leafs.scrollTop = 0;
+  Object.assign($leafs, { scrollTop: 0 });
   $$byClass('open').forEach(rmClass('open'));
   folders.forEach(addClass('open'));
   saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
@@ -735,7 +782,11 @@ export function openFolder(folderId: string, incognito = false) {
 
 type MenuClass = 'leaf-menu' | 'folder-menu' | 'tabs-menu' | 'multi-sel-menu';
 
-export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePos = false) {
+export function showMenu(
+  menuClassOrElement: MenuClass | HTMLElement,
+  appZoom: number,
+  relativePos = false,
+) {
   return (e: MouseEvent) => {
     e.stopImmediatePropagation();
     const $target = e.target as HTMLElement;
@@ -745,7 +796,7 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
     const { width, height } = $menu.getBoundingClientRect();
     if (relativePos) {
       if (rect.x - width < 5) {
-        addStyle({ left: `${$target.offsetLeft}px` })($menu);
+        addStyle({ left: `calc(${$target.offsetLeft}px / ${appZoom})` })($menu);
       }
       return;
     }
@@ -762,9 +813,9 @@ export function showMenu(menuClassOrElement: MenuClass | HTMLElement, relativePo
         return `${rect.left - width + rect.width}px`;
       });
     const top = (rect.top + rect.height + height) >= (document.body.offsetHeight + 4)
-      ? `${rect.top - height}px`
-      : `${rect.top + rect.height}px`;
-    addStyle({ left, top })($menu);
+      ? `calc(${rect.top - height}px / ${appZoom})`
+      : `calc(${rect.top + rect.height}px / ${appZoom})`;
+    addStyle({ left: `calc(${left} / ${appZoom})`, top })($menu);
   };
 }
 
@@ -841,7 +892,7 @@ export function moveBookmarks(
       const orderedIds = position === 'afterend' ? sourceIds.reverse() : sourceIds;
       orderedIds.forEach((sourceId) => {
         const [$sourceLeafs, $sourceFolders] = [$(`.leafs ${cssid(sourceId)}`)!, $(`.folders ${cssid(sourceId)}`)!];
-        const isRootFrom = $sourceLeafs.parentElement?.id === '1';
+        const isRootFrom = $sourceLeafs?.parentElement?.id === '1';
         const isLeafFrom = hasClass($sourceLeafs, 'leaf');
         if (isLeafFrom && isRootFrom && !isRootTo) {
           $sourceFolders.remove();
@@ -868,10 +919,6 @@ export function moveBookmarks(
 
 export function getMessageDeleteSelecteds(count: number) {
   return `Are you sure you want to delete ${count} selected items?`;
-}
-
-export function getChildren($target: Element) {
-  return [...$target.children] as HTMLElement[];
 }
 
 export function getOffsetHeight($target: HTMLElement) {
@@ -909,9 +956,7 @@ export function setBrowserFavicon(colorPalette: ColorPalette) {
     .then((base64svg) => {
       let link = $('link[rel="icon"]') as HTMLLinkElement;
       if (!link) {
-        link = Object.assign(document.head.appendChild(document.createElement('link')), {
-          rel: 'icon',
-        });
+        link = Object.assign(document.head.appendChild(createElement('link', { rel: 'icon' })));
       }
       link.href = `data:image/svg+xml;base64,${base64svg}`;
     });
@@ -919,17 +964,17 @@ export function setBrowserFavicon(colorPalette: ColorPalette) {
 
 export async function changeColorTheme(colorPalette: ColorPalette) {
   const ruleText = makeThemeCss(colorPalette);
-  const sheet = document.styleSheets[1];
+  const [sheet] = document.adoptedStyleSheets;
   const root = [...sheet.cssRules].findIndex((rule) => (rule as any).selectorText === ':root');
   sheet.deleteRule(root);
   sheet.insertRule(`:root {\n${ruleText}}\n`);
   setThemeClass($byTag('app-main'), colorPalette);
-  postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette });
-  getLocal('options').then(({ options }) => {
-    if (options.windowMode) {
-      setBrowserFavicon(colorPalette);
-    }
-  });
+  return postMessage({ type: CliMessageTypes.setThemeColor, payload: colorPalette })
+    .then(({ options }) => {
+      if (options.windowMode) {
+        setBrowserFavicon(colorPalette);
+      }
+    });
 }
 
 export function setFavColorMenu(colorPalette: ColorPalette) {
@@ -941,43 +986,27 @@ export function setFavColorMenu(colorPalette: ColorPalette) {
   ($selected as any)?.scrollIntoViewIfNeeded();
 }
 
-export async function updateAppZoom(value: Changes<'zoomApp'>['newValue']) {
-  return chrome.tabs.getCurrent().then(async (tab) => {
-    if (!tab?.id) {
-      return Promise.reject();
-    }
-    return chrome.tabs.getZoom(tab.id).then((zoom) => {
-      const newZoom = zoom + ((value === 'plus') ? 0.05 : -0.05);
-      return chrome.tabs.setZoom(newZoom).then(always(newZoom));
-    });
-  });
-}
-
-export async function setZoomAppMenu(zoomValue?: number) {
-  const zoom = zoomValue ?? await chrome.tabs.getCurrent()
-    .then((tab) => (tab?.id ? chrome.tabs.getZoom(tab.id) : undefined));
-  if (!zoom) {
-    return;
-  }
-  $('.show .menu-zoom-app > span')!.textContent = `${Math.round(zoom * 100)}%`;
-}
-
 export function scrollVerticalCenter($target: HTMLElement) {
   const $container = $target.parentElement!;
   $container.scrollTop = $target.offsetTop - $container.offsetHeight / 2 + $target.offsetHeight / 2;
 }
 
-export function getInitialTabs() {
-  const promiseCurrentWindowId = chrome.windows.getCurrent(chromeEventFilter)
-    .then((win) => win.id!);
-  const promiseInitTabs = new Promise<InitailTabs>((resolve) => {
-    chrome.windows.getAll({ ...chromeEventFilter, populate: true }, (wins) => {
-      const windows = wins.map((win) => ({
+export async function getAllWindows(populate = true) {
+  return new Promise<InitailTabs>((resolve) => {
+    chrome.windows.getAll({ ...chromeEventFilter, populate }, (wins) => {
+      const windows = wins.map((win, order) => ({
         windowId: win.id!,
         tabs: win.tabs!,
+        order,
       }));
       resolve(windows);
     });
   });
+}
+
+export function getInitialTabs() {
+  const promiseCurrentWindowId = chrome.windows.getCurrent(chromeEventFilter)
+    .then((win) => win.id!);
+  const promiseInitTabs = getAllWindows();
   return Promise.all([promiseInitTabs, promiseCurrentWindowId]);
 }

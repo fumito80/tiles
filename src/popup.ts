@@ -15,14 +15,13 @@ import {
   PayloadAction,
   ApplyStyle,
   WindowModeInfo,
+  initialState,
 } from './types';
 
 import {
   pipe,
   cssid,
-  getGridColStart,
   last,
-  filter,
   curry,
   preFaviconUrl,
   extractDomain,
@@ -35,15 +34,17 @@ import {
   $, $$,
   addStyle, addClass,
   initSplitWidth,
-  hasClass,
   addChild,
   setHTML,
-  $$byClass, $byClass,
+  $byClass,
   toggleElement,
   $byTag,
   getPalettesHtml,
   getInitialTabs,
   setBrowserFavicon,
+  createElement,
+  hasClass,
+  $$byClass,
 } from './client';
 import { AppMain } from './app-main';
 import { HeaderLeafs, Leaf, Leafs } from './bookmarks';
@@ -59,20 +60,27 @@ import { storeMapping } from './store-mapping';
 import {
   ActionValue, initComponents, IPublishElement, makeAction,
 } from './store';
+import { HeaderRecentTabs, RecentTabs } from './recent-tabs';
 
 export { makeAction, IPublishElement };
 
 type Options = State['options'];
 
 const params = new URLSearchParams(document.location.search);
-const sheet = document.head.appendChild(document.createElement('style'));
-sheet.textContent = params.get('css');
+const sheet = new CSSStyleSheet();
+sheet.replace(params.get('css')!);
+document.adoptedStyleSheets = [sheet];
+
+const width = params.get('width') || 'unset';
+const height = params.get('height') || 'unset';
+const zoom = params.get('zoom') || 'unset';
+Object.assign(document.body.style, { width, height, zoom });
 
 function setOptions(settings: Settings, options: Options) {
   initSplitWidth(settings, options);
 
   if (options.showCloseTab) {
-    addStyle('--show-close-tab', 'inline-block')($byClass('tabs')!);
+    addStyle('--show-close-tab', 'inline-block')($byTag('app-main')!);
   }
   if (options.showDeleteHistory) {
     addStyle('--show-delete-history', 'inline-block')($byClass('histories')!);
@@ -111,35 +119,37 @@ function setBookmarksState(clState: ClientState, isSearching: boolean) {
   }
 }
 
-function getPanes(panes: Options['panes'], bookmarksPanes: Options['bookmarksPanes'], prefix = '') {
-  return panes
-    .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? bookmarksPanes : name), [])
-    .map((name) => $byClass(prefix + name)!);
-}
-
 function layoutPanes(options: Options, settings: Settings, isSearching: boolean) {
-  const $appMain = $byTag('app-main') as AppMain;
-  const $headers = getPanes(options.panes, ['leafs', 'folders'], 'header-');
-  const $bodies = getPanes(options.panes, options.bookmarksPanes);
-  $appMain.prepend(...$headers, ...$bodies);
+  const $appMain = $byTag<AppMain>('app-main');
+  const $$colGrids = options.panes2
+    .reduce((acc, pane) => {
+      const [first, ...rest] = pane.map((name) => $byClass(name)!);
+      const splited = rest.flatMap(($grid) => [createElement('div', { className: 'split-v' }), $grid]);
+      const grid = createElement('div', { className: 'col-grid' });
+      grid.append(first, ...splited);
+      return [...acc, grid];
+    }, [] as HTMLElement[]);
   pipe(
-    filter((el) => !hasClass(el, 'header-folders')),
-    last,
+    last<HTMLElement>,
     addClass('end'),
+    ($colGrid) => $byClass('pane-header', $colGrid),
     curry($byClass)('query-wrap'),
     ($el) => addChild($byClass('form-query')!)($el!),
-  )($headers);
-  addClass('end')(last($bodies));
-  // Bold Splitter
-  const $leafs = $('.histories + .leafs, .histories + .tabs');
-  if ($leafs) {
-    const gridColStart = getGridColStart($leafs);
-    const $splitter = $$byClass('split-h')[gridColStart - 1];
-    addClass('bold-separator')($splitter);
+  )($$colGrids);
+  const [first, ...rest] = $$colGrids;
+  const splited = rest.flatMap(($grid) => [createElement('div', { className: 'split-h' }), $grid]);
+  $appMain.prepend(first, ...splited);
+  const [left, right] = options.bookmarksPanes;
+  const $bmLeft = $byClass(left)!;
+  if (!hasClass($bmLeft.previousElementSibling!, 'header-bookmarks')) {
+    const $bmLeftAfter = $bmLeft.nextElementSibling;
+    const $bmRight = $byClass(right)!;
+    $bmLeft.parentElement!.insertBefore($bmLeft, $bmRight);
+    $bmLeft.parentElement!.insertBefore($bmRight, $bmLeftAfter);
   }
   $appMain.init(options, settings, isSearching);
-  return [...$headers, ...$bodies].reduce((acc, pane) => {
-    const name = pane.getAttribute('is');
+  return $$('[is]', $appMain).reduce((acc, pane) => {
+    const name = pane?.getAttribute('is');
     if (!name) {
       return acc;
     }
@@ -149,7 +159,7 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
 
 function setFavThemeMenu(favColorPalettes: ColorPalette[]) {
   const html = getPalettesHtml(favColorPalettes);
-  $('.pane-header.end .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
+  $('.end .pane-header:first-child .fav-color-themes')!.insertAdjacentHTML('beforeend', `<div class="menu-tree" role="menu">${html}</div>`);
 }
 
 function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {
@@ -160,22 +170,35 @@ function initWindowMode(options: Options, windowModeInfo: WindowModeInfo) {
     }
   });
   document.body.style.setProperty('width', '100%');
-  document.body.style.setProperty('height', 'calc(100vh - 5px)');
-  addStyle({ 'pointer-events': 'none' })($byClass('resize-y'));
+  addStyle({ display: 'none' })($byClass('resize-y'));
   setBrowserFavicon(options.colorPalette);
 }
 
-function init([{
-  settings,
-  htmlBookmarks,
-  clientState,
-  options,
-  htmlHistory,
-  lastSearchWord,
-  toggleWindowOrder,
-  pinWindows,
-  windowModeInfo,
-}, promiseInitTabs]: [State, PromiseInitTabs]) {
+function setHeaderHeight() {
+  const $$queryWrap = $$byClass('query-wrap');
+  let headerHeight = 0;
+  for (let i = ($$queryWrap.length - 1); i >= 0; i -= 1) {
+    headerHeight = $$queryWrap[i].offsetHeight;
+    if (headerHeight > 0) {
+      const sheet2 = new CSSStyleSheet();
+      sheet2.insertRule(`.pane-header { height: ${headerHeight}px; }`);
+      document.adoptedStyleSheets = [sheet, sheet2];
+      break;
+    }
+  }
+}
+
+function init([{ settings, options, ...states }, promiseInitTabs]: [State, PromiseInitTabs]) {
+  const {
+    htmlBookmarks,
+    clientState,
+    htmlHistory,
+    lastSearchWord,
+    toggleWindowOrder,
+    pinWindows,
+    windowModeInfo,
+    windowStates,
+  } = { ...initialState, ...states };
   if (options.windowMode) {
     initWindowMode(options, windowModeInfo);
   }
@@ -191,8 +214,9 @@ function init([{
     promiseInitHistory,
     lastSearchWord,
     isSearching,
-    toggleWindowOrder ?? true,
+    toggleWindowOrder,
     pinWindows,
+    windowStates,
   );
   const store = storeMapping(options, components);
   setOptions(settings, options);
@@ -206,6 +230,8 @@ function init([{
     store.dispatch('resetHistory');
   }
   setFavThemeMenu(options.favColorPalettes);
+  setHeaderHeight();
+  Promise.all([promiseInitTabs, promiseInitHistory]).then(setHeaderHeight);
   return store;
 }
 
@@ -261,6 +287,8 @@ customElements.define('multi-sel-pane', MultiSelPane);
 customElements.define('popup-menu', PopupMenu);
 customElements.define('dialog-content', DialogContent);
 customElements.define('modal-dialog', ModalDialog, { extends: 'dialog' });
+customElements.define('header-recent-tabs', HeaderRecentTabs, { extends: 'div' });
+customElements.define('body-recent-tabs', RecentTabs, { extends: 'div' });
 
 export type Store = ReturnType<typeof init>;
 export type StoreSub = Pick<Store, 'dispatch' | 'getStates'>;

@@ -243,3 +243,7 @@ i {
 .icon-minus:before {
   content: "\e926";
 }
+
+.icon-recent-tabs:before {
+  content: "\e927";
+}

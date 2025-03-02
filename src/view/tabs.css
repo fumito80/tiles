@@ -77,28 +77,15 @@ open-tab {
   animation-duration: .2s;
 }
 
-.pane-body.end.tabs {
-  margin-right: 0;
-
-  .pin-wrap-top,
-  .pin-wrap-bottom {
-    margin-right: 4px;
-  }
-
-  .tabs-wrap {
-    margin-right: 2px;
+.end .pane-header.header-tabs {
+  .collapse-tabs {
+    +.query-wrap {
+      margin-left: 0;
+    }
   }
 }
 
 .pane-header.header-tabs {
-
-  &.end {
-    .collapse-tabs {
-      +.query-wrap {
-        margin-left: 0;
-      }
-    }
-  }
 
   >button {
     margin-left: 10px;
@@ -205,7 +192,7 @@ open-tab {
   }
 }
 
-.tab-wrap[data-initial]::before {
+.tab-wrap:not([style])[data-initial]::before {
   content: attr(data-initial);
   font-size: 13.5px;
   width: 18px;
@@ -472,7 +459,7 @@ app-main {
         padding: 4px 8px;
         border-radius: 4px;
         white-space: pre;
-        max-width: 400px;
+        max-width: 450px;
         overflow: hidden;
         text-overflow: ellipsis;
 
@@ -491,7 +478,7 @@ app-main {
   }
 }
 
-app-main.drag-start>.tabs {
+app-main.drag-start .tabs {
   .tabs-collapsed window-header:not(.drag-source)~open-tab {
 
     &.highlight,
@@ -718,7 +705,7 @@ app-main {
     position: sticky;
     bottom: 0;
     margin: 0;
-    z-index: 3;
+    z-index: 4;
 
     >.new-window-plus {
       width: 100%;

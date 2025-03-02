@@ -45,11 +45,11 @@
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
-      <filter id="shadow-onepoint">
-        <feOffset dx='355' dy='-355' />
+      <filter id="hue">
+        <feOffset dx='600' dy='-600' />
         <feGaussianBlur stdDeviation='10' result='offset-blur' />
         <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
-        <feFlood flood-color='#FFFFFF' flood-opacity='.8' result='color' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.7' result='color' />
         <feComposite operator='in' in='color' in2='inverse' result='shadow' />
         <feComposite operator='over' in='shadow' in2='SourceGraphic' />
       </filter>
@@ -89,7 +89,7 @@
     }
     function makeRect(x, y, width, rx, gap) {
       // return `<rect x="${x}" y="${y}" width="${width}" height="${width}" rx="${rx}" filter="url(#shadow1)" />`;
-      return `M${x} 0
+      return `M${x} ${y}
         h${width}
         q${rx} 0 ${rx} ${rx}
         v${width}
@@ -100,65 +100,85 @@
         q0 ${-rx} ${rx} ${-rx}
         z`;
     }
-    function makeConnext(x, y, width, rx, gap) {
+    function makeConnet(x, y, width, rx, gap) {
       return `
         M${x} ${y}
         h${width - rx * 2}
-        q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${rx} ${rx}
-        h${width - rx * 2}
-        q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${rx} ${rx}
-        h${width - rx * 2}
-        q${rx} 0 ${rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2}
-        q${-rx} 0 ${-rx} ${-rx}
-        v${-width + rx * 2}
-        q0 ${-rx} ${-rx} ${-rx}
-        h${-width + rx * 2}
 
-        q${-rx} 0 ${-rx} ${rx}
-        v${width - rx * 2}
-        q0 ${rx} ${-rx} ${rx}
-        h${-width + rx * 2}
-        q${-rx} 0 ${-rx} ${-rx}
+        q${rx} 0 ${rx} ${-rx}
         v${-width + rx * 2}
         q0 ${-rx} ${rx} ${-rx}
         h${width - rx * 2}
-        q${rx} 0 ${rx} ${-rx}
+        q${rx} 0 ${rx} ${rx}
+        v${width - rx * 2}
+        q0 ${rx} ${-rx} ${rx}
+        h${-width + rx * 2}
 
+        q${-rx} 0 ${-rx} ${rx}
+
+        v${width - rx * 2}
+        q0 ${rx} ${rx} ${rx}
+        h${width - rx * 2}
+        q${rx} 0 ${rx} ${rx}
+        v${width - rx * 2}
+        
+        q0 ${rx} ${-rx} ${rx}
+        h${-width + rx * 2}
+        q${-rx} 0 ${-rx} ${-rx}
         v${-width + rx * 2}
         q0 ${-rx} ${-rx} ${-rx}
         h${-width + rx * 2}
+
         q${-rx} 0 ${-rx} ${-rx}
         v${-width + rx * 2}
         q0 ${-rx} ${rx} ${-rx}
         z`;
     }
-    const accentColor = '#FF6663';
+    // const accentColor = '#FF6663';
+    const accentColor = '0067C0';
+    const backgroundBaseColor = accentColor;
+    const [r, g, b] = /(..)(..)(..)/.exec(accentColor).slice(1).map((x) => parseInt(x, 16));
+    const shade = [r, g, b].map((x) => Math.floor(x * 0.6).toString(16).padStart(2, '0')).join('');
     const stroke = accentColor;
     const fill = accentColor;
     const [svg] = document.getElementsByTagName('svg');
     const svgs = [];
     const width = 600;
+    const gridWidth = 500;
+    const topPlus = 160;
     const strokeWidth = 0;
     const gap = 0;
-    const rx = 55;
+    const rx = 70;
     const border = 20;
-    const rectWidth = ((width - strokeWidth) - (gap * 2)) / 3;
+    const rectWidth = ((gridWidth - strokeWidth) - (gap * 2)) / 3;
     svg.setAttribute('stroke-width', strokeWidth);
     svg.setAttribute('stroke', stroke);
     svg.setAttribute('fill', fill);
     svg.setAttribute('width', width);
     svg.setAttribute('height', width);
-    let path = '<path d="';
-    path += makeConnext(rx + strokeWidth / 2, strokeWidth / 2, rectWidth, rx, gap);
-    path += makeRect(width / 3 * 2 + rx, strokeWidth / 2, width / 3 - strokeWidth / 2 - rx * 2, rx, gap);
+    let path = `<path fill="#${backgroundBaseColor}" filter="url(#hue)" d="
+      M 20 140 A 150 150 0 0 1 140 20 Q 300 -10 460 20 A 150 150 0 0 1 580 140 Q 610 300 580 460 A 150 150 0 0 1 460 580 Q 300 610 140 580 A 150 150 0 0 1 20 460 Q -10 300 20 140 z
+    " />`;
+    svg.insertAdjacentHTML('beforeend', path);
+    path =`<path fill="#${shade}" d="`;
+    path += makeConnet(
+      rx + strokeWidth / 2 + ((width - gridWidth) / 2),
+      strokeWidth / 2 + ((width - gridWidth) / 2) + topPlus,
+      rectWidth,
+      rx,
+      gap,
+    );
     path += '" filter="url(#shadow)" />'
+    // path += '<path d="';
+    // path += makeRect(
+    //   gridWidth / 3 * 2 + rx + ((width - gridWidth) / 2),
+    //   strokeWidth / 2 + ((width - gridWidth) / 2) + topPlus,
+    //   gridWidth / 3 - strokeWidth / 2 - rx * 2,
+    //   rx,
+    //   gap,
+    // );
+    // path += `" fill="#${accentColor}" filter="url(#shadow)" />`
+    // path += `<circle fill="#${accentColor}" cx="320" cy="${0 + topPlus}" r="90" filter="url(#shadow)" />`;
     path = path.replace(/\s+/g, ' ');
     svg.insertAdjacentHTML('beforeend', path);
     // svg.insertAdjacentHTML('beforeend', makeBorder(width, 0, 20));

@@ -192,12 +192,6 @@ export function eq<T>(a: T) {
   return (b: T) => a === b;
 }
 
-// export type Map<T extends Array<any>, U, V> = U extends T
-//   ? (f: (element: U[number], index: number, self: U) => V) => (array: T) => V[]
-//   : (f: (element: T[number], index: number, self: T) => V) => (array: T) => V[]
-
-// export const map = <T, U, V>((f) => (array) => array.map(f)) as Map<T, U, V>;
-
 export function map<T extends Array<any>, U>(
   f: (element: T[number], index: number, self: T[number][]) => U,
 ) {
@@ -252,7 +246,7 @@ export function third<T>([,, a]: [any, any, T, ...any]) {
   return a;
 }
 
-export function init<T extends Array<any>>(args: T) {
+export function init<T>(args: T[]) {
   return args.slice(0, -1);
 }
 
@@ -673,8 +667,10 @@ export function getLocal<T extends Array<keyof State>>(...keyNames: T) {
   return getStorage(chrome.storage.local, ...keyNames);
 }
 
-export async function updateSettings<T extends Partial<State['settings']>>(setting: T, processer = identity<Pick<State, 'settings'>>) {
-  return getLocal('settings').then(processer).then(({ settings }) => setLocal({ settings: { ...settings, ...setting } }));
+export async function updateSettings(
+  processer = identity<Settings>,
+) {
+  return getLocal('settings').then(({ settings }) => processer(settings)).then((settings) => setLocal({ settings }));
 }
 
 export function getSync<T extends Array<keyof State>>(...keyNames: T) {
@@ -843,16 +839,16 @@ export function camelToSnake(value: string) {
   return value.split('').map((s) => [s, s.toLowerCase()]).map(([s, smallS]) => (s === smallS ? s : `-${smallS}`)).join('');
 }
 
-export function getGridColStart($target: HTMLElement) {
-  let gridColStart = 0;
-  for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
-    if (!$prev.classList.contains('pane-body')) {
-      break;
-    }
-    gridColStart += 1;
-  }
-  return gridColStart;
-}
+// export function getGridColStart($target: HTMLElement) {
+//   let gridColStart = 0;
+//   for (let $prev = $target.previousElementSibling; $prev; $prev = $prev.previousElementSibling) {
+//     if (!$prev.classList.contains('pane-body')) {
+//       break;
+//     }
+//     gridColStart += 1;
+//   }
+//   return gridColStart;
+// }
 
 export function getColorFromBg(colorPalette: ColorPalette) {
   const lightColor = '#efefef';
@@ -905,14 +901,18 @@ export function setPopupStyle({ css, colorPalette, windowMode }: Pick<Options, '
     chrome.action.setPopup({ popup: '' });
     return;
   }
-  getLocal('settings').then(({ settings }) => {
+  getLocal('settings', 'setAppZoom').then(({ settings, setAppZoom }) => {
+    const width = `${settings.width / setAppZoom}px`;
+    const height = `${settings.height / setAppZoom}px`;
     const encoded = encodeURIComponent(makeCss(settings, colorPalette, css));
-    chrome.action.setPopup({ popup: `popup.html?css=${encoded}` });
-    getPopup().then((popup) => {
-      if (popup) {
+    const popup = `popup.html?css=${encoded}&width=${width}&height=${height}&zoom=${setAppZoom}`;
+    chrome.action.setPopup({ popup });
+    getPopup().then((popupWindow) => {
+      if (popupWindow) {
         postMessage({ type: BkgMessageTypes.terminateWindowMode });
       }
     });
+    return popup;
   });
 }
 
@@ -1057,5 +1057,35 @@ export function addQueryHistory() {
 export const chromeEventFilter = { windowTypes: ['normal'] } as chrome.windows.WindowEventFilter;
 
 export function getHtmlHistory(htmlHistory: string) {
-  return `<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
+  return `<history-item class="current-date history-item header-date" style="transform: translateY(-10000px)"></history-item>${htmlHistory}`;
+}
+
+export async function createOrPopup(windowId: number | undefined, refresh = false) {
+  const {
+    settings, options, setAppZoom, windowModeInfo,
+  } = await getLocal('settings', 'options', 'setAppZoom', 'windowModeInfo');
+  const variables = makeThemeCss(options.colorPalette);
+  const encoded = encodeURIComponent(`:root {\n${variables}\n}\n\n${options.css}`);
+  const url = `popup.html?css=${encoded}&width=unset&height=unset&zoom=${setAppZoom}`;
+  getPopup().then((popup) => {
+    if (!popup) {
+      chrome.windows.create({ url, type: 'popup', ...settings.windowSize }).then((win) => {
+        setLocal({
+          windowModeInfo: {
+            popupWindowId: win.id!,
+            currentWindowId: windowId ?? windowModeInfo.currentWindowId,
+          },
+        });
+      });
+      return;
+    }
+    if (refresh && windowId) {
+      setLocal({ windowModeInfo: { ...windowModeInfo, currentWindowId: windowId } });
+    }
+    chrome.tabs.update(
+      popup.id!,
+      { url: refresh ? url : undefined },
+      () => chrome.windows.update(popup.windowId, { focused: true }),
+    );
+  });
 }

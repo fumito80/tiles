@@ -13,7 +13,8 @@
   <main>
     <header>
       <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
-      <div class="chrome-sync ms-auto">
+      <button type="button" class="apply-settings btn btn-sm btn-outline-primary ms-auto me-5 px-4">Done</button>
+      <div class="chrome-sync">
         <button class="btn btn-sm btn-outline-secondary upload-sync"
           title="Save settings to the cloud in your chrome sign-in account." data-bs-toggle="tooltip"
           data-bs-placement="bottom"><i class="icon-cloud-arrow-up"></i> Upload
@@ -78,26 +79,25 @@
             <div class="tab-pane fade" id="mix-theme" role="tabpanel" aria-labelledby="mix-theme" tabindex="0"></div>
           </div>
         </div>
-
         <div class="heading">Layout</div>
-        <layout-panes name="panes">
-          <div draggable="true" data-value="histories">
+        <layout-panes name="panes2">
+          <div draggable="true" data-value="history">
             <i class="icon-history"></i>
             <div class="title">HISTORY</div>
-            <div>
-              <input type="checkbox" name="zoom-history" id="zoom-history"><label for="zoom-history">Xen mode</label>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
-          <div draggable="true" data-value="tabs">
+          <div draggable="true" data-value="windows">
             <i class="icon-tabs"></i>
             <div class="title">OPEN TABS</div>
-            <div>
-              <input type="checkbox" name="zoom-tabs" id="zoom-tabs"><label for="zoom-tabs">Xen mode</label>
-            </div>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
+          </div>
+          <div draggable="true" data-value="recent-tabs">
+            <i class="icon-recent-tabs"></i>
+            <div class="title">RECENT TABS</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
           <div draggable="true" data-value="bookmarks">
             <i class="icon-bookmarks"></i>
@@ -107,12 +107,12 @@
               <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
               <div data-value="folders">Folders</div>
             </layout-bm-panes>
-            <div class="droppable pane-before"></div>
-            <div class="droppable pane-after"></div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
           </div>
         </layout-panes>
         <label class="item">
-          <input type="checkbox" class="bullet" tabindex="-1">Xen mode display ratio:
+          <input type="checkbox" class="bullet" tabindex="-1">Wider ratio:
           <select name="zoom-ratio" class="form-control ms-2">
             <option value="0.5">50%</option>
             <option value="0.6">60%</option>
@@ -124,9 +124,6 @@
 
         <div class="heading">General</div>
         <label class="item new"><input type="checkbox" name="window-mode">Window mode</label>
-        <div class="d-flex gap-4 mt-2 ms-3"><button type="button"
-            class="apply-settings btn btn-sm btn-outline-primary">Apply
-            settings</button></div>
         <label class="item"><input type="checkbox" name="exclusive-open-bm-folder-tree">Bookmarks folder tree opens
           exclusively</label>
         <div class="item"><input type="checkbox" class="bullet" tabindex="-1">New tab position</div>
@@ -160,7 +157,7 @@
         <label class="item"><input type="checkbox" name="restore-searching">Restore the search in progress at
           startup</label>
         <div class="heading">Open tabs pane</div>
-        <label class="item"><input type="checkbox" name="collapse-tabs">Icon view at startup</label>
+        <label class="item"><input type="checkbox" name="auto-minimize-app">Minimize app when selecting a tab/window</label>
         <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
         <label class="item"><input type="checkbox" name="show-minimize-all">Show minimize all other windows
           button</label>
@@ -168,7 +165,6 @@
           button</label>
         <div class="heading">History pane</div>
         <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
-
         <div class="heading">Style</div>
         <div class="item-collaplse">
           <input type="checkbox" class="bullet" tabindex="-1">
@@ -192,10 +188,29 @@
           </div>
         </div>
         <input is="monaco-editor" type="hidden" name="css">
-
+        <div class="d-none hidden">
+          <div class="auto-wider" data-no="1">
+            <label><input type="checkbox" name="wider1">Auto wider</label>
+          </div>
+          <div class="auto-wider" data-no="2">
+            <label><input type="checkbox" name="wider2">Auto wider</label>
+          </div>
+          <div class="auto-wider dummy" data-no="3">
+            <label>Auto wider</label>
+          </div>
+          <div class="auto-wider dummy" data-no="4">
+            <label>Auto wider</label>
+          </div>
+        </div>
       </form>
     </article>
   </main>
+  <template>
+    <div class="column">
+      <div class="droppable pane-before"></div>
+      <div class="droppable pane-after"></div>
+    </div>
+  </template>
   <script src="settings.js"></script>
 </body>
 

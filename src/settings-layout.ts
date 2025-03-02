@@ -1,8 +1,10 @@
-import { State, InsertPosition } from './types';
+import type {
+  State, InsertPosition, Panes2, PaneNames,
+} from './types';
 import {
-  $, $byClass, addClass, hasClass, rmClass,
+  $, $$, $$byClass, $byClass, $byTag, addClass, getChildren, hasClass, rmClass,
 } from './client';
-import { isDefined } from './common';
+import { isDefined, objectEqaul, updateSettings } from './common';
 
 export abstract class CustomInputElement extends HTMLElement {
   fireEvent() {
@@ -15,52 +17,55 @@ export abstract class CustomInputElement extends HTMLElement {
   abstract value: any;
 }
 
-type Panes = State['options']['panes'][number];
-
-function dragstart(e: DragEvent) {
-  const $target = e.target as HTMLElement;
-  addClass('drag-source')($target);
-  addClass('dragging')($target.parentElement);
-  e.dataTransfer!.effectAllowed = 'move';
-}
-
 export class LayoutPanes extends CustomInputElement {
-  #value: Panes[] = [];
-  #leaveTimer = null as unknown as ReturnType<typeof setTimeout>;
+  #value: Panes2 = [];
+  #dragging = 'dragging';
+  #dragEnter = 'drag-enter';
   constructor() {
     super();
-    this.addEventListener('dragstart', dragstart);
-    this.addEventListener('dragover', this.dragover);
-    this.addEventListener('dragenter', this.dragenter);
-    this.addEventListener('dragleave', this.dragleave);
-    this.addEventListener('dragend', this.dragend);
-    this.addEventListener('drop', this.drop);
+    document.body.addEventListener('dragstart', this.dragstart.bind(this));
+    document.body.addEventListener('dragover', this.dragover.bind(this));
+    document.body.addEventListener('dragenter', this.dragenter.bind(this));
+    document.body.addEventListener('dragend', this.dragend.bind(this));
   }
   get value() {
     return this.#value;
   }
-  set value(value: Panes[]) {
-    [...this.children].forEach((el, i) => {
-      const index = value.findIndex((name) => name === (el as HTMLElement).dataset.value);
-      const $checkZenMode = $<HTMLInputElement>('input[type="checkbox"]', el);
-      if ($checkZenMode) {
-        $checkZenMode.disabled = index === this.childElementCount - 1;
-      }
-      if (i === index) {
-        return;
-      }
-      this.insertBefore(el, this.children[index]);
+  set value(columns: Panes2) {
+    columns.forEach((column) => {
+      const $column = this.appendChild(document.importNode($('.column', $byTag<HTMLTemplateElement>('template').content)!, true));
+      column.slice().reverse().forEach((paneName) => {
+        $column.insertAdjacentElement('afterbegin', $(`[data-value="${paneName}"]`)!);
+      });
     });
-    this.#value = value;
+    this.resetAutoWiderElement();
+    this.#value = columns;
   }
+  resetAutoWiderElement() {
+    const $hidden = $byClass('hidden')!;
+    const $$columns = $$byClass('column', this);
+    $$byClass('auto-wider').forEach(($autoWider) => {
+      const $column = $$columns[Number($autoWider.dataset.no) - 1];
+      $column?.append($autoWider);
+      if (!$column) {
+        $hidden.append($autoWider);
+      }
+    });
+  }
+  dragstart(e: DragEvent) {
+    const $target = e.target as HTMLElement;
+    setTimeout(() => {
+      addClass('drag-source')($target);
+      addClass(this.#dragging)(this);
+    }, 1);
+    e.dataTransfer!.effectAllowed = 'move';
+  }
+  // eslint-disable-next-line class-methods-use-this
   dragover(e: DragEvent) {
-    if (!hasClass(e.target as HTMLElement, 'droppable')) {
-      return;
-    }
-    clearTimeout(this.#leaveTimer);
     e.preventDefault();
   }
   dragenter(e: DragEvent) {
+    rmClass(this.#dragEnter)($byClass(this.#dragEnter));
     const $dragSource = $byClass('drag-source')!;
     const $enterTarget = e.target as HTMLElement;
     if ($dragSource === $enterTarget || !hasClass($enterTarget, 'droppable')) {
@@ -70,31 +75,54 @@ export class LayoutPanes extends CustomInputElement {
     if ($src === $dest) {
       return;
     }
-    clearTimeout(this.#leaveTimer);
-    const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
-    $dest.insertAdjacentElement(position, $src);
-  }
-  dragleave() {
-    clearTimeout(this.#leaveTimer);
-    this.#leaveTimer = setTimeout(() => {
-      this.value = this.#value;
-    }, 200);
-  }
-  dragend(e: DragEvent) {
-    const $target = e.target as HTMLElement;
-    rmClass('drag-source')($target);
-    rmClass('dragging')($target.parentElement);
-    if (e.dataTransfer?.dropEffect === 'none') {
-      this.value = this.#value;
-    }
-  }
-  drop() {
-    const newValue = [...this.children].map((el) => (el as HTMLElement).dataset.value!) as Panes[];
-    if (this.value === newValue) {
+    e.preventDefault();
+    addClass(this.#dragEnter)($enterTarget);
+    if (hasClass($enterTarget, 'pane-top', 'pane-bottom')) {
+      const position: InsertPosition = hasClass($enterTarget, 'pane-top') ? 'beforebegin' : 'afterend';
+      const $column = $src.parentElement!;
+      $dest.insertAdjacentElement(position, $src);
+      if (!$('[draggable]', $column)) {
+        $byClass('hidden')!.append(...$$byClass('auto-wider', $column)!);
+        $column.remove();
+      }
+      this.resetAutoWiderElement();
       return;
     }
-    this.value = newValue;
-    this.fireEvent();
+    const position: InsertPosition = hasClass($enterTarget, 'pane-before') ? 'beforebegin' : 'afterend';
+    let $column = $src.parentElement!;
+    if ($$('[draggable]', $column).length > 1) {
+      $column = document.importNode($('.column', $byTag<HTMLTemplateElement>('template').content)!, true);
+      $column.prepend($src);
+    }
+    $dest.insertAdjacentElement(position, $column);
+    this.resetAutoWiderElement();
+  }
+  dragend(e: DragEvent) {
+    rmClass(this.#dragEnter)($byClass(this.#dragEnter));
+    rmClass(this.#dragging)(this);
+    rmClass('drag-source')(e.target as HTMLElement);
+    const windowMode = ((this.parentElement as HTMLFormElement)['window-mode'] as HTMLInputElement).checked;
+    this.update(!windowMode);
+  }
+  update(applyValue = false) {
+    const newValue = $$('.column:has([data-value])', this)
+      .map(($col) => getChildren($col)
+        .map(($el) => ($el as HTMLElement).dataset.value as PaneNames[number])
+        .filter(isDefined));
+    if (!objectEqaul(newValue, this.value, true)) {
+      $$<HTMLInputElement>('.hidden input[type="checkbox"], .column:last-child input[type="checkbox"], [data-value="bookmarks"]~.auto-wider input[type="checkbox"]').forEach(($el) => {
+        // eslint-disable-next-line no-param-reassign
+        $el.checked = false;
+      });
+      if (applyValue) {
+        updateSettings((settings) => ({
+          ...settings,
+          paneSizes: { ...settings.paneSizes, widths: [], heights: [] },
+        }));
+        this.#value = newValue;
+      }
+      this.fireEvent();
+    }
   }
 }
 
@@ -107,8 +135,8 @@ export class LayoutBookmarksPanes extends CustomInputElement {
     this.#btnFlip.addEventListener('click', this.flipBmPanes.bind(this));
   }
   get value() {
-    return [...this.children]
-      .map((el) => (el as HTMLElement).dataset.value as BookmarksPanes)
+    return getChildren(this)
+      .map((el) => el.dataset.value as BookmarksPanes)
       .filter(isDefined);
   }
   set value(value: BookmarksPanes[]) {

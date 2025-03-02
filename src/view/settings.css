@@ -324,44 +324,62 @@ label.theme {
 
 /* Layout */
 
-[name="panes"] {
+[name="panes2"] {
   margin: 1em;
   display: flex;
   gap: 10px;
 
-  >div {
-    position: relative;
-    border: 2px solid #222;
-    border-radius: 5px;
-    width: 120px;
-    height: 120px;
-    display: grid;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    grid-template-rows: 40% 10% 50%;
-    background-color: aliceblue;
-    cursor: grab;
-
-    .title+div {
-      cursor: default;
-    }
-
-    >i {
-      color: darkgray;
-    }
-
-    >.droppable {
-      position: absolute;
-      height: 100%;
-      left: 0;
-      width: 0;
-      transition: width 0.1s, left 0.1s;
-    }
-
+  .droppable {
+    position: absolute;
+    height: 100%;
+    width: 0;
   }
 
-  .icon-tabs {
+  .icon-drag-handle {
+    text-align: center;
+    font-size: 1.5em;
+    cursor: ew-resize;
+  }
+
+  .column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    >[draggable] {
+      position: relative;
+      border: 2px solid #222;
+      border-radius: 5px;
+      min-width: 120px;
+      height: 100%;
+      min-height: 120px;
+      display: grid;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      grid-template-rows: 40% 10% 50%;
+      background-color: aliceblue;
+      cursor: grab;
+      box-sizing: border-box;
+
+      .title+div {
+        cursor: default;
+      }
+
+      >i {
+        color: darkgray;
+      }
+    }
+  }
+
+  .icon-tabs,
+  .icon-recent-tabs {
+    font-size: 1.4em;
+  }
+
+  .icon-bookmarks,
+  .icon-history {
     font-size: 1.3em;
   }
 
@@ -370,10 +388,13 @@ label.theme {
     margin-right: auto;
   }
 
-  >.drag-source {
+  .drag-source[draggable] {
     background-color: transparent;
     color: transparent;
-    border-color: transparent;
+    /* border-color: transparent; */
+    border-style: dashed;
+    border-color: dodgerblue;
+    border-width: 3px;
     transition: background-color 0.01s, color 0.01s, border-color 0.01s;
 
     .title+div,
@@ -382,22 +403,33 @@ label.theme {
       visibility: hidden;
       transition: visibility 0.01s;
     }
-
   }
 
   &.dragging {
+    >.column {
+      >.droppable.pane-before {
+        width: 30px;
+        left: -20px;
+      }
+    }
 
-    >div {
+    .column:last-child>.pane-after {
+      width: 30px;
+      right: -20px;
+    }
+
+    [draggable]:not(.drag-source) {
       >.droppable {
-        width: calc(50% + 7px);
-      }
+        width: 100%;
+        height: 30%;
 
-      >.pane-before {
-        left: -7px;
-      }
+        &.pane-top {
+          top: -20px;
+        }
 
-      >.pane-after {
-        left: 50%;
+        &.pane-bottom {
+          bottom: -20px;
+        }
       }
     }
   }
@@ -488,11 +520,27 @@ label.theme {
   }
 }
 
-.item:has([name="window-mode"]:not(:checked))+div .apply-settings {
-  color: var(--bs-btn-disabled-color);
+.apply-settings {
+  transition: all .2s;
+}
+
+main:has([name="window-mode"]:not(:checked)) .apply-settings {
   pointer-events: none;
-  background-color: var(--bs-btn-disabled-bg);
-  border-color: var(--bs-btn-disabled-border-color);
-  opacity: var(--bs-btn-disabled-opacity);
+  opacity: 0;
   cursor: pointer;
+}
+
+.auto-wider.dummy,
+.column:last-child .auto-wider,
+[data-value="bookmarks"]~.auto-wider {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.column:first-child:last-child .auto-wider {
+  display: none;
+}
+
+.auto-wider {
+  text-align: center;
 }

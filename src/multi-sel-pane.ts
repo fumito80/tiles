@@ -1,15 +1,16 @@
 import {
-  ColorPalette, Options, Panes, State,
+  ColorPalette, MulitiSelectables, Options, Panes, State,
 } from './types';
 import {
-  $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
-  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu,
-  showMenu, preShowMenu, setZoomAppMenu,
+  $, $$, $$byClass, $$byTag, $byClass, $byTag, addAttr, hasClass, rmClass, addBookmarkFromText,
+  addClass, addFolder, changeColorTheme, getChildren, setFavColorMenu, showMenu, preShowMenu,
 } from './client';
 import {
   Changes, Dispatch, IPubSubElement, ISubscribeElement, makeAction, Store, StoreSub,
 } from './popup';
-import { getLocal, pick, setEvents } from './common';
+import {
+  getLocal, pick, setEvents, when,
+} from './common';
 
 export function getSelecteds() {
   return $$byClass('selected');
@@ -42,12 +43,6 @@ function clickMainMenu(e: MouseEvent, store: Store) {
     case 'settings':
       chrome.runtime.openOptionsPage();
       break;
-    case 'zoom-app-minus':
-    case 'zoom-app-plus': {
-      const [,, value] = $menu.dataset.value.split('-');
-      store.dispatch('zoomApp', value as Changes<'zoomApp'>['newValue'], true);
-      break;
-    }
     default:
   }
   if (hasClass($menu, 'fav-palette')) {
@@ -86,18 +81,14 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     addAttr('title', header.multiDeletesTitle)($deletesButton);
     header.insertAdjacentElement('afterbegin', this);
     $byClass('multi-sel-menu-button', this)?.addEventListener('click', (e) => {
-      showMenu($menu, true)(e);
+      showMenu($menu, this.#header.appZoom)(e);
       e.stopImmediatePropagation();
     }, true);
     $byClass('multi-sel-menu-button', this)?.addEventListener('mousedown', (e) => {
       preShowMenu($menu, e);
     });
   }
-  show({ newValue }: {
-    newValue: {
-      leafs?: boolean, tabs?: boolean, history?: boolean, all?: boolean,
-    }
-  }) {
+  show({ newValue }: { newValue: MulitiSelectables }) {
     const { all } = newValue;
     const [, show] = Object.entries(newValue).find(([key]) => key === this.#header.paneName) || [];
     if (!show && !all) {
@@ -122,13 +113,13 @@ export class MultiSelPane extends HTMLElement implements ISubscribeElement {
     this.$count.textContent = String(count);
     if (count === 0) {
       dispatch('multiSelPanes', {
-        bookmarks: false, tabs: false, histories: false, all: true,
+        bookmarks: false, windows: false, history: false, 'recent-tabs': false, all: true,
       }, true);
       return;
     }
     this.$count.textContent = String(count);
     rmClass('pre')(this);
-    const maxWidth = ([...this.children] as HTMLElement[])
+    const maxWidth = getChildren(this)
       .map(getElementWidth)
       .reduce((acc, width) => acc + width, 0);
     this.style.setProperty('max-width', `${Math.ceil(maxWidth)}px`);
@@ -175,8 +166,10 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
   abstract paneName: Panes;
   private includeUrl!: boolean;
   private $mainMenu!: HTMLElement;
+  private $mainMenuButton!: HTMLElement;
   protected $popupMenu!: HTMLElement;
   protected $multiSelPane!: MultiSelPane;
+  #appZoom!: number;
   abstract menuClickHandler(e: MouseEvent, dispatch: Dispatch): void;
   readonly abstract multiDeletesTitle: string;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -189,26 +182,25 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
       throw new Error('No popup found');
     }
     this.$multiSelPane.init(this, this.$popupMenu);
-    const $mainMenuButton = this.$mainMenu.previousElementSibling as HTMLElement;
-    if (getComputedStyle($mainMenuButton.parentElement!).display === 'none') {
+    this.$mainMenuButton = this.$mainMenu.previousElementSibling as HTMLElement;
+    if (getComputedStyle(this.$mainMenuButton.parentElement!).display === 'none') {
       return;
     }
     const { $mainMenu } = this;
-    setEvents([$mainMenuButton], {
+    setEvents([this.$mainMenuButton], {
       click(e) {
         const isShow = hasClass($mainMenu, 'show');
         $$byClass('main-menu').forEach(rmClass('show'));
         if (!isShow) {
           $mainMenu.classList.add('show');
-          showMenu($mainMenu, true)(e);
+          showMenu($mainMenu, (this as MulitiSelectablePaneHeader).appZoom)(e);
           getLocal('options').then(({ options }) => setFavColorMenu(options.colorPalette));
-          setZoomAppMenu();
         }
       },
       mousedown(e) {
         preShowMenu($mainMenu, e);
       },
-    });
+    }, undefined, this);
   }
   selectItems({ newValue }: Changes<'selectItems'>, _: any, __: any, store: StoreSub) {
     if (newValue?.paneName !== this.paneName) {
@@ -216,8 +208,22 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
     }
     this.$multiSelPane.selectItems(newValue.count, store.dispatch);
   }
+  setZoomAppMenu({ newValue }: Changes<'setAppZoom'>) {
+    $$('.menu-zoom-app > span', this.$mainMenu).forEach((el) => Object.assign(el, { textContent: `${Math.round(newValue * 100)}%` }));
+    this.#appZoom = newValue;
+    const isShow = hasClass(this.$mainMenu, 'show');
+    if (isShow) {
+      showMenu(this.$mainMenu, this.#appZoom)({
+        target: this.$mainMenuButton,
+        stopImmediatePropagation: () => {},
+      } as unknown as MouseEvent);
+    }
+  }
+  get appZoom() {
+    return this.#appZoom;
+  }
   actions() {
-    if (hasClass(this, 'end')) {
+    if ($('.col-grid.end .pane-header') === this) {
       return {
         setIncludeUrl: makeAction({
           initValue: this.includeUrl,
@@ -230,9 +236,18 @@ export abstract class MulitiSelectablePaneHeader extends HTMLDivElement implemen
           initValue: '' as Panes,
           force: true,
         }),
-        zoomApp: makeAction({
-          initValue: '' as 'plus' | 'minus',
-          force: true,
+        setAppZoom: makeAction({
+          initValue: 1,
+          persistent: true,
+          target: $byClass('menu-zoom-app', this.$mainMenu),
+          eventType: 'click',
+          eventProcesser: (e, currentValue) => {
+            const target = e.target as HTMLElement;
+            const newValue = currentValue + 0.01 * when(hasClass(target, 'zoom-app-plus')).then(1)
+              .when(hasClass(target, 'zoom-app-minus')).then(-1)
+              .else(0);
+            return (newValue < 0.5 || newValue > 1.6) ? currentValue : newValue;
+          },
         }),
       };
     }

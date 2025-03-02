@@ -6,11 +6,10 @@ import {
   Changes, Dispatch, IPubSubElement, makeAction, States, Store, StoreSub,
 } from './popup';
 import {
-  $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText,
-  setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle,
-  addBookmark,
+  $$byTag, $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText, createElement,
+  setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle, addBookmark,
   getMessageDeleteSelecteds,
-  $$byTag,
+  getChildren,
 } from './client';
 import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,
@@ -24,8 +23,8 @@ import { dialog } from './dialogs';
 
 function getRowHeight() {
   const $tester = pipe(
-    addChild(document.createElement('div')),
-    addClass('history'),
+    addChild(createElement('div')),
+    addClass('history-item'),
     setText('A'),
   )(document.body);
   const styles = getComputedStyle($tester!);
@@ -93,7 +92,7 @@ async function getHistoriesByIds(elementIds: string[]) {
 }
 
 export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSubElement {
-  readonly paneName = 'histories';
+  readonly paneName = 'history';
   private store!: Store;
   readonly multiDeletesTitle = 'Delete selected histories';
   toggleCollapseIcon({ newValue: { collapsed } }: Changes<'historyCollapseDate'>) {
@@ -153,7 +152,7 @@ export class HeaderHistory extends MulitiSelectablePaneHeader implements IPubSub
 }
 
 export class History extends MulitiSelectablePaneBody implements IPubSubElement, ISearchable {
-  readonly paneName = 'histories';
+  readonly paneName = 'history';
   #includeUrl!: boolean;
   #reFilter!: RegExp | null;
   #rowHeight!: number;
@@ -179,8 +178,8 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.$fakeBottom = $byClass('v-scroll-fake-bottom', this)!;
     this.$draggableClone = $byClass('draggable-clone')!;
     if (isSearching) {
-      const header = '<history-item class="current-date history header-date" style="transform: translateY(-10000px)"></history-item>';
-      const line = '<history-item class="history" draggable="true" style="transform: translateY(-10000px);"></history-item>';
+      const header = '<history-item class="current-date history-item header-date" style="transform: translateY(-10000px)"></history-item>';
+      const line = '<history-item class="history-item" draggable="true" style="transform: translateY(-10000px);"></history-item>';
       const lines = Array(historyHtmlCount).fill(line).join('');
       insertHTML('afterbegin', header + lines)(this.firstElementChild);
     } else {
@@ -258,8 +257,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     this.#includeUrl = includeUrl;
     dispatch('historyCollapseDate', { collapsed: false }, true);
   }
-  refreshHistory(_: any, __: any, states: States, store: StoreSub) {
-    store.dispatch('multiSelPanes', { all: false });
+  refreshHistory(_: any, __: any, states: States) {
     this.#histories = undefined;
     this.promiseInitHistory = getHistoryDataByWorker();
     this.resetHistory(undefined, undefined, states);
@@ -310,7 +308,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       $$byClass('init').forEach(rmClass('init'));
     }
     if (this.#reFilter || !initialize) {
-      [...this.$rows?.children || []].forEach(
+      getChildren(this.$rows).forEach(
         pipe(
           rmStyle('background-image'),
           rmAttr('title'),
@@ -475,12 +473,12 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const $target = e.target as HTMLElement;
     if (hasClass($target, 'header-date')) {
       const {
-        searching, historyCollapseDate, multiSelPanes: { histories, all } = {},
+        searching, historyCollapseDate, multiSelPanes: { history, all } = {},
       } = states;
-      if (histories || all) {
+      if (history || all) {
         this.selectDateAll($target, searching, store.dispatch);
         if (all) {
-          store.dispatch('multiSelPanes', { histories: true, all: false });
+          store.dispatch('multiSelPanes', { history: true, all: false });
         }
       } else {
         store.dispatch('focusQuery');
@@ -490,10 +488,10 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       return;
     }
-    const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
-    if ($history instanceof HistoryItem) {
-      if ($history.isSession && hasClass($target, 'icon-fa-angle-right')) {
-        const [, id] = $history.id.split('-');
+    const $historyItem = $target instanceof HistoryItem ? $target : $target.parentElement;
+    if ($historyItem instanceof HistoryItem) {
+      if ($historyItem.isSession && hasClass($target, 'icon-fa-angle-right')) {
+        const [, id] = $historyItem.id.split('-');
         let isOpenClosedWindow = false;
         const vData = ((data) => {
           const findIndex = data.findIndex(propEq('id', id));
@@ -511,7 +509,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
             .concat({ ...closedWindow, isOpenSessionWindow: false })
             .concat(data.slice(findIndex + closedWindow.sessionWindow!.length + 1));
         })(this.getVScrollData());
-        $history.classList.toggle('open-closed-window', isOpenClosedWindow);
+        $historyItem.classList.toggle('open-closed-window', isOpenClosedWindow);
         const { scrollTop } = this;
         this.setVScroll(rowSetterHistory, vData, false);
         this.setScrollTop(scrollTop);
@@ -519,9 +517,9 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         return;
       }
       if (hasClass($target, 'icon-x')) {
-        const [{ url }] = await getHistoriesByIds([$history.id]);
-        $history.delete(url!).then(() => {
-          const [, id] = $history.id.split('-');
+        const [{ url }] = await getHistoriesByIds([$historyItem.id]);
+        $historyItem.delete(url!).then(() => {
+          const [, id] = $historyItem.id.split('-');
           this.applyData((data) => {
             const newData = [] as MyHistoryItem[];
             for (let i = 0; i < data.length; i += 1) {
@@ -536,73 +534,73 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         });
         return;
       }
-      const { histories, all } = states.multiSelPanes!;
-      if (histories || all) {
-        if (hasClass($history, 'session-tab', 'session-window')) {
+      const { history, all } = states.multiSelPanes!;
+      if (history || all) {
+        if (hasClass($historyItem, 'session-tab', 'session-window')) {
           dialog.alert(messages.cantSelectMultiple);
           return;
         }
         if (e.shiftKey && this.#lastClickedId && this.#lastClickedId !== $target.id) {
-          this.selectWithShift($history, this.#lastClickedId);
+          this.selectWithShift($historyItem, this.#lastClickedId);
         } else {
-          const selected = $history.select();
-          this.selectItem($history.id, selected);
+          const selected = $historyItem.select();
+          this.selectItem($historyItem.id, selected);
         }
         this.selectItems(store.dispatch);
         if (all) {
-          store.dispatch('multiSelPanes', { histories: true, all: false });
+          store.dispatch('multiSelPanes', { history: true, all: false });
         }
-        this.#lastClickedId = $history.id;
+        this.#lastClickedId = $historyItem.id;
         return;
       }
-      if ($history.isSession) {
-        const [, sessionId] = $history.id.split('session-');
+      if ($historyItem.isSession) {
+        const [, sessionId] = $historyItem.id.split('session-');
         postMessage({ type: CliMessageTypes.restoreSession, payload: sessionId });
         return;
       }
-      const [{ url }] = await getHistoriesByIds([$history.id]);
-      $history.open(url!, store.dispatch);
+      const [{ url }] = await getHistoriesByIds([$historyItem.id]);
+      $historyItem.open(url!, store.dispatch);
     }
   }
-  multiSelect({ newValue: { histories } }: { newValue: MulitiSelectables }) {
-    if (!histories) {
+  multiSelect({ newValue: { history } }: { newValue: MulitiSelectables }) {
+    if (!history) {
       this.applyData((data) => data?.map((row) => ({ ...row, selected: false })));
       this.#lastClickedId = undefined;
     }
   }
   mousedownItem(_: any, e: MouseEvent, __: any, store: StoreSub) {
     const $target = e.target as HTMLElement;
-    const $history = $target instanceof HistoryItem ? $target : $target.parentElement;
-    if ($history instanceof HistoryItem) {
-      const isHeader = hasClass($history, 'header-date');
+    const $historyItem = $target instanceof HistoryItem ? $target : $target.parentElement;
+    if ($historyItem instanceof HistoryItem) {
+      const isHeader = hasClass($historyItem, 'header-date');
       clearTimeout(this.timerMultiSelect);
       this.timerMultiSelect = setTimeout(
         async () => {
           const {
             dragging, multiSelPanes, searching, toggleRecentlyClosed,
           } = await store.getStates();
-          const histories = !multiSelPanes?.histories;
+          const history = !multiSelPanes?.history;
           if (dragging) {
-            if (!histories) {
-              this.selectItem($history.id, true);
+            if (!history) {
+              this.selectItem($historyItem.id, true);
               this.selectItems(store.dispatch);
             }
             return;
           }
-          if (toggleRecentlyClosed || hasClass($history, 'session-tab', 'session-window')) {
+          if (toggleRecentlyClosed || hasClass($historyItem, 'session-tab', 'session-window')) {
             dialog.alert(messages.cantSelectMultiple);
             return;
           }
-          store.dispatch('multiSelPanes', { histories, all: false });
-          if (!histories || multiSelPanes?.all) {
+          store.dispatch('multiSelPanes', { history, all: false });
+          if (!history || multiSelPanes?.all) {
             store.dispatch('multiSelPanes', { all: false });
             return;
           }
           if (isHeader) {
-            this.selectDateAll($history, searching, store.dispatch, true);
+            this.selectDateAll($historyItem, searching, store.dispatch, true);
             return;
           }
-          $history.preMultiSelect(histories);
+          $historyItem.preMultiSelect(history);
           store.dispatch('selectItems', { paneName: this.paneName, count: 1 }, true);
         },
         delayMultiSelect,
@@ -612,7 +610,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
       }
       // pre making draggable clones
       this.hookData((data) => {
-        const [, cunnretId] = $history.id.split('-');
+        const [, cunnretId] = $historyItem.id.split('-');
         const selecteds = data.filter((el) => el.selected || el.id === cunnretId);
         const html = [] as string[];
         let cloneCount = 0;
@@ -626,7 +624,7 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
         });
         this.$draggableClone.innerHTML = html.join('');
         if (cloneCount > 0) {
-          const $div = this.$draggableClone.appendChild(document.createElement('div'));
+          const $div = this.$draggableClone.appendChild(createElement('div'));
           $div.textContent = `... and ${selecteds.length - cloneCount} more items`;
           addStyle({ padding: '2px' })($div);
         }
@@ -651,12 +649,11 @@ export class History extends MulitiSelectablePaneBody implements IPubSubElement,
     const vScrollHeight = this.#rowHeight * data.length;
     addStyle('height', `${vScrollHeight - this.offsetHeight + padding}px`)(this.$fakeBottom);
     const setter = rowSetter(isShowFixedHeader);
-    const children = [...this.$rows.children] as HTMLElement[];
     this.vScrollData = data;
     this.vScrollHandler = () => {
       const rowTop = -(this.scrollTop % this.#rowHeight);
       const dataTop = Math.floor(this.scrollTop / this.#rowHeight);
-      children.forEach(setter(this.vScrollData, rowTop, dataTop));
+      getChildren(this.$rows).forEach(setter(this.vScrollData, rowTop, dataTop));
     };
     this.addEventListener('scroll', this.vScrollHandler);
   }
