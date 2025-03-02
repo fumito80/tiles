@@ -1,6 +1,6 @@
 import {
   $, $$, $$byClass, $byClass, addClass, rmClass, hasClass, addStyle, getBookmark,
-  setAnimationClass, editTitle, remeveBookmark, getMessageDeleteSelecteds,
+  setAnimationClass, editTitle, removeBookmark, getMessageDeleteSelecteds,
 } from './client';
 import {
   cssid, setEvents, setFavicon, switches,
@@ -180,7 +180,7 @@ function setLeafMenu($leafMenu: HTMLElement, options: Options, dispatch: Dispatc
           break;
         }
         case 'remove':
-          remeveBookmark($leaf);
+          removeBookmark($leaf);
           break;
         case 'show-in-folder': {
           const id = $leaf.parentElement?.id;
@@ -315,7 +315,7 @@ export class Leafs extends Bookmarks implements ISubscribeElement, ISearchable {
     }
     const removes = $selecteds
       .filter(($el): $el is Leaf => $el instanceof Leaf)
-      .map(remeveBookmark);
+      .map(removeBookmark);
     Promise.all(removes).then(() => this.selectItems(dispatch));
   }
   multiSelectLeafs({ newValue: { bookmarks } }: { newValue: MulitiSelectables }) {

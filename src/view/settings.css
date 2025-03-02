@@ -535,7 +535,7 @@ main:has([name="window-mode"]:not(:checked)) .apply-settings {
 }
 
 .auto-wider.dummy,
-.column:not(:first-child) .auto-wider,
+.column:last-child .auto-wider,
 [data-value="bookmarks"]~.auto-wider {
   visibility: hidden;
   pointer-events: none;

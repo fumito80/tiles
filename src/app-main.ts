@@ -247,6 +247,9 @@ export class AppMain extends HTMLElement implements IPubSubElement {
           $$(cssid(clientState.open)).forEach(addClass('open'));
         }
       }
+      if (states.searching) {
+        store.dispatch('re-search', 'bookmarks', true);
+      }
     });
   }
   applyStyle({ newValue: { css, colorPalette } }: Changes<'applyStyle'>) {

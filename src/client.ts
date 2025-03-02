@@ -243,7 +243,7 @@ export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
       .join(' ');
     $grid.style.setProperty('grid-template-rows', tmplRows);
   });
-  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% max-content auto`);
+  $byClass('bookmarks')!.style.setProperty('grid-template-columns', `${paneSizes.bookmarks[0]}% min-content auto`);
   if (!paneSizes.widths.length || !paneSizes.heights.length) {
     updateSettings((settings) => ({
       ...settings,
@@ -252,15 +252,16 @@ export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
   }
 }
 
-export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in') {
+export function setAnimationClass(className: 'hilite' | 'remove-hilite' | 'hilite-fast' | 'fade-in', promiseResolver = () => {}) {
   return (el: Element | undefined) => {
     if (!el) {
       return el;
     }
-    el?.addEventListener('animationend', () => {
+    el.addEventListener('animationend', () => {
       addStyle({ 'animation-duration': '0s' })(el);
       rmClass(className)(el);
       setTimeout(() => rmStyle('animation-duration')(el), 200);
+      promiseResolver();
     }, { once: true });
     addClass(className)(el);
     return el;
@@ -834,19 +835,12 @@ export function setOpenPaths($folder: HTMLElement) {
   saveStateAllPaths();
 }
 
-export async function remeveBookmark($leaf: Leaf) {
-  await chrome.bookmarks.remove($leaf.id);
-  return new Promise<void>((resolve) => {
+export async function removeBookmark($leaf: Leaf) {
+  await new Promise<void>((resolve) => {
     addChild($byClass('leaf-menu')!)($byClass('components')!);
-    pipe(
-      addListener('animationend', () => {
-        $$(cssid($leaf.id)).forEach(($el) => $el.remove());
-        resolve();
-      }, { once: true }),
-      rmClass('hilite'),
-      setAnimationClass('remove-hilite'),
-    )($leaf);
+    setAnimationClass('remove-hilite', resolve)($leaf);
   });
+  chrome.bookmarks.remove($leaf.id);
 }
 
 export function getPrevTarget(...className: string[]) {

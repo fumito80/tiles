@@ -278,7 +278,7 @@ form.form-query {
 
   .query {
     width: 100%;
-    max-width: 100px;
+    max-width: 120px;
     border: 0;
     outline: none;
     font-size: inherit;
@@ -1480,6 +1480,7 @@ app-main::-webkit-scrollbar {
     }
 
     .query-wrap {
+      margin-left: 5px;
       margin-right: 0;
     }
   }
