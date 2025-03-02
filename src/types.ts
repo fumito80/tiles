@@ -41,6 +41,15 @@ export type PaneSizes = {
   bookmarks: number[],
 };
 
+export const oldPaneNames = ['leafs', 'tabs', 'histories', 'folders'] as const;
+
+type OldPaneWidth = {
+  name: (typeof oldPaneNames)[number];
+  width: number,
+};
+
+export type OldPaneLayouts = [OldPaneWidth, OldPaneWidth, OldPaneWidth][];
+
 export const initialSettings = {
   postPage: false,
   width: 800,
@@ -51,18 +60,12 @@ export const initialSettings = {
     top: undefined as number | undefined,
     left: undefined as number | undefined,
   },
+  paneLayouts: [] as OldPaneLayouts, // Discarded
   paneSizes: {
     widths: [],
     heights: [],
     bookmarks: [50],
   } as PaneSizes,
-  bodyColor: '#222222',
-  tabs: true,
-  history: true,
-  historyMax: {
-    rows: 30,
-    days: null,
-  },
   includeUrl: false,
   theme: {
     light: '',
@@ -131,6 +134,9 @@ const panes2 = [
 ] as const satisfies Panes2;
 
 export const initialOptions = {
+  panes: [] as unknown as ('histories' | 'tabs' | 'bookmarks')[], // Discarded
+  zoomTabs: false, // Discarded
+  zoomHistory: true, // Discarded
   panes2,
   bookmarksPanes: ['leafs', 'folders'] as const,
   newTabPosition: 'rs' as 'rs' | 're' | 'ls' | 'le',

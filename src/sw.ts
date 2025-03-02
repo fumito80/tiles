@@ -122,7 +122,38 @@ type InitStateKeys = keyof Pick<
   State,
   'settings' | 'clientState' | 'options' | 'lastSearchWord'
 >;
-const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options', 'lastSearchWord'];
+
+function migrate(storage: Pick<State, InitStateKeys>) {
+  const { settings, options } = storage;
+  if (settings.paneLayouts?.length === 0) {
+    return storage;
+  }
+  const panes = options.panes
+    .reduce<string[]>((acc, name) => acc.concat(name === 'bookmarks' ? options.bookmarksPanes[0] : name), []);
+  const widths = settings.paneLayouts
+    .find((ps) => panes.every((pane, i) => pane === ps[i]?.name))!
+    .map((paneWidth) => (paneWidth.width / initialSettings.width) * 100);
+  const mapping = {
+    histories: ['history'],
+    tabs: ['windows'],
+    bookmarks: ['bookmarks', 'recent-tabs'],
+  };
+  const panes2 = options.panes
+    .map((pane) => mapping[pane as keyof typeof mapping]) as typeof initialOptions.panes2;
+  const [firstPane, secondPane] = options.panes;
+  const wider1 = (options.zoomHistory && firstPane === 'histories')
+    || (options.zoomTabs && firstPane === 'tabs');
+  const wider2 = (options.zoomHistory && secondPane === 'histories')
+    || (options.zoomTabs && secondPane === 'tabs');
+  settings.paneLayouts = [];
+  return {
+    ...storage,
+    options: {
+      ...options, panes2, wider1, wider2, windowMode: false,
+    },
+    settings: { ...settings, paneSizes: { ...initialSettings.paneSizes, widths } },
+  } as const satisfies Pick<State, InitStateKeys>;
+}
 
 async function init(storage: Pick<State, InitStateKeys>) {
   const css = await fetch('./default.css').then((resp) => resp.text());
@@ -147,7 +178,11 @@ async function init(storage: Pick<State, InitStateKeys>) {
   regsterChromeEvents(saveQuery)([chrome.runtime.onConnect]);
 }
 
-getLocal(...initStateKeys).then(init);
+const initStateKeys: Array<InitStateKeys> = ['settings', 'clientState', 'options', 'lastSearchWord'];
+
+getLocal(...initStateKeys)
+  .then(migrate)
+  .then(init);
 
 chrome.action.onClicked.addListener((tab) => createOrPopup(tab.windowId));
 
