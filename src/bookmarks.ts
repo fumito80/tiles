@@ -10,7 +10,10 @@ import { dialog } from './dialogs';
 import { dropBmInNewWindow } from './drag-drop';
 import {
   getSelecteds,
-  MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
+  MulitiSelectablePaneBody,
+  MultiSelPane,
+  MutiSelectableItem,
+  MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import { ISearchable, SearchParams } from './search';
 import {

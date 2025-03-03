@@ -20,11 +20,8 @@ import {
   createOrPopup,
 } from './common';
 import {
-  $, $$, $byTag, $byClass, $byId,
-  rmClass, addClass, setText, hasClass,
-  insertHTML,
-  getChildren,
-  getPalettesHtml,
+  $, $$, $byTag, $byClass, $byId, rmClass, addClass, setText, hasClass,
+  insertHTML, getChildren, getPalettesHtml,
 } from './client';
 
 type Options = State['options'];

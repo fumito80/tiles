@@ -467,37 +467,37 @@ export function resizeHeightHandler($main: AppMain) {
   };
 }
 
-export function setAnimationFolder(className: string) {
+export function setAnimationFolder(className: string, promiseResolver = () => {}) {
   return (el: Element | null | undefined = undefined) => {
     if (!el) {
       return el;
     }
     return pipe(
-      addListener('animationend', () => rmClass(className)(el), { once: true }),
+      addListener('animationend', () => {
+        rmClass(className)(el);
+        promiseResolver();
+      }, { once: true }),
       addClass(className),
     )(el);
   };
 }
 
 export async function removeFolder($folder: HTMLElement) {
-  const ret = await chrome.bookmarks.removeTree($folder.id)
-    .then(() => 'ok')
-    .catch((reason) => dialog.alert(reason.message));
-  if (ret !== 'ok') {
-    return;
-  }
   addChild($byClass('folder-menu')!)(document.body);
-  pipe(
-    addListener('animationend', () => {
-      const $parent = $folder.parentElement!;
-      $folder.remove();
-      setHasChildren($parent);
-      $byClass('title', $parent)!.click();
-    }, { once: true }),
-    rmClass('hilite'),
-    setAnimationFolder('remove-hilite'),
-  )($byClass('marker', $folder)!);
-  $(`.leafs ${cssid($folder.id)}`)?.remove();
+  await new Promise<void>((resolve) => {
+    pipe(
+      addListener('animationend', () => {
+        const $parent = $folder.parentElement!;
+        if ($byClass('open', $parent)) {
+          setHasChildren($parent);
+          $byClass('title', $parent)!.click();
+        }
+      }, { once: true }),
+      rmClass('hilite'),
+      setAnimationFolder('remove-hilite', resolve),
+    )($byClass('marker', $folder)!);
+  });
+  chrome.bookmarks.removeTree($folder.id).catch((reason) => dialog.alert(reason.message));
 }
 
 export async function editTitle(
@@ -840,7 +840,7 @@ export async function removeBookmark($leaf: Leaf) {
     addChild($byClass('leaf-menu')!)($byClass('components')!);
     setAnimationClass('remove-hilite', resolve)($leaf);
   });
-  chrome.bookmarks.remove($leaf.id);
+  return chrome.bookmarks.remove($leaf.id);
 }
 
 export function getPrevTarget(...className: string[]) {

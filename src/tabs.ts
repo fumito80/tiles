@@ -1,6 +1,5 @@
 import {
-  MulitiSelectablePaneBody,
-  MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
+  MulitiSelectablePaneBody, MultiSelPane, MutiSelectableItem, MulitiSelectablePaneHeader,
 } from './multi-sel-pane';
 import {
   $, $$byClass, $$byTag, $byClass, $byTag, addClass, addStyle, hasClass, rmClass, rmStyle,

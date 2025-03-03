@@ -8,8 +8,7 @@ import {
 import {
   $$byTag, $byClass, addChild, addClass, hasClass, rmAttr, rmStyle, setHTML, setText, createElement,
   setAnimationClass, toggleClass, insertHTML, $$byClass, rmClass, addStyle, addBookmark,
-  getMessageDeleteSelecteds,
-  getChildren,
+  getMessageDeleteSelecteds, getChildren,
 } from './client';
 import {
   delayMultiSelect, filter, getHistoryDataByWorker, getLocaleDate,

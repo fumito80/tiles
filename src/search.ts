@@ -2,15 +2,10 @@ import {
   Changes, Dispatch, IPubSubElement, makeAction, Store, StoreSub,
 } from './popup';
 import {
-  addListener,
-  addQueryHistory,
-  getLocal, pipe, setLocal, when,
+  addListener, addQueryHistory, getLocal, pipe, setLocal, when,
 } from './common';
 import {
-  $, $byClass,
-  rmClass, addAttr,
-  selectFolder,
-  hasClass,
+  $, $byClass, rmClass, addAttr, selectFolder, hasClass,
 } from './client';
 import { Options, Panes } from './types';
 

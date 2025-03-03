@@ -146,7 +146,7 @@ export const initialOptions = {
   findTabsFirst: true,
   enableExternalUrl: false,
   externalUrl: '',
-  findTabsMatches: 'domain' as 'domain' | 'prefix',
+  findTabsMatches: 'prefix' as 'domain' | 'prefix',
   css: '',
   editorTheme: 'vs-dark' as 'vs' | 'vs-dark',
   colorPalette: defaultColorPalette,

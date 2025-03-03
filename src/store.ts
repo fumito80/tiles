@@ -1,6 +1,11 @@
 import {
   EventListenerOptions,
-  HTMLElementEventType, MyHistoryItem, Options, PromiseInitTabs, State, StoredElements,
+  HTMLElementEventType,
+  MyHistoryItem,
+  Options,
+  PromiseInitTabs,
+  State,
+  StoredElements,
 } from './types';
 import { $, $byClass, $byTag } from './client';
 import { FormSearch } from './search';

@@ -1,11 +1,11 @@
 import { getImageData } from './draw-svg';
 
 chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
-  if (message.type === 'getImageData') {
-    getImageData(message.svg)
-      .then(({ data, width }) => ({ data: Array.from(data), width }))
-      .then(sendResponse);
-    return true;
+  if (message.type !== 'getImageData') {
+    return false;
   }
-  return false;
+  getImageData(message.svg)
+    .then(({ data, width }) => ({ data: Array.from(data), width }))
+    .then(sendResponse);
+  return true;
 });
