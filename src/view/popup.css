@@ -229,8 +229,7 @@ window-header,
 .leaf-menu-button,
 .folder-menu-button,
 .multi-sel-menu-button,
-window-header>button,
-.unpin-window {
+window-header>button {
   display: none;
   z-index: 1;
   padding: 0;
