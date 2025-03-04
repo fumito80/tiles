@@ -242,6 +242,15 @@ open-tab {
       [data-value='pin-window-top']>i {
         transform: scale(1, -1);
       }
+
+      [data-value="collapse-tab"],
+      [data-value="unpin-window"] {
+        display: none;
+
+        +hr {
+          display: none;
+        }
+      }
     }
   }
 
@@ -620,51 +629,64 @@ app-main.drag-start .tabs {
       display: var(--show-close-tab, none);
     }
   }
+
+  [data-value="collapse-tab"] {
+    &::after {
+      content: 'Show icon view' !important;
+    }
+
+    .icon-list {
+      display: none;
+    }
+
+    .icon-grid {
+      display: block !important;
+    }
+  }
 }
 
 app-main {
-  .tabs-collapsed .tab-wrap {
-    >.outline {
-      content: '';
-      position: absolute;
-      width: calc(100% + 4px);
-      height: calc(100% + 4px);
-      border: 2px solid transparent;
-      border-radius: 6px;
-      left: -4px;
-      top: -4px;
-    }
-
-    &:hover>.outline,
-    &.highlight.focus>.outline,
-    &.selected>.outline {
-      border-color: var(--item-hover-bg);
-    }
-
-    &.selected>.outline {
-      &::before {
+  .tabs-collapsed {
+    .tab-wrap {
+      >.outline {
         content: '';
         position: absolute;
-        width: 10px;
-        height: 10px;
-        background-color: white;
-        top: 1px;
-        left: 1px;
-        border-radius: 50%;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        border: 2px solid transparent;
+        border-radius: 6px;
+        left: -4px;
+        top: -4px;
       }
 
-      &::after {
-        content: '\e91c';
-        position: absolute;
-        font-family: 'glyphs';
-        font-size: 12px;
-        text-rendering: auto;
-        color: var(--common-marker);
+      &:hover>.outline,
+      &.highlight.focus>.outline,
+      &.selected>.outline {
+        border-color: var(--item-hover-bg);
+      }
+
+      &.selected>.outline {
+        &::before {
+          content: '';
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          background-color: white;
+          top: 1px;
+          left: 1px;
+          border-radius: 50%;
+        }
+
+        &::after {
+          content: '\e91c';
+          position: absolute;
+          font-family: 'glyphs';
+          font-size: 12px;
+          text-rendering: auto;
+          color: var(--common-marker);
+        }
       }
     }
-  }
-
-  .tabs-collapsed {
 
     .tab-wrap.current-tab {
       border-color: var(--key-bg);
@@ -818,12 +840,6 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     &.translate-window {
       z-index: 1;
     }
-
-    window-header {
-      .unpin-window {
-        display: none;
-      }
-    }
   }
 
   .pin-wrap-top,
@@ -850,24 +866,18 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
         margin-bottom: 0;
         overflow: visible;
 
-        >*:not(.unpin-window) {
+        >*:not(.tabs-menu-button) {
           display: none;
         }
       }
 
-      &:not(:has(open-tab:hover)):hover {
-        .unpin-window {
+      &:not(:has(open-tab:hover)):hover,
+      &:not(.tabs-collapsed) {
+        .tabs-menu-button {
           display: flex;
           position: absolute;
           top: 0;
           right: -15px;
-
-          &:hover {
-            >i::before {
-              content: '\e920';
-              color: black;
-            }
-          }
         }
       }
     }
@@ -880,6 +890,58 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
         height: calc(100% - 5px);
         background-color: var(--key-bg);
         border-radius: 10px;
+      }
+    }
+
+    .tabs-menu-button:focus+.tabs-menu {
+      &::before {
+        content: '';
+        width: 100%;
+        display: block;
+        height: 30px;
+        position: absolute;
+        top: -30px;
+        right: -10px;
+      }
+
+      &::after {
+        content: '';
+        width: 100%;
+        display: block;
+        height: 30px;
+        position: absolute;
+        bottom: -30px;
+        right: -10px;
+      }
+
+      [data-value="collapse-tab"] {
+        display: flex;
+
+        &::after {
+          content: 'Show list view';
+        }
+
+        .icon-grid {
+          display: none;
+        }
+      }
+
+      [data-value="unpin-window"] {
+        display: flex;
+
+        +hr {
+          display: block;
+        }
+
+        .icon-pin-angle::before {
+          content: '\e920';
+        }
+      }
+
+      [data-value="pin-window-top"],
+      [data-value="pin-window-bottom"],
+      open-window .tabs-menu-button {
+        display: none;
       }
     }
   }

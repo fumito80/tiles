@@ -310,7 +310,7 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
   }
   connect(store: Store) {
     const { windowId, order } = this;
-    const buttons = ['collapse-tab', 'unpin-window', 'minimize-others'] as const;
+    const buttons = ['collapse-tab', 'minimize-others'] as const;
     setEvents($$byTag('button', this), {
       click(e) {
         const buttonClass = whichClass(buttons, e.currentTarget as HTMLElement);
@@ -319,10 +319,6 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
           .then(() => {
             store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
             (e.currentTarget as HTMLElement).blur();
-          })
-          .case('unpin-window')
-          .then(() => {
-            store.dispatch('pinWindow', { order, method: 'sub' });
           })
           .case('minimize-others')
           .then(() => {
@@ -354,6 +350,12 @@ export class WindowHeader extends HTMLElement implements ISubscribeElement {
             break;
           case 'minimize-others':
             store.dispatch('windowAction', { type: 'minimizeOthers', windowId }, true);
+            break;
+          case 'unpin-window':
+            store.dispatch('pinWindow', { order, method: 'sub' });
+            break;
+          case 'collapse-tab':
+            store.dispatch('windowAction', { type: 'collapseWindow', windowId }, true);
             break;
           default:
         }
@@ -819,11 +821,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         [this.$pinWrap, pinWindows?.top] as const,
         [this.$pinWrapB, pinWindows?.bottom] as const,
       ].forEach(([$container, orders]) => {
-        $container.append(
-          ...$windows
-            .filter(($win) => orders?.includes($win.order))
-            .map(($win) => $win.switchCollapseIcon(true)),
-        );
+        $container.append(...$windows.filter(($win) => orders?.includes($win.order)));
       });
       return [initWindows, currentWindowId];
     });
