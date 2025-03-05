@@ -16,8 +16,15 @@ body {
 }
 
 /* for open tabs pane */
-.tabs-wrap::-webkit-scrollbar {
-    width: 8px;
+.tabs {
+
+    .tabs-wrap,
+    .pin-wrap-top open-window,
+    .pin-wrap-bottom open-window {
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+    }
 }
 
 /* for history pane */
