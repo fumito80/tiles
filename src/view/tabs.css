@@ -849,6 +849,10 @@ app-main:not(.drag-start):not(.disable-zoom-tabs):not(.zoom-pane)>div:not(.end) 
     overflow: hidden;
     margin-right: 2px;
 
+    .tabs-menu-button {
+      display: none;
+    }
+
     open-window {
       border: 1px solid transparent !important;
       padding: 2px !important;
