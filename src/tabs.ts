@@ -14,6 +14,7 @@ import {
   addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
   isDefined,
+  last,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -1092,15 +1093,38 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         }
       });
   }
-  toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>) {
+  async toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>) {
     if (isInit) {
       return;
     }
-    this.getWindows().forEach((win) => {
-      this.$windosWrap.insertAdjacentElement('afterbegin', win);
-    });
+    this.classList.add('window-sorting');
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
+    const wins = this.getWindows().reverse();
+    let promiseTrans = Promise.resolve(wins);
+    wins.forEach(() => {
+      promiseTrans = promiseTrans.then(([win, ...rest]) => new Promise((resolve) => {
+        const top = last(rest);
+        if (!top) {
+          resolve([]);
+          return;
+        }
+        // const rest = [top, ...wins].slice(0, i + 1);
+        win.addEventListener('transitionend', () => {
+          win.style.removeProperty('transform');
+          rest.forEach((w) => w.style.removeProperty('transform'));
+          // this.$windosWrap.insertAdjacentElement('afterbegin', win);
+          this.$windosWrap.insertBefore(win, top);
+          resolve(rest);
+        }, { once: true });
+        const toTop = win.offsetTop - top.offsetTop;
+        const slide = win.offsetHeight + 5;
+        win.style.setProperty('transform', `translate(0, -${toTop}px)`);
+        rest.forEach((w) => w.style.setProperty('transform', `translate(0, ${slide}px)`));
+      }));
+    });
+    await promiseTrans;
+    this.classList.remove('window-sorting');
     this.$tabsWrap.scrollTop = 0;
   }
   getWindowById(windowId: number) {

@@ -2053,6 +2053,15 @@ app-main:not(.searching):not(.drag-start) {
   }
 }
 
+.window-sorting {
+  open-window {
+    display: block !important;
+  }
+  open-tab {
+    float: unset;
+  }
+}
+
 @import "./tabs";
 @import "./history";
 @import "./color-theme";
