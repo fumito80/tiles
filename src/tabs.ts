@@ -1101,29 +1101,33 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
     const wins = this.getWindows().reverse();
-    let promiseTrans = Promise.resolve(wins);
+    let promiseTrans = Promise.resolve([wins, 0 as number] as const);
     wins.forEach(() => {
-      promiseTrans = promiseTrans.then(([win, ...rest]) => new Promise((resolve) => {
+      promiseTrans = promiseTrans.then(([[win, ...rest], lastTop]) => new Promise((resolve) => {
         const top = last(rest);
         if (!top) {
-          resolve([]);
+          resolve([[], 0]);
           return;
         }
         // const rest = [top, ...wins].slice(0, i + 1);
+        const toTop = -(win.offsetTop - top.offsetTop - lastTop);
+        const slide = win.offsetHeight + 5 + lastTop;
         win.addEventListener('transitionend', () => {
-          win.style.removeProperty('transform');
-          rest.forEach((w) => w.style.removeProperty('transform'));
+          // win.style.removeProperty('transform');
+          // rest.forEach((w) => w.style.removeProperty('transform'));
           // this.$windosWrap.insertAdjacentElement('afterbegin', win);
-          this.$windosWrap.insertBefore(win, top);
-          resolve(rest);
+          // this.$windosWrap.insertBefore(win, top);
+          resolve([rest, slide]);
+          // console.log(i);
         }, { once: true });
-        const toTop = win.offsetTop - top.offsetTop;
-        const slide = win.offsetHeight + 5;
-        win.style.setProperty('transform', `translate(0, -${toTop}px)`);
+        win.style.setProperty('transform', `translate(0, ${toTop}px)`);
+        // console.log(toTop);
         rest.forEach((w) => w.style.setProperty('transform', `translate(0, ${slide}px)`));
       }));
     });
     await promiseTrans;
+    this.$windosWrap.append(...wins);
+    wins.forEach((win) => win.style.removeProperty('transform'));
     this.classList.remove('window-sorting');
     this.$tabsWrap.scrollTop = 0;
   }
