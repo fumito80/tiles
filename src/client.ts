@@ -568,6 +568,28 @@ export async function editTitle(
   });
 }
 
+export function selectFolder(
+  $target: HTMLElement,
+  $leafs: HTMLElement,
+  exclusiveOpenBmFolderTree: boolean,
+) {
+  const $foldersFolder = $target.parentElement?.parentElement!;
+  const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
+  const isOpen = hasClass($foldersFolder, 'open');
+  if (isOpen) {
+    folders.forEach(addClass('path'));
+    if (!exclusiveOpenBmFolderTree) {
+      saveStateAllPaths($foldersFolder.id);
+    }
+    return;
+  }
+  Object.assign($leafs, { scrollTop: 0 });
+  $$byClass('open').forEach(rmClass('open'));
+  folders.forEach(addClass('open'));
+  saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
+  $$byClass('hilite').forEach(rmClass('hilite'));
+}
+
 export async function addBookmark(
   parentId: string,
   bookmarkCreateArg: chrome.bookmarks.BookmarkCreateArg,
@@ -598,11 +620,11 @@ export async function addBookmark(
     insertHTML('beforebegin', htmlLeaf)($byId('1')!.children[index! + 1]);
     insertHTML('beforebegin', htmlLeaf)($byClass('folders')!.children[index!]);
   } else {
-    if (parentId !== $byClass('open')?.id && !isSearching) {
-      $$byClass('open').forEach(rmClass('open'));
-      $$(cssid(parentId)).forEach(addClass('open'));
-    }
     const $targetFolder = $(`.leafs ${cssid(parentId)}`) || $(`.folders ${cssid(parentId)}`)!;
+    if (parentId !== $byClass('open')?.id && !isSearching) {
+      const $folderTitle = $(`.folders ${cssid(parentId)} .title`)!;
+      selectFolder($folderTitle, $byClass('leafs')!, false);
+    }
     if (index == null) {
       insertHTML('beforeend', htmlLeaf)($targetFolder);
     } else {
@@ -637,28 +659,6 @@ export async function addBookmarkFromText(parentId = '1', url = '', name = '') {
       addBookmarkFromText(parentId, input.url, input.name);
     }
   }
-}
-
-export function selectFolder(
-  $target: HTMLElement,
-  $leafs: HTMLElement,
-  exclusiveOpenBmFolderTree: boolean,
-) {
-  const $foldersFolder = $target.parentElement?.parentElement!;
-  const folders = [$foldersFolder, $(`.leafs ${cssid($foldersFolder.id)}`)];
-  const isOpen = hasClass($foldersFolder, 'open');
-  if (isOpen) {
-    folders.forEach(addClass('path'));
-    if (!exclusiveOpenBmFolderTree) {
-      saveStateAllPaths($foldersFolder.id);
-    }
-    return;
-  }
-  Object.assign($leafs, { scrollTop: 0 });
-  $$byClass('open').forEach(rmClass('open'));
-  folders.forEach(addClass('open'));
-  saveStateOpenedPath($foldersFolder, exclusiveOpenBmFolderTree);
-  $$byClass('hilite').forEach(rmClass('hilite'));
 }
 
 export async function addFolder(

@@ -111,11 +111,11 @@ export type ColorPalette = [
 ];
 
 export const defaultColorPalette: ColorPalette = [
-  'FFFFFF',
-  'CDD7D6',
-  '102542',
-  'B3A394',
-  'F87060',
+  'F1F5F1',
+  'CBD2D6',
+  '5489BA',
+  '80C8D1',
+  '2A4875',
 ];
 
 export type PaneNames = [
