@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Icons Maker</title>
+  <style>
+    body {
+      white-space: nowrap;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    svg {
+      border: 1px solid #000;
+      /* background-color: #ccc; */
+    }
+    .racing-sans-one-regular {
+      font-family: "Racing Sans One", serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 7.5rem;
+    }
+
+    img {
+      aspect-ratio: 1;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ここから -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="19" height="19">
+    <defs>
+      <filter id="shadow">
+        <feOffset dx='0' dy='0' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#000000' flood-opacity='1.0' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+      <filter id="shadow-onepoint">
+        <feOffset dx='355' dy='-355' />
+        <feGaussianBlur stdDeviation='10' result='offset-blur' />
+        <feComposite operator='out' in='SourceGraphic' in2='offset-blur' result='inverse' />
+        <feFlood flood-color='#FFFFFF' flood-opacity='.8' result='color' />
+        <feComposite operator='in' in='color' in2='inverse' result='shadow' />
+        <feComposite operator='over' in='shadow' in2='SourceGraphic' />
+      </filter>
+    </defs>
+    <g stroke-width="0" stroke-linejoin="round" shape-rendering="optimizeQuality" transform="scale(1.12, 1.12) translate(-26, -26)" filter="url(#shadow)">
+      <path fill="#${accent}" stroke="#${outerStroke}" d="
+        M76 394 v-180 a 180 180 0 1 1 329.66629547096 100 c -45 75 -175 155 -230 160 c -40 7 -94 -13 -99 -73 z
+      " />
+      <circle fill="#${outerStroke}" cx="256" cy="212" r="65" />
+    </g>
+  </svg>
+  <!-- ここまで -->
+  <script>
+    function makeLink(download, img, href) {
+      const link = document.body.appendChild(document.createElement('a'));
+      link.append(img);
+      return Object.assign(link, { href, download });
+    }
+    function addImage(width, svg) {
+      const svg2 = svg.cloneNode(true);
+      svg2.setAttribute('width', width);
+      svg2.setAttribute('height', width);
+      const img = document.createElement('img');
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = width;
+      const ctx = canvas.getContext('2d');
+
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0);
+        const url = canvas.toDataURL('image/png');
+        const img2 = document.createElement('img');
+        img2.setAttribute('width', width);
+        img2.src = url;
+        makeLink('p' + width, img2, url);
+      };
+      const svgData = new XMLSerializer().serializeToString(svg2);
+      img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(svgData));
+    }
+    const [svg] = document.getElementsByTagName('svg');
+    svg.querySelector('path').setAttribute('fill', '#BFD7EA');
+    svg.querySelector('path').setAttribute('stroke', '#14213D');
+    svg.querySelector('g > circle').setAttribute('fill', '#14213D');
+    svg.setAttribute('width', '512');
+    svg.setAttribute('height', '512');
+    addImage(128, svg);
+    addImage(48, svg);
+    svg.insertAdjacentHTML('beforeend', `<path stroke="red" stroke-width="0" d="
+      M256 0 v512
+      M76 0 v512
+      M436 0 v512
+      M0 32 h512
+      M0 212 h512
+    " />`);
+  </script>
+</body>

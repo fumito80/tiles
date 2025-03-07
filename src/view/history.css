@@ -1,0 +1,283 @@
+/* History */
+
+.histories {
+  position: relative;
+  border-radius: var(--pane-radius);
+  transition: var(--xen-mode-transition);
+  animation: fade-in 0.15s ease-in-out;
+
+  .rows {
+    display: grid;
+    grid-auto-rows: min-content;
+    padding: 0.1em 0;
+
+    >.history-item {
+      margin: 0 2px;
+
+      &:hover>.icon-x {
+        display: var(--show-delete-history, none);
+      }
+
+      &.selected {
+        >.icon-x {
+          display: none;
+        }
+
+        rtu &:active {
+          filter: opacity(0.7);
+        }
+      }
+
+      &.open-closed-window {
+        >.icon-fa-angle-right {
+          transform: rotate(90deg);
+        }
+      }
+
+      &.child-session {
+        margin-left: 1.6em;
+      }
+
+      &.fade-in {
+        animation: fade-in 0.15s ease-in-out;
+      }
+
+      >.time {
+        font-size: 0.9em;
+        padding: 0 3px;
+        opacity: .7;
+      }
+
+      &:hover .time {
+        display: none;
+      }
+    }
+
+    >.history-item:empty {
+      display: none;
+    }
+
+    .header-date {
+      display: flex;
+      height: 1.6em;
+      margin: 0.1em 2px;
+      padding: 0;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.3);
+      color: var(--dark-font-color);
+      border-radius: 2px;
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+
+      &:nth-child(2) {
+        margin-top: 0;
+      }
+    }
+
+    .current-date {
+      position: absolute;
+      width: -webkit-fill-available;
+      z-index: 1;
+
+      &::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      &::after {
+        content: attr(data-value);
+        position: absolute;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+        color: var(--dark-font-color);
+        background-color: rgba(0, 0, 0, 0.3);
+      }
+    }
+  }
+
+  &.init::-webkit-scrollbar-thumb {
+    background-color: transparent !important;
+  }
+}
+
+.end > .pane-body.histories {
+  margin-right: 4px;
+}
+
+.v-scroll {
+  position: relative;
+  overflow-y: auto;
+}
+
+.v-scroll>.rows {
+  position: sticky;
+  top: 0;
+  width: 100%;
+}
+
+.v-scroll-fake-bottom {
+  width: 1px;
+}
+
+/* Date collapse icon */
+
+.date-collapsed {
+  .icon-calendar-plus-solid {
+    display: inline-block;
+  }
+
+  .icon-calendar-minus-solid {
+    display: none;
+  }
+}
+
+.header-histories {
+  &:not(.date-collapsed) {
+    .icon-calendar-plus-solid {
+      display: none;
+    }
+
+    .icon-calendar-minus-solid {
+      display: inline-block;
+    }
+  }
+
+  >button.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.show-recently-closed {
+    .toggle-recently-closed .icon-recently-closed-tab {
+      transform: unset;
+
+      &::before {
+        content: '\e90d';
+      }
+    }
+  }
+}
+
+.toggle-recently-closed {
+  margin-left: 10px;
+
+  >i {
+    transform: scale(1.1);
+  }
+}
+
+.toggle-recently-closed,
+.collapse-history-date {
+  margin-right: 10px;
+
+  .init {
+    visibility: hidden;
+  }
+}
+
+/* History date collapse mode */
+
+app-main:not(.disable-zoom-history) {
+
+  .collapse-history-date {
+    display: none;
+  }
+
+  &.zoom-pane {
+
+    .collapse-history-date {
+      display: flex;
+    }
+  }
+
+  &.zoom-fade-out {
+
+    .collapse-history-date {
+      display: none;
+    }
+  }
+}
+
+.header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  content: '\e912';
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-family: "glyphs";
+  line-height: 1;
+  left: 5px;
+  font-size: 1.2em;
+  color: var(--common-marker);
+}
+
+.theme-dark-pane .header-histories:has(multi-sel-pane.show)~.histories .header-date:hover::before {
+  color: deepskyblue;
+}
+
+/* Recently closed tabs */
+
+.history-item {
+
+  >.icon-fa-angle-right {
+    display: none;
+  }
+
+  &.session-window,
+  &.session-tab {
+
+    &::before {
+      content: '\e922';
+      font-family: "glyphs";
+      font-size: 1.3em;
+      margin-left: 1.3em;
+    }
+
+    >.history-title {
+      text-indent: 2px;
+    }
+
+    &:hover>.time {
+      display: block !important;
+      color: var(--item-hover-color);
+      opacity: 1;
+    }
+
+    >.icon-x {
+      display: none !important;
+    }
+  }
+
+  &.session-window {
+    &::before {
+      content: '\e923';
+    }
+
+    >.icon-fa-angle-right {
+      display: inline-block;
+      position: absolute;
+      left: 4px;
+    }
+  }
+}
+
+/* Display time */
+
+.disable-zoom-history .history-item .time,
+app-main:not(.disable-zoom-history).zoom-pane .history-item .time {
+  display: block;
+}
+
+.zoom-center .history-item .time,
+app-main:not(.disable-zoom-history) .history-item .time {
+  display: none;
+}
+
+.draggable-clone .time {
+  display: none;
+}

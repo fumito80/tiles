@@ -1,29 +1,35 @@
 /* eslint-disable import/no-extraneous-dependencies */
-/* eslint-disable import/no-unresolved */
-
 const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+const ZipPlugin = require('zip-webpack-plugin');
+const common = require('./webpack.common');
+const manifest = require('./src/assets/manifest.json');
 
 module.exports = {
+  ...common,
   mode: 'production',
-  entry: {
-    popup: './src/popup.ts',
-    // background: './src/redux-provider.ts',
-    background: './src/background.ts',
-  },
   output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, 'dist'),
+    ...common.output,
+    path: path.resolve(__dirname, 'publish'),
   },
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
+  plugins: [
+    ...common.plugins,
+    new CopyPlugin({
+      patterns: [
+        { from: '*.*', context: 'vite-work/' },
+      ],
+    }),
+    new ZipPlugin({
+      path: '../zip',
+      filename: `${manifest.version}.zip`,
+      extension: 'zip',
+      fileOptions: {
+        compress: true,
+        forceZip64Format: false,
       },
-    ],
-  },
-  resolve: {
-    extensions: ['.ts'],
-  },
+      zipOptions: {
+        forceZip64Format: false,
+      },
+    }),
+  ],
 };

@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "TempoGrid",
+  "version": "0.22.0.1",
+  "default_locale": "en",
+  "description": "Integrated browsing resource manager. Change to your favorite colors to change your mood at work!",
+  "permissions": [
+    "storage",
+    "bookmarks",
+    "tabs",
+    "history",
+    "favicon",
+    "sessions",
+    "offscreen"
+  ],
+  "action": {
+    "default_title": "TempoGrid",
+    "default_icon": {
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "description": "TempoGrid",
+      "suggested_key": {
+        "default": "Alt+P"
+      }
+    }
+  },
+  "background": {
+    "service_worker": "sw.js"
+  },
+  "options_page": "settings.html"
+}

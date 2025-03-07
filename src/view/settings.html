@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="icon48.png" />
+  <link rel="stylesheet" href="settings.css">
+  <title>TempoGrid Settings</title>
+</head>
+
+<body>
+  <main>
+    <header>
+      <h5><span class="extension-name"></span>Settings<span class="version ms-3"></span></h5>
+      <button type="button" class="apply-settings btn btn-sm btn-secondary ms-auto me-5 px-4">Done</button>
+      <div class="chrome-sync">
+        <button class="btn btn-sm btn-outline-primary upload-sync"
+          title="Save settings to the cloud in your chrome sign-in account." data-bs-toggle="tooltip"
+          data-bs-placement="bottom"><i class="icon-cloud-arrow-up"></i> Upload
+          sync</button>
+        <button class="btn btn-sm btn-outline-warning ms-1 download-sync" data-bs-toggle="tooltip"
+          title="Load settings from the cloud in your chrome sign-in account." data-bs-placement="bottom"><i
+            class="icon-cloud-arrow-down"></i> Download
+          sync</button>
+      </div>
+    </header>
+    <article>
+      <form>
+        <div class="heading">Color theme</div>
+        <div class="item-collaplse">
+          <color-palette name="color-palette" class="ms-2">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of history, tabs, and bookmarks panes">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of frame and folders">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of item while hovering">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of search box while typing">
+            <input type="color" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Background color of current folder/tab">
+          </color-palette>
+          <button type="button" class="add-fav-palette ms-4 btn btn-sm btn-outline-secondary"><i class="icon-plus"></i>
+            Add to favorites</button>
+          <button type="button" class="remove-fav-palette btn btn-outline-warning btn-sm ms-2 mb-1"
+            title="Delete selected favorite palette"><i class="icon-x"></i> Delete</button>
+        </div>
+        <div class="item w-100">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <span>Favorite color palettes</span>
+        </div>
+        <fav-color-palettes name="fav-color-palettes"></fav-color-palettes>
+        <label class="item-collaplse">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <a role="button" data-bs-toggle="collapse" href="#color-palettes" aria-expanded="false">
+            <span>Color palettes</span><i class="icon-fa-angle-right ms-1"></i>
+          </a>
+        </label>
+        <div id="color-palettes" class="collapse mt-2">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#light-theme" type="button"
+                role="tab" aria-controls="light-theme" aria-selected="true">Light</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dark-theme" type="button" role="tab"
+                aria-controls="dark-theme" aria-selected="true">Dark</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mix-theme" type="button" role="tab"
+                aria-controls="mix-theme" aria-selected="true">Mix</button>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="light-theme" role="tabpanel" aria-labelledby="light-theme"
+              tabindex="0"></div>
+            <div class="tab-pane fade" id="dark-theme" role="tabpanel" aria-labelledby="dark-theme" tabindex="0"></div>
+            <div class="tab-pane fade" id="mix-theme" role="tabpanel" aria-labelledby="mix-theme" tabindex="0"></div>
+          </div>
+        </div>
+        <div class="heading">Layout</div>
+        <layout-panes name="panes2">
+          <div draggable="true" data-value="history">
+            <i class="icon-history"></i>
+            <div class="title">HISTORY</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
+          </div>
+          <div draggable="true" data-value="windows">
+            <i class="icon-tabs"></i>
+            <div class="title">OPEN TABS</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
+          </div>
+          <div draggable="true" data-value="recent-tabs">
+            <i class="icon-recent-tabs"></i>
+            <div class="title">RECENT TABS</div>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
+          </div>
+          <div draggable="true" data-value="bookmarks">
+            <i class="icon-bookmarks"></i>
+            <div class="title">BOOKMARKS</div>
+            <layout-bm-panes name="bookmarks-panes">
+              <div data-value="leafs">Bookmarks</div>
+              <button type="button" class="btn-flip-bm btn btn-light"><i class="icon-sync-arrows"></i></button>
+              <div data-value="folders">Folders</div>
+            </layout-bm-panes>
+            <div class="droppable pane-top"></div>
+            <div class="droppable pane-bottom"></div>
+          </div>
+        </layout-panes>
+        <label class="item">
+          <input type="checkbox" class="bullet" tabindex="-1">Wider ratio:
+          <select name="zoom-ratio" class="form-control ms-2">
+            <option value="0.5">50%</option>
+            <option value="0.6">60%</option>
+            <option value="0.7">70%</option>
+            <option value="0.8">80%</option>
+            <option value="0.9">90%</option>
+          </select>
+        </label>
+
+        <div class="heading">General</div>
+        <label class="item new"><input type="checkbox" name="window-mode">Window mode</label>
+        <label class="item"><input type="checkbox" name="exclusive-open-bm-folder-tree">Bookmarks folder tree opens
+          exclusively</label>
+        <div class="item"><input type="checkbox" class="bullet" tabindex="-1">New tab position</div>
+        <div class="d-flex gap-4 mt-1 ms-3">
+          <label><input type="radio" name="new-tab-position" value="le">Left end</label>
+          <label><input type="radio" name="new-tab-position" value="ls">Left side</label>
+          <label><input type="radio" name="new-tab-position" value="rs">Right side</label>
+          <label><input type="radio" name="new-tab-position" value="re">Right end</label>
+        </div>
+        <label class="item"><input type="checkbox" name="find-tabs-first">When openning a bookmark, find it in tabs
+          first</label>
+        <div class="d-flex gap-4 mt-2 ms-3">
+          <label><input type="radio" name="find-tabs-matches" value="prefix">URL prefix match</label>
+          <label><input type="radio" name="find-tabs-matches" value="domain">URL domain match</label>
+        </div>
+        <label class="item ms-3"><input type="checkbox" name="bm-auto-find-tabs">Mouse over a bookmark to highlight
+          the
+          tab
+          with the matching URL</label>
+        <label class="item ms-3 mt-2">
+          <input type="checkbox" class="bullet ms-3" tabindex="-1">Mouse over delay:
+          <input type="number" name="bm-auto-find-tabs-delay" min="0" class="form-control w-25 mx-2"
+            value="500">milliseconds
+        </label>
+        <label class="item d-grid grid-columns-2"><input type="checkbox" name="enable-external-url"><span>In search
+            box
+            press enter
+            key, it opens the following URL with the input string as a parameter</span><input type="url"
+            name="external-url" class="form-control mt-1 mx-3"
+            placeholder="Enter a URL. ex. https://www.google.com/search?q="></label>
+        <label class="item"><input type="checkbox" name="restore-searching">Restore the search in progress at
+          startup</label>
+        <div class="heading">Open tabs pane</div>
+        <label class="item"><input type="checkbox" name="auto-minimize-app">Minimize app when selecting a tab/window</label>
+        <label class="item"><input type="checkbox" name="show-close-tab">Show close tab button</label>
+        <label class="item"><input type="checkbox" name="show-minimize-all">Show minimize all other windows
+          button</label>
+        <label class="item"><input type="checkbox" name="show-switch-tabs-win">Show scroll to next/previous window
+          button</label>
+        <div class="heading">History pane</div>
+        <label class="item"><input type="checkbox" name="show-delete-history">Show delete history button</label>
+        <div class="heading">Style</div>
+        <div class="item-collaplse">
+          <input type="checkbox" class="bullet" tabindex="-1">
+          <a role="button" data-bs-toggle="collapse" href="#customize-css" aria-expanded="false">
+            <div>Customize CSS</div><i class="icon-fa-angle-right ms-1"></i>
+          </a>
+        </div>
+        <div id="customize-css" class="collapse position-relative">
+          <div class="css-header">
+            <button class="restore-css btn btn-outline-warning btn-sm" type="button">Restore default</button>
+            <label class="theme">Theme: <select is="monaco-editor-theme" name="editor-theme">
+                <option value="vs">Light</option>
+                <option value="vs-dark">Dark</option>
+              </select></label>
+          </div>
+          <div class="customize-css css-editor mt-1"></div>
+          <div class="loading">
+            <div class="spinner-grow text-info" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+        <input is="monaco-editor" type="hidden" name="css">
+        <div class="d-none hidden">
+          <div class="auto-wider" data-no="1">
+            <label><input type="checkbox" name="wider1">Auto wider</label>
+          </div>
+          <div class="auto-wider" data-no="2">
+            <label><input type="checkbox" name="wider2">Auto wider</label>
+          </div>
+          <div class="auto-wider dummy" data-no="3">
+            <label>Auto wider</label>
+          </div>
+          <div class="auto-wider dummy" data-no="4">
+            <label>Auto wider</label>
+          </div>
+        </div>
+      </form>
+    </article>
+  </main>
+  <template>
+    <div class="column">
+      <div class="droppable pane-before"></div>
+      <div class="droppable pane-after"></div>
+    </div>
+  </template>
+  <script src="settings.js"></script>
+</body>
+
+</html>

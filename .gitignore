@@ -105,3 +105,13 @@ dist
 
 # Own files
 .vscode/
+
+publish/
+
+vite-work/
+
+zip/
+
+old/
+
+three-svg.js

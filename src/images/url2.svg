@@ -1,0 +1,12 @@
+<svg viewBox="0 0 750 750" stroke-linejoin="round" stroke-linecap="round"
+  xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #ccc;">
+  <path id="w"
+    d="
+M0 200 h40 l30 200 l30 -200 h40 l30 200 l30 -200 h40 l-50 340 h-40 l-30 -200 l-30 200 h-40 z
+M250 200 h40 l30 200 l30 -200 h40 l30 200 l30 -200 h40 l-50 340 h-40 l-30 -200 l-30 200 h-40 z
+M500 200 h40 l30 200 l30 -200 h40 l30 200 l30 -200 h40 l-50 340 h-40 l-30 -200 l-30 200 h-40 z
+M730 520
+A25 25 0 1 1 780 520
+A25 25 0 0 1 730 520
+" />
+</svg>
