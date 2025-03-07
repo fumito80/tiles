@@ -10,6 +10,6 @@ module.exports = {
   devtool: 'inline-source-map',
   watchOptions: {
     poll: true,
-    ignored: [path.resolve(__dirname, 'src/background.ts')],
+    ignored: [path.resolve(__dirname, 'src/sw.ts')],
   },
 };

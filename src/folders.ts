@@ -79,7 +79,7 @@ export class Folders extends Bookmarks implements IPubSubElement {
         const { value } = (e.target as HTMLElement).dataset;
         switch (value) {
           case 'add-bookmark': {
-            store.dispatch('addBookmarkFromTab', { parentId: $folder.id });
+            store.dispatch('addBookmarkFromTab', { parentId: $folder.id }, true);
             break;
           }
           case 'add-bookmark-text': {
