@@ -145,6 +145,9 @@ function layoutPanes(options: Options, settings: Settings, isSearching: boolean)
     $bmLeft.parentElement!.insertBefore($bmLeft, $bmRight);
     $bmLeft.parentElement!.insertBefore($bmRight, $bmLeftAfter);
   }
+  // Bold Splitter
+  const $boldTargets = $$('.col-grid:not(.end):has(.history), .col-grid:not(.end):has(.recent-tabs), .col-grid:not(.end):has(.leafs:last-child)');
+  $boldTargets.map(($colGrid) => $colGrid.nextElementSibling).forEach(addClass('bold-separator'));
   $appMain.init(options, settings, isSearching);
   return $$('[is]', $appMain).reduce((acc, pane) => {
     const name = pane?.getAttribute('is');
@@ -180,6 +183,7 @@ function setHeaderHeight() {
     if (headerHeight > 0) {
       const sheet2 = new CSSStyleSheet();
       sheet2.insertRule(`.pane-header { height: ${headerHeight}px; }`);
+      sheet2.insertRule(`app-main>.split-h::before { height: ${headerHeight - 14}px; }`);
       document.adoptedStyleSheets = [sheet, sheet2];
       break;
     }

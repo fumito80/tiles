@@ -214,12 +214,6 @@ export function insertHTML(position: InsertPosition, html: string) {
   };
 }
 
-export function addRules(selector: string, ruleProps: [string, string][]) {
-  const rules = ruleProps.map(([prop1, value]) => `${prop1}:${value};`).join('');
-  const [sheet] = document.styleSheets;
-  sheet.insertRule(`${selector} {${rules}}`, sheet.cssRules.length);
-}
-
 export function initSplitWidth({ paneSizes }: Settings, { panes2 }: Options) {
   const widths = paneSizes.widths.length === 0
     ? init(panes2).map(() => 100 / panes2.length)
