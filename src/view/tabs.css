@@ -139,7 +139,8 @@ open-tab {
     transition: all 0.2s ease-in-out;
   }
 
-  &.window-order-asc {
+  &.window-order-asc,
+  &.end-window-order-asc {
     .new-window-plus {
       display: flex;
       opacity: 1;
@@ -988,6 +989,20 @@ app-main.drag-start {
   .pin-wrap-bottom {
     open-window:has(.tabs-header.drag-source) {
       border-color: var(--item-hover-bg) !important;
+    }
+  }
+}
+
+.window-sorting {
+  * {
+    transition: unset !important;
+  }
+
+  open-window.tabs-collapsed {
+    display: block !important;
+
+    open-tab {
+      float: unset;
     }
   }
 }

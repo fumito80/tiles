@@ -150,6 +150,7 @@ export function storeMapping(options: Options, components: Components) {
   store.subscribeContext($headerTabs)
     .map([$tabs, 'setWheelHighlightTab'], $headerTabs.showBookmarkMatches)
     .map([$tabs, 'tabMatches'], $headerTabs.showTabMatches)
+    .map([$tabs, 'endWindowOrderAsc'], $headerTabs.endWindowOrderAsc)
     .map([$headerTabs, 'toggleWindowOrderHeader'], $headerTabs.toggleWindowOrder);
 
   store.subscribeContext($tabs)

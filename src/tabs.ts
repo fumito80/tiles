@@ -11,9 +11,8 @@ import {
   getAllWindows,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
+  isDefined, addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
-  isDefined,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -537,9 +536,13 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$buttonCollapse.blur();
   }
   toggleWindowOrder(_: any, __: any, states: States, store: StoreSub) {
+    toggleClass('end-window-order-asc', states.toggleWindowOrder)(this);
     toggleClass('window-order-asc', !states.toggleWindowOrder)(this);
     this.$tabOrderAsc.blur();
     store.dispatch('toggleWindowOrder', !states.toggleWindowOrder);
+  }
+  endWindowOrderAsc() {
+    rmClass('end-window-order-asc')(this);
   }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
@@ -1092,16 +1095,30 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         }
       });
   }
-  toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>) {
+  async toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>, _: any, states: States, store: StoreSub) {
     if (isInit) {
       return;
     }
-    this.getWindows().forEach((win) => {
-      this.$windosWrap.insertAdjacentElement('afterbegin', win);
+    addClass('window-sorting')(this);
+    this.$tabsWrap.scrollTop = 0;
+    const wins = this.getWindows().reverse();
+    let promise = Promise.resolve(wins);
+    wins.forEach(() => {
+      promise = promise.then(([win, ...rest]) => new Promise((resolve) => {
+        this.$windosWrap.appendChild(win);
+        setTimeout(() => {
+          this.$windosWrap.appendChild(win);
+          resolve(rest);
+        }, 0);
+      }));
     });
+    await promise;
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
-    this.$tabsWrap.scrollTop = 0;
+    if (!states.toggleWindowOrder) {
+      store.dispatch('endWindowOrderAsc');
+    }
+    setTimeout(() => rmClass('window-sorting')(this), 500);
   }
   getWindowById(windowId: number) {
     return this.windows.find((win) => win.windowId === windowId);
@@ -1471,6 +1488,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         initValue: '',
       }),
       minimizeApp: {},
+      endWindowOrderAsc: {},
     };
   }
   override connect(store: Store) {
