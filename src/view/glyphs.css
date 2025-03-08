@@ -34,10 +34,6 @@ i {
   content: "\e905";
 }
 
-.icon-url:before {
-  content: "\e90c";
-}
-
 .icon-calendar-plus-solid:before {
   content: "\e907";
 }
@@ -86,14 +82,6 @@ i {
   content: "\f044";
 }
 
-.icon-uniF07B:before {
-  content: "\f07b";
-}
-
-.icon-uniF07C:before {
-  content: "\f07c";
-}
-
 .icon-fa-sign-in-alt:before {
   content: "\f090";
 }
@@ -118,10 +106,6 @@ i {
   content: "\f1f8";
 }
 
-.icon-folder::before {
-  content: "\e90a";
-}
-
 .icon-arrow-up::before {
   content: "\e917";
 }
@@ -132,14 +116,6 @@ i {
 
 .icon-new-window::before {
   content: "\e911";
-}
-
-.icon-collapse-tabs::before {
-  content: "\e911";
-}
-
-.icon-expand-tabs::before {
-  content: "\e916";
 }
 
 .icon-list::before {
@@ -156,10 +132,6 @@ i {
 
 .icon-close::before {
   content: "\e915";
-}
-
-.icon-closes::before {
-  content: "\e917";
 }
 
 .icon-incognito::before {
@@ -220,10 +192,6 @@ i {
 
 .icon-minimize::before {
   content: '\e921';
-}
-
-.icon-clipboard::before {
-  content: '\e920';
 }
 
 .icon-edit:before {

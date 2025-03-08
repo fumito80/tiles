@@ -144,14 +144,14 @@ async function enterZoom(
     addStyle('right', `${offset + 5}px`)($iconAngleRight);
     addStyle('transform', `translateX(${-offset}px)`)($('.pane-header > i')!);
     addClass('zoom-center')($main);
-    shiftSafetyZone = $target.offsetLeft + (offset > 0 ? 14 - offset : 4);
+    shiftSafetyZone = $target.offsetLeft + (offset > 0 ? 12 - offset : 2);
     if (zoomRatio >= 0.9) {
       addStyle('width', '10px')($safetyZoneRight);
     }
   } else {
     addStyle('left', '-100px')($iconAngleLeft);
     addStyle('right', '5px')($iconAngleRight);
-    shiftSafetyZone = 8;
+    shiftSafetyZone = 0;
   }
   addStyle('left', `calc(${zoomRatio * 100}% + ${shiftSafetyZone}px)`)($safetyZoneRight);
   async function mouseenter(ev: MouseEvent) {
@@ -161,10 +161,7 @@ async function enterZoom(
     clearTimeoutZoom();
     const $shade = ev.target as HTMLElement;
     if (hasClass($shade, 'shade-left')) {
-      // const $leftPane = $target.previousElementSibling as HTMLElement;
       if (options.wider1) {
-      // if ((options.zoomHistory && hasClass($leftPane, 'histories'))
-      //   || (options.zoomTabs && hasClass($leftPane, 'tabs'))) {
         await Promise.all([promise1, ...zoomOut($target, elements, mouseenter)()]);
         enterZoom($target, elements, zoomRatio, options);
         return;
