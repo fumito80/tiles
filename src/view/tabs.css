@@ -998,11 +998,15 @@ app-main.drag-start {
     transition: unset !important;
   }
 
-  open-window.tabs-collapsed {
-    display: block !important;
+  open-window {
+    transition: transform 0.05s !important;
 
-    open-tab {
-      float: unset;
+    .tabs-collapsed {
+      display: block !important;
+
+      open-tab {
+        float: unset;
+      }
     }
   }
 }

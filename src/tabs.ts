@@ -13,6 +13,7 @@ import {
 import {
   isDefined, addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
+  last,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -1102,17 +1103,44 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
     addClass('window-sorting')(this);
     this.$tabsWrap.scrollTop = 0;
     const wins = this.getWindows().reverse();
-    let promise = Promise.resolve(wins);
+    let promiseTrans = Promise.resolve([wins, 0 as number] as const);
     wins.forEach(() => {
-      promise = promise.then(([win, ...rest]) => new Promise((resolve) => {
-        this.$windosWrap.appendChild(win);
-        setTimeout(() => {
-          this.$windosWrap.appendChild(win);
-          resolve(rest);
-        }, 0);
+      promiseTrans = promiseTrans.then(([[win, ...rest], lastTop]) => new Promise((resolve) => {
+        const top = last(rest);
+        if (!top) {
+          resolve([[], 0]);
+          return;
+        }
+        // const rest = [top, ...wins].slice(0, i + 1);
+        const toTop = -(win.offsetTop - top.offsetTop - lastTop);
+        const slide = win.offsetHeight + 5 + lastTop;
+        win.addEventListener('transitionend', () => {
+          // win.style.removeProperty('transform');
+          // rest.forEach((w) => w.style.removeProperty('transform'));
+          // this.$windosWrap.insertAdjacentElement('afterbegin', win);
+          // this.$windosWrap.insertBefore(win, top);
+          resolve([rest, slide]);
+          // console.log(i);
+        }, { once: true });
+        win.style.setProperty('transform', `translate(0, ${toTop}px)`);
+        // console.log(toTop);
+        rest.forEach((w) => w.style.setProperty('transform', `translate(0, ${slide}px)`));
       }));
     });
-    await promise;
+    await promiseTrans;
+    this.$windosWrap.append(...wins);
+    wins.forEach((win) => win.style.removeProperty('transform'));
+    // let promise = Promise.resolve(wins);
+    // wins.forEach(() => {
+    //   promise = promise.then(([win, ...rest]) => new Promise((resolve) => {
+    //     this.$windosWrap.appendChild(win);
+    //     setTimeout(() => {
+    //       this.$windosWrap.appendChild(win);
+    //       resolve(rest);
+    //     }, 0);
+    //   }));
+    // });
+    // await promise;
     const position = newValue ? 'beforebegin' : 'afterend';
     this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
     if (!states.toggleWindowOrder) {
