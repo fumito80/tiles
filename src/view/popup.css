@@ -2021,16 +2021,6 @@ app-main:not(.searching):not(.drag-start) {
   }
 }
 
-.window-sorting {
-  open-window {
-    display: block !important;
-    transition: transform 0.04s !important;
-  }
-  open-tab {
-    float: unset;
-  }
-}
-
 @import "./tabs";
 @import "./history";
 @import "./color-theme";

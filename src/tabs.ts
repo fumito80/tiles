@@ -11,10 +11,8 @@ import {
   getAllWindows,
 } from './client';
 import {
-  addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
+  isDefined, addListener, delayMultiSelect, extractDomain, getLocal, htmlEscape, postMessage,
   makeStyleIcon, pipe, when, setEvents, whichClass, switches, decodeUrl, chromeEventFilter, decode,
-  isDefined,
-  last,
 } from './common';
 import { ISearchable, SearchParams } from './search';
 import {
@@ -538,9 +536,13 @@ export class HeaderTabs extends MulitiSelectablePaneHeader implements IPubSubEle
     this.$buttonCollapse.blur();
   }
   toggleWindowOrder(_: any, __: any, states: States, store: StoreSub) {
+    toggleClass('end-window-order-asc', states.toggleWindowOrder)(this);
     toggleClass('window-order-asc', !states.toggleWindowOrder)(this);
     this.$tabOrderAsc.blur();
     store.dispatch('toggleWindowOrder', !states.toggleWindowOrder);
+  }
+  endWindowOrderAsc() {
+    rmClass('end-window-order-asc')(this);
   }
   // eslint-disable-next-line class-methods-use-this
   async menuClickHandler(e: MouseEvent) {
@@ -1093,43 +1095,30 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         }
       });
   }
-  async toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>) {
+  async toggleWindowOrder({ newValue, isInit }: Changes<'toggleWindowOrder'>, _: any, states: States, store: StoreSub) {
     if (isInit) {
       return;
     }
-    this.classList.add('window-sorting');
-    const position = newValue ? 'beforebegin' : 'afterend';
-    this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
+    addClass('window-sorting')(this);
+    this.$tabsWrap.scrollTop = 0;
     const wins = this.getWindows().reverse();
-    let promiseTrans = Promise.resolve([wins, 0 as number] as const);
+    let promise = Promise.resolve(wins);
     wins.forEach(() => {
-      promiseTrans = promiseTrans.then(([[win, ...rest], lastTop]) => new Promise((resolve) => {
-        const top = last(rest);
-        if (!top) {
-          resolve([[], 0]);
-          return;
-        }
-        // const rest = [top, ...wins].slice(0, i + 1);
-        const toTop = -(win.offsetTop - top.offsetTop - lastTop);
-        const slide = win.offsetHeight + 5 + lastTop;
-        win.addEventListener('transitionend', () => {
-          // win.style.removeProperty('transform');
-          // rest.forEach((w) => w.style.removeProperty('transform'));
-          // this.$windosWrap.insertAdjacentElement('afterbegin', win);
-          // this.$windosWrap.insertBefore(win, top);
-          resolve([rest, slide]);
-          // console.log(i);
-        }, { once: true });
-        win.style.setProperty('transform', `translate(0, ${toTop}px)`);
-        // console.log(toTop);
-        rest.forEach((w) => w.style.setProperty('transform', `translate(0, ${slide}px)`));
+      promise = promise.then(([win, ...rest]) => new Promise((resolve) => {
+        this.$windosWrap.appendChild(win);
+        setTimeout(() => {
+          this.$windosWrap.appendChild(win);
+          resolve(rest);
+        }, 0);
       }));
     });
-    await promiseTrans;
-    this.$windosWrap.append(...wins);
-    wins.forEach((win) => win.style.removeProperty('transform'));
-    this.classList.remove('window-sorting');
-    this.$tabsWrap.scrollTop = 0;
+    await promise;
+    const position = newValue ? 'beforebegin' : 'afterend';
+    this.$windosWrap.insertAdjacentElement(position, $byClass('new-window')!);
+    if (!states.toggleWindowOrder) {
+      store.dispatch('endWindowOrderAsc');
+    }
+    setTimeout(() => rmClass('window-sorting')(this), 500);
   }
   getWindowById(windowId: number) {
     return this.windows.find((win) => win.windowId === windowId);
@@ -1499,6 +1488,7 @@ export class Tabs extends TabsBase implements IPubSubElement, ISearchable {
         initValue: '',
       }),
       minimizeApp: {},
+      endWindowOrderAsc: {},
     };
   }
   override connect(store: Store) {
